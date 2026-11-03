@@ -154,8 +154,9 @@
     if (problem.figure) rootEl.append(figureBox(problem.figure));
     const blanks = problem.blanks || [];
     const values = {};
-    const slots = {};      // 語の空欄の表示（文中）
-    const inputs = {};     // 数値の空欄の input
+    // 同じ空欄 id が文中に何度出てもよい。値は id ごとに 1 つ
+    const slots = {};      // 値を表示する文中の枠（id → 配列）。語の空欄はすべて、数値の空欄は 2 回目以降
+    const inputs = {};     // 数値の空欄の input（id ごとに 1 つ。文中で最初に出た位置）
     const groups = [];     // 語群のボタン
     const note = noteLine();
     const submitBtn = button('答える', () => {
@@ -190,12 +191,12 @@
       const b = blanks[bi];
       if (!b) { textBox.append(document.createTextNode('[' + part + ']')); return; }
       const mark = CIRCLED[bi] || '(' + (bi + 1) + ')';
-      if (b.kind === 'number') {
+      if (b.kind === 'number' && !inputs[b.id]) {
         const input = el('input', {
           type: 'number', inputmode: 'decimal', step: 'any', class: 'blank-input',
           'aria-label': '空らん' + mark + (b.unit ? '（単位 ' + b.unit + '）' : ''),
         });
-        input.addEventListener('input', () => { values[b.id] = input.value; setNote(note, ''); update(); });
+        input.addEventListener('input', () => { values[b.id] = input.value; showValue(b.id, input.value); setNote(note, ''); update(); });
         input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !submitBtn.disabled) submitBtn.click(); });
         inputs[b.id] = input;
         textBox.append(el('span', { class: 'blank blank-number' }, [
@@ -203,15 +204,26 @@
           b.unit ? el('span', { class: 'blank-unit', text: b.unit }) : null,
         ]));
       } else {
+        // 語の空欄、または 2 回目以降に出た数値の空欄（入力は最初の欄で行い、ここには同じ値を映す）
         const slot = el('span', { class: 'blank blank-word is-empty', 'aria-label': '空らん' + mark }, [
           el('span', { class: 'blank-mark', 'aria-hidden': 'true', text: mark }),
           el('span', { class: 'blank-value', text: '　　' }),
+          b.kind === 'number' && b.unit ? el('span', { class: 'blank-unit', text: b.unit }) : null,
         ]);
-        slots[b.id] = slot;
+        (slots[b.id] || (slots[b.id] = [])).push(slot);
         textBox.append(slot);
       }
     });
     rootEl.append(el('div', { class: 'card fill-card' }, textBox));
+
+    // 同じ id の枠すべてに値を表示する
+    function showValue(id, text) {
+      const empty = text === undefined || text === null || String(text).trim() === '';
+      (slots[id] || []).forEach((slot) => {
+        slot.querySelector('.blank-value').textContent = empty ? '　　' : String(text);
+        slot.classList.toggle('is-empty', empty);
+      });
+    }
 
     // 語群（空欄ごとに 1 列）
     blanks.forEach((b, bi) => {
@@ -225,9 +237,7 @@
             if (sub.isDone()) return;
             values[b.id] = text;
             opts.forEach((x) => x.setAttribute('aria-pressed', x === ob ? 'true' : 'false'));
-            const slot = slots[b.id];
-            slot.querySelector('.blank-value').textContent = text;
-            slot.classList.remove('is-empty');
+            showValue(b.id, text);
             setNote(note, '');
             update();
           },
