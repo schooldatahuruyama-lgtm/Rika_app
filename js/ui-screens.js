@@ -1,4 +1,4 @@
-// 各画面の描画（プロフィール、ホーム、学習マップ、ステージ入口、設定、解説・問題・学び直し・結果）
+// 各画面の描画（プロフィール、ホーム、学習マップ、ステージ入口、設定、解説・問題・学び直し・結果、記録）
 // ブラウザ専用。RikaQuest.ui = { screens, helpers } を作る。
 // 画面の描画関数はすべて screens[name](section, ctx, params) の形。app.go が section を空にしてから呼ぶ。
 //   ctx = { store, record, reg, config, go, save, now, message, setRecord, replaceStore, confirm, clearAll, state, app }
@@ -6,7 +6,6 @@
 // 描画関数が関数を返すと、次に別の画面へ移るときに app がそれを呼ぶ（後片付け用）。
 // 利用者の文字はすべて textContent で入れる。innerHTML は figures・mascot が返す SVG 文字列だけに使う。
 // 問題の操作部品は ui-problems.js（RikaQuest.ui.problems。このファイルより先に読み込む）。
-// Task 13 は record を screens に上書きで登録する。
 (function (root) {
   'use strict';
 
@@ -14,6 +13,9 @@
   const UNIT_ID = 'light';
   const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日'];
   const STATUS_LABEL = { none: '未着手', inprogress: '途中', cleared: 'クリア' };
+  // 画面の表示だけに使う目安（判定・計算には使わない）
+  const REVIEW_MINUTES = 2;      // 復習クエスト（類題 3 問）のおよその時間
+  const HISTORY_LIMIT = 30;      // 記録画面の取り組み履歴に出す件数
 
   // アバター 6 種（id を profile.avatar に保存する。背景色は CSS の .avatar-<id>）
   const AVATARS = [
@@ -252,7 +254,7 @@
     ]));
 
     section.append(questCard(ctx, rec, now));
-    section.append(levelCard(ctx, rec));
+    section.append(levelCard(ctx, rec, 'レベルと経験値'));
     section.append(streakCard(rec, now, today));
 
     section.append(el('div', { class: 'stack' }, [
@@ -277,8 +279,9 @@
       return card(children);
     }
     if (quest.kind === 'review') {
+      children.push(el('p', { class: 'muted', text: '復習クエスト' }));
       children.push(el('p', { class: 'quest-title', text: quest.title }));
-      children.push(el('p', { class: 'muted', text: '少しだけ問題を解いて、思い出そう。' }));
+      children.push(el('p', { class: 'muted', text: '約 ' + REVIEW_MINUTES + ' 分　少しだけ問題を解いて、思い出そう。' }));
       children.push(button('復習する', () => ctx.go('problem', { review: quest.conceptId }), 'btn-primary btn-block'));
       return card(children);
     }
@@ -291,7 +294,8 @@
     return card(children);
   }
 
-  function levelCard(ctx, rec) {
+  // レベルと経験値のカード（ホームと記録画面で使う）
+  function levelCard(ctx, rec, title) {
     const level = rec.level;
     const total = rec.xp;
     const next = RQ.xp.nextLevelXp(level, ctx.config);
@@ -306,7 +310,7 @@
     }, el('div', { class: 'xp-bar-fill' }));
     bar.firstChild.style.width = percent + '%';
     return card([
-      cardTitle('レベルと経験値'),
+      cardTitle(title),
       el('div', { class: 'level-row' }, [
         el('span', { class: 'level-num', text: 'Lv ' + level }),
         el('span', { text: total + ' / ' + next + ' XP' }),
@@ -316,11 +320,13 @@
     ]);
   }
 
+  // 連続学習のカード（ホームと記録画面で使う）。
+  // 曜日の丸は「学習した日」= 予想（warmup）以外の解答があった日（連続学習の数え方と同じ）
   function streakCard(rec, now, today) {
     const streak = rec.streak || {};
     const alive = streak.lastDate ? RQ.xp.daysBetween(streak.lastDate, today) <= 1 : false;
     const count = alive ? streak.count || 0 : 0;
-    const studied = new Set((rec.history || []).map((h) => RQ.xp.localDate(h.at)));
+    const studied = new Set((rec.history || []).filter((h) => h && h.phase !== 'warmup').map((h) => RQ.xp.localDate(h.at)));
     const dots = el('ol', { class: 'week-dots', 'aria-label': '今週学習した日' });
     weekDates(now).forEach((date, i) => {
       const done = studied.has(date);
@@ -928,16 +934,155 @@
     };
   }
 
-  // ---- まだ作っていない画面（Task 13 が置きかえる） ----
+  // ---- 記録 ----
+  // 進捗（領域ごとのクリア数）、理解度の目安（経験値とは別のカード）、経験値とレベル、連続学習、取り組み履歴。
+  // 履歴は長くなるので一番下に置く。
 
-  function placeholder(title) {
-    return function (section, ctx) {
-      section.append(topBar(title, 'ホーム', () => ctx.go('home')));
-      section.append(card([
-        el('p', { class: 'quest-title', text: '準備中' }),
-        el('p', { class: 'muted', text: 'この画面はまだ作っています。' }),
-      ], 'placeholder'));
-    };
+  function renderRecord(section, ctx) {
+    const rec = ctx.record;
+    const unit = ctx.reg.unit(UNIT_ID);
+    const now = ctx.now();
+    const today = RQ.xp.localDate(now);
+    section.append(topBar('記録', 'ホーム', () => ctx.go('home')));
+    if (!unit) {
+      section.append(card(el('p', { text: '教材が読み込まれていません。' })));
+    } else {
+      section.append(progressCard(ctx, rec, unit));
+      section.append(masteryCard(ctx, rec, unit));
+    }
+    section.append(levelCard(ctx, rec, '経験値とレベル'));
+    section.append(streakCard(rec, now, today));
+    section.append(historyCard(ctx, rec, now));
+    section.append(button('ホームへ', () => ctx.go('home'), 'btn-block'));
+  }
+
+  // 進捗: 領域ごとに「クリア n / N ステージ」と小さなバー。ステージのない領域は「準備中」
+  function progressCard(ctx, rec, unit) {
+    const list = el('ul', { class: 'progress-list' });
+    areasInOrder(unit).forEach((area) => {
+      const stages = (area.stages || []).filter(Boolean);
+      if (stages.length === 0) {
+        list.append(el('li', { class: 'progress-row is-soon' }, [
+          el('span', { class: 'progress-name', text: area.title }),
+          el('span', { class: 'muted', text: '準備中' }),
+        ]));
+        return;
+      }
+      const cleared = stages.filter((s) => RQ.record.stageState(rec, s.id).status === 'cleared').length;
+      const percent = Math.round((cleared / stages.length) * 100);
+      const bar = el('div', {
+        class: 'progress-bar', role: 'progressbar', 'aria-label': area.title + 'のクリア',
+        'aria-valuemin': 0, 'aria-valuemax': stages.length, 'aria-valuenow': cleared,
+      }, el('div', { class: 'progress-bar-fill' }));
+      bar.firstChild.style.width = percent + '%';
+      list.append(el('li', { class: 'progress-row' + (cleared === stages.length ? ' is-complete' : '') }, [
+        el('div', { class: 'progress-head' }, [
+          el('span', { class: 'progress-name', text: area.title }),
+          el('span', { class: 'progress-count', text: 'クリア ' + cleared + ' / ' + stages.length + ' ステージ' }),
+        ]),
+        bar,
+      ]));
+    });
+    return card([cardTitle('進捗'), list]);
+  }
+
+  // 理解度の目安: 概念ごとに 3 段階（config.mastery.labels の順）。一度も取り組んでいなければ灰色で「未学習」
+  function masteryCard(ctx, rec, unit) {
+    const steps = ctx.config.mastery.labels.map((l) => l[1]);
+    const list = el('ul', { class: 'mastery-list' });
+    (unit.concepts || []).filter(Boolean).forEach((concept) => {
+      const learned = !!(rec.mastery && rec.mastery[concept.id]);
+      const label = RQ.mastery.label(RQ.record.masteryOf(rec, concept.id), ctx.config);
+      const level = Math.max(0, steps.indexOf(label));
+      const chip = el('span', {
+        class: 'mastery-chip' + (learned ? ' level-' + level : ' is-unlearned'),
+        role: 'img',
+        'aria-label': concept.title + 'の理解のめやす: ' + label + (learned ? '' : '（未学習）'),
+      });
+      steps.forEach((name, i) => {
+        chip.append(el('span', { class: 'mastery-step' + (i === level ? ' is-current' : ''), 'aria-hidden': 'true', text: name }));
+      });
+      list.append(el('li', { class: 'mastery-row' + (learned ? '' : ' is-unlearned') }, [
+        el('span', { class: 'mastery-name' }, [
+          concept.title,
+          learned ? null : el('span', { class: 'mastery-note', text: '未学習' }),
+        ]),
+        chip,
+      ]));
+    });
+    return card([
+      cardTitle('理解度の目安'),
+      el('p', { class: 'muted', text: 'これは理解のめやす。経験値とは別です' }),
+      list,
+    ], 'mastery-card');
+  }
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  // 'YYYY-MM-DD' → 「11月4日（水）」。今日・きのうはそう添える
+  function dateHeading(ymd, today) {
+    const d = new Date(Number(ymd.slice(0, 4)), Number(ymd.slice(5, 7)) - 1, Number(ymd.slice(8, 10)));
+    const text = (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WEEKDAYS[(d.getDay() + 6) % 7] + '）';
+    const diff = RQ.xp.daysBetween(ymd, today);
+    if (diff === 0) return '今日 ' + text;
+    if (diff === 1) return 'きのう ' + text;
+    return text;
+  }
+
+  // 履歴 1 件の題名: ステージ名、復習なら「復習: 概念名」
+  function historyTitle(ctx, h) {
+    if (h.phase === 'review' || !h.stageId) {
+      const c = h.conceptId ? ctx.reg.concept(h.conceptId) : null;
+      return '復習: ' + (c ? c.title : '（見つからない内容）');
+    }
+    const s = ctx.reg.stage(h.stageId);
+    return s ? s.title : '（見つからないステージ）';
+  }
+
+  const HISTORY_PHASE_LABEL = { retry: '類題', check: '確認問題' };
+
+  // 取り組み履歴: 新しい順に HISTORY_LIMIT 件。日付ごとに見出しをつける
+  function historyCard(ctx, rec, now) {
+    const today = RQ.xp.localDate(now);
+    const entries = (rec.history || [])
+      .filter((h) => h && h.at && !Number.isNaN(new Date(h.at).getTime()))
+      .map((h, i) => ({ h, i, t: new Date(h.at).getTime() }))
+      .sort((a, b) => b.t - a.t || b.i - a.i)   // 新しい順（同じ時刻なら後に入ったもの）
+      .slice(0, HISTORY_LIMIT)
+      .map((x) => x.h);
+    const children = [cardTitle('取り組み履歴')];
+    if (entries.length === 0) {
+      children.push(el('p', { class: 'muted', text: 'まだ取り組んだ記録がありません。' }));
+      return card(children);
+    }
+    const truncated = (rec.history || []).length > entries.length;
+    children.push(el('p', { class: 'muted', text: truncated ? '最近の ' + entries.length + ' 件（新しい順）' : '新しい順に ' + entries.length + ' 件' }));
+    let list = null;
+    let currentDate = null;
+    entries.forEach((h) => {
+      const at = new Date(h.at);
+      const date = RQ.xp.localDate(at);
+      if (date !== currentDate) {
+        currentDate = date;
+        children.push(el('h3', { class: 'history-date', text: dateHeading(date, today) }));
+        list = el('ol', { class: 'history-list' });
+        children.push(list);
+      }
+      let result;
+      if (h.phase === 'warmup') result = el('span', { class: 'tag', text: '予想' });
+      else if (h.correct) result = el('span', { class: 'tag tag-ok', text: '正解' });
+      else result = el('span', { class: 'tag tag-warn', text: 'おしい' });
+      const phase = HISTORY_PHASE_LABEL[h.phase];
+      list.append(el('li', { class: 'history-row' }, [
+        el('time', { class: 'history-time', datetime: h.at, text: pad2(at.getHours()) + ':' + pad2(at.getMinutes()) }),
+        el('span', { class: 'history-title' }, [
+          historyTitle(ctx, h),
+          phase ? el('span', { class: 'history-phase', text: phase }) : null,
+        ]),
+        result,
+      ]));
+    });
+    return card(children, 'history-card');
   }
 
   const screens = {
@@ -950,7 +1095,7 @@
     problem: renderProblem,
     offer: renderOffer,
     result: renderResult,
-    record: placeholder('記録'),
+    record: renderRecord,
   };
 
   const helpers = {
@@ -965,7 +1110,7 @@
     // 実装計画の名前でも呼べるようにする
     renderProfile, renderHome, renderMap, renderSettings,
     renderStageEntry: (section, ctx, stageId) => renderStage(section, ctx, { stageId }),
-    renderLesson, renderProblem, renderOffer, renderResult,
+    renderLesson, renderProblem, renderOffer, renderResult, renderRecord,
   };
 
   // 先に読み込んだ ui-problems.js（RikaQuest.ui.problems）を残したまま足す

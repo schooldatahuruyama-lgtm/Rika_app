@@ -770,11 +770,166 @@ svg.scene {
   flex: 1 1 140px;
 }
 
-/* ---- 準備中の画面 ---- */
+/* ---- 記録 ---- */
 
-.placeholder {
-  text-align: center;
-  padding: 32px 20px;
+/* 進捗: 領域ごとのクリア数と小さなバー */
+.progress-list,
+.mastery-list,
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.progress-row + .progress-row {
+  margin-top: 14px;
+}
+
+.progress-row.is-soon {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--muted);
+}
+
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+
+.progress-name {
+  font-weight: bold;
+}
+
+.progress-row.is-complete .progress-count {
+  color: #1D6E3E;
+  font-weight: bold;
+}
+
+.progress-bar {
+  height: 12px;
+  margin-top: 6px;
+  border-radius: 6px;
+  background: #E3EAF7;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--ok);
+}
+
+/* 理解度の目安（経験値とは別のカード。青い左の線で区別する） */
+.mastery-card {
+  border-left: 6px solid var(--blue-soft);
+}
+
+.mastery-card > .muted {
+  margin-top: -4px;
+}
+
+.mastery-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 10px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.mastery-name {
+  font-weight: bold;
+}
+
+.mastery-note {
+  margin-left: 8px;
+  font-weight: normal;
+  color: var(--muted);
+}
+
+/* 3 段階の札。今の段階だけ色がつく（まだ=青系、もう少し=オレンジ系、できた=緑系） */
+.mastery-chip {
+  display: inline-flex;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mastery-step {
+  padding: 2px 10px;
+  color: var(--muted);
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.mastery-step + .mastery-step {
+  border-left: 2px solid var(--line);
+}
+
+.mastery-chip.level-0 .mastery-step.is-current { background: var(--blue-soft); color: var(--blue-dark); font-weight: bold; }
+.mastery-chip.level-1 .mastery-step.is-current { background: #FFE6CC; color: #8A4A0B; font-weight: bold; }
+.mastery-chip.level-2 .mastery-step.is-current { background: #DDF2E5; color: #1D6E3E; font-weight: bold; }
+
+/* 一度も取り組んでいない概念は灰色 */
+.mastery-chip.is-unlearned {
+  border-style: dashed;
+  background: #F4F6FA;
+}
+
+.mastery-chip.is-unlearned .mastery-step.is-current {
+  background: #E6E9EE;
+  color: var(--muted);
+  font-weight: bold;
+}
+
+.mastery-row.is-unlearned .mastery-name {
+  color: var(--muted);
+}
+
+/* 取り組み履歴: 日付の見出しと、時刻・題名・結果の行 */
+.history-date {
+  font-size: 18px;
+  margin: 16px 0 4px;
+  color: var(--blue-dark);
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.history-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.history-phase {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #EEF1F6;
+  color: var(--muted);
+}
+
+.history-row .tag {
+  white-space: nowrap;
 }
 
 /* 広い画面（タブレット横・PC）では少しゆったり */
