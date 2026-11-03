@@ -547,14 +547,53 @@
 
     section.append(card([cardTitle('記録の保存について'), el('p', { class: 'caution', text: DATA_LOSS_NOTICE })]));
 
-    // オフライン教材の状態（Task 14 で中身を作る。id="offline-status" を差しかえる）
-    section.append(card([
-      cardTitle('オフラインで使える教材'),
-      el('div', { id: 'offline-status' }, [
-        el('p', { text: 'オフライン対応: 準備中' }),
-        el('p', { class: 'muted', text: '未対応（Task 14 で実装）' }),
-      ]),
-    ]));
+    // オフライン教材の状態。ctx.state.offline（app.js が書く）を使い、なければ localStorage の印を読む。
+    // sw.js の知らせで状態が変わると app.js が 'rika-quest:offline' を送るので、この箱だけ描き直す
+    const offlineBox = el('div', { id: 'offline-status', 'aria-live': 'polite' });
+    let unitTitles = '';
+    try {
+      unitTitles = ctx.reg.units().map((u) => u.title).join('、');
+    } catch (e) {
+      unitTitles = '';
+    }
+    const paintOffline = () => {
+      let off = ctx.state.offline;
+      if (!off) {
+        let mark = null;
+        try {
+          mark = root.location.protocol === 'file:' ? null : JSON.parse(root.localStorage.getItem('rika-quest:offline'));
+        } catch (e) {
+          mark = null;
+        }
+        if (root.location.protocol === 'file:') off = { state: 'unsupported' };
+        else off = mark && typeof mark.version === 'string' ? { state: 'ready', version: mark.version } : { state: 'pending' };
+      }
+      let lines;
+      if (off.state === 'ready') {
+        lines = [
+          el('p', { text: 'オフラインで使える: ' + (unitTitles || '教材') + '（版 ' + off.version + '、済）' }),
+          el('p', { class: 'muted', text: '通信がなくても、この端末で学習を続けられます。' }),
+        ];
+      } else if (off.state === 'failed') {
+        lines = [el('p', { text: 'オフライン対応を準備できませんでした' })];
+      } else if (off.state === 'unsupported') {
+        lines = [el('p', { text: 'この開き方（file://）ではオフライン対応は使えません。http で開くと使えます。' })];
+      } else {
+        lines = [el('p', { text: 'オフライン対応: 準備中（読み込み中）' })];
+      }
+      offlineBox.replaceChildren(...lines);
+    };
+    const onOffline = () => {
+      // 画面を離れたあと（箱が外れたあと）に届いたら、受け取りをやめる
+      if (!offlineBox.isConnected) {
+        document.removeEventListener('rika-quest:offline', onOffline);
+        return;
+      }
+      paintOffline();
+    };
+    paintOffline();
+    document.addEventListener('rika-quest:offline', onOffline);
+    section.append(card([cardTitle('オフラインで使える教材'), offlineBox]));
 
     section.append(card([
       cardTitle('すべて削除'),

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>理科クエスト（試作1）</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- ホーム画面に追加するための情報。manifest.webmanifest へのリンクは http(s) で開いたときだけ js/app.js が足す
+       （file:// ではブラウザが manifest を読めずにエラーを出すため）。sw.js の登録も js/app.js がする -->
+  <meta name="theme-color" content="#1A5CFF">
 </head>
 <body>
   <!-- 上の帯: アプリ名・いま選んでいる生徒・保存の状態・教材エラーの件数 -->

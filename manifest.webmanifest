@@ -1,0 +1,19 @@
+{
+  "name": "理科クエスト",
+  "short_name": "理科クエスト",
+  "description": "中学校理科の学習アプリ（試作1）",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF3FF",
+  "theme_color": "#1A5CFF",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22256%22%20r%3D%22256%22%20fill%3D%22%231A5CFF%22%2F%3E%3Ctext%20x%3D%22256%22%20y%3D%22256%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20font-size%3D%22300%22%20font-weight%3D%22700%22%20font-family%3D%22sans-serif%22%20fill%3D%22%23FFFFFF%22%3E%E5%85%89%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

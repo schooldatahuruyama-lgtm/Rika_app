@@ -7,7 +7,8 @@
 //   app.setRecord(record)     … 今の生徒の記録を置きかえて保存（record.js の関数は新しい record を返すため）
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
-//   app.offline               … オフライン教材の状態（Task 14 が書く。app.state.offline と同じ値）
+//   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported', version, at }（app.state.offline と同じ値）
+//                               書きかえると document に 'rika-quest:offline' を送る（設定画面が表示を更新する）
 //   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
 //               app.choose('accept'|'later') / app.stopSession()。出来事はそのつど record.applyEvents で記録に入れ、
 //               ステージの学習なら record.setResume で再開位置も保存する。終わったら finishStage / markReviewDone
@@ -22,6 +23,8 @@
   const NOTICE_KEPT = '読み込めない記録が残っているため、新しい記録は保存されません。設定画面から対処してください';
   const NOTICE_FILE = 'このまま使えますが、オフライン対応は http で開いたときだけ有効です';
   const NOTICE_NO_STORAGE = 'この環境ではブラウザに記録を保存できません。閉じると記録は消えます。';
+  // オフラインの準備ができた版と日時（再読み込みしても「済」を出すため。記録とは別のキー）
+  const OFFLINE_KEY = 'rika-quest:offline';
 
   // プロフィールがなくても開ける画面
   const NO_PROFILE_SCREENS = ['profile', 'settings'];
@@ -443,6 +446,85 @@
     };
   }
 
+  // ---- オフライン（Service Worker） ----
+
+  function setOffline(value) {
+    state.offline = value;
+    try {
+      document.dispatchEvent(new CustomEvent('rika-quest:offline', { detail: value }));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function readOfflineMark() {
+    try {
+      const v = JSON.parse(root.localStorage.getItem(OFFLINE_KEY));
+      if (isObject(v) && typeof v.version === 'string') return { version: v.version, at: typeof v.at === 'string' ? v.at : null };
+    } catch (e) {
+      // localStorage が使えない・中身が壊れている: 印がないものとして続ける
+    }
+    return null;
+  }
+
+  function writeOfflineMark(mark) {
+    try {
+      root.localStorage.setItem(OFFLINE_KEY, JSON.stringify(mark));
+    } catch (e) {
+      // 書けなくても続ける（次に開いたとき sw.js に問い合わせ直す）
+    }
+  }
+
+  // sw.js の { type: 'offline-ready', version } を受けたとき。同じ版の印があれば最初に準備できた日時を残す
+  function onOfflineReady(version) {
+    const mark = readOfflineMark();
+    const at = mark && mark.version === version && mark.at ? mark.at : new Date().toISOString();
+    writeOfflineMark({ version, at });
+    setOffline({ state: 'ready', version, at });
+  }
+
+  // http(s):// で開いて Service Worker が使えるときだけ sw.js を登録する（file:// では登録しない）
+  function setupOffline() {
+    const protocol = root.location.protocol;
+    let container = null;
+    try {
+      if (root.navigator && 'serviceWorker' in root.navigator) container = root.navigator.serviceWorker;
+    } catch (e) {
+      container = null;
+    }
+    const web = protocol === 'http:' || protocol === 'https:';
+    // ホーム画面に追加するための manifest（file:// では読めずにエラーになるので、http(s) のときだけここで足す）
+    if (web && !document.querySelector('link[rel="manifest"]')) {
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.webmanifest';
+      document.head.append(link);
+    }
+    if (!web || !container) {
+      setOffline({ state: 'unsupported' });
+      return;
+    }
+    setOffline({ state: 'pending' });
+    container.addEventListener('message', (event) => {
+      const data = event.data;
+      if (isObject(data) && data.type === 'offline-ready' && typeof data.version === 'string') onOfflineReady(data.version);
+    });
+    // すでに sw.js が動いている（2 回目以降に開いた）: 前の印で「済」を出し、今の版を問い合わせる
+    if (container.controller) {
+      const mark = readOfflineMark();
+      if (mark) setOffline({ state: 'ready', version: mark.version, at: mark.at });
+      try {
+        container.controller.postMessage({ type: 'status' });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    container.register('sw.js').catch((e) => {
+      console.warn('オフライン対応を準備できませんでした', e);
+      setOffline({ state: 'failed' });
+    });
+  }
+
   function checkContent() {
     state.contentErrors = [];
     state.reg.units().forEach((unit) => {
@@ -477,6 +559,7 @@
     checkContent();
 
     if (root.location.protocol === 'file:') showNotice('file-notice', NOTICE_FILE);
+    setupOffline();
 
     go(currentProfile() ? 'home' : 'profile');
   }
@@ -498,9 +581,9 @@
     choose: sessionChoose,
     stopSession,
     get record() { return currentRecord(); },
-    // Task 14: app.offline = { state, version, at } と書ける（state.offline と同じ値）
+    // オフライン教材の状態（state.offline と同じ値。書くと設定画面の表示も変わる）
     get offline() { return state.offline; },
-    set offline(value) { state.offline = value; },
+    set offline(value) { setOffline(value); },
   };
 
   root.RikaQuest = Object.assign(root.RikaQuest || {}, { app });
