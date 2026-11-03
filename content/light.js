@@ -1,7 +1,7 @@
 // 「光の世界」教材データ（中学1年 理科）
 // 文章と図はすべてこのアプリのための自作。形は共通資料の「共通のデータの形」を参照。
-// Task 8: 単元の骨組み（4 領域）と、光の直進 2 ステージ・光の反射 2 ステージ、概念 3 つ。
-//         屈折・凸レンズのステージと残りの概念は Task 10 で足す。
+// 4 領域 × 2 ステージ（光の直進・反射・屈折・凸レンズ）と、概念 8 つ。
+// Task 8: 直進・反射の 4 ステージと概念 3 つ。Task 10: 屈折・凸レンズの 4 ステージと概念 5 つ。
 // 図（scene）の item は js/figures.js の定義に従う。座標は x 右向き・y 下向き、場面は 320×240。
 // ray-draw / drag の samples は手計算した正解例・不正解例（tests/content-light.test.js で判定を確かめる）。
 (function (root) {
@@ -28,6 +28,13 @@
   function rayDraw(p) { return Object.assign({ type: 'ray-draw' }, p); }
   function drag(p) { return Object.assign({ type: 'drag' }, p); }
 
+  // 候補の向きを示す点線。region の中心の 24 手前で止め、ア・イ・ウの文字に重ならないようにする
+  function guide(x1, y1, x2, y2) {
+    const d = Math.hypot(x2 - x1, y2 - y1);
+    const k = d > 0 ? Math.max(0, d - 24) / d : 0;
+    return { type: 'ray', x1, y1, x2: x1 + (x2 - x1) * k, y2: y1 + (y2 - y1) * k, dashed: true };
+  }
+
   function word(id, opts, answer) { return { id, kind: 'word', options: opts, answer }; }
   function number(id, answer, tolerance, unit) { return { id, kind: 'number', answer, tolerance, unit }; }
 
@@ -41,7 +48,7 @@
     lessons: [
       {
         id: 'straight-1-c1',
-        text: '電球や太陽のように、自分で光を出すものを光源といいます。光源から出た光は、まわりのあらゆる向きへ、まっすぐに進みます。光の進む道を矢印のついた直線で表したものを、光の道すじといいます。',
+        text: '電球や太陽のように、自分で光を出すものを光源といいます。光源から出た光は、あらゆる向きへ進みます。光の進む道を光の道すじといい、図では矢印のついた直線で表します。光は同じ物質の中ではまっすぐ進みます。',
         // 電球から四方へ出る光の道すじ
         figure: scene([
           { type: 'ray', x1: 80, y1: 120, x2: 300, y2: 120, arrow: true },
@@ -138,21 +145,24 @@
       }),
       drag({
         id: 'straight-1-p5', concept: 'straight',
-        prompt: 'スクリーンの 2 つの青い点のあいだに、ちょうど影ができるようにしたい。物体を左右に動かして置こう。',
+        prompt: 'スクリーンの 2 つの青い点のあいだに、ちょうど影ができるようにしたい。電球と青い点を結ぶ 2 本の点線のあいだに物体がちょうど入るように、物体を左右に動かして置こう。',
         // 光源 (40,120)、物体の高さ 40（y 100〜140）。スクリーン x=280 で影の高さ 120（y 60〜180）にするには
         // 40 × (280−40) / (x−40) = 120 → x = 120
+        // 電球と青い点を結ぶ点線を案内に描く。x=120 で点線は y 100 と 140 を通り、物体の上下のはしと重なる
         figure: scene([
+          { type: 'ray', x1: 40, y1: 120, x2: 280, y2: 60, dashed: true },
+          { type: 'ray', x1: 40, y1: 120, x2: 280, y2: 180, dashed: true },
           { type: 'screen', x: 280, y1: 30, y2: 220 },
           { type: 'point', x: 280, y: 60 },
           { type: 'point', x: 280, y: 180 },
           { type: 'lamp', x: 40, y: 120 },
-          { type: 'object', id: 'obj', x: 200, y: 140, height: 40, label: '物体' },
+          { type: 'object', id: 'obj', x: 240, y: 140, height: 40, label: '物体' },
         ]),
         draggable: { itemId: 'obj', axis: 'x' },
         target: { x: 120, y: 140 },
         samples: { correct: { x: 120, y: 140 }, wrong: { x: 180, y: 140 } },
-        explanation: '物体を電球に近づけるほど、電球と物体のはしを結ぶ直線が大きく開くので、影は大きくなります。光がまっすぐ進むことを使うと、影の大きさも予想できます。',
-        hint: '影を大きくしたいときは、物体を電球に近づけるか遠ざけるか考えよう。',
+        explanation: '影のはしは、電球と物体のはしを結ぶ直線で決まります。だから、2 本の点線のあいだに物体の上下のはしがちょうど入る位置に置けば、影は青い点のあいだにできます。光がまっすぐ進むことを使うと、影の大きさも予想できます。',
+        hint: '物体の上のはしと下のはしが、2 本の点線にちょうど重なる位置をさがそう。',
       }),
     ],
     retryPool: [
@@ -351,6 +361,7 @@
   // ================================================================
 
   // ---- ステージ reflect-1: 反射の法則（入射角＝反射角） ----
+  // 法線（長さ 120）は当たった点から鏡の表側へだけ描く（中心を当たった点から 60 ずらす）。角の文字は法線の横に置く
   const reflect1 = {
     id: 'reflect-1', areaId: 'reflect', title: '反射の法則', minutes: 5, concepts: ['reflect-law'],
     lessons: [
@@ -372,10 +383,10 @@
         text: '光が鏡に当たった点に、鏡の面に垂直な線を引きます。この線を法線といいます。入射光と法線のなす角を入射角、反射光と法線のなす角を反射角といいます。',
         figure: scene([
           { type: 'mirror', x1: 30, y1: 180, x2: 290, y2: 180 },
-          { type: 'normal', x: 160, y: 180, angle: 0 },
+          { type: 'normal', x: 160, y: 120, angle: 0 },
           { type: 'ray', x1: 60, y1: 60, x2: 160, y2: 180, arrow: true },
           { type: 'ray', x1: 160, y1: 180, x2: 260, y2: 60, arrow: true },
-          { type: 'label', x: 168, y: 234, text: '法線' },
+          { type: 'label', x: 166, y: 54, text: '法線' },
           { type: 'label', x: 100, y: 95, text: '入射角' },
           { type: 'label', x: 172, y: 95, text: '反射角' },
         ]),
@@ -386,7 +397,7 @@
         // 入射角 30° → 反射角 30°
         figure: scene([
           { type: 'mirror', x1: 30, y1: 180, x2: 290, y2: 180 },
-          { type: 'normal', x: 160, y: 180, angle: 0 },
+          { type: 'normal', x: 160, y: 120, angle: 0 },
           { type: 'ray', x1: 100, y1: 76, x2: 160, y2: 180, arrow: true },
           { type: 'ray', x1: 160, y1: 180, x2: 220, y2: 76, arrow: true },
           { type: 'label', x: 124, y: 100, text: '30°' },
@@ -410,7 +421,7 @@
         // 入射の向き (100,120)。水平な鏡なので反射の向きは (100,−120)。入射角＝反射角＝約 39.8°
         figure: scene([
           { type: 'mirror', x1: 40, y1: 180, x2: 280, y2: 180 },
-          { type: 'normal', x: 160, y: 180, angle: 0 },
+          { type: 'normal', x: 160, y: 120, angle: 0 },
           { type: 'ray', x1: 60, y1: 60, x2: 160, y2: 180, arrow: true },
           { type: 'lamp', x: 60, y: 60 },
         ]),
@@ -427,7 +438,7 @@
         prompt: '空らんに入る数を入れよう。',
         figure: scene([
           { type: 'mirror', x1: 30, y1: 180, x2: 290, y2: 180 },
-          { type: 'normal', x: 160, y: 180, angle: 0 },
+          { type: 'normal', x: 160, y: 120, angle: 0 },
           { type: 'ray', x1: 100, y1: 76, x2: 160, y2: 180, arrow: true },
           { type: 'label', x: 124, y: 100, text: '30°' },
           { type: 'label', x: 40, y: 40, text: '入射角 30°' },
@@ -443,7 +454,7 @@
         // 入射光は法線から約 50° かたむく。ア＝入射光と法線のあいだ、イ＝入射光と鏡のあいだ、ウ＝反射光と法線のあいだ
         figure: scene([
           { type: 'mirror', x1: 30, y1: 180, x2: 290, y2: 180 },
-          { type: 'normal', x: 160, y: 180, angle: 0 },
+          { type: 'normal', x: 160, y: 120, angle: 0 },
           { type: 'ray', x1: 52, y1: 90, x2: 160, y2: 180, arrow: true },
           { type: 'ray', x1: 160, y1: 180, x2: 268, y2: 90, arrow: true },
           { type: 'region', id: 'r1', x: 137, y: 130, r: 22, label: 'ア' },
@@ -468,7 +479,7 @@
         // 縦の鏡 x=240。入射の向き (180,80) → 反射の向き (−180,80)。正解例は (60,220)
         figure: scene([
           { type: 'mirror', x1: 240, y1: 30, x2: 240, y2: 230 },
-          { type: 'normal', x: 240, y: 140, angle: 90 },
+          { type: 'normal', x: 180, y: 140, angle: 90 },
           { type: 'ray', x1: 60, y1: 60, x2: 240, y2: 140, arrow: true },
           { type: 'lamp', x: 60, y: 60 },
         ]),
@@ -488,7 +499,7 @@
         // 入射の向き (90,120) → 反射の向き (90,−120)。正解例は (220,80)
         figure: scene([
           { type: 'mirror', x1: 30, y1: 200, x2: 290, y2: 200 },
-          { type: 'normal', x: 130, y: 200, angle: 0 },
+          { type: 'normal', x: 130, y: 140, angle: 0 },
           { type: 'ray', x1: 40, y1: 80, x2: 130, y2: 200, arrow: true },
           { type: 'lamp', x: 40, y: 80 },
         ]),
@@ -629,12 +640,13 @@
         id: 'reflect-2-p5', concept: 'mirror-image',
         prompt: '目の前に小さな鏡があります。ア〜ウの位置にあるもののうち、この目から鏡に映って見えるのはどれ？',
         // 鏡 x=200, y 90〜150。目 (120,120)。像は x=400−x。像と目を結ぶ線が鏡を通るのはイだけ
-        // ア (150,30): 鏡の位置で y≒65、イ (60,130): y≒124、ウ (150,212): y≒177
+        // ア (150,30): 鏡の位置で y≒65、イ (60,170): y≒138、ウ (150,212): y≒177
+        // イから反射点 (200,138) へ向かう光は x=120 で y≒156 を通り、目の絵（y 110〜130）にかからない
         figure: scene([
           { type: 'mirror', x1: 200, y1: 90, x2: 200, y2: 150 },
           { type: 'eye', x: 120, y: 120 },
           { type: 'region', id: 'r1', x: 150, y: 30, r: 22, label: 'ア' },
-          { type: 'region', id: 'r2', x: 60, y: 130, r: 22, label: 'イ' },
+          { type: 'region', id: 'r2', x: 60, y: 170, r: 22, label: 'イ' },
           { type: 'region', id: 'r3', x: 150, y: 212, r: 22, label: 'ウ' },
         ]),
         answer: 'r2',
@@ -684,6 +696,808 @@
         answer: 'r2',
         explanation: '鏡の向こうの同じ距離のところに像を考え、像と目を直線で結ぶと、鏡とはイで交わります。光はイで反射して目に届きます。',
         hint: '先に像の位置を決めて、像と目を結んでみよう。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 3: 光の屈折
+  // ================================================================
+  // 屈折の図の約束: boundary は y より下を lower の物質で塗る。空気→水・ガラスは光源を境界より上（y が小さい）、
+  // 水・ガラス→空気は光源を境界より下に置く。屈折の角度は図をそれらしく見せるための目安で、生徒には数値を出さない。
+  // 判定は向きだけ（法線に近づく / 離れる）。垂直に入る光は判定で向きが決まらないので ray-draw にしない。
+
+  // ---- ステージ refract-1: 屈折の向き（空気⇄水・ガラス） ----
+  const refract1 = {
+    id: 'refract-1', areaId: 'refract', title: '屈折の向き', minutes: 5, concepts: ['refract-dir'],
+    lessons: [
+      {
+        id: 'refract-1-c1',
+        text: '光が空気から水へななめに進むとき、境界面で折れ曲がって進みます。これを光の屈折といいます。空気から水やガラスへ進む光は、境界面に垂直な線（法線）に近づくように折れ曲がります。',
+        // 入射光は法線から 45°、水の中では約 32°（点線はまっすぐ進んだときの道）
+        figure: scene([
+          { type: 'boundary', y: 120, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 140, y: 120, angle: 0 },
+          { type: 'ray', x1: 140, y1: 120, x2: 220, y2: 200, dashed: true },
+          { type: 'ray', x1: 50, y1: 30, x2: 140, y2: 120, arrow: true },
+          { type: 'ray', x1: 140, y1: 120, x2: 202, y2: 220, arrow: true },
+          { type: 'label', x: 146, y: 72, text: '法線' },
+        ]),
+      },
+      {
+        id: 'refract-1-c2',
+        text: '水やガラスから空気へ進む光は、反対に法線から離れるように折れ曲がります。光の道すじは逆向きにたどることもできるので、空気から水へ進むときと同じ道すじを、向きだけ逆にして進みます。',
+        // 水の中で法線から約 32° → 空気中で 45°（点線はまっすぐ進んだときの道）
+        figure: scene([
+          { type: 'boundary', y: 120, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 140, y: 120, angle: 0 },
+          { type: 'ray', x1: 140, y1: 120, x2: 190, y2: 40, dashed: true },
+          { type: 'ray', x1: 78, y1: 220, x2: 140, y2: 120, arrow: true },
+          { type: 'ray', x1: 140, y1: 120, x2: 230, y2: 30, arrow: true },
+          { type: 'label', x: 100, y: 70, text: '法線' },
+        ]),
+      },
+      {
+        id: 'refract-1-c3',
+        text: '境界面に垂直に入る光は、折れ曲がらずにそのまままっすぐ進みます。折れ曲がるのは、ななめに入る光だけです。ガラスと空気の境界面でも、水のときと同じ向きに屈折します。',
+        // 左: 垂直に入る光。右: 空気→ガラスでななめに入る光（法線に近づく）
+        figure: scene([
+          { type: 'boundary', y: 110, upper: 'air', lower: 'glass' },
+          { type: 'normal', x: 240, y: 110, angle: 0 },
+          { type: 'ray', x1: 110, y1: 20, x2: 110, y2: 220, arrow: true },
+          { type: 'ray', x1: 190, y1: 30, x2: 240, y2: 110, arrow: true },
+          { type: 'ray', x1: 240, y1: 110, x2: 282, y2: 220, arrow: true },
+          { type: 'label', x: 118, y: 70, text: '垂直' },
+          { type: 'label', x: 196, y: 24, text: 'ななめ' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'refract-1-w1', concept: 'refract-dir',
+      prompt: '予想しよう。光が空気から水の中へななめに入るとき、光はどう進むと思う？',
+      options: ['向きを変えずにまっすぐ進む', '水面（境界面）で折れ曲がって進む', '水面ですべてはね返る'],
+      answer: 'b',
+      explanation: '光は、空気と水の境界面で折れ曲がって進みます。どちらに曲がるのかを、このステージで調べよう。',
+      hint: '水の入ったコップにさしたストローの見え方を思い出そう。',
+    }),
+    problems: [
+      rayDraw({
+        id: 'refract-1-p1', concept: 'refract-dir',
+        prompt: '空気中の電球から出た光が、水面に当たりました。水の中へ進む光の道すじを、当たった点から指で引こう。',
+        // 光源は境界（y=120）より上の空気中。入射の向き (100,80) は法線から約 51°。
+        // 正解例 out (223,220) → 向き (73,100) は法線から約 36°（法線に近づく）。
+        // 不正解例 out (300,190) → 向き (150,70) は法線から約 65°（法線から離れる）
+        figure: scene([
+          { type: 'boundary', y: 120, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 150, y: 120, angle: 0 },
+          { type: 'ray', x1: 50, y1: 40, x2: 150, y2: 120, arrow: true },
+          { type: 'lamp', x: 50, y: 40 },
+        ]),
+        source: { x: 50, y: 40 },
+        hit: { x: 150, y: 120 },
+        surface: { kind: 'boundary', y: 120, from: 'air', to: 'water' },
+        expected: { kind: 'direction' },
+        samples: { correct: { out: { x: 223, y: 220 } }, wrong: { out: { x: 300, y: 190 } } },
+        explanation: '空気から水へ進む光は、法線に近づくように折れ曲がります。点線の法線と、入射光をまっすぐのばした線とのあいだを通るように引けていれば大丈夫です。',
+        hint: '入射光をそのまままっすぐのばした線より、点線（法線）に近い側へ引こう。',
+      }),
+      fill({
+        id: 'refract-1-p2', concept: 'refract-dir',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '光がちがう物質の境界面へななめに進むと、境界面で折れ曲がる。これを光の[b1]という。空気からガラスへ進む光は、法線に[b2]ように折れ曲がる。',
+        blanks: [
+          word('b1', ['反射', '屈折', '直進'], '屈折'),
+          word('b2', ['近づく', '離れる'], '近づく'),
+        ],
+        explanation: '境界面で光が折れ曲がることを屈折といいます。空気から水やガラスへ進むときは、法線に近づくように曲がります。鏡ではね返る「反射」と区別しておこう。',
+        hint: '空気から水へ進むときと同じ向きに曲がるよ。',
+      }),
+      rayDraw({
+        id: 'refract-1-p3', concept: 'refract-dir',
+        prompt: '水の中の点 A から出た光が、水面に当たりました。空気中へ出ていく光の道すじを、当たった点から指で引こう。',
+        // 点 A は境界（y=110）より下の水の中。入射の向き (80,−90) は法線から約 42°。
+        // 正解例 out (290,30) → 向き (150,−80) は法線から約 62°（法線から離れる）。
+        // 不正解例 out (180,20) → 向き (40,−90) は法線から約 24°（法線に近づく）
+        figure: scene([
+          { type: 'boundary', y: 110, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 140, y: 110, angle: 0 },
+          { type: 'ray', x1: 60, y1: 200, x2: 140, y2: 110, arrow: true },
+          { type: 'point', x: 60, y: 200 },
+          { type: 'label', x: 40, y: 206, text: 'A' },
+        ]),
+        source: { x: 60, y: 200 },
+        hit: { x: 140, y: 110 },
+        surface: { kind: 'boundary', y: 110, from: 'water', to: 'air' },
+        expected: { kind: 'direction' },
+        samples: { correct: { out: { x: 290, y: 30 } }, wrong: { out: { x: 180, y: 20 } } },
+        explanation: '水から空気へ進む光は、法線から離れるように折れ曲がります。空気から水へ進むときとは反対の向きです。入射光をまっすぐのばした線より、水面に近い側へ引けていれば大丈夫です。',
+        hint: '空気から水へ進むときと反対に、法線から遠ざかる側へ引こう。',
+      }),
+      figureChoice({
+        id: 'refract-1-p4', concept: 'refract-dir',
+        prompt: '空気中から、ガラスへななめに光が当たりました。ガラスの中へ進む光は、ア〜ウのどの向きに進む？',
+        // 入射の向き (90,80) は法線から約 48°。ア＝法線に近づく（約 30°）、イ＝まっすぐのばした向き、ウ＝法線から離れる（約 71°）
+        figure: scene([
+          { type: 'boundary', y: 110, upper: 'air', lower: 'glass' },
+          { type: 'normal', x: 140, y: 110, angle: 0 },
+          { type: 'ray', x1: 50, y1: 30, x2: 140, y2: 110, arrow: true },
+          { type: 'lamp', x: 50, y: 30 },
+          guide(140, 110, 192, 200),
+          guide(140, 110, 241, 200),
+          guide(140, 110, 240, 145),
+          { type: 'region', id: 'r1', x: 192, y: 200, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 241, y: 200, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 240, y: 145, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r1',
+        explanation: '空気からガラスへ進む光は、法線に近づくように折れ曲がるので、アの向きに進みます。イはまっすぐ進んだときの向き、ウは法線から離れる向きです。水のときと同じ向きに曲がると覚えておこう。',
+        hint: '点線の法線に近いのはア〜ウのどれか、比べてみよう。',
+      }),
+      choice({
+        id: 'refract-1-p5', concept: 'refract-dir',
+        prompt: '光を水面に垂直に当てました（境界面に垂直に入る光）。水の中で光はどう進む？',
+        options: ['法線に近づくように曲がる', '法線から離れるように曲がる', '折れ曲がらずにまっすぐ進む'],
+        answer: 'c',
+        explanation: '境界面に垂直に入る光は、折れ曲がらずにそのまままっすぐ進みます。屈折して折れ曲がるのは、ななめに入る光です。',
+        hint: '垂直に入る光は、はじめから法線と重なっているね。',
+      }),
+    ],
+    retryPool: [
+      rayDraw({
+        id: 'refract-1-r1', concept: 'refract-dir',
+        prompt: '空気中の電球から出た光が、ガラスに当たりました。ガラスの中へ進む光の道すじを、当たった点から指で引こう。',
+        // 光源は境界（y=130）より上。入射の向き (90,80) は法線から約 48°。
+        // 正解例 out (185,230) → 約 29°（法線に近づく）。不正解例 out (240,160) → 約 75°（法線から離れる）
+        figure: scene([
+          { type: 'boundary', y: 130, upper: 'air', lower: 'glass' },
+          { type: 'normal', x: 130, y: 130, angle: 0 },
+          { type: 'ray', x1: 40, y1: 50, x2: 130, y2: 130, arrow: true },
+          { type: 'lamp', x: 40, y: 50 },
+        ]),
+        source: { x: 40, y: 50 },
+        hit: { x: 130, y: 130 },
+        surface: { kind: 'boundary', y: 130, from: 'air', to: 'glass' },
+        expected: { kind: 'direction' },
+        samples: { correct: { out: { x: 185, y: 230 } }, wrong: { out: { x: 240, y: 160 } } },
+        explanation: '空気からガラスへ進む光は、法線に近づくように折れ曲がります。入射光をまっすぐのばした線と、法線とのあいだへ引けば大丈夫です。',
+        hint: '入射光をそのままのばした線より、点線（法線）に近い側へ引こう。',
+      }),
+      choice({
+        id: 'refract-1-r2', concept: 'refract-dir',
+        prompt: 'ガラスの中から空気中へ、ななめに光が出ていきます。光は境界面でどう折れ曲がる？',
+        options: ['法線に近づくように曲がる', '法線から離れるように曲がる', '必ず全部はね返る'],
+        answer: 'b',
+        explanation: 'ガラスや水から空気へ進む光は、法線から離れるように折れ曲がります。空気からガラスへ進むときの道すじを、逆向きにたどった形です。',
+        hint: '空気からガラスへ進むときの反対を考えよう。',
+      }),
+      figureChoice({
+        id: 'refract-1-r3', concept: 'refract-dir',
+        prompt: '水の中の点 A から出た光が、水面に当たりました。空気中へ出た光は、ア〜ウのどの向きに進む？',
+        // 入射の向き (70,−80) は法線から約 41°。ア＝法線に近づく（15°）、イ＝まっすぐのばした向き（41°）、ウ＝法線から離れる（66°）
+        figure: scene([
+          { type: 'boundary', y: 150, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 150, y: 150, angle: 0 },
+          { type: 'ray', x1: 80, y1: 230, x2: 150, y2: 150, arrow: true },
+          { type: 'point', x: 80, y: 230 },
+          { type: 'label', x: 40, y: 228, text: 'A' },
+          guide(150, 150, 178, 44),
+          guide(150, 150, 222, 67),
+          guide(150, 150, 250, 105),
+          { type: 'region', id: 'r1', x: 178, y: 44, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 222, y: 67, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 250, y: 105, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r3',
+        explanation: '水から空気へ進む光は、法線から離れるように折れ曲がるので、ウの向きに進みます。アは法線に近づく向き、イはまっすぐ進んだときの向きです。',
+        hint: '水から空気へ出るときは、法線から遠ざかる向きに曲がったね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ refract-2: 水中のものの見え方と全反射 ----
+  const refract2 = {
+    id: 'refract-2', areaId: 'refract', title: '水中のものの見え方と全反射', minutes: 5, concepts: ['refract-view', 'total-reflect'],
+    lessons: [
+      {
+        id: 'refract-2-c1',
+        text: '水の底のコインではね返った光は、水面で法線から離れるように折れ曲がって目に届きます。目は光がまっすぐ来たと感じるので、コインは実際の位置より浮き上がって見えます。',
+        // コイン (110,200) → 水面 (160,100)、水の中で約 27° → 空気中で約 37°。
+        // 目に届く光を逆にのばした点線と、コインの真上の線の交わる (110,168) が見える位置
+        figure: scene([
+          { type: 'boundary', y: 100, upper: 'air', lower: 'water' },
+          { type: 'ray', x1: 160, y1: 100, x2: 110, y2: 168, dashed: true },
+          { type: 'ray', x1: 110, y1: 200, x2: 160, y2: 100, arrow: true },
+          { type: 'ray', x1: 160, y1: 100, x2: 205, y2: 39, arrow: true },
+          { type: 'eye', x: 214, y: 27 },
+          { type: 'point', x: 110, y: 200 },
+          { type: 'point', x: 110, y: 168 },
+          { type: 'label', x: 50, y: 206, text: 'コイン' },
+          { type: 'label', x: 8, y: 172, text: '浮いて見える' },
+        ]),
+      },
+      {
+        id: 'refract-2-c2',
+        text: '水に入れた棒をななめ上から見ると、水の中の部分が浮き上がって短く見えます。棒の先からの光が水面で折れ曲がって目に届くためです。ななめに入れた棒が水面で折れて見えるのも、同じ理由です。',
+        // 棒の先 (100,210) → 水面 (150,100) → 目。逆にのばした点線が棒と交わる (100,176) が見える位置
+        figure: scene([
+          { type: 'boundary', y: 100, upper: 'air', lower: 'water' },
+          { type: 'object', x: 100, y: 210, height: 170, label: '棒の先' },
+          { type: 'ray', x1: 150, y1: 100, x2: 100, y2: 176, dashed: true },
+          { type: 'ray', x1: 100, y1: 210, x2: 150, y2: 100, arrow: true },
+          { type: 'ray', x1: 150, y1: 100, x2: 188, y2: 42, arrow: true },
+          { type: 'eye', x: 196, y: 30 },
+          { type: 'point', x: 100, y: 176 },
+          { type: 'label', x: 14, y: 182, text: '見える位置' },
+        ]),
+      },
+      {
+        id: 'refract-2-c3',
+        text: '水やガラスから空気へ進む光は、入射角が大きくなると、空気中へ出られなくなり、境界面ですべて反射します。これを全反射といいます。全反射でも、入射角と反射角は等しくなります。',
+        // 水中の光源 (40,200) → 水面 (180,100)。入射角は約 54° と大きいので、空気中へ出ずにすべて反射する
+        figure: scene([
+          { type: 'boundary', y: 100, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 180, y: 100, angle: 0 },
+          { type: 'ray', x1: 40, y1: 200, x2: 180, y2: 100, arrow: true },
+          { type: 'ray', x1: 180, y1: 100, x2: 290, y2: 179, arrow: true },
+          { type: 'lamp', x: 40, y: 200 },
+          { type: 'label', x: 60, y: 80, text: 'すべて反射する' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'refract-2-w1', concept: 'refract-view',
+      prompt: '予想しよう。水を入れたコップの底にコインを置き、ななめ上から見ると、コインはどこにあるように見えると思う？',
+      options: ['実際の位置より浮き上がって見える', '実際の位置より深く沈んで見える', '実際と同じ位置に見える'],
+      answer: 'a',
+      explanation: 'コインは、実際より浮き上がって見えます。光が水面で折れ曲がることと関係があります。このステージで確かめよう。',
+      hint: 'お風呂やプールの底が、どう見えるか思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'refract-2-p1', concept: 'refract-view',
+        prompt: '水の底のコインからの光が、水面で折れ曲がって目に届きました。目からは、コインがア〜ウのどこにあるように見える？',
+        // コイン (90,210) → 水面 (170,70)、空気中の向き (0.66,−0.75)。目に届く光を逆にのばすと x=90 で y≒161 → イ
+        figure: scene([
+          { type: 'boundary', y: 70, upper: 'air', lower: 'water' },
+          { type: 'ray', x1: 90, y1: 210, x2: 170, y2: 70, arrow: true },
+          { type: 'ray', x1: 170, y1: 70, x2: 202, y2: 34, arrow: true },
+          { type: 'eye', x: 212, y: 24 },
+          { type: 'point', x: 90, y: 210 },
+          { type: 'label', x: 118, y: 234, text: 'コイン' },
+          { type: 'region', id: 'r1', x: 90, y: 104, r: 22 },
+          { type: 'label', x: 50, y: 110, text: 'ア' },
+          { type: 'region', id: 'r2', x: 90, y: 161, r: 22 },
+          { type: 'label', x: 50, y: 167, text: 'イ' },
+          { type: 'region', id: 'r3', x: 90, y: 212, r: 22 },
+          { type: 'label', x: 50, y: 218, text: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: '目は、光がまっすぐ来たと感じます。目に届いた光を水の中へまっすぐ逆にのばすと、コインの真上のイを通ります。だから、コインは実際（ウ）より浮き上がったイに見えます。',
+        hint: '目に届いた光を、水面から水の中へまっすぐ逆にのばしてみよう。',
+      }),
+      choice({
+        id: 'refract-2-p2', concept: 'refract-view',
+        prompt: '水の入ったプールの底は、実際の深さと比べてどう見える？',
+        options: ['実際より深く見える', '実際と同じ深さに見える', '実際より浅く見える'],
+        answer: 'c',
+        explanation: '底からの光が水面で法線から離れるように折れ曲がって目に届くので、底は浮き上がって見え、プールは実際より浅く見えます。見た目より深いことがあるので、水に入るときは気をつけよう。',
+        hint: '水の底のコインが、どう見えたか思い出そう。',
+      }),
+      rayDraw({
+        id: 'refract-2-p3', concept: 'refract-view',
+        prompt: '水の底のコインからの光が、水面に当たりました。空気中へ出て目に向かう光の道すじを、当たった点から指で引こう。',
+        // コインは境界（y=110）より下。入射の向き (50,−90) は法線から約 29°。
+        // 正解例 out (208,19) → 約 41°（法線から離れる）。不正解例 out (150,20) → 約 13°（法線に近づく）
+        figure: scene([
+          { type: 'boundary', y: 110, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 130, y: 110, angle: 0 },
+          { type: 'ray', x1: 80, y1: 200, x2: 130, y2: 110, arrow: true },
+          { type: 'point', x: 80, y: 200 },
+          { type: 'label', x: 18, y: 206, text: 'コイン' },
+        ]),
+        source: { x: 80, y: 200 },
+        hit: { x: 130, y: 110 },
+        surface: { kind: 'boundary', y: 110, from: 'water', to: 'air' },
+        expected: { kind: 'direction' },
+        samples: { correct: { out: { x: 208, y: 19 } }, wrong: { out: { x: 150, y: 20 } } },
+        explanation: 'コインからの光は、水から空気へ出るときに法線から離れるように折れ曲がります。この光が目に入るので、コインは浮き上がって見えます。入射光をまっすぐのばした線より、水面に近い側へ引けていれば大丈夫です。',
+        hint: '水から空気へ出る光は、法線から遠ざかる側へ曲がったね。',
+      }),
+      figureChoice({
+        id: 'refract-2-p4', concept: 'total-reflect',
+        prompt: '水の中の電球から、水面に大きくかたむけて光を当てました（入射角が大きい）。光はア〜ウのどこへ進む？',
+        // 入射の向き (140,−100) は法線から約 54°。入射角が大きいので全反射してウへ。
+        // ア＝まっすぐのばした向き、イ＝法線に近づく向き（どちらも空気中へ出る）
+        figure: scene([
+          { type: 'boundary', y: 100, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 180, y: 100, angle: 0 },
+          { type: 'ray', x1: 40, y1: 200, x2: 180, y2: 100, arrow: true },
+          { type: 'lamp', x: 40, y: 200 },
+          guide(180, 100, 250, 50),
+          guide(180, 100, 200, 28),
+          guide(180, 100, 278, 170),
+          { type: 'region', id: 'r1', x: 250, y: 50, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 200, y: 28, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 278, y: 170, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r3',
+        explanation: '水から空気へ進む光は、入射角が大きいと空気中へ出られず、水面ですべて反射します（全反射）。だからウへ進みます。このとき、入射角と反射角は等しくなっています。',
+        hint: '水から空気へ進む光で、入射角がとても大きいときに起こることを思い出そう。',
+      }),
+      choice({
+        id: 'refract-2-p5', concept: 'total-reflect',
+        prompt: '全反射について、正しいものはどれ？',
+        options: ['空気から水へ進む光で起こる', '水やガラスから空気へ進む光で、入射角が大きいときに起こる', 'どんな向きの光でも、必ず起こる'],
+        answer: 'b',
+        explanation: '全反射は、水やガラスから空気へ進む光で、入射角が大きいときに起こります。空気から水へ進む光は、法線に近づくように曲がって水の中へ入るので、全反射は起こりません。',
+        hint: '空気中へ「出られなくなる」のは、どちら向きに進む光か考えよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'refract-2-r1', concept: 'refract-view',
+        prompt: '水を入れたコップに、ストローをななめに入れました。横から見ると、ストローはどう見える？',
+        options: ['水面のところで折れ曲がって見える', 'まっすぐのまま見える', '水の中の部分が見えなくなる'],
+        answer: 'a',
+        explanation: '水の中の部分からの光が、水面で折れ曲がって目に届きます。そのため水の中の部分が浮き上がって見え、ストローは水面のところで折れて見えます。',
+        hint: '水の中のものは、浮き上がって見えたね。',
+      }),
+      figureChoice({
+        id: 'refract-2-r2', concept: 'refract-view',
+        prompt: '水の底のコインからの光が、水面で折れ曲がって目に届きました。目からは、コインがア〜ウのどこにあるように見える？',
+        // コイン (100,210) → 水面 (188,70)、空気中の向き (0.71,−0.71)。逆にのばすと x=100 で y≒158 → ウ
+        figure: scene([
+          { type: 'boundary', y: 70, upper: 'air', lower: 'water' },
+          { type: 'ray', x1: 100, y1: 210, x2: 188, y2: 70, arrow: true },
+          { type: 'ray', x1: 188, y1: 70, x2: 220, y2: 38, arrow: true },
+          { type: 'eye', x: 230, y: 28 },
+          { type: 'point', x: 100, y: 210 },
+          { type: 'label', x: 128, y: 234, text: 'コイン' },
+          { type: 'region', id: 'r1', x: 100, y: 212, r: 22 },
+          { type: 'label', x: 60, y: 218, text: 'ア' },
+          { type: 'region', id: 'r2', x: 100, y: 102, r: 22 },
+          { type: 'label', x: 60, y: 108, text: 'イ' },
+          { type: 'region', id: 'r3', x: 100, y: 158, r: 22 },
+          { type: 'label', x: 60, y: 164, text: 'ウ' },
+        ]),
+        answer: 'r3',
+        explanation: '目に届いた光を水の中へまっすぐ逆にのばすと、コインの真上のウを通ります。目は光がまっすぐ来たと感じるので、コインは実際（ア）より浮き上がったウに見えます。',
+        hint: '目に届いた光を、水の中へまっすぐ逆にのばしてみよう。',
+      }),
+      fill({
+        id: 'refract-2-r3', concept: 'refract-view',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '水の底のコインは、実際より[b1]見える。コインからの光が、水面で[b2]からだ。',
+        blanks: [
+          word('b1', ['浮き上がって', '沈んで', '小さく'], '浮き上がって'),
+          word('b2', ['折れ曲がる', '止まる', 'すべてはね返る'], '折れ曲がる'),
+        ],
+        explanation: 'コインからの光は、水面で法線から離れるように折れ曲がって目に届きます。目は光がまっすぐ来たと感じるので、コインは浮き上がって見えます。',
+        hint: '水から空気へ出る光は、水面で屈折するね。',
+      }),
+      choice({
+        id: 'refract-2-r4', concept: 'total-reflect',
+        prompt: '細いガラスの線（光ファイバー）の中を、光が外へもれずに遠くまで伝わります。これは何を利用している？',
+        options: ['光の直進だけ', '全反射', '影ができるしくみ'],
+        answer: 'b',
+        explanation: '光ファイバーの中の光は、ガラスと外の境界面に大きな入射角で当たり、全反射をくり返して進みます。だから外へもれずに遠くまで届きます。',
+        hint: 'ガラスから外へ「出られない」光は、どうなったか思い出そう。',
+      }),
+      figureChoice({
+        id: 'refract-2-r5', concept: 'total-reflect',
+        prompt: 'ガラスの中の点 A から、ガラスと空気の境界面に大きくかたむけて光を当てました。光はア〜ウのどこへ進む？',
+        // 入射の向き (150,−100) は法線から約 56° と大きい → 全反射してイへ。ア＝まっすぐのばした向き、ウ＝法線に近づく向き
+        figure: scene([
+          { type: 'boundary', y: 110, upper: 'air', lower: 'glass' },
+          { type: 'normal', x: 200, y: 110, angle: 0 },
+          { type: 'ray', x1: 50, y1: 210, x2: 200, y2: 110, arrow: true },
+          { type: 'point', x: 50, y: 210 },
+          { type: 'label', x: 30, y: 216, text: 'A' },
+          guide(200, 110, 270, 63),
+          guide(200, 110, 290, 170),
+          guide(200, 110, 215, 38),
+          { type: 'region', id: 'r1', x: 270, y: 63, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 290, y: 170, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 215, y: 38, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: 'ガラスから空気へ進む光は、入射角が大きいと空気中へ出られず、境界面ですべて反射します。これが全反射なので、光はイへ進みます。',
+        hint: '入射角がとても大きいとき、光は空気中へ出られるかな。',
+      }),
+      choice({
+        id: 'refract-2-r6', concept: 'total-reflect',
+        prompt: '水の中から水面に向けて光を当て、入射角を少しずつ大きくしていきます。どうなる？',
+        options: ['空気中へ出る光が、いつまでも強くなっていく', 'ある大きさをこえると、光が空気中へ出られずに、すべて反射する', '光が水の中で消えてしまう'],
+        answer: 'b',
+        explanation: '入射角を大きくしていくと、ある大きさをこえたところで、光は空気中へ出られなくなり、水面ですべて反射します。これが全反射です。',
+        hint: '全反射が起こるのは、入射角が大きいときだったね。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 4: 凸レンズ
+  // ================================================================
+  // レンズの図の約束: 物体・光源はレンズの左。lens item は F（左）・F'（右）を cx∓f に描く。
+  // 像の位置はレンズの式で計算して図に置くが、生徒には式を出さず「焦点の外 / 内」「焦点距離の 2 倍」で説明する。
+
+  // ---- ステージ lens-1: 焦点と光の集まり方（平行光、焦点距離） ----
+  const lens1 = {
+    id: 'lens-1', areaId: 'lens', title: '焦点と光の集まり方', minutes: 5, concepts: ['focus'],
+    lessons: [
+      {
+        id: 'lens-1-c1',
+        text: '凸レンズは、まん中が厚くふくらんだレンズです。光軸（レンズの中心を通り、レンズに垂直な線）に平行な光を当てると、光はレンズで屈折して 1 点に集まります。この点を焦点といいます。',
+        // レンズ cx=160、焦点距離 60 → 焦点 F' (220,120) に平行な光が集まる
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 60 },
+          { type: 'ray', x1: 20, y1: 80, x2: 160, y2: 80, arrow: true },
+          { type: 'ray', x1: 20, y1: 120, x2: 160, y2: 120, arrow: true },
+          { type: 'ray', x1: 20, y1: 160, x2: 160, y2: 160, arrow: true },
+          { type: 'ray', x1: 160, y1: 80, x2: 280, y2: 160, arrow: true },
+          { type: 'ray', x1: 160, y1: 120, x2: 290, y2: 120, arrow: true },
+          { type: 'ray', x1: 160, y1: 160, x2: 280, y2: 80, arrow: true },
+          { type: 'label', x: 10, y: 112, text: '光軸' },
+          { type: 'label', x: 206, y: 166, text: '焦点' },
+        ]),
+      },
+      {
+        id: 'lens-1-c2',
+        text: 'レンズの中心から焦点までの距離を、焦点距離といいます。焦点はレンズの両側に 1 つずつあり、どちらも同じ焦点距離のところにあります。ふくらみの大きいレンズほど、焦点距離は短くなります。',
+        // 焦点 F (100,110)・F' (220,110)。下の点線と青い点で、中心から両側の焦点までの距離を示す
+        figure: scene([
+          { type: 'axis', y: 110 },
+          { type: 'lens', cx: 160, cy: 110, height: 140, f: 60 },
+          { type: 'ray', x1: 20, y1: 70, x2: 160, y2: 70, arrow: true },
+          { type: 'ray', x1: 160, y1: 70, x2: 280, y2: 150, arrow: true },
+          { type: 'normal', x: 160, y: 212, angle: 90 },
+          { type: 'point', x: 100, y: 212 },
+          { type: 'point', x: 160, y: 212 },
+          { type: 'point', x: 220, y: 212 },
+          { type: 'label', x: 96, y: 203, text: '焦点距離' },
+          { type: 'label', x: 164, y: 236, text: '焦点距離' },
+        ]),
+      },
+      {
+        id: 'lens-1-c3',
+        text: 'レンズの中心を通る光は、屈折せずにそのまままっすぐ進みます。また、焦点を通ってからレンズに入った光は、レンズで屈折したあと、光軸に平行に進みます。',
+        // 中心を通る光: (40,60) → (160,120) → (280,180)。焦点 F (100,120) を通る光: (60,150) → (160,75) → 光軸に平行
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 60 },
+          { type: 'ray', x1: 40, y1: 60, x2: 160, y2: 120, arrow: true },
+          { type: 'ray', x1: 160, y1: 120, x2: 280, y2: 180, arrow: true },
+          { type: 'ray', x1: 60, y1: 150, x2: 160, y2: 75, arrow: true },
+          { type: 'ray', x1: 160, y1: 75, x2: 300, y2: 75, arrow: true },
+          { type: 'label', x: 200, y: 214, text: 'まっすぐ' },
+          { type: 'label', x: 196, y: 64, text: '光軸に平行' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'lens-1-w1', concept: 'focus',
+      prompt: '予想しよう。虫めがね（凸レンズ）で日光を紙に当て、レンズと紙の距離を変えていくと、どうなると思う？',
+      options: ['光はいつも広がったままで、紙全体が暗くなる', 'ある距離で光が小さな点に集まり、明るくなる', '距離を変えても何も変わらない'],
+      answer: 'b',
+      explanation: 'ある距離で、光が小さな明るい点に集まります。その点が「焦点」です。目を傷めるので、レンズで太陽を直接見てはいけません。',
+      hint: '虫めがねで光を集めて遊んだときのことを思い出そう。',
+    }),
+    problems: [
+      rayDraw({
+        id: 'lens-1-p1', concept: 'focus',
+        prompt: '光軸に平行な光が、凸レンズに当たりました。レンズを通ったあとの光の道すじを、当たった点から指で引こう。',
+        // レンズ cx=160, cy=120, f=60 → 焦点 F' (220,120)。正解例 out (280,160) は (160,80)→(220,120) の直線上。
+        // 不正解例 out (280,80) はまっすぐのまま（焦点から 40px はなれる）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 60 },
+          { type: 'ray', x1: 20, y1: 80, x2: 160, y2: 80, arrow: true },
+        ]),
+        source: { x: 20, y: 80 },
+        hit: { x: 160, y: 80 },
+        surface: { kind: 'lens', cx: 160, cy: 120, f: 60 },
+        expected: { kind: 'lens', ray: 'parallel' },
+        samples: { correct: { out: { x: 280, y: 160 } }, wrong: { out: { x: 280, y: 80 } } },
+        explanation: '光軸に平行な光は、レンズで屈折して、反対側の焦点 F\' を通ります。当たった点と F\' を結ぶ直線をのばせば大丈夫です。',
+        hint: 'レンズの右側にある焦点 F\' を通るように引こう。',
+      }),
+      drag({
+        id: 'lens-1-p2', concept: 'focus',
+        prompt: '光軸に平行な光が凸レンズを通りました。光がいちばん小さな点に集まる位置まで、スクリーンを左右に動かそう。',
+        // レンズ cx=130、焦点距離 70 → 光が集まる点（焦点）は x=200。
+        // レンズを出た光は途中までだけ描く（向きをのばして集まる点を考える）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 130, cy: 120, height: 140 },
+          { type: 'ray', x1: 20, y1: 80, x2: 130, y2: 80, arrow: true },
+          { type: 'ray', x1: 20, y1: 120, x2: 130, y2: 120, arrow: true },
+          { type: 'ray', x1: 20, y1: 160, x2: 130, y2: 160, arrow: true },
+          { type: 'ray', x1: 130, y1: 80, x2: 165, y2: 100, arrow: true },
+          { type: 'ray', x1: 130, y1: 120, x2: 165, y2: 120, arrow: true },
+          { type: 'ray', x1: 130, y1: 160, x2: 165, y2: 140, arrow: true },
+          { type: 'screen', id: 'scr', x: 270, y1: 40, y2: 200 },
+        ]),
+        draggable: { itemId: 'scr', axis: 'x' },
+        target: { x: 200, y: 120 },
+        samples: { correct: { x: 200, y: 120 }, wrong: { x: 250, y: 120 } },
+        explanation: 'レンズを出た光の向きをのばすと、x が 200 のところで 1 点に集まります。ここが焦点です。スクリーンを焦点に置くと、光がいちばん小さく明るい点になります。',
+        hint: 'レンズを出た 3 本の光をまっすぐのばして、交わるところをさがそう。',
+      }),
+      choice({
+        id: 'lens-1-p3', concept: 'focus',
+        prompt: '「焦点距離」とは、どこからどこまでの距離？',
+        options: ['レンズの厚いところの厚さ', 'レンズの中心から焦点まで', 'レンズからいちばん遠くのスクリーンまで'],
+        answer: 'b',
+        explanation: '焦点距離は、レンズの中心から焦点までの距離です。焦点はレンズの両側にあり、どちらも同じ焦点距離のところにあります。',
+        hint: '名前のとおり「焦点」までの距離だよ。どこから測るか考えよう。',
+      }),
+      figureChoice({
+        id: 'lens-1-p4', concept: 'focus',
+        prompt: 'レンズの中心に向かって光が進んでいます。レンズを通ったあと、光はア〜ウのどの向きに進む？',
+        // 入射の向き (120,60)。中心を通る光はまっすぐ進むので (262,176) のイ。ア (270,120)＝光軸に平行、ウ＝下へ大きく曲がる
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 150, cy: 120, height: 140, f: 60 },
+          { type: 'ray', x1: 30, y1: 60, x2: 150, y2: 120, arrow: true },
+          guide(150, 120, 270, 120),
+          guide(150, 120, 262, 176),
+          guide(150, 120, 215, 205),
+          { type: 'region', id: 'r1', x: 270, y: 120, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 262, y: 176, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 215, y: 205, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: 'レンズの中心を通る光は、屈折せずにそのまままっすぐ進みます。入射光をまっすぐのばした向きのイです。アのように光軸に平行になるのは、焦点を通ってからレンズに入った光です。',
+        hint: '入射光をそのまままっすぐのばすと、どこへ行くかな。',
+      }),
+      fill({
+        id: 'lens-1-p5', concept: 'focus',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '光軸に平行な光は、凸レンズを通ると[b1]に集まる。レンズの中心から[b1]までの距離を[b2]という。',
+        blanks: [
+          word('b1', ['焦点', '光源', '像'], '焦点'),
+          word('b2', ['焦点距離', '入射角', '光の道すじ'], '焦点距離'),
+        ],
+        explanation: '光軸に平行な光は、凸レンズで屈折して焦点に集まります。レンズの中心から焦点までの距離が焦点距離です。',
+        hint: '虫めがねで日光を集めた明るい点の名前を思い出そう。',
+      }),
+    ],
+    retryPool: [
+      rayDraw({
+        id: 'lens-1-r1', concept: 'focus',
+        prompt: '光軸の下を、光軸に平行に進む光が凸レンズに当たりました。レンズを通ったあとの光の道すじを引こう。',
+        // レンズ cx=150, cy=120, f=70 → 焦点 F' (220,120)。正解例 out (290,70) は (150,170)→(220,120) の直線上。
+        // 不正解例 out (290,170) はまっすぐのまま（焦点から 50px）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 150, cy: 120, height: 140, f: 70 },
+          { type: 'ray', x1: 20, y1: 170, x2: 150, y2: 170, arrow: true },
+        ]),
+        source: { x: 20, y: 170 },
+        hit: { x: 150, y: 170 },
+        surface: { kind: 'lens', cx: 150, cy: 120, f: 70 },
+        expected: { kind: 'lens', ray: 'parallel' },
+        samples: { correct: { out: { x: 290, y: 70 } }, wrong: { out: { x: 290, y: 170 } } },
+        explanation: '光軸の下を通る光も、光軸に平行なら、レンズで屈折して反対側の焦点 F\' を通ります。今度は上向きに曲がって F\' を通ればよいです。',
+        hint: '当たった点から、右側の焦点 F\' を通る線を引こう。',
+      }),
+      choice({
+        id: 'lens-1-r2', concept: 'focus',
+        prompt: '虫めがねで日光を集めて、紙の上の光をいちばん小さく明るい点にしたい。紙はどこに置けばよい？',
+        options: ['レンズにぴったりくっつける', 'レンズの焦点の位置', 'できるだけレンズから遠く'],
+        answer: 'b',
+        explanation: '日光はほぼ平行な光なので、レンズを通ると焦点に集まります。紙を焦点の位置に置くと、光がいちばん小さく明るい点になります。',
+        hint: '平行な光が集まる点の名前を思い出そう。',
+      }),
+      drag({
+        id: 'lens-1-r3', concept: 'focus',
+        prompt: '光軸に平行な光が凸レンズを通りました。光が 1 点に集まる位置まで、スクリーンを左右に動かそう。',
+        // レンズ cx=110、焦点距離 60 → 光が集まる点（焦点）は x=170
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 110, cy: 120, height: 140 },
+          { type: 'ray', x1: 20, y1: 85, x2: 110, y2: 85, arrow: true },
+          { type: 'ray', x1: 20, y1: 120, x2: 110, y2: 120, arrow: true },
+          { type: 'ray', x1: 20, y1: 155, x2: 110, y2: 155, arrow: true },
+          { type: 'ray', x1: 110, y1: 85, x2: 140, y2: 102.5, arrow: true },
+          { type: 'ray', x1: 110, y1: 120, x2: 140, y2: 120, arrow: true },
+          { type: 'ray', x1: 110, y1: 155, x2: 140, y2: 137.5, arrow: true },
+          { type: 'screen', id: 'scr', x: 270, y1: 40, y2: 200 },
+        ]),
+        draggable: { itemId: 'scr', axis: 'x' },
+        target: { x: 170, y: 120 },
+        samples: { correct: { x: 170, y: 120 }, wrong: { x: 230, y: 120 } },
+        explanation: 'レンズを出た光の向きをのばすと、1 点で交わります。そこが焦点です。スクリーンを焦点に置くと、光がいちばん小さく集まります。',
+        hint: 'レンズを出た光をまっすぐのばして、交わるところをさがそう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ lens-2: 実像と虚像（物体の位置と像の位置・大きさ） ----
+  const lens2 = {
+    id: 'lens-2', areaId: 'lens', title: '実像と虚像', minutes: 6, concepts: ['lens-image'],
+    lessons: [
+      {
+        id: 'lens-2-c1',
+        text: '物体を焦点より外側に置くと、レンズを通った光が反対側で集まり、スクリーンに像が映ります。この像を実像といいます。実像は、物体と上下左右が逆向きになります。',
+        // f=40、レンズ cx=160。物体 x=40（レンズから 120）→ 実像 x=220（レンズから 60）、大きさ半分で逆向き
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 40 },
+          { type: 'screen', x: 220, y1: 40, y2: 200 },
+          { type: 'ray', x1: 40, y1: 70, x2: 160, y2: 70, arrow: true },
+          { type: 'ray', x1: 160, y1: 70, x2: 220, y2: 145, arrow: true },
+          { type: 'ray', x1: 40, y1: 70, x2: 220, y2: 145, arrow: true },
+          { type: 'object', x: 40, y: 120, height: 50, label: '物体' },
+          { type: 'object', x: 220, y: 120, height: -25 },
+          { type: 'label', x: 232, y: 176, text: '実像' },
+        ]),
+      },
+      {
+        id: 'lens-2-c2',
+        text: '物体を焦点距離の 2 倍の位置に置くと、反対側の焦点距離の 2 倍の位置に、物体と同じ大きさの実像ができます。物体をそれより遠くにすると像は小さく、焦点に近づけると像は大きくなります。',
+        // f=40、レンズ cx=160。物体 x=80（レンズから 80 = 焦点距離の 2 倍）→ 実像 x=240、同じ大きさ
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 40 },
+          { type: 'screen', x: 240, y1: 40, y2: 200 },
+          { type: 'ray', x1: 80, y1: 80, x2: 160, y2: 80, arrow: true },
+          { type: 'ray', x1: 160, y1: 80, x2: 240, y2: 160, arrow: true },
+          { type: 'ray', x1: 80, y1: 80, x2: 240, y2: 160, arrow: true },
+          { type: 'object', x: 80, y: 120, height: 40, label: '物体' },
+          { type: 'object', x: 240, y: 120, height: -40 },
+          { type: 'label', x: 196, y: 222, text: '同じ大きさ' },
+        ]),
+      },
+      {
+        id: 'lens-2-c3',
+        text: '物体を焦点より内側に置くと、スクリーンに像はできません。レンズをのぞくと、物体より大きな像が同じ向きに見えます。これを虚像といいます。虫めがねで文字が大きく見えるのは虚像です。',
+        // f=50、レンズ cx=170。物体 x=140（レンズから 30、焦点の内側）→ 虚像 x=95、2.5 倍で同じ向き。
+        // レンズを出た光を逆にのばした点線が、虚像の先 (95,45) で交わる
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 170, cy: 120, height: 140, f: 50 },
+          { type: 'object', x: 95, y: 120, height: 75 },
+          { type: 'ray', x1: 170, y1: 90, x2: 95, y2: 45, dashed: true },
+          { type: 'ray', x1: 170, y1: 120, x2: 95, y2: 45, dashed: true },
+          { type: 'ray', x1: 140, y1: 90, x2: 170, y2: 90, arrow: true },
+          { type: 'ray', x1: 170, y1: 90, x2: 290, y2: 162, arrow: true },
+          { type: 'ray', x1: 140, y1: 90, x2: 250, y2: 200, arrow: true },
+          { type: 'object', x: 140, y: 120, height: 30 },
+          { type: 'eye', x: 300, y: 190 },
+          { type: 'label', x: 112, y: 166, text: '物体' },
+          { type: 'label', x: 62, y: 166, text: '虚像' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'lens-2-w1', concept: 'lens-image',
+      prompt: '予想しよう。虫めがねを持った手をのばし、遠くの景色をのぞくと、どう見えると思う？',
+      options: ['大きく、同じ向きに見える', '上下左右が逆さまに見える', '何も見えなくなる'],
+      answer: 'b',
+      explanation: '遠くの景色は、上下左右が逆さまに見えます。近くの文字が大きく見えるときとは、像のでき方がちがいます。このステージで調べよう。',
+      hint: '物体がレンズから遠いか近いかで、見え方が変わるよ。',
+    }),
+    problems: [
+      rayDraw({
+        id: 'lens-2-p1', concept: 'lens-image',
+        prompt: '物体の先から、レンズの中心に向かう光があります。レンズを通ったあとの光の道すじを、当たった点から指で引こう。',
+        // レンズ cx=170, cy=120, f=50。入射の向き (110,50)。正解例 out (280,170) は同じ向き（まっすぐ）。
+        // 不正解例 out (280,120) は光軸に平行（約 24° ずれる）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 170, cy: 120, height: 140, f: 50 },
+          { type: 'object', x: 60, y: 120, height: 50, label: '物体' },
+          { type: 'ray', x1: 60, y1: 70, x2: 170, y2: 120, arrow: true },
+        ]),
+        source: { x: 60, y: 70 },
+        hit: { x: 170, y: 120 },
+        surface: { kind: 'lens', cx: 170, cy: 120, f: 50 },
+        expected: { kind: 'lens', ray: 'center' },
+        samples: { correct: { out: { x: 280, y: 170 } }, wrong: { out: { x: 280, y: 120 } } },
+        explanation: 'レンズの中心を通る光は、屈折せずにそのまままっすぐ進みます。入射光をまっすぐのばした線を引けば大丈夫です。この光は、像の先の位置を決めるのに使えます。',
+        hint: '入射光を、向きを変えずにそのままのばそう。',
+      }),
+      drag({
+        id: 'lens-2-p2', concept: 'lens-image',
+        prompt: 'スクリーンは、レンズから焦点距離の 2 倍の位置にあります。スクリーンに物体と同じ大きさのはっきりした像が映るように、物体を左右に動かして置こう。',
+        // f=40、レンズ cx=160。スクリーン x=240（レンズから 80 = 焦点距離の 2 倍）→ 物体は反対側の 2 倍の x=80。
+        // 不正解例 x=105（2 倍より焦点寄り。像はスクリーンより遠くにでき、大きくなる）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 40 },
+          { type: 'screen', x: 240, y1: 40, y2: 200 },
+          { type: 'object', id: 'obj', x: 30, y: 120, height: 40, label: '物体' },
+        ]),
+        draggable: { itemId: 'obj', axis: 'x' },
+        target: { x: 80, y: 120 },
+        samples: { correct: { x: 80, y: 120 }, wrong: { x: 105, y: 120 } },
+        explanation: '物体を焦点距離の 2 倍の位置に置くと、反対側の焦点距離の 2 倍の位置に、同じ大きさで逆向きの実像ができます。レンズから F までの長さの 2 倍のところに置けていれば大丈夫です。',
+        hint: 'スクリーンはレンズから F\' までの 2 倍の位置。物体も、反対側で同じように考えよう。',
+      }),
+      choice({
+        id: 'lens-2-p3', concept: 'lens-image',
+        prompt: '物体を凸レンズの焦点より内側（レンズと焦点のあいだ）に置きました。どうなる？',
+        options: ['スクリーンに、逆向きの実像が映る', 'スクリーンには像が映らず、レンズをのぞくと大きな虚像が見える', '物体はどこからも見えなくなる'],
+        answer: 'b',
+        explanation: '物体が焦点の内側にあると、レンズを通った光は集まらないので、スクリーンに像は映りません。レンズをのぞくと、物体より大きく同じ向きの虚像が見えます。虫めがねで文字を見るときと同じです。',
+        hint: '虫めがねで近くの文字を見たときを思い出そう。',
+      }),
+      rayDraw({
+        id: 'lens-2-p4', concept: 'lens-image',
+        prompt: '物体の先から出て、焦点 F を通ってレンズに当たる光があります。レンズを通ったあとの光の道すじを引こう。',
+        // レンズ cx=170, cy=120, f=50 → F (120,120)。物体の先 (60,90) と F を結ぶ線はレンズで (170,145)。
+        // 正解例 out (290,145) は光軸に平行。不正解例 out (290,205) はまっすぐのまま（約 27° ずれる）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 170, cy: 120, height: 140, f: 50 },
+          { type: 'object', x: 60, y: 120, height: 30, label: '物体' },
+          { type: 'ray', x1: 60, y1: 90, x2: 170, y2: 145, arrow: true },
+        ]),
+        source: { x: 60, y: 90 },
+        hit: { x: 170, y: 145 },
+        surface: { kind: 'lens', cx: 170, cy: 120, f: 50 },
+        expected: { kind: 'lens', ray: 'focus' },
+        samples: { correct: { out: { x: 290, y: 145 } }, wrong: { out: { x: 290, y: 205 } } },
+        explanation: '焦点を通ってからレンズに入った光は、屈折したあと光軸に平行に進みます。点線の光軸と平行な、横向きの線を引けば大丈夫です。',
+        hint: '光軸（横の線）と平行になるように引こう。',
+      }),
+      fill({
+        id: 'lens-2-p5', concept: 'lens-image',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '物体を焦点の外側に置くと、スクリーンに[b1]が映る。その向きは、物体と上下左右が[b2]になる。',
+        blanks: [
+          word('b1', ['実像', '虚像', '影'], '実像'),
+          word('b2', ['同じ', '逆'], '逆'),
+        ],
+        explanation: '焦点の外側の物体からの光は、レンズを通ると反対側で集まり、スクリーンに実像ができます。実像は、物体と上下左右が逆向きです。',
+        hint: 'スクリーンに映る像と、のぞくと見える像の名前のちがいを思い出そう。',
+      }),
+    ],
+    retryPool: [
+      rayDraw({
+        id: 'lens-2-r1', concept: 'lens-image',
+        prompt: '物体の先から、光軸に平行に進む光があります。レンズを通ったあとの光の道すじを引こう。',
+        // レンズ cx=160, cy=120, f=50 → F' (210,120)。正解例 out (285,180) は (160,80)→(210,120) の直線上。
+        // 不正解例 out (285,80) はまっすぐのまま
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 140, f: 50 },
+          { type: 'object', x: 50, y: 120, height: 40, label: '物体' },
+          { type: 'ray', x1: 50, y1: 80, x2: 160, y2: 80, arrow: true },
+        ]),
+        source: { x: 50, y: 80 },
+        hit: { x: 160, y: 80 },
+        surface: { kind: 'lens', cx: 160, cy: 120, f: 50 },
+        expected: { kind: 'lens', ray: 'parallel' },
+        samples: { correct: { out: { x: 285, y: 180 } }, wrong: { out: { x: 285, y: 80 } } },
+        explanation: '光軸に平行な光は、レンズで屈折して反対側の焦点 F\' を通ります。この光と、レンズの中心を通る光が交わるところに、像の先ができます。',
+        hint: '右側の焦点 F\' を通るように引こう。',
+      }),
+      choice({
+        id: 'lens-2-r2', concept: 'lens-image',
+        prompt: '物体を、凸レンズから焦点距離の 2 倍の位置に置きました。スクリーンにできる実像の大きさは？',
+        options: ['物体より大きい', '物体と同じ大きさ', '物体より小さい'],
+        answer: 'b',
+        explanation: '焦点距離の 2 倍の位置に物体を置くと、反対側の焦点距離の 2 倍の位置に、物体と同じ大きさの実像ができます。向きは上下左右が逆です。',
+        hint: '「焦点距離の 2 倍」は、像の大きさがちょうど変わり目になる位置だったね。',
+      }),
+      drag({
+        id: 'lens-2-r3', concept: 'lens-image',
+        prompt: 'スクリーンは、レンズから焦点距離の 2 倍の位置にあります。スクリーンにはっきりした像が映るように、物体を左右に動かして置こう。',
+        // f=50、レンズ cx=150。スクリーン x=250（レンズから 100 = 焦点距離の 2 倍）→ 物体は x=50。不正解例 x=80（2 倍より焦点寄り。像はスクリーンより遠くにできる）
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 150, cy: 120, height: 140, f: 50 },
+          { type: 'screen', x: 250, y1: 40, y2: 200 },
+          { type: 'object', id: 'obj', x: 20, y: 120, height: 40, label: '物体' },
+        ]),
+        draggable: { itemId: 'obj', axis: 'x' },
+        target: { x: 50, y: 120 },
+        samples: { correct: { x: 50, y: 120 }, wrong: { x: 80, y: 120 } },
+        explanation: 'スクリーンが焦点距離の 2 倍の位置にあるので、物体も反対側の焦点距離の 2 倍の位置に置くと、はっきりした実像が映ります。像は物体と同じ大きさで逆向きです。',
+        hint: 'レンズから F までの長さの 2 倍のところをさがそう。',
       }),
     ],
   };
@@ -780,6 +1594,151 @@
         }),
       ],
     },
+    {
+      id: 'refract-dir', title: '屈折の向き', basic: 'straight', lessonStageId: 'refract-1',
+      checkPool: [
+        choice({
+          id: 'refract-dir-k1', concept: 'refract-dir',
+          prompt: '空気から水へ、ななめに進む光は、境界面でどうなる？',
+          options: ['法線から離れるように折れ曲がる', 'そのまままっすぐ進む', '法線に近づくように折れ曲がる'],
+          answer: 'c',
+          explanation: '空気から水やガラスへななめに進む光は、法線に近づくように折れ曲がります。水やガラスから空気へ進むときは、その反対で法線から離れます。',
+          hint: '空気から水へ入るときは、法線に「近づく」か「離れる」か思い出そう。',
+        }),
+        fill({
+          id: 'refract-dir-k2', concept: 'refract-dir',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: '光がちがう物質の境界面で折れ曲がって進むことを、光の[b1]という。',
+          blanks: [word('b1', ['反射', '屈折', '直進'], '屈折')],
+          explanation: '境界面で光が折れ曲がることを屈折といいます。鏡などではね返るのは反射です。',
+          hint: '「はね返る」ではなく「折れ曲がる」ことの名前だよ。',
+        }),
+        choice({
+          id: 'refract-dir-k3', concept: 'refract-dir',
+          prompt: '水面に垂直に入った光は、どう進む？',
+          options: ['折れ曲がらずにまっすぐ進む', '法線に近づくように曲がる', '水面にそって進む'],
+          answer: 'a',
+          explanation: '境界面に垂直に入る光は、折れ曲がらずにまっすぐ進みます。屈折するのは、ななめに入る光です。',
+          hint: '垂直に入る光は、法線と重なっているね。',
+        }),
+      ],
+    },
+    {
+      id: 'refract-view', title: '屈折による見え方', basic: 'refract-dir', lessonStageId: 'refract-2',
+      checkPool: [
+        choice({
+          id: 'refract-view-k1', concept: 'refract-view',
+          prompt: 'コップの水の底にあるコインが浮き上がって見えるのは、光のどんな性質のため？',
+          options: ['反射', '屈折', '直進'],
+          answer: 'b',
+          explanation: 'コインからの光が水面で屈折して目に届くので、コインは浮き上がって見えます。目は光がまっすぐ来たと感じるためです。',
+          hint: '光が水面で折れ曲がることを何といったか思い出そう。',
+        }),
+        choice({
+          id: 'refract-view-k2', concept: 'refract-view',
+          prompt: '池の中の魚を岸から見ると、魚は実際の位置と比べてどこに見える？',
+          options: ['実際より浅い（水面に近い）ところ', '実際より深いところ', '実際と同じところ'],
+          answer: 'a',
+          explanation: '魚からの光が水面で法線から離れるように折れ曲がって目に届くので、魚は実際より浅いところに浮き上がって見えます。',
+          hint: '水の底のコインの見え方と同じように考えよう。',
+        }),
+        fill({
+          id: 'refract-view-k3', concept: 'refract-view',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: '水の中のものからの光は、水面で法線から[b1]ように折れ曲がって目に届く。',
+          blanks: [word('b1', ['離れる', '近づく'], '離れる')],
+          explanation: '水から空気へ出る光は、法線から離れるように折れ曲がります。その光を目はまっすぐ来たと感じるので、水の中のものは浮き上がって見えます。',
+          hint: '水から空気へ進む光の曲がり方を思い出そう。',
+        }),
+      ],
+    },
+    {
+      id: 'total-reflect', title: '全反射', basic: 'refract-dir', lessonStageId: 'refract-2',
+      checkPool: [
+        choice({
+          id: 'total-reflect-k1', concept: 'total-reflect',
+          prompt: '水やガラスから空気へ進む光が、空気中へ出られずに、境界面ですべて反射することを何という？',
+          options: ['乱反射', '全反射', '屈折'],
+          answer: 'b',
+          explanation: '境界面ですべて反射することを全反射といいます。水やガラスから空気へ進む光で、入射角が大きいときに起こります。',
+          hint: '「すべて」反射する、という名前だよ。',
+        }),
+        choice({
+          id: 'total-reflect-k2', concept: 'total-reflect',
+          prompt: '全反射が起こるのは、どんなとき？',
+          options: ['空気から水へ光が進むとき', '鏡に光が当たったとき', '水やガラスから空気へ進む光の入射角が大きいとき'],
+          answer: 'c',
+          explanation: '全反射は、水やガラスから空気へ進む光の入射角が大きいときに起こります。空気から水へ進む光では起こりません。',
+          hint: '空気中へ「出られなくなる」のはどちら向きの光か考えよう。',
+        }),
+        fill({
+          id: 'total-reflect-k3', concept: 'total-reflect',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: 'ガラスから空気へ進む光は、入射角がある大きさをこえると、境界面ですべて[b1]する。',
+          blanks: [word('b1', ['屈折', '反射', '直進'], '反射')],
+          explanation: '入射角がある大きさをこえると、光は空気中へ出られず、境界面ですべて反射します。これが全反射です。',
+          hint: '空気中へ出られなかった光は、どうなるかな。',
+        }),
+      ],
+    },
+    {
+      id: 'focus', title: '焦点', basic: 'refract-dir', lessonStageId: 'lens-1',
+      checkPool: [
+        choice({
+          id: 'focus-k1', concept: 'focus',
+          prompt: '光軸に平行な光が凸レンズを通ったあと、集まる点を何という？',
+          options: ['焦点', '光源', '像'],
+          answer: 'a',
+          explanation: '光軸に平行な光は、凸レンズで屈折して焦点に集まります。焦点はレンズの両側にあります。',
+          hint: '虫めがねで日光を集めた明るい点の名前だよ。',
+        }),
+        choice({
+          id: 'focus-k2', concept: 'focus',
+          prompt: '凸レンズの中心を通る光は、レンズを通ったあとどう進む？',
+          options: ['焦点に向かって曲がる', 'そのまままっすぐ進む', 'レンズではね返る'],
+          answer: 'b',
+          explanation: 'レンズの中心を通る光は、屈折せずにそのまままっすぐ進みます。焦点を通るのは、光軸に平行に入った光です。',
+          hint: 'レンズの中心を通る光は特別だったね。',
+        }),
+        fill({
+          id: 'focus-k3', concept: 'focus',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: 'レンズの中心から焦点までの距離を[b1]という。',
+          blanks: [word('b1', ['焦点距離', '屈折', '光軸'], '焦点距離')],
+          explanation: 'レンズの中心から焦点までの距離を焦点距離といいます。ふくらみの大きいレンズほど、焦点距離は短くなります。',
+          hint: '「焦点」までの「距離」だね。',
+        }),
+      ],
+    },
+    {
+      id: 'lens-image', title: 'レンズの像', basic: 'focus', lessonStageId: 'lens-2',
+      checkPool: [
+        choice({
+          id: 'lens-image-k1', concept: 'lens-image',
+          prompt: '虫めがねで近くの文字を見ると、大きく見えます。このとき見えている像を何という？',
+          options: ['実像', '虚像', '影'],
+          answer: 'b',
+          explanation: '文字が焦点の内側にあるので、レンズをのぞくと大きく同じ向きの虚像が見えます。虚像はスクリーンには映りません。',
+          hint: 'スクリーンに映らない像の名前を思い出そう。',
+        }),
+        choice({
+          id: 'lens-image-k2', concept: 'lens-image',
+          prompt: 'スクリーンに映る実像の向きは、物体と比べてどうなっている？',
+          options: ['物体と同じ向き', '上下左右が逆向き', '上下は同じで、左右だけ逆向き'],
+          answer: 'b',
+          explanation: '凸レンズでスクリーンに映る実像は、物体と上下左右が逆向きになります。',
+          hint: '実像は「逆さま」に映ったね。',
+        }),
+        fill({
+          id: 'lens-image-k3', concept: 'lens-image',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: '物体を焦点の[b1]に置くと、スクリーンに像はできず、レンズをのぞくと大きな虚像が見える。',
+          blanks: [word('b1', ['内側', '外側', '2 倍の位置'], '内側')],
+          explanation: '物体が焦点の内側にあると、レンズを通った光は集まらないので、スクリーンに像はできません。レンズをのぞくと大きな虚像が見えます。',
+          hint: '虫めがねで文字を見るとき、文字はレンズの近くにあるね。',
+        }),
+      ],
+    },
   ];
 
   // ================================================================
@@ -793,8 +1752,8 @@
     areas: [
       { id: 'straight', title: '光の直進', order: 1, stages: [straight1, straight2] },
       { id: 'reflect', title: '光の反射', order: 2, stages: [reflect1, reflect2] },
-      { id: 'refract', title: '光の屈折', order: 3, stages: [] },   // Task 10 で足す
-      { id: 'lens', title: '凸レンズ', order: 4, stages: [] },      // Task 10 で足す
+      { id: 'refract', title: '光の屈折', order: 3, stages: [refract1, refract2] },
+      { id: 'lens', title: '凸レンズ', order: 4, stages: [lens1, lens2] },
     ],
   };
 

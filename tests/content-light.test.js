@@ -6,8 +6,8 @@ const { judge } = require('../js/judge.js');
 const config = require('../js/config.js');
 const light = require('../content/light.js');
 
-// Task 8 では 4 ステージ。Task 10 で 8 に変える
-const STAGE_COUNT = 4;
+// 4 領域 × 2 ステージ（Task 8 で直進・反射、Task 10 で屈折・凸レンズ）
+const STAGE_COUNT = 8;
 const FIGURE_TYPES = ['figure-choice', 'ray-draw', 'drag'];
 
 const stages = light.unit.areas.flatMap(a => a.stages);
@@ -77,5 +77,30 @@ test('すべての問題に prompt・explanation・hint があり、レッスン
       assert.ok(c.text.length >= 60 && c.text.length <= 120, c.id + ' の文が ' + c.text.length + ' 字');
       assert.ok(c.figure && Array.isArray(c.figure.items), c.id + ' に図がない');
     });
+  });
+});
+
+test('概念は 8 つそろい、refract-2 は refract-view と total-reflect の両方を使う', () => {
+  const expected = ['straight', 'reflect-law', 'mirror-image', 'refract-dir', 'refract-view', 'total-reflect', 'focus', 'lens-image'];
+  expected.forEach(id => assert.ok(conceptIds.has(id), '概念 ' + id + ' がない'));
+  assert.equal(conceptIds.size, expected.length);
+  const r2 = stages.find(s => s.id === 'refract-2');
+  assert.ok(r2, 'ステージ refract-2 がない');
+  assert.deepEqual([...r2.concepts].sort(), ['refract-view', 'total-reflect']);
+  // 問題にも両方の概念が付き、類題は概念ごとに 3 問
+  const used = new Set(r2.problems.map(p => p.concept));
+  assert.ok(used.has('refract-view') && used.has('total-reflect'), 'refract-2 の problems に両方の概念がない');
+  ['refract-view', 'total-reflect'].forEach(cid => {
+    assert.equal(r2.retryPool.filter(p => p.concept === cid).length, 3, 'refract-2 の ' + cid + ' の類題が 3 問でない');
+  });
+});
+
+test('図の item の type はすべて figures.js が描ける種類', () => {
+  const { ITEM_TYPES } = require('../js/figures.js');
+  const scenes = stages.flatMap(s => s.lessons.map(c => ({ id: c.id, figure: c.figure })))
+    .concat(allProblems().map(p => ({ id: p.id, figure: p.figure })));
+  scenes.forEach(({ id, figure }) => {
+    if (!figure) return;
+    figure.items.forEach(it => assert.ok(ITEM_TYPES.includes(it.type), id + ' の item の type ' + it.type + ' は描けない'));
   });
 });
