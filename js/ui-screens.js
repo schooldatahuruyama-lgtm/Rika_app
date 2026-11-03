@@ -174,8 +174,9 @@
           isCurrent ? el('span', { class: 'tag', text: '使用中' }) : null,
           button(isCurrent ? 'このまま始める' : '切り替え', () => {
             store.currentProfileId = p.id;
-            ctx.save();
+            const saved = ctx.save();
             ctx.go('home');
+            reportSave(ctx, saved, null);
           }, isCurrent ? 'btn-primary' : ''),
         ]));
       });
@@ -209,8 +210,9 @@
       const nickname = input.value.trim().slice(0, 12);
       if (!nickname) return;
       RQ.record.createProfile(ctx.store, { nickname, avatar: chosenAvatar }, ctx.now());
-      ctx.save();
+      const saved = ctx.save();
       ctx.go('home');
+      reportSave(ctx, saved, null);
     });
 
     section.append(card([
@@ -450,6 +452,17 @@
 
   // ---- 設定 ----
 
+  // 保存の結果をお知らせにする。失敗したら成功の文は出さない
+  function reportSave(ctx, ok, successText) {
+    if (ok) {
+      if (successText) ctx.message(successText, 'ok');
+      return;
+    }
+    ctx.message('保存できませんでした。' + (ctx.state.protectedStorage
+      ? '読み込めない記録が残っているため、「読み込めない記録を上書きして新しく始める」で対処してください。'
+      : 'この変更は、ページを閉じると消えます。'), 'warn');
+  }
+
   function renderSettings(section, ctx) {
     const store = ctx.store;
     section.append(topBar('設定', currentProfile(store) ? 'ホーム' : 'もどる', () => ctx.go(currentProfile(store) ? 'home' : 'profile')));
@@ -484,17 +497,17 @@
         el('span', { class: 'profile-name', text: p.nickname }),
         isCurrent ? el('span', { class: 'tag', text: '使用中' }) : button('切り替え', () => {
           store.currentProfileId = p.id;
-          ctx.save();
+          const saved = ctx.save();
           ctx.go('settings');
-          ctx.message(p.nickname + ' に切り替えました。', 'ok');
+          reportSave(ctx, saved, p.nickname + ' に切り替えました。');
         }),
         button('削除', async () => {
           const ok = await ctx.confirm('「' + p.nickname + '」の記録をすべて削除します。元に戻せません。よろしいですか？', '削除する');
           if (!ok) return;
           RQ.record.deleteProfile(ctx.store, p.id);
-          ctx.save();
+          const saved = ctx.save();
           ctx.go(ctx.store.profiles.length > 0 ? 'settings' : 'profile');
-          ctx.message('「' + p.nickname + '」を削除しました。', 'ok');
+          reportSave(ctx, saved, '「' + p.nickname + '」を削除しました。');
         }, 'btn-danger'),
       ]));
     });
@@ -558,9 +571,9 @@
       }
       const ok = await ctx.confirm('今の記録を、ファイルの記録で置きかえます。よろしいですか？', '置きかえる');
       if (!ok) return;
-      ctx.replaceStore(result.store);
+      const saved = ctx.replaceStore(result.store);
       ctx.go(currentProfile(ctx.store) ? 'settings' : 'profile');
-      ctx.message('記録を読み込みました（プロフィール ' + ctx.store.profiles.length + ' 人）。', 'ok');
+      reportSave(ctx, saved, '記録を読み込みました（プロフィール ' + ctx.store.profiles.length + ' 人）。');
     };
     reader.readAsText(file);
   }

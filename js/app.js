@@ -7,6 +7,7 @@
 //   app.setRecord(record)     … 今の生徒の記録を置きかえて保存（record.js の関数は新しい record を返すため）
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
+//   app.offline               … オフライン教材の状態（Task 14 が書く。app.state.offline と同じ値）
 // 画面を足すとき: index.html に <section id="screen-<name>" class="screen" hidden> を置き、
 //   RikaQuest.ui.screens[name] = function (section, ctx, params) { ... } を登録する（app.js より前に読み込む）。
 (function (root) {
@@ -54,13 +55,39 @@
     return store.records[store.currentProfileId] || null;
   }
 
-  // 読み込んだ store を整える: 生徒ごとに記録があるように、足りない項目は初期値で補う
+  function isFiniteNumber(x) { return typeof x === 'number' && Number.isFinite(x); }
+
+  // record の項目ごとの正しい形
+  const RECORD_CHECKS = {
+    xp: isFiniteNumber,
+    level: isFiniteNumber,
+    streak: (s) => isObject(s) && isFiniteNumber(s.count) && (s.lastDate === null || typeof s.lastDate === 'string'),
+    mastery: isObject,
+    stages: isObject,
+    lessonsRead: isObject,
+    reviewDone: isObject,
+    history: Array.isArray,
+    xpLog: Array.isArray,
+  };
+
+  // 形の違う項目は createRecord() の同じ項目の値に置きかえる（知らない項目はそのまま残す）
+  function normalizeRecord(rec) {
+    const fresh = RQ.record.createRecord();
+    if (!isObject(rec)) return fresh;
+    const out = Object.assign({}, rec);
+    Object.keys(RECORD_CHECKS).forEach((key) => {
+      if (!RECORD_CHECKS[key](out[key])) out[key] = fresh[key];
+    });
+    return out;
+  }
+
+  // 読み込んだ store を整える: 生徒ごとに記録があるように、形の違う項目は初期値で補う
   function normalizeStore(store) {
     if (!isObject(store.records)) store.records = {};
     store.profiles = (Array.isArray(store.profiles) ? store.profiles : []).filter((p) => isObject(p) && typeof p.id === 'string');
     store.profiles.forEach((p) => {
-      const rec = store.records[p.id];
-      store.records[p.id] = isObject(rec) ? Object.assign(RQ.record.createRecord(), rec) : RQ.record.createRecord();
+      if (typeof p.nickname !== 'string') p.nickname = p.nickname === undefined || p.nickname === null ? '' : String(p.nickname);
+      store.records[p.id] = normalizeRecord(store.records[p.id]);
     });
     if (!store.profiles.some((p) => p.id === store.currentProfileId)) {
       store.currentProfileId = store.profiles.length > 0 ? store.profiles[0].id : null;
@@ -202,9 +229,40 @@
       if (typeof result === 'function') cleanup = result;
     } catch (e) {
       console.error(e);
-      message('画面を表示できませんでした。ホームに戻ってやり直してください。', 'warn');
+      renderFailure(section, screen);
     }
     root.scrollTo(0, 0);
+  }
+
+  // 描画に失敗した画面: 詰まないように、移れる先のボタンを出す（ui の道具は使わない）
+  function renderFailure(section, screen) {
+    function btn(label, onClick, primary) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-block' + (primary ? ' btn-primary' : '');
+      b.textContent = label;
+      b.addEventListener('click', onClick);
+      return b;
+    }
+    const box = document.createElement('div');
+    box.className = 'card stack';
+    const p = document.createElement('p');
+    p.textContent = '画面を表示できませんでした。記録の形が正しくない可能性があります。';
+    box.append(p);
+    if (screen !== 'home' && currentProfile()) box.append(btn('ホームへ', () => go('home'), true));
+    if (screen !== 'settings') {
+      box.append(btn('設定へ', () => go('settings'), screen === 'home' || !currentProfile()));
+    } else {
+      // 設定画面そのものが描けないときは、すべて削除だけはできるようにする
+      box.append(btn('すべて削除', () => {
+        const ask = RQ.ui && RQ.ui.helpers && RQ.ui.helpers.confirm
+          ? RQ.ui.helpers.confirm('すべてのプロフィールと記録を削除します。元に戻せません。よろしいですか？', 'すべて削除する')
+          : Promise.resolve(root.confirm('すべてのプロフィールと記録を削除します。元に戻せません。よろしいですか？'));
+        ask.then((ok) => { if (ok) clearAll(); });
+      }));
+    }
+    section.replaceChildren(box);
+    message('画面を表示できませんでした。', 'warn');
   }
 
   // ---- 起動 ----
@@ -273,6 +331,9 @@
     clearAll,
     normalizeStore,
     get record() { return currentRecord(); },
+    // Task 14: app.offline = { state, version, at } と書ける（state.offline と同じ値）
+    get offline() { return state.offline; },
+    set offline(value) { state.offline = value; },
   };
 
   root.RikaQuest = Object.assign(root.RikaQuest || {}, { app });
