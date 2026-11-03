@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>理科クエスト（試作1）</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 上の帯: アプリ名・いま選んでいる生徒・保存の状態・教材エラーの件数 -->
+  <header class="app-header">
+    <div class="header-inner">
+      <span class="app-name">理科クエスト</span>
+      <span id="content-error" class="header-badge" hidden></span>
+      <span id="header-profile" class="header-profile"></span>
+      <span id="save-status" class="save-status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <!-- header の下のお知らせ（読み込みエラー・file:// の注意・一時的なお知らせ） -->
+  <div class="notices">
+    <p id="load-notice" class="notice notice-warn" hidden></p>
+    <p id="file-notice" class="notice notice-file" hidden></p>
+    <div id="message" class="notice" role="status" hidden></div>
+  </div>
+
+  <!-- 画面は 1 つずつ表示する（app.go が切り替える）。中身は js/ui-screens.js が作る -->
+  <main id="main" class="page">
+    <section id="screen-profile" class="screen" hidden></section>
+    <section id="screen-home" class="screen" hidden></section>
+    <section id="screen-map" class="screen" hidden></section>
+    <section id="screen-stage" class="screen" hidden></section>
+    <!-- Task 12: 解説・問題・学び直しの提案・結果 -->
+    <section id="screen-lesson" class="screen" hidden></section>
+    <section id="screen-problem" class="screen" hidden></section>
+    <section id="screen-offer" class="screen" hidden></section>
+    <section id="screen-result" class="screen" hidden></section>
+    <!-- Task 13: 記録 -->
+    <section id="screen-record" class="screen" hidden></section>
+    <section id="screen-settings" class="screen" hidden></section>
+  </main>
+
+  <!-- 確認ダイアログ（削除・上書き・読み込みの前に使う） -->
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <form method="dialog">
+      <p id="confirm-text" class="confirm-text"></p>
+      <div class="dialog-buttons">
+        <button type="submit" value="cancel" class="btn" id="confirm-cancel">やめる</button>
+        <button type="submit" value="ok" class="btn btn-primary" id="confirm-ok">はい</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/config.js"></script>
+  <script src="js/geometry.js"></script>
+  <script src="js/content-registry.js"></script>
+  <script src="js/judge.js"></script>
+  <script src="js/mastery.js"></script>
+  <script src="js/xp.js"></script>
+  <script src="js/record.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/recommend.js"></script>
+  <script src="js/figures.js"></script>
+  <script src="js/mascot.js"></script>
+  <script src="content/light.js"></script>
+  <script src="js/ui-screens.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
