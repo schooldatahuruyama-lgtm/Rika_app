@@ -104,6 +104,24 @@
 
   // ---- 検証 ----
 
+  // fill の空らん 1 つの必須項目: id、kind（'word' か 'number'）。
+  // word は options（配列）と answer、number は answer（数値）。tolerance・unit は任意
+  function checkBlank(p, b, i, errors) {
+    const name = '問題 ' + p.id + '（fill）の blanks[' + i + '] ';
+    if (!isObject(b)) { errors.push(name + 'が空らんの形ではありません'); return; }
+    const need = (ok, field) => { if (!ok) errors.push(name + 'に ' + field + ' がありません'); };
+    need(has(b.id) && b.id !== '', 'id');
+    if (!has(b.kind)) { errors.push(name + 'に kind がありません'); return; }
+    if (b.kind === 'word') {
+      need(Array.isArray(b.options), 'options');
+      need(has(b.answer), 'answer');
+    } else if (b.kind === 'number') {
+      need(typeof b.answer === 'number' && Number.isFinite(b.answer), 'answer（数値）');
+    } else {
+      errors.push(name + 'の kind ' + b.kind + ' は使えません');
+    }
+  }
+
   // 形式ごとの必須項目（Task 2 では存在だけを確かめる）
   function checkTypeFields(p, errors) {
     const name = '問題 ' + p.id + '（' + p.type + '）に ';
@@ -115,7 +133,9 @@
         need(has(p.answer), 'answer');
         break;
       case 'fill':
+        need(typeof p.text === 'string', 'text');
         need(Array.isArray(p.blanks) && p.blanks.length > 0, 'blanks');
+        list(p.blanks).forEach((b, i) => checkBlank(p, b, i, errors));
         break;
       case 'figure-choice':
         need(isObject(p.figure), 'figure');

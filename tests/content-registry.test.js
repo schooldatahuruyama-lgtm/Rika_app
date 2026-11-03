@@ -85,3 +85,31 @@ test('validateUnit: 数・形式・必須項目の検査と、形の崩れた教
   assert.doesNotThrow(() => cr.validateUnit(u));
   assert.match(messages(u), /ステージ s-a1 の problems が配列ではありません/);
 });
+test('validateUnit: fill の text と各空らんの id・kind・answer を検査', () => {
+  // fixture の p-a1-2 は fill（空らん b1 は kind 'word'）
+  const fillOf = u => u.areas[0].stages[0].problems[1];
+  let u = copy();
+  delete fillOf(u).text;
+  assert.match(messages(u), /問題 p-a1-2（fill）に text がありません/);
+
+  u = copy();
+  delete fillOf(u).blanks[0].answer;
+  assert.match(messages(u), /問題 p-a1-2（fill）の blanks\[0\] に answer がありません/);
+
+  u = copy();
+  delete fillOf(u).blanks[0].kind;
+  assert.match(messages(u), /問題 p-a1-2（fill）の blanks\[0\] に kind がありません/);
+
+  // id・word の options・number の answer（数値）・使えない kind
+  u = copy();
+  const blanks = fillOf(u).blanks;
+  delete blanks[0].id;
+  delete blanks[0].options;
+  blanks.push({ id: 'b2', kind: 'number', answer: '30', unit: '度' }, { id: 'b3', kind: 'number', answer: 30 }, { id: 'b4', kind: 'date', answer: 'x' });
+  const m = messages(u);
+  assert.match(m, /問題 p-a1-2（fill）の blanks\[0\] に id がありません/);
+  assert.match(m, /問題 p-a1-2（fill）の blanks\[0\] に options がありません/);
+  assert.match(m, /問題 p-a1-2（fill）の blanks\[1\] に answer（数値） がありません/);
+  assert.doesNotMatch(m, /blanks\[2\]/);   // tolerance は任意
+  assert.match(m, /問題 p-a1-2（fill）の blanks\[3\] の kind date は使えません/);
+});
