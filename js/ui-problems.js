@@ -19,7 +19,11 @@
   const MIN_DRAG = 8;          // これより短いドラッグは無視する（図の px）
   const GUIDE_HALF = 70;       // 法線の案内線の半分の長さ
   const KEY_STEP = 2;          // 矢印キーで動かす量（Shift で 10 倍）
+  const MIN_TOUCH_PX = 44;     // タッチ対象の最小の大きさ（画面の CSS px）
+  const HANDLE_R = 22;         // 光線を引く始点・当たる点の印の半径（図の px。縮尺 1 で直径 44px）
   const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥'];
+  // 動かすものに名前（label）がないときの呼び名（「〇〇を指で動かそう」に使う）
+  const ITEM_NAMES = { screen: 'スクリーン', lens: '凸レンズ', mirror: '鏡', object: '物体', lamp: '電球', eye: '目' };
   const INVALID_TEXT = 'もう一度操作してね';
 
   function figures() { return RQ.figures; }
@@ -269,7 +273,8 @@
     const items = (problem.figure && problem.figure.items) || [];
     const labelOf = (id) => {
       const it = items.find((x) => x.type === 'region' && x.id === id);
-      return it && it.label ? it.label : id;
+      // label は図の丸の中に描く名前、name は図に描かない呼び名（名前を丸の横に label 項目で描くとき）
+      return it && (it.label || it.name) ? (it.label || it.name) : id;
     };
     let selected = null;
     const box = el('div', { class: 'figure-box is-tappable' });
@@ -384,6 +389,13 @@
   function renderRayDraw(rootEl, problem, onAnswer, opts) {
     const config = (opts && opts.config) || RQ.config;
     const snap = (config && config.tolerance && config.tolerance.snapPx) || 24;
+    // 光源・当たる点に指が届いたとみなす半径（図の px）。図が縮んで表示されても、
+    // 画面上で直径 MIN_TOUCH_PX 以上になるようにする
+    function snapR() {
+      const ctm = svg.getScreenCTM();
+      const scale = ctm ? Math.hypot(ctm.a, ctm.b) : 1;
+      return scale > 0 ? Math.max(snap, MIN_TOUCH_PX / 2 / scale) : snap;
+    }
     const source = problem.source;
     const hit = problem.hit;
     const name = surfaceName(problem.surface);
@@ -405,8 +417,8 @@
     }
     const seg1 = svgEl('line', { class: 'drawn-ray', visibility: 'hidden' });
     const seg2 = svgEl('line', { class: 'drawn-ray drawn-out', visibility: 'hidden' });
-    const sourceHandle = svgEl('circle', { cx: source.x, cy: source.y, r: 14, class: 'ray-handle' });
-    const hitHandle = svgEl('circle', { cx: hit.x, cy: hit.y, r: 12, class: 'ray-handle', visibility: 'hidden' });
+    const sourceHandle = svgEl('circle', { cx: source.x, cy: source.y, r: HANDLE_R, class: 'ray-handle' });
+    const hitHandle = svgEl('circle', { cx: hit.x, cy: hit.y, r: HANDLE_R, class: 'ray-handle', visibility: 'hidden' });
     layer.append(seg1, seg2, sourceHandle, hitHandle);
     svg.append(layer);
 
@@ -453,12 +465,12 @@
       if (sub.isDone() || dragging) return;
       const p = toLocal(svg, e);
       if (phase === 1) {
-        if (dist(p, source) <= snap) {
+        if (dist(p, source) <= snapR()) {
           dragging = 'seg1';
           setLine(seg1, source, p);
           seg1.setAttribute('visibility', 'visible');
           live.textContent = name + 'に当たる点まで引こう';
-        } else if (dist(p, hit) <= snap) {
+        } else if (dist(p, hit) <= snapR()) {
           // 入射光は図に描いてあるので、当たった点から引き始めてもよい
           snapFirst();
           startOut(p);
@@ -466,7 +478,7 @@
           setNote(note, '光源から' + name + 'まで引こう', 'warn');
           return;
         }
-      } else if (dist(p, hit) <= snap) {
+      } else if (dist(p, hit) <= snapR()) {
         startOut(p);
       } else {
         setNote(note, name + 'に当たった点から引こう', 'warn');
@@ -491,7 +503,7 @@
       const p = toLocal(svg, e);
       if (dragging === 'seg1') {
         setLine(seg1, source, p);
-        live.textContent = dist(p, hit) <= snap ? 'ここで指をはなそう' : name + 'に当たる点まで引こう';
+        live.textContent = dist(p, hit) <= snapR() ? 'ここで指をはなそう' : name + 'に当たる点まで引こう';
       } else {
         setLine(seg2, hit, p);
         const long = dist(p, hit) >= MIN_DRAG;
@@ -507,7 +519,7 @@
       dragging = null;
       pointerId = null;
       if (kind === 'seg1') {
-        if (dist(p, hit) <= snap && dist(p, source) >= MIN_DRAG) {
+        if (dist(p, hit) <= snapR() && dist(p, source) >= MIN_DRAG) {
           snapFirst();
         } else {
           seg1.setAttribute('visibility', 'hidden');
@@ -585,7 +597,7 @@
     const g = svg.querySelector('g[data-item-id="' + cssEscape(drag.itemId) + '"]');
     const live = el('p', { class: 'live-value', 'aria-live': 'polite' });
     const note = noteLine();
-    const what = item.label || 'もの';
+    const what = item.label || ITEM_NAMES[item.type] || 'もの';
     const way = axis === 'x' ? '左右に' : axis === 'y' ? '上下に' : '';
 
     const offset = { x: 0, y: 0 };

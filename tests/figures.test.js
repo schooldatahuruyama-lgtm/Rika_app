@@ -94,6 +94,23 @@ test('sceneSvg: 13 種類すべての item を描ける', () => {
   assert.ok(s.includes('水'));
 });
 
+test('sceneSvg: 文字は線より上の層にまとめて描く（ドラッグ対象の文字はその item の中に残す）', () => {
+  const scene = { width: 320, height: 240, items: [
+    { type: 'lens', cx: 160, cy: 120, height: 140, f: 60 },
+    { type: 'ray', x1: 10, y1: 10, x2: 300, y2: 200 },
+    { type: 'object', id: 'o', x: 50, y: 120, height: 40, label: '物体' },
+    { type: 'region', id: 'r', x: 200, y: 60, r: 22, label: 'イ' },
+  ] };
+  const s = figures.sceneSvg(scene, { draggableId: 'o' });
+  const layer = s.match(/<g class="scene-labels" pointer-events="none">([\s\S]*?)<\/g>/);
+  assert.ok(layer, '文字の層がある');
+  assert.ok(s.indexOf('class="scene-labels"') > s.indexOf('item-ray'), '光線より後（上）に描く');
+  assert.ok(layer[1].includes('>F<') && layer[1].includes('>イ<'), 'レンズの F と region の文字は文字の層へ');
+  assert.ok(!layer[1].includes('物体'), 'ドラッグ対象の文字は層に入れない');
+  assert.match(s, /data-item-id="o"[^>]*>[\s\S]*?物体[\s\S]*?<\/g>/);
+  assert.ok(!figures.sceneSvg({ width: 100, height: 100, items: [{ type: 'axis', y: 50 }] }).includes('scene-labels'), '文字がなければ層を作らない');
+});
+
 test('sceneSvg: item は配列の順に描かれる', () => {
   const s = figures.sceneSvg({ width: 100, height: 100, items: [{ type: 'eye', x: 1, y: 1 }, { type: 'lamp', x: 2, y: 2 }] });
   assert.ok(s.indexOf('item-eye') < s.indexOf('item-lamp'));

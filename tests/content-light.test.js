@@ -63,6 +63,14 @@ test('ray-draw は光が左から右へ進み、drag の対象は図の中にあ
   });
 });
 
+test('figure-choice の選ぶ場所にはすべて呼び名（label か name）がある（画面に id を出さないため）', () => {
+  allProblems().filter(p => p.type === 'figure-choice').forEach(p => {
+    p.figure.items.filter(it => it.type === 'region').forEach(r => {
+      assert.ok(r.label || r.name, p.id + ' の ' + r.id + ' に呼び名がない');
+    });
+  });
+});
+
 test('教科書名・出版社名を含まない', () => {
   assert.doesNotMatch(JSON.stringify(light.unit), /東京書籍|啓林館|大日本図書|教育出版|学校図書/);
 });

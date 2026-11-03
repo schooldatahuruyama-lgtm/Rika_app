@@ -718,6 +718,14 @@ svg.scene {
   height: auto;
 }
 
+/* 図の文字のふち取り（光線や線が文字の上を通っても読めるように） */
+svg.scene .scene-label {
+  paint-order: stroke;
+  stroke: #FAFCFF;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
 .mascot-box {
   display: flex;
   justify-content: center;
@@ -1034,6 +1042,15 @@ svg.scene {
   border-color: var(--blue);
 }
 
+/* スマホ幅: 図をカードの余白まで広げ、図が縮みすぎないようにする
+   （図は幅 320 の viewBox。375px で縮尺が 1 以上になり、選ぶ場所の丸が 44px 以上になる） */
+@media (max-width: 479px) {
+  .card .figure-box {
+    margin-left: -14px;
+    margin-right: -14px;
+  }
+}
+
 .figure-box.is-ok { border-color: var(--ok); }
 .figure-box.is-warn { border-color: var(--warn); }
 
@@ -1326,17 +1343,21 @@ svg.scene {
   font-weight: normal;
 }
 
+/* 回数と経験値の列は中身の幅だけにして、項目名の列を広く取る（スマホ幅で項目名が折れないように） */
 .xp-table .xp-count {
   color: var(--muted);
   text-align: right;
-  width: 4em;
+  white-space: nowrap;
+  width: 1%;
+  padding-left: 12px;
 }
 
 .xp-table .xp-amount {
   text-align: right;
   font-weight: bold;
   white-space: nowrap;
-  width: 6em;
+  width: 1%;
+  padding-left: 16px;
 }
 
 .xp-table tfoot th,

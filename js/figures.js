@@ -244,6 +244,8 @@
     '<path d="M0,0 L10,5 L0,10 z" fill="' + COLOR.orange + '"/></marker></defs>';
 
   // 場面を SVG 文字列にする。items は配列の順に描く（後のものが上に重なる）。知らない type は飛ばす
+  // 文字（text）は光線などに隠れないよう、最後に文字の層（scene-labels、タップは下へ通す）にまとめて描く。
+  // ただしドラッグ対象の文字はいっしょに動くよう、その item の中に残す。
   // opts: { highlightRegion: id|null, draggableId: id|null, extraRays: [{x1,y1,x2,y2}] }
   function sceneSvg(scene, opts) {
     const o = opts || {};
@@ -251,23 +253,29 @@
     const height = Number(scene && scene.height) || 240;
     const items = (scene && Array.isArray(scene.items)) ? scene.items : [];
     let body = '';
+    let labels = '';
     for (const it of items) {
       if (!it || !Object.prototype.hasOwnProperty.call(DRAW, it.type)) continue;
       const hasId = it.id !== undefined && it.id !== null && it.id !== '';
       const selected = it.type === 'region' && hasId && it.id === o.highlightRegion;
       const draggable = hasId && it.id === o.draggableId;
       const cls = 'item item-' + it.type + (selected ? ' is-selected' : '') + (draggable ? ' is-draggable' : '');
+      let drawn = DRAW[it.type](it, { width, height, selected });
+      if (!draggable) {
+        drawn = drawn.replace(/<text[\s\S]*?<\/text>/g, (m) => { labels += m; return ''; });
+      }
       body += '<g' + attrs({
         'data-item-id': hasId ? String(it.id) : null,
         'data-item-type': it.type,
         class: cls,
         style: draggable ? 'cursor:grab' : null,
-      }) + '>' + (draggable ? hitArea(it, { width, height }) : '') + DRAW[it.type](it, { width, height, selected }) + '</g>';
+      }) + '>' + (draggable ? hitArea(it, { width, height }) : '') + drawn + '</g>';
     }
     const extra = Array.isArray(o.extraRays) ? o.extraRays : [];
     if (extra.length) {
       body += '<g class="extra-rays">' + extra.filter(Boolean).map((r) => rayLine(Object.assign({ arrow: true }, r), 'extra-ray')).join('') + '</g>';
     }
+    if (labels) body += '<g class="scene-labels" pointer-events="none">' + labels + '</g>';
     return '<svg' + attrs({
       xmlns: 'http://www.w3.org/2000/svg',
       viewBox: '0 0 ' + num(width) + ' ' + num(height),
