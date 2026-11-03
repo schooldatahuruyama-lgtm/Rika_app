@@ -565,7 +565,8 @@
         } catch (e) {
           mark = null;
         }
-        if (root.location.protocol === 'file:') off = { state: 'unsupported' };
+        if (root.location.protocol === 'file:') off = { state: 'unsupported-file' };
+        else if (!(root.navigator && 'serviceWorker' in root.navigator)) off = { state: 'unsupported-insecure' };
         else off = mark && typeof mark.version === 'string' ? { state: 'ready', version: mark.version } : { state: 'pending' };
       }
       let lines;
@@ -576,8 +577,11 @@
         ];
       } else if (off.state === 'failed') {
         lines = [el('p', { text: 'オフライン対応を準備できませんでした' })];
-      } else if (off.state === 'unsupported') {
+      } else if (off.state === 'unsupported-file') {
         lines = [el('p', { text: 'この開き方（file://）ではオフライン対応は使えません。http で開くと使えます。' })];
+      } else if (off.state === 'unsupported-insecure') {
+        // Service Worker は https か localhost（127.0.0.1）でだけ動く。LAN の IP を http で開いたときなど
+        lines = [el('p', { text: 'この開き方ではオフライン対応は使えません。https か、このパソコンの http://127.0.0.1 で開くと使えます。' })];
       } else {
         lines = [el('p', { text: 'オフライン対応: 準備中（読み込み中）' })];
       }

@@ -7,7 +7,7 @@
 //   app.setRecord(record)     … 今の生徒の記録を置きかえて保存（record.js の関数は新しい record を返すため）
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
-//   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported', version, at }（app.state.offline と同じ値）
+//   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported-file'|'unsupported-insecure', version, at }（app.state.offline と同じ値）
 //                               書きかえると document に 'rika-quest:offline' を送る（設定画面が表示を更新する）
 //   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
 //               app.choose('accept'|'later') / app.stopSession()。出来事はそのつど record.applyEvents で記録に入れ、
@@ -255,6 +255,11 @@
     }
     // 復習は再開しない（ステージの進捗・再開位置を変えない）
     if (newSession.kind === 'stage') rec = RQ.record.setResume(rec, newSession.stageId, newSession);
+    // 復習は最初の有効な解答（history が出る answer）で「今日この概念を復習した」と記録する。
+    // 途中で「やめる」→ もう一度始めても全額にならないようにするため（結果画面での記録はそのまま。同じ日付を書くだけ）
+    if (newSession.kind === 'review' && events && events.some((e) => e.kind === 'history')) {
+      rec = RQ.record.markReviewDone(rec, newSession.conceptId, RQ.xp.localDate(now));
+    }
     state.session = newSession;
     if (RQ.session.current(newSession, state.reg).kind === 'ended') {
       rec = closeRecord(rec, newSession, now);
@@ -500,8 +505,13 @@
       link.href = 'manifest.webmanifest';
       document.head.append(link);
     }
-    if (!web || !container) {
-      setOffline({ state: 'unsupported' });
+    // file:// は 'unsupported-file'。http(s) でも Service Worker が使えない（LAN の IP など、https でも localhost でもない）ときは 'unsupported-insecure'
+    if (!web) {
+      setOffline({ state: 'unsupported-file' });
+      return;
+    }
+    if (!container) {
+      setOffline({ state: 'unsupported-insecure' });
       return;
     }
     setOffline({ state: 'pending' });
