@@ -21,5 +21,5 @@
 ## 開発
 
 - テスト: `npm test`（Node.js 18 以上。追加のインストールは不要。`tests/` にテストができたら実行できる）
-- 開発の進め方（Claude Code が設計、サブエージェントが実装、Codex がレビュー）: [CLAUDE.md](CLAUDE.md)、[AGENTS.md](AGENTS.md)
+- 開発の進め方（Claude Code が設計、通常はサブエージェント（Opus など）が実装、Codex がレビュー。サブエージェントが使えないときは Claude Code 本体や Codex が実装を代行）: [CLAUDE.md](CLAUDE.md)、[AGENTS.md](AGENTS.md)
 - アプリから書き出した記録（`rika-quest-*.json`）や `samples/` の資料は Git に入りません。

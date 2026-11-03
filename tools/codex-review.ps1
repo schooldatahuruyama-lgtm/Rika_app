@@ -48,7 +48,12 @@ if ($Round -eq 2) {
     if (-not (Test-Path -LiteralPath $Previous -PathType Leaf)) {
         Fail "Previous review not found: $Previous" 4
     }
-    $prevText = Get-Content -LiteralPath $Previous -Raw -Encoding UTF8
+    $prevFull = (Resolve-Path -LiteralPath $Previous).Path
+    $reviewDirResolved = (Resolve-Path -LiteralPath $reviewDir -ErrorAction SilentlyContinue)
+    if (-not $reviewDirResolved -or -not $prevFull.StartsWith($reviewDirResolved.Path + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        Fail "Previous must be inside .ai-review/" 4
+    }
+    $prevText = Get-Content -LiteralPath $prevFull -Raw -Encoding UTF8
     $previousSection = "## Previous review (round 1) and Claude Code's response`n`n" + $prevText
     $round2Section = "## Status of round 1 findings (write this section in Japanese)`n| # | Status (resolved / unresolved / not needed and justified) | Comment |`n|---|---|---|`n"
 }
