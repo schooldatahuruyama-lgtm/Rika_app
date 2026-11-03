@@ -519,10 +519,46 @@
         console.error(e);
       }
     }
-    container.register('sw.js').catch((e) => {
+    container.register('sw.js').then((reg) => {
+      watchInstall(reg, reg.installing || reg.waiting);
+      reg.addEventListener('updatefound', () => watchInstall(reg, reg.installing));
+      // 動き出したら今の版を問い合わせる（返事の offline-ready で「済」になる。返事がなければ準備中のまま）
+      container.ready.then(() => askStatus(container)).catch(() => {});
+    }).catch((e) => {
       console.warn('オフライン対応を準備できませんでした', e);
       setOffline({ state: 'failed' });
     });
+  }
+
+  // install に失敗した（PRECACHE が取れない・容量不足・回線切れ）sw.js は redundant になる。
+  // register() は成功で返るので、ここで見張って「準備できませんでした」にする。
+  // ただし前の版の sw.js が動いている（更新だけ失敗した）ときは、前の版でオフラインで使えるので状態を変えない
+  const watchedWorkers = new WeakSet();   // register の戻りと updatefound で同じ worker を二重に見張らない
+
+  function watchInstall(reg, worker) {
+    if (!worker || watchedWorkers.has(worker)) return;
+    watchedWorkers.add(worker);
+    const check = () => {
+      if (worker.state !== 'redundant') return;
+      worker.removeEventListener('statechange', check);
+      if (reg.active && reg.active !== worker) return;
+      console.warn('オフライン対応を準備できませんでした（Service Worker の install に失敗）');
+      setOffline({ state: 'failed' });
+    };
+    worker.addEventListener('statechange', check);
+    check();
+  }
+
+  function askStatus(container) {
+    const send = () => {
+      try {
+        if (container.controller) container.controller.postMessage({ type: 'status' });
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (container.controller) send();
+    else container.addEventListener('controllerchange', send, { once: true });
   }
 
   function checkContent() {
