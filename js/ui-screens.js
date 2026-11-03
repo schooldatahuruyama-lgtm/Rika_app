@@ -1,11 +1,12 @@
-// 各画面の描画（プロフィール、ホーム、学習マップ、ステージ入口、設定）
+// 各画面の描画（プロフィール、ホーム、学習マップ、ステージ入口、設定、解説・問題・学び直し・結果）
 // ブラウザ専用。RikaQuest.ui = { screens, helpers } を作る。
 // 画面の描画関数はすべて screens[name](section, ctx, params) の形。app.go が section を空にしてから呼ぶ。
 //   ctx = { store, record, reg, config, go, save, now, message, setRecord, replaceStore, confirm, clearAll, state, app }
 //   （store・record は getter で、いつも最新の値を返す）
 // 描画関数が関数を返すと、次に別の画面へ移るときに app がそれを呼ぶ（後片付け用）。
 // 利用者の文字はすべて textContent で入れる。innerHTML は figures・mascot が返す SVG 文字列だけに使う。
-// Task 12 は lesson・problem・offer・result を、Task 13 は record を、screens に上書きで登録する。
+// 問題の操作部品は ui-problems.js（RikaQuest.ui.problems。このファイルより先に読み込む）。
+// Task 13 は record を screens に上書きで登録する。
 (function (root) {
   'use strict';
 
@@ -578,7 +579,356 @@
     reader.readAsText(file);
   }
 
-  // ---- まだ作っていない画面（Task 12・13 が置きかえる） ----
+  // ---- 学習画面（解説・問題・学び直しの提案・結果） ----
+  // 進行は ctx.state.session（session.js の形）。画面は app.renderSession() が current() の view で選ぶ。
+  // 操作は ctx.app.next() / answer(value) / choose(choice) / stopSession() を呼ぶ（記録・保存は app がする）。
+
+  const LEVELUP_MS = 1500;   // レベルアップの祝いを出しておく時間（タップで消せる）
+
+  // 経験値の種類の名前（結果画面の内訳。並びもこの順）
+  const XP_LABEL = {
+    answer: '答えた',
+    correct: '正解',
+    firstTry: '1回目で正解',
+    retryCorrect: '復習で正解',
+    learnback: '学び直し',
+    lessonRead: '解説を読んだ',
+    stageClear: 'ステージクリア',
+    daily: '今日の学習',
+  };
+
+  function sessionStep(session) {
+    return session && Array.isArray(session.queue) ? session.queue[session.index] || null : null;
+  }
+
+  function stageTitleOf(ctx, stageId) {
+    const stage = stageId ? ctx.reg.stage(stageId) : null;
+    return stage ? stage.title : '';
+  }
+
+  // 画面の上: 何の学習か（左）と「やめる」（右）
+  function learnBar(ctx, title) {
+    return el('div', { class: 'learn-bar' }, [
+      el('p', { class: 'learn-title', text: title }),
+      button('やめる', () => ctx.app.stopSession(), 'btn-quiet'),
+    ]);
+  }
+
+  function sessionTitle(ctx, session) {
+    if (session.kind === 'review') {
+      const c = ctx.reg.concept(session.conceptId);
+      return '復習: ' + (c ? c.title : '');
+    }
+    return stageTitleOf(ctx, session.stageId);
+  }
+
+  // 解説カードの中身（文と図）
+  function lessonCardBody(card) {
+    const children = [];
+    if (card.figure) children.push(svgBox(RQ.figures.sceneSvg(card.figure), 'figure-box'));
+    children.push(el('p', { class: 'lesson-text', text: card.text }));
+    return children;
+  }
+
+  // 「解説を見る」で開く解説のステージ: ステージの warmup・main・retry はそのステージ、
+  // check 問題と復習は、表示中の問題の概念の lessonStageId
+  function lessonStageForProblem(ctx, session, problem, phase) {
+    if (session.kind === 'stage' && phase !== 'check') return session.stageId;
+    const concept = problem ? ctx.reg.concept(problem.concept) : null;
+    return concept ? concept.lessonStageId : session.stageId;
+  }
+
+  // 解説のモーダル（進行は変えない。lessonRead も出さない）
+  function openLessonDialog(ctx, stageId) {
+    const stage = stageId ? ctx.reg.stage(stageId) : null;
+    const dialog = document.getElementById('lesson-dialog');
+    if (!dialog || !stage) return;
+    document.getElementById('lesson-dialog-title').textContent = '解説: ' + stage.title;
+    const body = document.getElementById('lesson-dialog-body');
+    body.replaceChildren();
+    (stage.lessons || []).forEach((c, i) => {
+      body.append(card([
+        el('p', { class: 'muted', text: (i + 1) + ' / ' + stage.lessons.length }),
+      ].concat(lessonCardBody(c)), 'lesson-card'));
+    });
+    body.scrollTop = 0;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+    document.getElementById('lesson-dialog-close').focus();
+  }
+
+  function closeLessonDialog() {
+    const dialog = document.getElementById('lesson-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+    else dialog.removeAttribute('open');
+  }
+
+  // ---- 解説カード ----
+
+  function renderLesson(section, ctx) {
+    const session = ctx.state.session;
+    const view = RQ.session.current(session, ctx.reg);
+    const step = sessionStep(session);
+    const lessonStageId = step && step.lessonStageId;
+    const isOwn = lessonStageId === session.stageId;
+    section.append(learnBar(ctx, (isOwn ? '解説: ' : '学び直し: ') + stageTitleOf(ctx, lessonStageId)));
+
+    const after = session.queue[session.index + 1];
+    const isLast = view.index === view.total - 1;
+    const nextLabel = isLast && after && after.kind === 'warmup' ? '予想してみよう' : '次へ';
+    const nextBtn = button(nextLabel, () => ctx.app.next(), 'btn-primary btn-block');
+
+    section.append(card([
+      el('p', { class: 'card-count', text: (view.index + 1) + ' / ' + view.total }),
+    ].concat(lessonCardBody(view.card)), 'lesson-card'));
+    section.append(nextBtn);
+    nextBtn.focus({ preventScroll: true });
+  }
+
+  // ---- 問題とフィードバック ----
+
+  // answered: 解答済み（フィードバック表示中）なら、いま答えた問題の番号を出す
+  function phaseLabel(ctx, session, phase, answered) {
+    if (phase === 'warmup') return '予想';
+    if (phase === 'retry') return '類題';
+    if (phase === 'check') {
+      const lb = session.learnback;
+      const basic = lb ? ctx.reg.concept(lb.basicId) : null;
+      return '確認問題' + (basic ? '（' + basic.title + '）' : '');
+    }
+    if (phase === 'review') {
+      const done = (session.results.review || []).length;
+      const total = session.queue.filter((s) => s.phase === 'review').length;
+      return '復習 ' + Math.min(answered ? done : done + 1, total) + ' / ' + total;
+    }
+    const stage = ctx.reg.stage(session.stageId);
+    const total = stage ? (stage.problems || []).length : 0;
+    const done = (session.results.main || []).length;
+    return '問題 ' + Math.min(answered ? done : done + 1, total) + ' / ' + total;
+  }
+
+  function feedbackPanel(ctx, correct, feedback, phase) {
+    const fb = feedback || {};
+    const panel = el('div', { class: 'card feedback ' + (correct ? 'is-ok' : 'is-warn'), role: 'status', tabindex: '-1' }, [
+      el('p', { class: 'feedback-head', text: correct ? '正解！' : 'おしい' }),
+      !correct ? el('p', { class: 'feedback-sub', text: 'ここを見直そう' }) : null,
+      fb.explanation ? el('p', { class: 'feedback-text', text: fb.explanation }) : null,
+      !correct && fb.hint ? el('p', { class: 'feedback-hint' }, [el('strong', { text: 'ヒント: ' }), fb.hint]) : null,
+      phase === 'warmup' ? el('p', { class: 'muted', text: '予想は経験値に関係しません。' }) : null,
+    ]);
+    const nextBtn = button('次へ', () => ctx.app.next(), 'btn-primary btn-block');
+    panel.append(nextBtn);
+    return { panel, nextBtn };
+  }
+
+  function renderProblem(section, ctx) {
+    const session = ctx.state.session;
+    const view = RQ.session.current(session, ctx.reg);
+    const problem = view.problem;
+    const phase = view.phase;
+    section.append(learnBar(ctx, sessionTitle(ctx, session)));
+
+    const lessonStageId = lessonStageForProblem(ctx, session, problem, phase);
+    section.append(el('div', { class: 'problem-head' }, [
+      el('span', { class: 'tag phase-tag phase-' + phase, text: phaseLabel(ctx, session, phase, view.kind === 'feedback') }),
+      lessonStageId ? button('解説を見る', () => openLessonDialog(ctx, lessonStageId), 'btn-quiet') : null,
+    ]));
+
+    const body = el('div', { class: 'card problem-card' }, [el('p', { class: 'prompt', text: problem.prompt })]);
+    section.append(body);
+
+    function showFeedback(correct, feedback) {
+      const f = feedbackPanel(ctx, correct, feedback, phase);
+      section.append(f.panel);
+      f.panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      f.nextBtn.focus({ preventScroll: true });
+    }
+
+    if (view.kind === 'feedback') {
+      // 解答済み（再読み込みで戻ってきたときなど）: 図だけを見せてフィードバックへ
+      const fig = RQ.ui.problems.staticFigure(problem);
+      if (fig) body.append(fig);
+      showFeedback(view.correct, view.feedback);
+      return closeLessonDialog;
+    }
+
+    RQ.ui.problems.render(body, problem, (value) => {
+      const r = ctx.app.answer(value);
+      if (!r || r.invalid) return { invalid: true };
+      showFeedback(r.correct, r.feedback);
+      return r;
+    }, { config: ctx.config });
+    return closeLessonDialog;
+  }
+
+  // ---- 学び直しの提案 ----
+
+  function renderOffer(section, ctx) {
+    const session = ctx.state.session;
+    const view = RQ.session.current(session, ctx.reg);
+    const concept = view.concept || {};
+    const basic = view.basic || {};
+    section.append(learnBar(ctx, sessionTitle(ctx, session)));
+    section.append(el('div', { class: 'hero offer-hero' }, [
+      svgBox(RQ.mascot.svg(88), 'mascot-box'),
+      el('div', { class: 'hero-text' }, [
+        el('h1', { text: basic.title + 'に戻って確かめよう' }),
+        el('p', { text: '「' + concept.title + '」で 2 回続けておしかったね。' }),
+      ]),
+    ]));
+    section.append(card([
+      el('p', { text: '「' + basic.title + '」の確認問題を ' + ctx.config.learnback.checkCount + ' 問だけ解いてから、続きに戻ります。' }),
+      el('p', { class: 'muted', text: '「あとで」を選ぶと、このまま続きに進みます。' }),
+    ]));
+    section.append(el('div', { class: 'stack' }, [
+      button('戻る', () => ctx.app.choose('accept'), 'btn-primary btn-block'),
+      button('あとで', () => ctx.app.choose('later'), 'btn-block'),
+    ]));
+  }
+
+  // ---- 結果 ----
+
+  // この学習でついた経験値（xpLog の、学習を始めてからの分。ステージの学習はそのステージの分だけ）
+  function sessionXpEntries(rec, session) {
+    const start = Date.parse(session.startedAt);
+    const stageId = session.kind === 'stage' ? session.stageId : null;
+    return (rec.xpLog || []).filter((e) => {
+      const at = Date.parse(e.at);
+      if (!(at >= start)) return false;
+      return (e.stageId === undefined || e.stageId === null ? null : e.stageId) === stageId;
+    });
+  }
+
+  function xpBreakdown(entries) {
+    const groups = {};
+    entries.forEach((e) => {
+      const g = groups[e.kind] || (groups[e.kind] = { count: 0, amount: 0 });
+      g.count += 1;
+      g.amount += e.amount;
+    });
+    const kinds = Object.keys(XP_LABEL).filter((k) => groups[k]).concat(Object.keys(groups).filter((k) => !XP_LABEL[k]));
+    return kinds.map((k) => ({ kind: k, label: XP_LABEL[k] || k, count: groups[k].count, amount: groups[k].amount }));
+  }
+
+  function renderResult(section, ctx) {
+    const result = ctx.state.lastResult;
+    const session = result.session;
+    const sum = result.summary;
+    const rec = ctx.record;
+    const stopped = sum.ended === 'stopped';
+    const isStage = session.kind === 'stage';
+
+    const entries = sessionXpEntries(rec, session);
+    const gained = entries.reduce((a, e) => a + e.amount, 0);
+    const levelAfter = rec.level;
+    const levelBefore = RQ.xp.levelFor(rec.xp - gained, ctx.config);
+
+    // 見出しとマスコット
+    const heading = stopped ? '今日はここまで。明日また挑戦しよう'
+      : isStage ? 'ステージクリア！' : '復習おつかれさま！';
+    const say = stopped ? 'よくがんばったね。続きはまた明日！'
+      : sum.firstTryCount === sum.mainCount && sum.mainCount > 0 ? '全部 1 回目で正解！すごい！' : 'よくがんばったね！';
+    section.append(el('div', { class: 'hero' }, [
+      svgBox(RQ.mascot.svg(96), 'mascot-box'),
+      el('div', { class: 'hero-text' }, [
+        el('h1', { text: heading }),
+        el('p', { text: RQ.mascot.NAME + '「' + say + '」' }),
+      ]),
+    ]));
+
+    // できたこと
+    const done = [cardTitle('できたこと')];
+    if (isStage) {
+      done.push(el('p', { class: 'muted', text: stageTitleOf(ctx, session.stageId) }));
+      done.push(el('p', { class: 'result-big' }, [
+        '1 回目で正解 ', el('strong', { text: sum.firstTryCount + ' / ' + sum.mainCount }), ' 問',
+      ]));
+      if (!stopped) done.push(el('div', { class: 'row' }, [el('span', { text: '星' }), starsView(sum.stars)]));
+      else done.push(el('p', { class: 'muted', text: 'このステージは「途中」のまま。次はもう一度、最初から挑戦しよう。' }));
+    } else {
+      const rs = session.results.review || [];
+      done.push(el('p', { class: 'result-big' }, ['正解 ', el('strong', { text: rs.filter((r) => r.correct).length + ' / ' + rs.length }), ' 問']));
+    }
+    section.append(card(done));
+
+    // 復習で伸びたこと
+    const improved = (sum.improvedConcepts || []).map((id) => ctx.reg.concept(id)).filter(Boolean);
+    section.append(card([
+      cardTitle('復習で伸びたこと'),
+      improved.length > 0
+        ? el('ul', { class: 'concept-list' }, improved.map((c) => el('li', { text: c.title })))
+        : el('p', { class: 'muted', text: '次は復習で伸ばそう' }),
+    ]));
+
+    // 獲得した経験値の内訳
+    const rows = xpBreakdown(entries);
+    const table = el('table', { class: 'xp-table' }, [
+      el('tbody', {}, rows.map((r) => el('tr', {}, [
+        el('th', { scope: 'row', text: r.label }),
+        el('td', { class: 'xp-count', text: r.count > 1 ? '×' + r.count : '' }),
+        el('td', { class: 'xp-amount', text: '+' + r.amount }),
+      ]))),
+      el('tfoot', {}, el('tr', {}, [
+        el('th', { scope: 'row', text: '合計' }), el('td', {}), el('td', { class: 'xp-amount', text: '+' + gained + ' XP' }),
+      ])),
+    ]);
+    section.append(card([
+      cardTitle('獲得した経験値'),
+      rows.length > 0 ? table : el('p', { class: 'muted', text: '今回の経験値はありません。' }),
+      session.xpMultiplier < 1 ? el('p', { class: 'muted', text: 'もう一度の挑戦なので、経験値は半分です。' }) : null,
+      el('p', { class: 'level-change' }, levelAfter > levelBefore
+        ? ['レベル ', el('strong', { text: 'Lv ' + levelBefore + ' → Lv ' + levelAfter }), ' にアップ！']
+        : ['レベル ', el('strong', { text: 'Lv ' + levelAfter }), '（あと ' + Math.max(0, RQ.xp.nextLevelXp(levelAfter, ctx.config) - rec.xp) + ' XP で Lv ' + (levelAfter + 1) + '）']),
+    ]));
+
+    // 次のおすすめ
+    const next = [cardTitle('次のおすすめ')];
+    const suggested = sum.suggestedConcept ? ctx.reg.concept(sum.suggestedConcept) : null;
+    if (suggested) {
+      next.push(el('p', { text: suggested.title + 'を確かめるのがおすすめ' }));
+      next.push(button(suggested.title + 'を復習する', () => ctx.go('problem', { review: suggested.id }), 'btn-block'));
+    }
+    const nextStage = isStage && !stopped ? ctx.reg.nextStage(session.stageId) : null;
+    const canNext = nextStage && RQ.recommend.isUnlocked(ctx.reg, rec, nextStage.id);
+    if (stopped && isStage) next.push(el('p', { text: '明日、もう一度「' + stageTitleOf(ctx, session.stageId) + '」に挑戦しよう。' }));
+    else if (canNext) next.push(el('p', { text: '次のステージ「' + nextStage.title + '」が開いたよ。' }));
+    else if (!suggested) next.push(el('p', { class: 'muted', text: '学習マップから、好きなステージを選ぼう。' }));
+    section.append(card(next));
+
+    const buttons = el('div', { class: 'stack' });
+    if (canNext) buttons.append(button('次のステージへ', () => ctx.go('stage', { stageId: nextStage.id }), 'btn-primary btn-block'));
+    buttons.append(button('ホームへ', () => ctx.go('home'), 'btn-block' + (canNext ? '' : ' btn-primary')));
+    buttons.append(button('マップへ', () => ctx.go('map'), 'btn-block'));
+    section.append(buttons);
+
+    // レベルアップの祝い（1.5 秒。タップで消える）。一度見せたら同じ結果では出さない
+    let timer = null;
+    let overlay = null;
+    if (levelAfter > levelBefore && !result.celebrated) {
+      result.celebrated = true;
+      overlay = el('div', { class: 'levelup-overlay', role: 'dialog', 'aria-label': 'レベルアップ', tabindex: '-1' });
+      overlay.innerHTML = RQ.mascot.celebrateMarkup('レベル ' + levelAfter + ' になった！');
+      overlay.append(el('p', { class: 'levelup-skip', text: 'タップでとじる' }));
+      const close = () => {
+        if (timer) clearTimeout(timer);
+        timer = null;
+        if (overlay) overlay.remove();
+        overlay = null;
+      };
+      overlay.addEventListener('click', close);
+      overlay.addEventListener('keydown', close);
+      document.body.append(overlay);
+      overlay.focus({ preventScroll: true });
+      timer = setTimeout(close, LEVELUP_MS);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (overlay) overlay.remove();
+    };
+  }
+
+  // ---- まだ作っていない画面（Task 13 が置きかえる） ----
 
   function placeholder(title) {
     return function (section, ctx) {
@@ -596,17 +946,18 @@
     map: renderMap,
     stage: renderStage,
     settings: renderSettings,
-    lesson: placeholder('解説'),
-    problem: placeholder('問題'),
-    offer: placeholder('学び直し'),
-    result: placeholder('結果'),
+    lesson: renderLesson,
+    problem: renderProblem,
+    offer: renderOffer,
+    result: renderResult,
     record: placeholder('記録'),
   };
 
   const helpers = {
     el, append, svgBox, button, card, cardTitle, topBar, avatarOf, avatarBadge, starsView, statusTag,
     currentProfile, areasInOrder, areaOfStage, weekDates, downloadText, confirm: confirmDialog,
-    AVATARS, STATUS_LABEL, UNIT_ID,
+    openLessonDialog, closeLessonDialog, sessionXpEntries, xpBreakdown,
+    AVATARS, STATUS_LABEL, UNIT_ID, XP_LABEL,
   };
 
   const api = {
@@ -614,7 +965,9 @@
     // 実装計画の名前でも呼べるようにする
     renderProfile, renderHome, renderMap, renderSettings,
     renderStageEntry: (section, ctx, stageId) => renderStage(section, ctx, { stageId }),
+    renderLesson, renderProblem, renderOffer, renderResult,
   };
 
-  root.RikaQuest = Object.assign(root.RikaQuest || {}, { ui: api });
+  // 先に読み込んだ ui-problems.js（RikaQuest.ui.problems）を残したまま足す
+  root.RikaQuest = Object.assign(root.RikaQuest || {}, { ui: Object.assign((root.RikaQuest && root.RikaQuest.ui) || {}, api) });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -51,6 +51,15 @@
     </form>
   </dialog>
 
+  <!-- 「解説を見る」で開く解説カード（進行は変えない） -->
+  <dialog id="lesson-dialog" class="lesson-dialog" aria-labelledby="lesson-dialog-title">
+    <form method="dialog" class="lesson-dialog-head">
+      <h2 id="lesson-dialog-title" class="lesson-dialog-title"></h2>
+      <button type="submit" value="close" class="btn" id="lesson-dialog-close">閉じる</button>
+    </form>
+    <div id="lesson-dialog-body" class="lesson-dialog-body"></div>
+  </dialog>
+
   <script src="js/config.js"></script>
   <script src="js/geometry.js"></script>
   <script src="js/content-registry.js"></script>
@@ -64,6 +73,7 @@
   <script src="js/figures.js"></script>
   <script src="js/mascot.js"></script>
   <script src="content/light.js"></script>
+  <script src="js/ui-problems.js"></script>
   <script src="js/ui-screens.js"></script>
   <script src="js/app.js"></script>
 </body>

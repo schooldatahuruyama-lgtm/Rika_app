@@ -8,6 +8,9 @@
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
 //   app.offline               … オフライン教材の状態（Task 14 が書く。app.state.offline と同じ値）
+//   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
+//               app.choose('accept'|'later') / app.stopSession()。出来事はそのつど record.applyEvents で記録に入れ、
+//               ステージの学習なら record.setResume で再開位置も保存する。終わったら finishStage / markReviewDone
 // 画面を足すとき: index.html に <section id="screen-<name>" class="screen" hidden> を置き、
 //   RikaQuest.ui.screens[name] = function (section, ctx, params) { ... } を登録する（app.js より前に読み込む）。
 (function (root) {
@@ -29,7 +32,8 @@
     config: RQ.config,
     screen: null,
     params: null,
-    session: null,          // Task 12: いま進めている学習（session.js の形）
+    session: null,          // いま進めている学習（session.js の形）
+    lastResult: null,       // 終わった学習の結果 { session, summary, celebrated }（結果画面が使う）
     offline: null,          // Task 14: オフライン教材の状態
     protectedStorage: false,
     contentErrors: [],
@@ -173,6 +177,153 @@
     box.append(document.createTextNode(p.nickname));
   }
 
+  // ---- 学習の進行（session.js を動かし、出来事を記録に入れて保存する） ----
+  // go('lesson' | 'problem', { stageId, mode }) / ({ stageId, resume: true }) / ({ review: conceptId }) で始め、
+  // renderSession() が current() の view に合う画面（lesson / problem / offer / result）を { session: true } で開く。
+
+  const SESSION_SCREENS = ['lesson', 'problem', 'offer'];
+
+  // params から学習を始める。始められなければ移れる画面へ回して false
+  function startSession(params) {
+    const rec = currentRecord();
+    const now = new Date();
+    const S = RQ.session;
+    try {
+      if (params.review) {
+        state.session = S.startReview(state.reg, rec, params.review, now, state.config);
+      } else if (params.resume) {
+        const resume = RQ.record.stageState(rec, params.stageId).resume;
+        if (!isObject(resume) || !Array.isArray(resume.queue)) {
+          go('stage', { stageId: params.stageId });
+          message('続きの記録が見つかりませんでした。', 'warn');
+          return false;
+        }
+        state.session = resume;
+      } else {
+        state.session = S.startStage(state.reg, rec, params.stageId, params.mode === 'lesson' ? 'lesson' : 'problem', now, state.config);
+      }
+    } catch (e) {
+      console.error(e);
+      state.session = null;
+      go('home');
+      message('学習を始められませんでした。', 'warn');
+      return false;
+    }
+    state.lastResult = null;
+    return true;
+  }
+
+  // 教材が変わって、保存した続きの問題・カードが見つからないとき
+  function viewIsBroken(view) {
+    if (view.kind === 'lesson') return !view.card;
+    if (view.kind === 'problem' || view.kind === 'feedback') return !view.problem;
+    if (view.kind === 'offer') return !view.concept || !view.basic;
+    return false;
+  }
+
+  function renderSession() {
+    const s = state.session;
+    if (!s) { go('home'); return; }
+    const view = RQ.session.current(s, state.reg);
+    if (view.kind === 'ended') {
+      finishSession();
+      return;
+    }
+    if (viewIsBroken(view)) {
+      state.session = null;
+      if (s.kind === 'stage') {
+        setRecord(RQ.record.setResume(currentRecord(), s.stageId, null));
+        go('stage', { stageId: s.stageId });
+      } else {
+        go('home');
+      }
+      message('教材が変わったため、続きから始められませんでした。最初から始めてください。', 'warn');
+      return;
+    }
+    go(view.kind === 'lesson' ? 'lesson' : view.kind === 'offer' ? 'offer' : 'problem', { session: true });
+  }
+
+  // 出来事を記録に入れ、ステージの学習なら再開位置も保存する。終わっていれば結果をまとめる
+  function commitSession(newSession, events) {
+    const now = new Date();
+    let rec = currentRecord();
+    if (events && events.length > 0) {
+      rec = RQ.record.applyEvents(rec, events, { now, multiplier: newSession.xpMultiplier, stageId: newSession.stageId }, state.config);
+    }
+    // 復習は再開しない（ステージの進捗・再開位置を変えない）
+    if (newSession.kind === 'stage') rec = RQ.record.setResume(rec, newSession.stageId, newSession);
+    state.session = newSession;
+    if (RQ.session.current(newSession, state.reg).kind === 'ended') {
+      rec = closeRecord(rec, newSession, now);
+    }
+    setRecord(rec);
+  }
+
+  // 終わった学習を記録に書く: ステージは finishStage（再開位置を消す）、復習は reviewDone
+  function closeRecord(rec, s, now) {
+    const sum = RQ.session.summary(s, state.reg, state.config);
+    let next = rec;
+    if (s.kind === 'stage') {
+      next = RQ.record.finishStage(rec, { stageId: s.stageId, stars: sum.stars, cleared: sum.ended === 'completed' }, now);
+    } else {
+      next = RQ.record.markReviewDone(rec, s.conceptId, RQ.xp.localDate(now));
+    }
+    state.lastResult = { session: s, summary: sum, celebrated: false };
+    state.session = null;
+    return next;
+  }
+
+  // 終わった学習の結果画面へ（まだ記録に書いていなければ書く）
+  function finishSession() {
+    const s = state.session;
+    if (s) setRecord(closeRecord(currentRecord(), s, new Date()));
+    if (state.lastResult) go('result', { session: true });
+    else go('home');
+  }
+
+  function sessionAnswer(value) {
+    const s = state.session;
+    if (!s) return { invalid: true };
+    const r = RQ.session.answer(s, state.reg, value, state.config);
+    if (r.invalid) return r;
+    commitSession(r.session, r.events);
+    return r;
+  }
+
+  function sessionNext() {
+    const s = state.session;
+    if (!s) { go('home'); return; }
+    const r = RQ.session.next(s, state.reg, state.config);
+    if (r.session !== s || r.events.length > 0) commitSession(r.session, r.events);
+    renderAfterCommit();
+  }
+
+  // choose も stageClear を返すことがあるので、events は必ず記録に入れる
+  function sessionChoose(choice) {
+    const s = state.session;
+    if (!s) { go('home'); return; }
+    const r = RQ.session.choose(s, state.reg, choice, state.config);
+    if (r.session !== s || r.events.length > 0) commitSession(r.session, r.events);
+    renderAfterCommit();
+  }
+
+  function renderAfterCommit() {
+    if (state.session) renderSession();
+    else if (state.lastResult) go('result', { session: true });
+    else go('home');
+  }
+
+  // 「やめる」: ステージは再開位置を保存してホームへ（復習は再開しないので捨てる）
+  function stopSession() {
+    const s = state.session;
+    state.session = null;
+    if (s && s.kind === 'stage' && !s.ended) {
+      setRecord(RQ.record.setResume(currentRecord(), s.stageId, s));
+    }
+    go('home');
+    if (s && s.kind === 'stage') message('途中まで保存しました。ステージの「続きから」で再開できます。', 'ok');
+  }
+
   // ---- 画面の切り替え ----
 
   function makeCtx() {
@@ -200,6 +351,15 @@
     // プロフィールがないと開けない画面は、プロフィール画面へ
     if (NO_PROFILE_SCREENS.indexOf(screen) === -1 && !currentProfile()) {
       screen = 'profile';
+      p = {};
+    }
+    // 学習の画面: 始める指定なら session を作ってから、いまの view の画面へ
+    if ((screen === 'lesson' || screen === 'problem') && !p.session && (p.stageId || p.review)) {
+      if (startSession(p)) renderSession();
+      return;
+    }
+    if ((SESSION_SCREENS.indexOf(screen) !== -1 && !state.session) || (screen === 'result' && !state.lastResult)) {
+      screen = 'home';
       p = {};
     }
     const screens = (RQ.ui && RQ.ui.screens) || {};
@@ -330,6 +490,13 @@
     replaceStore,
     clearAll,
     normalizeStore,
+    // 学習の進行（ui-screens の学習画面が呼ぶ）
+    startSession,
+    renderSession,
+    answer: sessionAnswer,
+    next: sessionNext,
+    choose: sessionChoose,
+    stopSession,
     get record() { return currentRecord(); },
     // Task 14: app.offline = { state, version, at } と書ける（state.offline と同じ値）
     get offline() { return state.offline; },
