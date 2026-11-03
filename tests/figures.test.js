@@ -48,6 +48,22 @@ test('sceneSvg: draggableId の item に is-draggable が付く', () => {
   assert.match(s, /<g [^>]*data-item-id="obj"[^>]*class="[^"]*is-draggable/);
 });
 
+test('sceneSvg: draggableId の item だけ、先頭に透明な当たり判定（r ≥ 22）が付く', () => {
+  const scene = { width: 320, height: 240, items: [
+    { type: 'object', id: 'obj', x: 60, y: 160, height: 50, label: '物体' },
+    { type: 'point', id: 'p', x: 200, y: 100 },
+  ] };
+  assert.ok(!figures.sceneSvg(scene).includes('hit-area'));
+  const s = figures.sceneSvg(scene, { draggableId: 'obj' });
+  const m = s.match(/<g [^>]*data-item-id="obj"[^>]*>(<circle class="hit-area" cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"[^>]*\/>)/);
+  assert.ok(m, '当たり判定が g の先頭にある');
+  assert.equal(m[2], '60');
+  assert.equal(m[3], '135');   // object は矢印の中ほど (y - height/2)
+  assert.ok(Number(m[4]) >= 22);
+  assert.ok(m[1].includes('fill="transparent"') && m[1].includes('pointer-events="all"'));
+  assert.equal(s.split('hit-area').length - 1, 1, 'ドラッグ対象でない item には付かない');
+});
+
 test('sceneSvg: extraRays は線として描かれる', () => {
   const s = figures.sceneSvg({ width: 320, height: 240, items: [] }, { extraRays: [{ x1: 1, y1: 2, x2: 300, y2: 200 }] });
   assert.ok(s.includes('<line x1="1" y1="2" x2="300" y2="200"'));

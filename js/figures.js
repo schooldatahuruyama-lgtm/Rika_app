@@ -28,6 +28,7 @@
   };
 
   const MIN_REGION_R = 22;     // タップ対象の半径の下限（直径 44px 以上）
+  const HIT_R = 28;            // ドラッグ対象の当たり判定の半径（直径 56px）
   const NORMAL_LENGTH = 120;   // 法線の長さ
   const LABEL_SIZE = 16;
 
@@ -218,6 +219,27 @@
     },
   };
 
+  // item の中心（ドラッグの当たり判定を置く場所）
+  function centerOf(it, ctx) {
+    const n = (v) => Number(v) || 0;
+    switch (it.type) {
+      case 'object': return { x: n(it.x), y: n(it.y) - n(it.height) / 2 };
+      case 'screen': return { x: n(it.x), y: (n(it.y1) + n(it.y2)) / 2 };
+      case 'mirror':
+      case 'ray': return { x: (n(it.x1) + n(it.x2)) / 2, y: (n(it.y1) + n(it.y2)) / 2 };
+      case 'lens': return { x: n(it.cx), y: n(it.cy) };
+      case 'boundary':
+      case 'axis': return { x: ctx.width / 2, y: n(it.y) };
+      default: return { x: n(it.x), y: n(it.y) };   // point / region / eye / lamp / label / normal
+    }
+  }
+
+  // ドラッグ対象の透明な当たり判定（直径 56px。タッチ対象 44px 以上の約束を守る）
+  function hitArea(it, ctx) {
+    const c = centerOf(it, ctx);
+    return tag('circle', { class: 'hit-area', cx: c.x, cy: c.y, r: HIT_R, fill: 'transparent', 'pointer-events': 'all' });
+  }
+
   const ARROW_DEFS = '<defs><marker id="scene-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">' +
     '<path d="M0,0 L10,5 L0,10 z" fill="' + COLOR.orange + '"/></marker></defs>';
 
@@ -240,7 +262,7 @@
         'data-item-type': it.type,
         class: cls,
         style: draggable ? 'cursor:grab' : null,
-      }) + '>' + DRAW[it.type](it, { width, height, selected }) + '</g>';
+      }) + '>' + (draggable ? hitArea(it, { width, height }) : '') + DRAW[it.type](it, { width, height, selected }) + '</g>';
     }
     const extra = Array.isArray(o.extraRays) ? o.extraRays : [];
     if (extra.length) {
