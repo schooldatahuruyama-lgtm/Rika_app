@@ -1,0 +1,13 @@
+# アプリから書き出した記録（生徒の学習記録を含む可能性がある）
+rika-quest-*.json
+
+# 手元だけで使う資料
+samples/
+
+node_modules/
+
+# Claude Code の作業ツリー（エージェントが一時的に使う）
+.claude/worktrees/
+
+# サブエージェント開発（SDD）の作業用フォルダ
+.superpowers/

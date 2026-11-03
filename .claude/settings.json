@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/codex-review.ps1:*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File tools/codex-review.ps1:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/codex-implement.ps1:*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File tools/codex-implement.ps1:*)"
+    ]
+  }
+}
