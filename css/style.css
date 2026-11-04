@@ -1016,6 +1016,40 @@ svg.scene .scene-label {
   margin-top: 12px;
 }
 
+/* 解説文・解答後の説明文の中の大切な言葉（**語句**）。赤は使わない */
+.term {
+  color: #1A5CFF;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* 解説カードの下の「大切な言葉」の一覧 */
+.term-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.term-list-label {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.term-chip {
+  background: #E8EFFF;
+  color: #1A5CFF;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 18px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 .prompt {
   font-size: 20px;
   font-weight: bold;

@@ -10,7 +10,7 @@
   const RULES = {
     retryPoolMin: 2,        // 概念ごとの類題の最小数
     checkPoolMin: 3,        // 概念ごとの確認問題の最小数
-    problems: [4, 5],       // ステージの問題数
+    problems: [4, 6],       // ステージの問題数（ふつうの問題 4〜5 問 ＋ 用語問題 1 問）
     lessons: [2, 4],        // ステージのレッスンカード数
   };
 
@@ -191,8 +191,13 @@
         if (!Array.isArray(s[f])) errors.push(name + ' の ' + f + ' が配列ではありません');
       });
       list(s.lessons).forEach((c, i) => {
-        if (!isObject(c)) errors.push(name + ' の lessons[' + i + '] がカードの形ではありません');
-        else cards.push(c);
+        if (!isObject(c)) { errors.push(name + ' の lessons[' + i + '] がカードの形ではありません'); return; }
+        cards.push(c);
+        // 用語の記法 **語句**（js/richtext.js）。閉じていない ** と、中身のない **** を見つける
+        if (typeof c.text === 'string') {
+          if ((c.text.split('**').length - 1) % 2 === 1) errors.push(name + ' の lessons[' + i + '] の ** が閉じていません');
+          if (c.text.indexOf('****') !== -1) errors.push(name + ' の lessons[' + i + '] に空の用語（****）があります');
+        }
       });
       if (!has(s.warmup)) errors.push(name + ' に warmup がありません');
       stageProblems(s).forEach(x => addProblem(x.problem, name + ' の ' + x.where));

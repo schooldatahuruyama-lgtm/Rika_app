@@ -671,11 +671,26 @@
     return stageTitleOf(ctx, session.stageId);
   }
 
-  // 解説カードの中身（文と図）
+  // **語句** 記法の文を段落にする（用語は strong.term。innerHTML は使わず、テキストノードで入れる）
+  function richParagraph(className, text) {
+    const p = el('p', { class: className });
+    RQ.richtext.parse(text).forEach((part) => {
+      p.append(part.term ? el('strong', { class: 'term', text: part.text }) : document.createTextNode(part.text));
+    });
+    return p;
+  }
+
+  // 解説カードの中身（図、文、カードに出てきた大切な言葉の一覧）
   function lessonCardBody(card) {
     const children = [];
     if (card.figure) children.push(svgBox(RQ.figures.sceneSvg(card.figure), 'figure-box'));
-    children.push(el('p', { class: 'lesson-text', text: card.text }));
+    children.push(richParagraph('lesson-text', card.text));
+    const terms = RQ.richtext.terms(card.text);
+    if (terms.length > 0) {
+      children.push(el('div', { class: 'term-list' }, [
+        el('span', { class: 'term-list-label', text: '大切な言葉' }),
+      ].concat(terms.map((t) => el('span', { class: 'term-chip', text: t })))));
+    }
     return children;
   }
 
@@ -762,7 +777,7 @@
     const panel = el('div', { class: 'card feedback ' + (correct ? 'is-ok' : 'is-warn'), role: 'status', tabindex: '-1' }, [
       el('p', { class: 'feedback-head', text: correct ? '正解！' : 'おしい' }),
       !correct ? el('p', { class: 'feedback-sub', text: 'ここを見直そう' }) : null,
-      fb.explanation ? el('p', { class: 'feedback-text', text: fb.explanation }) : null,
+      fb.explanation ? richParagraph('feedback-text', fb.explanation) : null,
       !correct && fb.hint ? el('p', { class: 'feedback-hint' }, [el('strong', { text: 'ヒント: ' }), fb.hint]) : null,
       phase === 'warmup' ? el('p', { class: 'muted', text: '予想は経験値に関係しません。' }) : null,
     ]);
