@@ -106,6 +106,16 @@ test('shadow: ITEM_TYPES にあり、x の位置に y1〜y2 の線として描�
   assert.ok(s.includes('opacity="0.55"'));
 });
 
+test('lens: bulge を渡すとふくらみ（path の制御点）が変わる。なければ今までどおり', () => {
+  const svgOf = (extra) => figures.sceneSvg({ width: 320, height: 240, items: [Object.assign({ type: 'lens', cx: 160, cy: 110, height: 140, f: 60 }, extra)] });
+  const plain = svgOf({});
+  assert.ok(plain.includes('Q190.8,110'), plain);   // 既定のふくらみ max(8, 70 × 0.22) × 2 = 30.8
+  assert.equal(svgOf({ bulge: 15.4 }), plain);
+  const fat = svgOf({ bulge: 25.4 });
+  assert.notEqual(fat, plain);
+  assert.ok(fat.includes('Q210.8,110') && fat.includes('Q109.2,110'), fat);
+});
+
 test('sceneSvg: 文字は線より上の層にまとめて描く（ドラッグ対象の文字はその item の中に残す）', () => {
   const scene = { width: 320, height: 240, items: [
     { type: 'lens', cx: 160, cy: 120, height: 140, f: 60 },

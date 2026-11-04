@@ -117,10 +117,15 @@ test('図の item の type はすべて figures.js が描ける種類', () => {
   });
 });
 
-test('動く図（anim）を持つカードは anim が anim.KINDS にあり、静止図（figure）も持つ。straight-1-c3 と reflect-1-c3 の 2 枚', () => {
+test('動く図（anim）を持つカードは anim が anim.KINDS にあり、静止図（figure）も持つ。straight-2-c3 以外の 23 枚', () => {
   const { KINDS } = require('../js/anim.js');
-  const cards = stages.flatMap(s => s.lessons).filter(c => c.anim !== undefined);
-  assert.deepEqual(cards.map(c => c.id).sort(), ['reflect-1-c3', 'straight-1-c3']);
+  const lessons = stages.flatMap(s => s.lessons);
+  const cards = lessons.filter(c => c.anim !== undefined);
+  assert.equal(cards.length, 23);
+  assert.deepEqual(cards.map(c => c.id).sort(), lessons.map(c => c.id).filter(id => id !== 'straight-2-c3').sort());
+  assert.equal(lessons.find(c => c.id === 'straight-2-c3').anim, undefined);
+  // 1 枚に 1 種類（同じ動く図を 2 枚に使わない）
+  assert.equal(new Set(cards.map(c => c.anim)).size, cards.length);
   cards.forEach(c => {
     assert.ok(KINDS.includes(c.anim), c.id + ' の anim ' + c.anim + ' は動く図の種類にない');
     assert.ok(c.figure && Array.isArray(c.figure.items), c.id + ' に静止図がない');

@@ -126,11 +126,12 @@
       return out;
     },
 
-    // 凸レンズ: 両側にふくらんだ形、中心の縦線、焦点 F（左）・F'（右）
+    // 凸レンズ: 両側にふくらんだ形、中心の縦線、焦点 F（左）・F'（右）。bulge（任意）でふくらみを指定できる
     lens(it) {
       const cx = Number(it.cx), cy = Number(it.cy);
       const half = (Number(it.height) || 120) / 2;
-      const bulge = Math.max(8, half * 0.22) * 2;   // 2 次ベジエの制御点（ふくらみはこの半分）
+      // 2 次ベジエの制御点（ふくらみはこの半分）
+      const bulge = (it.bulge !== undefined && it.bulge !== null) ? Number(it.bulge) * 2 : Math.max(8, half * 0.22) * 2;
       const top = num(cy - half), bottom = num(cy + half);
       const d = 'M' + num(cx) + ',' + top +
         ' Q' + num(cx + bulge) + ',' + num(cy) + ' ' + num(cx) + ',' + bottom +
