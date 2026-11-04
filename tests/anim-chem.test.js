@@ -8,6 +8,9 @@ const EXPECTED = [
   'su-water-displacement', 'st-particles', 'st-heating-curve', 'sl-dissolve', 'sl-recrystallize',
   'ch-water-formation', 'ch-open-container',
   'io-ion-formation', 'io-dissociation', 'io-daniell', 'io-migration', 'io-neutralize',
+  // 優先度 B
+  'su-upward-displacement', 'su-downward-displacement', 'su-co2-limewater', 'st-distill-order', 'sl-saturate',
+  'ch-mass-conservation', 'io-ion-count',
 ];
 const PREFIXES = ['su-', 'st-', 'sl-', 'ch-', 'io-'];
 const X_KEYS = ['x', 'x1', 'x2', 'cx'], Y_KEYS = ['y', 'y1', 'y2', 'cy'];
@@ -37,14 +40,14 @@ function sameWithin1px(a, b, label) {
   });
 }
 
-test('KINDS は計画の 12 本（化学の優先度 A）で、名前は単元の接頭辞で始まり、anim.KINDS の後ろに入っている', () => {
+test('KINDS は計画の 19 本（化学の優先度 A 12 本・B 7 本）で、名前は単元の接頭辞で始まり、anim.KINDS の後ろに入っている', () => {
   assert.deepEqual(chem.KINDS, EXPECTED);
   chem.KINDS.forEach(kind => {
     assert.ok(PREFIXES.some(p => kind.startsWith(p)), kind + ' の接頭辞');
     assert.ok(anim.KINDS.includes(kind), kind + ' が anim.KINDS にない');
     assert.equal(anim.periodOf(kind), 4000);
   });
-  assert.equal(anim.KINDS.length, 23 + 12);
+  assert.equal(anim.KINDS.length, 23 + 19);
 });
 
 test('restT は計画どおり', () => {
@@ -52,6 +55,8 @@ test('restT は計画どおり', () => {
     'su-water-displacement': 0, 'st-particles': 0, 'st-heating-curve': 0.99, 'sl-dissolve': 0, 'sl-recrystallize': 0.99,
     'ch-water-formation': 0.99, 'ch-open-container': 0.99, 'io-ion-formation': 0.99, 'io-dissociation': 0.6,
     'io-daniell': 0, 'io-migration': 0.85 * 56 / 96, 'io-neutralize': 0.99,
+    'su-upward-displacement': 0.99, 'su-downward-displacement': 0.99, 'su-co2-limewater': 0.99, 'st-distill-order': 0.99,
+    'sl-saturate': 0.99, 'ch-mass-conservation': 0.99, 'io-ion-count': 0.99,
   };
   chem.KINDS.forEach(kind => assert.ok(near(anim.restT(kind), rest[kind]), kind + ' の restT = ' + anim.restT(kind)));
 });
@@ -390,4 +395,198 @@ test('io-neutralize: 0.99 で H+ と OH- の丸がなく、水の 3 つの丸が
   const first = items('io-neutralize', 0);
   assert.ok(circles(first, c => c.label === 'H+' && c.x === 60 && c.y === 100 && c.fill === 'pink').length === 1);
   assert.ok(circles(first, c => c.label === 'OH-' && c.x === 144 && c.y === 100 && c.fill === 'sky').length === 1);
+});
+
+// ---- 優先度 B ----
+
+// 2 つの丸の中心の距離の、半径の和からのあまり（負なら重なっている）
+const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) - a.r - b.r;
+function minGap(list) {
+  let m = Infinity;
+  for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) m = Math.min(m, gap(list[i], list[j]));
+  return m;
+}
+// トークン名 → 色コード（大文字）
+const hexOf = token => anim.helpers.TOKEN_HEX[token].toUpperCase();
+
+test('su-upward/downward-displacement: 試験管の奥から気体がたまり、もとの空気の粒が口から外へおし出される。粒は重ならない', () => {
+  [['su-upward-displacement', 'purple', y => y, '#E9DDF8'], ['su-downward-displacement', 'gray', y => 260 - y, '#E6E8EC']].forEach(([kind, gas, Y, fill]) => {
+    const region = list => list.find(it => it.type === 'polygon' && it.fill === fill);
+    const air = list => circles(list, c => c.fill === 'white');
+    // t = 0 は静止図と同じ（試験管は空）。空気の粒 4 つは試験管の中
+    const first = items(kind, 0);
+    assert.equal(region(first), undefined, kind + ' の t = 0 に気体がある');
+    assert.equal(air(first).length, 4);
+    air(first).forEach(c => assert.ok(Y(c.y) > 52 && Y(c.y) < 150 && c.x > 150 && c.x < 170, kind + ' の t = 0 の空気の粒'));
+    // 気体の先（試験管の奥からの位置）は t とともに進み、口の手前（y 146）で止まる
+    const depth = list => { const r = region(list); return r ? Math.max(...r.points.map(p => Y(p[1]))) : 52; };
+    let prev = -Infinity;
+    [0.05, 0.2, 0.4, 0.6, 0.8, 0.99].forEach(t => { const d = depth(items(kind, t)); assert.ok(d >= prev - 1e-9, kind + ' t = ' + t); prev = d; });
+    assert.ok(near(depth(items(kind, 0.99)), 146));
+    // 気体の部分は奥（上方置換法は上・下方置換法は下）から始まる
+    assert.ok(near(Math.min(...region(items(kind, 0.5)).points.map(p => Y(p[1]))), 52, 1e-6));
+    // 0.99 で空気の粒はすべて口の外、気体の粒 8 つは試験管の中で濃い色
+    const end = items(kind, 0.99);
+    assert.equal(air(end).length, 4);
+    air(end).forEach(c => assert.ok(Y(c.y) > 150 + 3, kind + ' の 0.99 で口の中に空気の粒が残る y = ' + c.y));
+    const dots = circles(end, c => c.r === 3 && c.fill !== 'white' && c.x > 150 && c.x < 170 && Y(c.y) < 146);
+    assert.equal(dots.filter(c => String(c.fill).toUpperCase() === hexOf(gas)).length, 8, kind + ' の気体の粒');
+    // どの時刻でも、空気の粒・気体の粒・管の中を流れる粒は重ならない
+    for (let n = 0; n < 1000; n++) {
+      const list = circles(items(kind, n / 1000), c => c.r === 3);
+      assert.ok(minGap(list) >= -1e-9, kind + ' t = ' + n / 1000 + ' で粒が重なる');
+    }
+  });
+});
+
+test('su-co2-limewater: にごりの白い粒は 0 から 12 まで増え、どれも石灰水の中。泡はガラス管の先から液面までのあいだ', () => {
+  const cloud = t => circles(items('su-co2-limewater', t), c => c.r === 3.5);
+  assert.equal(cloud(0).length, 0);
+  let prev = 0;
+  [0.1, 0.3, 0.5, 0.7, 0.85, 0.99].forEach(t => { const n = cloud(t).length; assert.ok(n >= prev, 't = ' + t); prev = n; });
+  assert.equal(cloud(0.99).length, 12);
+  cloud(0.99).forEach(c => {
+    assert.ok(c.y - c.r > 161 && c.y + c.r < 215 && c.x - c.r > 181 && c.x + c.r < 259, '粒が石灰水の外 (' + c.x + ',' + c.y + ')');
+    assert.equal(String(c.fill).toUpperCase(), '#FFFFFF');
+  });
+  for (let n = 0; n < 200; n++) {
+    const list = items('su-co2-limewater', n / 200);
+    circles(list, c => c.r === 3 && c.x > 212).forEach(b => assert.ok(b.y >= 161 && b.y <= 201, '泡 y = ' + b.y));
+    // にごりの粒と泡は重ならない
+    const inBeaker = circles(list, c => (c.r === 3 && c.x > 212 && c.y > 161) || c.r === 3.5);
+    assert.ok(minGap(inBeaker) >= 0, 't = ' + n / 200 + ' で石灰水の中の粒が重なる');
+  }
+});
+
+test('st-distill-order: 1 本目 → 2 本目 → 3 本目の順に液がたまり、0.99 で 3 本とも静止図と同じ level 0.3。青い名前はたまっている 1 本だけ', () => {
+  const levels = t => items('st-distill-order', t).filter(it => it.type === 'tube').map(it => it.level);
+  assert.deepEqual(levels(0), [0, 0, 0]);
+  levels(0.99).forEach(v => assert.ok(near(v, 0.3)));
+  // 2 本目がたまり始めるとき、1 本目はたまり終わっている（順に集める）
+  for (let n = 0; n <= 100; n++) {
+    const t = n / 100, [a, b, c] = levels(t);
+    if (b > 0) assert.ok(near(a, 0.3), 't = ' + t);
+    if (c > 0) assert.ok(near(b, 0.3), 't = ' + t);
+    const blue = texts(items('st-distill-order', t)).filter(it => it.color === 'blue');
+    assert.ok(blue.length <= 1, 't = ' + t + ' で青い名前が ' + blue.length);
+  }
+  assert.equal(texts(items('st-distill-order', 0.4)).find(it => it.color === 'blue').text, '2 本目');
+  assert.ok(!texts(items('st-distill-order', 0.99)).some(it => it.color === 'blue'));
+});
+
+test('sl-saturate: とけた粒は 0 → 12 個に増え（それ以上は増えない）、そのあとの結晶は底にたまる。0.99 で山は静止図と同じ。粒は重ならない', () => {
+  const dots = t => circles(items('sl-saturate', t), c => c.fill === 'purple');
+  const pile = t => items('sl-saturate', t).find(it => it.type === 'polygon' && it.points.length === 7);
+  assert.equal(dots(0).length, 0);
+  assert.equal(pile(0), undefined);
+  assert.equal(dots(0.55).length, 12);
+  assert.equal(pile(0.55), undefined, 'とけている間に、とけ残りがある');
+  assert.equal(dots(0.99).length, 12);
+  assert.deepEqual(pile(0.99).points, [[100, 196], [112, 186], [126, 190], [136, 184], [150, 190], [164, 185], [178, 196]]);
+  // 「とけ残り」「飽和水溶液」「もうこれ以上とけない」はとけ残りができてから
+  assert.ok(!texts(items('sl-saturate', 0.55)).some(it => it.text === 'とけ残り'));
+  assert.ok(texts(items('sl-saturate', 0.3)).some(it => it.text === 'まだとける'));
+  ['とけ残り', '飽和水溶液', 'もうこれ以上とけない'].forEach(s => assert.ok(texts(items('sl-saturate', 0.99)).some(it => it.text === s)));
+  let prevPile = 0;
+  for (let n = 0; n < 1000; n++) {
+    const t = n / 1000, ds = dots(t);
+    assert.ok(ds.length <= 12);
+    assert.ok(minGap(ds) >= -1e-9, 't = ' + t + ' でとけた粒が重なる');
+    ds.forEach(c => assert.ok(c.y - c.r > 109 && c.x - c.r > 76 && c.x + c.r < 204, 't = ' + t + ' の粒が水の外'));
+    const k = chem.satPileK(t);
+    assert.ok(k >= prevPile - 1e-12);
+    prevPile = k;
+  }
+});
+
+test('ch-mass-conservation: はかりは各 t で両方とも 80.0 g。泡は 0 → 6 個にふえて上の空間にたまり、0.99 で静止図の泡 (230,100)・(250,88) がある', () => {
+  const bubbles = t => circles(items('ch-mass-conservation', t), c => c.fill === 'white' && c.x > 200);
+  for (let n = 0; n <= 100; n++) {
+    const t = n / 100;
+    const scales = items('ch-mass-conservation', t).filter(it => it.type === 'rect' && it.fill === 'glass');
+    assert.deepEqual(scales.map(r => r.label), ['80.0 g', '80.0 g']);
+    const bs = bubbles(t);
+    assert.ok(minGap(bs) >= 0, 't = ' + t + ' で泡が重なる');
+    bs.forEach(b => assert.ok(b.x - b.r > 211 && b.x + b.r < 269 && b.y - b.r > 65 && b.y + b.r < 158, 't = ' + t + ' の泡が容器の外'));
+  }
+  assert.equal(bubbles(0).length, 0);
+  const end = bubbles(0.99);
+  assert.equal(end.length, 6);
+  assert.ok(end.some(b => near(b.x, 230) && near(b.y, 100) && b.r === 4));
+  assert.ok(end.some(b => near(b.x, 250) && near(b.y, 88) && b.r === 4));
+  end.forEach(b => assert.ok(b.y + b.r < 120, 'たまった泡が水の中'));
+  assert.ok(!texts(items('ch-mass-conservation', 0.5)).some(it => it.text === '変わらない'));
+  assert.ok(texts(items('ch-mass-conservation', 0.99)).some(it => it.text === '変わらない'));
+});
+
+test('io-ion-count: 交点は 4 本の線の上でカーソルの近く、丸どうしは重ならない。中性（10 cm³）で止まって「緑色（中性）」、そこで H+ と OH- は 0、Na+ = Cl-', () => {
+  const LINE = {
+    orange: x => 200 - 160 * (x - 60) / 230,
+    green: () => 120,
+    blue: x => (x <= 175 ? 120 + 80 * (x - 60) / 115 : 200),
+    purple: x => (x <= 175 ? 200 : 200 - 80 * (x - 175) / 115),
+  };
+  const at = t => {
+    const list = items('io-ion-count', t);
+    const cursor = list.find(it => it.type === 'line' && it.color === 'blue' && it.dashed);
+    const dots = circles(list, d => d.r === 4 && LINE[d.fill]);
+    return { list, x: cursor.points[0][0], top: cursor.points[1][1], dots,
+      name: texts(list).find(it => it.x === 118 && it.y === 104).text };
+  };
+  for (let n = 0; n <= 400; n++) {
+    const t = n / 400 * 0.99, s = at(t);
+    assert.equal(s.dots.length, 4);
+    s.dots.forEach(d => {
+      assert.ok(near(d.y, LINE[d.fill](d.x), 1e-9), 't = ' + t + ' の ' + d.fill + ' の丸が線の上にない');
+      assert.ok(Math.abs(d.x - s.x) <= 12, 't = ' + t + ' の ' + d.fill + ' の丸がカーソルから遠い');
+      assert.ok(d.x >= 60 - 1e-9 && d.x <= 290 + 1e-9);
+    });
+    assert.ok(minGap(s.dots) >= 1 - 1e-9, 't = ' + t + ' で交点の丸が重なる');
+    // 中性までは、カーソルが左上のビーカーと文字（y 104 より上）にかからない
+    if (s.x <= 175) assert.ok(s.top >= 110 - 1e-9, 't = ' + t + ' のカーソルの上のはし ' + s.top);
+  }
+  assert.equal(at(0).name, '黄色（酸性）');
+  [0.36, 0.45, 0.54].forEach(t => {
+    const s = at(t);
+    assert.ok(near(s.x, 175), 't = ' + t);
+    assert.equal(s.name, '緑色（中性）');
+    const d = c => s.dots.find(x => x.fill === c);
+    assert.ok(near(d('blue').y, 200) && near(d('purple').y, 200), 'H+ と OH- は 0');
+    assert.ok(Math.abs(d('orange').y - 120) <= 4, 'Na+ が Cl- と同じ数に見えない');
+  });
+  assert.equal(at(0.99).name, '青色（アルカリ性）');
+  assert.ok(near(at(0.99).x, 290));
+  assert.ok(texts(at(0.45).list).some(it => it.text === 'いま 10 cm³'));
+});
+
+// 文字の重なりを見るための箱（全角 1 文字 ＝ size、半角 ＝ size × 0.6 の概算。tests/anim-physics.test.js と同じ）。y はベースライン
+function textBox(it) {
+  const size = Math.max(12, it.size || 16);
+  const w = Array.from(String(it.text)).reduce((s, c) => s + (/[ -~]/.test(c) ? 0.6 : 1) * size, 0);
+  const left = it.anchor === 'middle' ? it.x - w / 2 : it.anchor === 'end' ? it.x - w : it.x;
+  return { left, right: left + w, top: it.y - size * 0.85, bottom: it.y + size * 0.15 };
+}
+const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+const KINDS_B = EXPECTED.slice(12);
+
+test('B の kind: 各 t で文字（text）どうしが重ならず、場面（320×240）の中にある', () => {
+  KINDS_B.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const boxes = items(kind, t).filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+    }
+  });
+});
+
+test('B の kind: 矢印（arrow）の両はしが場面（320×240）の中にある', () => {
+  KINDS_B.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      items(kind, i / 100).filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + i / 100 + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
 });

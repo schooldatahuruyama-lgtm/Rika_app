@@ -150,3 +150,6 @@ Ruling: 各単元の動く図（SVG アニメーション）はユーザーの�
 動く図 A（41 本）: 登録口（anim.register・helpers、opus、指示書 .ai-tasks/20261104-220000）→ 物理 11・地学 12・化学 12・生物 6 を 4 エージェント並行（指示は docs/anim-plan.md の章を直接参照）。Claude round1 ×2（物理・地学: Medium 1/Low 6 → 5 件 fix、2 件見送り / 化学・生物: Medium 4/Low 5 → 全件 fix）→ Claude round2 = 指摘なし → complete（KINDS 64、tests 477）。アプリ上で 7 分野の動きを確認（タブが前面のときだけ rAF が動く）。
 写真 A（生物 5 単元 48 枚）: ChatGPT で生成（Sonnet の courier、1 枚 約 1.5 分）→ 3 エージェントが content に組みこみ（image 部品＋bg つき文字＋引き出し線。指示書 .ai-tasks/20261104-224000）→ Claude round1 Medium 2/Low 5: M2（合計 12.7 MB の PNG を install 時に全部キャッシュ）は 640×480 JPEG 品質 82 に変換して対応（48 枚 1.6 MB）、M1（バッタのあしの位置）は B の後に作り直し、L1 対応、L2・L3 は先生の判断、L4 は次の修正で、L5 見送り。VERSION 2026-11-04-16
 Ruling: 画像は JPEG 640×480 で入れる（PNG 708×531 は 1 枚 200〜490 KB で重い）。113 枚でも約 4 MB の見込み — コスト: 細部がやや甘くなる。
+動く図 B（24 本）: 物理 10・生物 3・化学 7・地学 4（2 エージェント並行）→ Claude round1 Medium 1/Low 8 → 全件 fix → round2 指摘なし（Low 1 記録）→ complete。KINDS 88（光 23＋65）。
+写真 B（地学・化学 48 枚、未使用 3: ion-2-c1 導線の色が逆、sol-4-c4 ろうとの足が壁についていない、volcano-2-c4-2 枚数上限）+ C（14 枚、未使用 2: refract-2-c2 折れ方が弱い、lens-2-c3 動く図あり）: 4＋3 エージェントで組みこみ → Claude round1 Medium 1（12px の文字）/Low 4 → fix → round2 解消、C round1 Low 3 → fix → complete。写真つきカード 97 枚＋問題 5 問、画像 108 枚 3.3 MB。VERSION 2026-11-05-17
+Ruling: 写真の文字は 13px 以上、白い下地つき、右はしは anchor end。写真の上では `photo`・`pointer`・`tag` の部品名に統一（A の body・heredity は `pin` のまま。後で統一）。

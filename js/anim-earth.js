@@ -6,7 +6,7 @@
 (function (root) {
   'use strict';
   const anim = typeof require === 'function' ? require('./anim.js') : root.RikaQuest.anim;
-  const { stage, lerp, deg, wrap, along, onCircle, mix } = anim.helpers;
+  const { stage, lerp, deg, wrap, along, onCircle, mix, ease, osc } = anim.helpers;
 
   // 小数部分（0 以上 1 未満）
   function frac(x) { return x - Math.floor(x); }
@@ -176,6 +176,81 @@
   }
 
   // ================================================================
+  // 地層と大地の変化（strata）
+  // ================================================================
+
+  // content/strata.js の FLOOR・LAND_TOP・riverItems と同じ部品（山から海までの断面。海面は y 138）
+  const FLOOR = '#D8D2C6';
+  const LAND_TOP = [[0, 40], [30, 44], [80, 94], [130, 122], [200, 138]];
+  function riverItems() {
+    return [
+      { type: 'rect', x: 200, y: 138, width: 120, height: 102, fill: 'water', stroke: 'none' },
+      { type: 'polygon', points: [[200, 150], [320, 196], [320, 240], [200, 240]], fill: FLOOR, stroke: 'none' },
+      { type: 'polygon', points: LAND_TOP.concat([[200, 240], [0, 240]]), fill: 'lightgreen', stroke: 'none' },
+      { type: 'line', points: LAND_TOP, color: 'line', width: 2 },
+      { type: 'line', points: [[200, 150], [320, 196]], color: 'line', width: 2 },
+      { type: 'line', points: [[200, 138], [320, 138]], color: 'blue', width: 2 },
+      { type: 'line', points: [[10, 45], [32, 48], [80, 98], [130, 126], [198, 141]], color: 'blue', width: 4, arrow: true },
+    ];
+  }
+  // 海底の線 (200,150)→(320,196) の y
+  function seaFloorY(x) { return 150 + (x - 200) * 46 / 120; }
+  // かけらの道すじ: 山の上のかけら（静止図の 1 つ目、中心 (12,57)）の後ろから出て、川の線に沿って河口 (198,141) まで
+  const EROSION_LAND = [[12, 57], [32, 48], [80, 98], [130, 126], [198, 141]];
+  // 海の中でかけらが止まる所（河口の近くの海底に 2 段に積もる。「④」の文字（x 228〜）にかからない）。着く順
+  const EROSION_REST = [[221, seaFloorY(221) - 3], [213, seaFloorY(213) - 3], [205, seaFloorY(205) - 3],
+    [217, seaFloorY(217) - 10], [209, seaFloorY(209) - 10]];
+  const EROSION_JAG = [0.25, 0.1, -0.2, 0.15, -0.1, 0.3, -0.25, 0.05];   // かどばった形（頂点ごとの半径のずれ）
+  const EROSION_TRIP = 0.42;   // 1 つのかけらが山から海底まで行く時間（川 0.8、海 0.2 の割合）
+  function erosionStart(k) { return 0.1 * k; }
+
+  // かけらの形: 中心 (x, y)、半径 R、かどばり a（1 でかどばる、0 で丸い）、回る角 rot（度）
+  function fragment(x, y, R, a, rot, k) {
+    const points = [];
+    for (let i = 0; i < 8; i++) {
+      const rr = R * (1 + a * EROSION_JAG[(i + 3 * k) % 8]);
+      points.push(onCircle(x, y, rr, rot + 45 * i));
+    }
+    return { type: 'polygon', points, fill: 'rock' };
+  }
+
+  // 山の岩石のかけらが川に運ばれながら小さく丸くなり、海に出てしずみ、河口の近くに積もる（strata-1-c1）
+  // 静止図は content/strata.js の strata-1-c1。かけらは静止図の山のかけらの後ろから出る
+  function srErosionFlow(t) {
+    const items = riverItems();
+    for (let k = 0; k < EROSION_REST.length; k++) {
+      const s = stage(t, erosionStart(k), erosionStart(k) + EROSION_TRIP);
+      let x, y;
+      if (s <= 0.8) {
+        const q = along(EROSION_LAND, s / 0.8);
+        x = q.x; y = q.y;
+      } else {
+        // 海: 海面のすぐ下（y 142.4。先に積もったかけらの上を通る）を沖へ進み、止まる所の真上からしずむ
+        const [rx, ry] = EROSION_REST[k];
+        const q = along([[198, 141], [203, 142.4], [rx, 142.4], [rx, ry]], (s - 0.8) / 0.2);
+        x = q.x; y = q.y;
+      }
+      items.push(fragment(x, y, lerp(4.5, 3, s), 1 - s, 540 * s, k));
+    }
+    items.push(
+      { type: 'polygon', points: [[6, 54], [16, 52], [18, 60], [8, 62]], fill: 'rock' },
+      { type: 'polygon', points: [[22, 58], [30, 56], [30, 64]], fill: 'rock' },
+      text(6, 30, '①', 16),
+      text(52, 62, '②', 16),
+      text(104, 100, '③', 16),
+      text(228, 158, '④', 16),
+      text(140, 30, '① 風化: 岩石がもろくなる', 12),
+      text(140, 48, '② 侵食: 流れる水がけずる', 12),
+      text(140, 66, '③ 運搬: 土砂を運ぶ', 12),
+      text(140, 84, '④ 堆積: 土砂が積もる', 12),
+      text(14, 120, '山', 14),
+      text(130, 176, '平地', 14),
+      text(290, 176, '海', 14),
+    );
+    return items;
+  }
+
+  // ================================================================
   // 天気とその変化（weather）
   // ================================================================
 
@@ -241,6 +316,89 @@
       text(235, 196, '反時計回りにふきこむ', 12, { anchor: 'middle' }),
       text(235, 214, '上昇気流→くもり・雨', 12, { anchor: 'middle' }),
     ];
+  }
+
+  // content/weather.js の frontItems・triangle・halfDisk・normalOf と同じ式（前線の記号）。
+  // ここで使うのは横向きの前線（pts は 2 点、左 → 右）だけなので、along は横の線の上の点で足りる
+  function frontItems(pts, kind, side, start) {
+    const [[x0, y0], [x1]] = pts;
+    const L = x1 - x0;
+    const step = 26;
+    const s0 = start === undefined ? 13 : start;
+    const at = s => ({ x: x0 + Math.min(s, L), y: y0, tx: 1, ty: 0 });
+    const items = [];
+    if (kind === 'stationary') {
+      for (let s = 0, k = 0; s < L - 2; s += step, k++) {
+        const e = Math.min(L, s + step);
+        items.push({ type: 'line', points: [[x0 + s, y0], [x0 + e, y0]], color: k % 2 ? 'red' : 'blue', width: 3 });
+        if (e - s >= step / 2 + 7) {
+          const q = at(s + step / 2);
+          items.push(k % 2 ? frontHalfDisk(q, -side, 'red') : frontTriangle(q, side, 'blue'));
+        }
+      }
+      return items;
+    }
+    const color = kind === 'cold' ? 'blue' : kind === 'warm' ? 'red' : 'purple';
+    items.push({ type: 'line', points: pts.map(p => [p[0], p[1]]), color, width: 3 });
+    for (let s = s0, k = 0; s <= L - 8; s += step, k++) {
+      const q = at(s);
+      const tri = kind === 'cold' || (kind === 'occluded' && k % 2 === 0);
+      items.push(tri ? frontTriangle(q, side, color) : frontHalfDisk(q, side, color));
+    }
+    return items;
+  }
+  function frontNormal(q, side) { return [q.ty * side, -q.tx * side]; }
+  function frontTriangle(q, side, color) {
+    const [nx, ny] = frontNormal(q, side);
+    return {
+      type: 'polygon', fill: color, stroke: 'none',
+      points: [[q.x - q.tx * 7, q.y - q.ty * 7], [q.x + q.tx * 7, q.y + q.ty * 7], [q.x + nx * 10, q.y + ny * 10]],
+    };
+  }
+  function frontHalfDisk(q, side, color) {
+    const [nx, ny] = frontNormal(q, side);
+    const points = [];
+    for (let k = 0; k <= 8; k++) {
+      const a = Math.PI * k / 8;
+      points.push([q.x + 7 * (Math.cos(a) * q.tx + Math.sin(a) * nx), q.y + 7 * (Math.cos(a) * q.ty + Math.sin(a) * ny)]);
+    }
+    return { type: 'polygon', fill: color, stroke: 'none', points };
+  }
+  // 4 本の前線: [種類, 静止図の線, 記号の向き（上）へ進む量]。停滞前線はほとんど動かない（上下に 2 ゆれる）
+  const FRONTS = [
+    ['cold', [[20, 50], [180, 50]], 14],
+    ['warm', [[20, 100], [180, 100]], 8],
+    ['stationary', [[20, 150], [176, 150]], 0],
+    ['occluded', [[20, 200], [180, 200]], 6],
+  ];
+  // 前線の動く量（上へ）。寒冷・温暖・閉そくは 0.05〜0.75 に進み、止まって見せてから t = 0 で静止図の位置にもどる
+  function frontShift(t, kind, amount) {
+    if (kind === 'stationary') return 2 * osc(t, 2);
+    return -amount * ease(stage(t, 0.05, 0.75));
+  }
+
+  // 前線の記号の向き（三角・半円のある側）へ前線が進む。寒冷前線は速く、温暖前線はゆっくり、停滞前線はほとんど動かない（weather-3-c3）
+  // 静止図は content/weather.js の weather-3-c3。もとの位置はうすい点線で残す
+  function weFrontMove(t) {
+    const items = [];
+    FRONTS.forEach(([kind, pts, amount]) => {
+      const dy = frontShift(t, kind, amount);
+      if (Math.abs(dy) > 1 && kind !== 'stationary') {
+        items.push({ type: 'line', points: pts.map(p => [p[0], p[1]]), color: 'gray', width: 1.5, dashed: true });
+      }
+      frontItems(pts, kind, 1).forEach(it => items.push(Object.assign({}, it, { points: it.points.map(([x, y]) => [x, y + dy]) })));
+    });
+    items.push(
+      text(196, 50, '寒冷前線', 14, { bold: true }),
+      text(196, 67, '寒気が強い', 12),
+      text(196, 100, '温暖前線', 14, { bold: true }),
+      text(196, 117, '暖気が強い', 12),
+      text(196, 150, '停滞前線', 14, { bold: true }),
+      text(196, 167, 'つり合っている', 12),
+      text(196, 200, '閉そく前線', 14, { bold: true }),
+      text(196, 217, '寒冷前線が追いついた', 12),
+    );
+    return items;
   }
 
   // content/weather.js の japanItems と同じ式（日本付近の地図・簡略）
@@ -509,6 +667,101 @@
     return items;
   }
 
+  // content/space.js の NOON・noonBase と同じ部品（北緯 35° の地点の南中高度。観測地点 (150, 200)、半径 140）
+  const NOON = { summer: onCircle(150, 200, 140, 78.4), equinox: onCircle(150, 200, 140, 55), winter: onCircle(150, 200, 140, 31.6) };
+  function noonBase() {
+    return [
+      arcLine(150, 200, 140, 0, 180, { color: 'gray', width: 1.5, dashed: true }),
+      { type: 'line', points: [[6, 200], [314, 200]], color: 'brown', width: 3 },
+      { type: 'circle', x: 150, y: 200, r: 4, fill: 'ink', stroke: 'none' },
+      text(296, 220, '南', 14, { anchor: 'middle', bold: true }),
+      text(20, 220, '北', 14, { anchor: 'middle', bold: true }),
+      text(150, 220, '観測地点', 12, { anchor: 'middle' }),
+    ];
+  }
+  // 1 年の中の位置 t → 南中高度 α = 55 + 23.4·cos(2π·g(t))（t = 0 夏至 78.4°、0.25 秋分 55°、0.5 冬至 31.6°、0.75 春分）。
+  // g(t) = t + 0.6·sin(4πt)/(4π) で、春分・秋分のあたりをゆっくり（速さ 0.4 倍）にする（cos だけでは春分・秋分の前後が速すぎて
+  // 「春分・秋分 55°」の文字が青くなる時間が短い）。g(0) = 0、g(0.25) = 0.25、g(0.5) = 0.5、g(1) = 1 なので 1 周でつながる
+  function noonAltitude(t) {
+    const g = t + 0.6 * Math.sin(4 * Math.PI * t) / (4 * Math.PI);
+    return 55 + 23.4 * Math.cos(2 * Math.PI * g);
+  }
+  // いまの太陽の道の半径と大きさ（外側のはし 122 + 9 = 131 が、静止図の太陽の内側のはし 140 − 9 と同じ。文字は 143 より外）
+  const NOON_NOW_R = 122, NOON_NOW_SIZE = 9;
+  // 静止図の季節の文字（左上の一覧と太陽の横の名前）と、その南中高度
+  const NOON_SEASONS = [
+    { a: 78.4, list: ['夏至 78.4°', 8, 38], name: ['夏至', 190, 60] },
+    { a: 55, list: ['春分・秋分 55°', 8, 54], name: ['春分・秋分', 244, 84] },
+    { a: 31.6, list: ['冬至 31.6°', 8, 70], name: ['冬至', 282, 124] },
+  ];
+
+  // 季節とともに南中する太陽の高さが変わる（space-2-c4）。静止図は content/space.js の space-2-c4
+  function spNoonAltitude(t) {
+    const a = noonAltitude(t);
+    // いまの太陽は、点線の天球（半径 140）の少し内側（半径 NOON_NOW_R）を動かす。天球の上だと「夏至」「春分・秋分」の文字にかかるため
+    const [sx, sy] = onCircle(150, 200, NOON_NOW_R, a);
+    const items = noonBase().concat([
+      { type: 'line', points: [[150, 200], NOON.summer], color: 'gray', width: 1.5 },
+      { type: 'line', points: [[150, 200], NOON.equinox], color: 'gray', width: 1.5 },
+      { type: 'line', points: [[150, 200], NOON.winter], color: 'gray', width: 1.5 },
+      { type: 'circle', x: NOON.summer[0], y: NOON.summer[1], r: 9, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: NOON.equinox[0], y: NOON.equinox[1], r: 9, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: NOON.winter[0], y: NOON.winter[1], r: 9, fill: 'yellow', stroke: 'orange' },
+      // いまの太陽: 観測地点からの線、南の地平線からの角（半径 36 の弧）
+      { type: 'line', points: [[150, 200], [sx, sy]], color: 'orange', width: 2 },
+      arcLine(150, 200, 36, 0, a, { color: 'blue', width: 2 }),
+      { type: 'circle', x: sx, y: sy, r: NOON_NOW_SIZE, fill: 'yellow', stroke: 'orange' },
+    ]);
+    NOON_SEASONS.forEach(s => {
+      const on = Math.abs(a - s.a) <= 2 ? { color: 'blue', bold: true } : {};
+      items.push(text(s.name[1], s.name[2], s.name[0], 12, on));
+    });
+    items.push(text(8, 20, '北緯 35° の地点', 12, { bold: true }));
+    NOON_SEASONS.forEach(s => {
+      const on = Math.abs(a - s.a) <= 2 ? { color: 'blue', bold: true } : {};
+      items.push(text(s.list[1], s.list[2], s.list[0], 12, on));
+    });
+    // いまの南中高度（観測地点の左上の空いた所。点線の弧・角の弧・観測地点からの線にかからない）
+    items.push(text(24, 160, 'いまの南中高度 ' + Number(a.toFixed(1)) + '°', 12, { color: 'blue', bold: true }));
+    return items;
+  }
+
+  // 太陽の黒点が、左のふちの近くから右のふちの近くへ動く（space-4-c2）。静止図は content/space.js の space-4-c2。
+  // 太陽の自転の周期は約 27 日なので、1 日目 → 13 日目の 12 日で黒点は経度で約 160° 進む（1 日に 13.3°）。
+  // 黒点の経度 φ = 80·(2p − 1) 度（p = stage(t, 0, 0.85)。1 日目 −80°、7 日目 0°、13 日目 +80°）。
+  // 黒点は太陽の中心より 8 上（y 112）にあるので、その高さで見える円の半径 √(46² − 8²) から、ふちで黒点が円の外へ出ないよう 2 引いた
+  // SPOT_HALF を使う: x = 中心 + SPOT_HALF·sin φ。
+  // 横の半径 = 6·cos φ（球の表面の円をななめから見た形。ふちでは細長い）
+  const SPOT_DEG_PER_DAY = 160 / 12;
+  const SPOT_HALF = Math.sqrt(46 * 46 - 8 * 8) - 2;
+  function sunspotPhi(t) { return 80 * (2 * stage(t, 0, 0.85) - 1); }
+  function spotItem(cx, phi) {
+    return { type: 'ellipse', x: cx + SPOT_HALF * Math.sin(deg(phi)), y: 112, rx: Math.max(1.2, 6 * Math.cos(deg(phi))), ry: 6, fill: SPOT_COLOR, stroke: 'none' };
+  }
+  const SPOT_REST = 0.425;   // φ = 0（7 日目、静止図の真ん中の黒点）
+  const SPOT_COLOR = '#5A4A2A';
+  function spSunspot(t) {
+    const phi = sunspotPhi(t);
+    const day = Math.round(7 + phi / SPOT_DEG_PER_DAY);
+    return [
+      { type: 'circle', x: 56, y: 120, r: 46, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: 160, y: 120, r: 46, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: 264, y: 120, r: 46, fill: 'yellow', stroke: 'orange' },
+      // 左右の太陽の 1 日目・13 日目の黒点も、同じ自転の速さ（±80°）の位置に描く
+      // （静止図は中心から横に 38・横の半径 2.5 で、約 ±56° にあたる。静止図もこの位置に直すとよい）
+      spotItem(56, -80),
+      spotItem(160, phi),
+      spotItem(264, 80),
+      text(56, 60, '1 日目', 12, { anchor: 'middle' }),
+      // 真ん中の太陽の上: いまが何日目か（7 日目のとき静止図と同じ文字）
+      text(160, 60, day + ' 日目', 12, { anchor: 'middle' }),
+      text(264, 60, '13 日目', 12, { anchor: 'middle' }),
+      { type: 'arrow', x1: 40, y1: 190, x2: 280, y2: 190, color: 'blue' },
+      text(160, 212, '黒点が同じ向きに動く → 自転', 12, { anchor: 'middle' }),
+      text(160, 232, '中央では円形、ふちでは細長い → 球形', 12, { anchor: 'middle' }),
+    ];
+  }
+
   const DEFS = [
     ['vo-quake-spread', voQuakeSpread, { restT: 0 }],
     ['vo-seismogram', voSeismogram, { restT: 0.99 }],
@@ -522,9 +775,14 @@
     ['sp-orbit-midnight', spOrbitMidnight, { restT: 0, period: 8000 }],
     ['sp-seasons', spSeasons, { restT: 0, period: 8000 }],
     ['sp-moon-phase', spMoonPhase, { restT: 0, period: 8000 }],
+    // 優先度 B（docs/anim-plan.md 8 章）
+    ['sr-erosion-flow', srErosionFlow, { restT: 0.99 }],
+    ['we-front-move', weFrontMove, { restT: 0 }],
+    ['sp-noon-altitude', spNoonAltitude, { restT: 0, period: 8000 }],
+    ['sp-sunspot', spSunspot, { restT: SPOT_REST, period: 8000 }],
   ];
   DEFS.forEach(([kind, fn, opts]) => anim.register(kind, fn, opts));
   // このファイルで足した kind（テスト用）。seismoPoints はテストで静止図の線と比べる
-  const api = { KINDS: DEFS.map(d => d[0]), seismoPoints };
+  const api = { KINDS: DEFS.map(d => d[0]), seismoPoints, seaFloorY, frontShift, noonAltitude, sunspotPhi, NOON_NOW_R };
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

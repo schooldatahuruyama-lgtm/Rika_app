@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
   const anim = typeof require === 'function' ? require('./anim.js') : root.RikaQuest.anim;
-  const { stage, lerp, ease, growLine, along } = anim.helpers;
+  const { stage, lerp, ease, growLine, along, pathLen, u } = anim.helpers;
 
   // 小数部分（0 以上 1 未満）
   function frac(x) { return x - Math.floor(x); }
@@ -349,6 +349,184 @@
     return items;
   }
 
+  // ================================================================
+  // 優先度 B（計画 7 章の B の 3 本）
+  // ================================================================
+
+  // ---- 動物のなかま（animals）----
+
+  // content/animals.js の gx・gy・tempGraph と同じ式（気温と体温のグラフ。横 1 ℃ ＝ 5px、縦 1 ℃ ＝ 4px）
+  function gx(T) { return 60 + 5 * T; }
+  function gy(T) { return 200 - 4 * T; }
+  function tempGraph() {
+    const items = [{ type: 'line', points: [[60, 30], [60, 200], [290, 200]], width: 2 }];
+    [0, 10, 20, 30, 40].forEach(v => {
+      items.push(
+        { type: 'line', points: [[gx(v), 200], [gx(v), 206]], width: 2 },
+        { type: 'text', x: gx(v), y: 220, text: String(v), anchor: 'middle', size: 12 },
+        { type: 'line', points: [[54, gy(v)], [60, gy(v)]], width: 2 },
+        { type: 'text', x: 50, y: gy(v) + 4, text: String(v), anchor: 'end', size: 12 },
+      );
+    });
+    items.push(
+      { type: 'text', x: 4, y: 20, text: '体温〔℃〕', size: 12 },
+      { type: 'text', x: 316, y: 236, text: '気温〔℃〕', anchor: 'end', size: 12 },
+    );
+    return items;
+  }
+  const DOG_TEMP = 38;   // 恒温動物（イヌ）の体温
+  // 「変温動物（トカゲ）」(160,168) の文字の範囲（縦の点線はこの範囲を通らない）
+  const LIZARD_LABEL = { left: 158, right: 279, top: 154, bottom: 172 };
+  // 気温（℃）: 4 → 36 → 4（変温動物の線の範囲）
+  const airTemp = (t) => 4 + 32 * u(t);
+  // 気温が変わると、変温動物（トカゲ）の体温は気温といっしょに変わり、恒温動物（イヌ）の体温は 38 ℃ のまま（animals-2-c2）
+  function anBodyTemp(t) {
+    const T = airTemp(t);
+    const x = gx(T);
+    const items = tempGraph().concat([
+      { type: 'line', points: [[gx(0), gy(DOG_TEMP)], [gx(40), gy(DOG_TEMP)]], color: 'orange', width: 3 },
+      { type: 'text', x: gx(2), y: gy(DOG_TEMP) - 8, text: '恒温動物（イヌ）', size: 13 },
+      { type: 'line', points: [[gx(4), gy(4)], [gx(36), gy(36)]], color: 'blue', width: 3 },
+      { type: 'text', x: gx(20), y: gy(8), text: '変温動物（トカゲ）', size: 13 },
+      // いまの気温の縦の点線（「変温動物（トカゲ）」の文字の横を通るときは、文字の上と下に分ける）と、2 つの点
+      ...(x >= LIZARD_LABEL.left && x <= LIZARD_LABEL.right
+        ? [[[x, 200], [x, LIZARD_LABEL.bottom]], [[x, LIZARD_LABEL.top], [x, gy(DOG_TEMP)]]]
+        : [[[x, 200], [x, gy(DOG_TEMP)]]]).map(points => ({ type: 'line', points, color: 'gray', width: 1.5, dashed: true })),
+      { type: 'circle', x, y: 200, r: 3, fill: 'gray', stroke: 'gray' },
+      // 点は半径 4（気温 36 ℃ のとき 2 つの点の中心は 8 離れ、重ならない）
+      { type: 'circle', x, y: gy(DOG_TEMP), r: 4, fill: 'orange', stroke: 'ink' },
+      { type: 'circle', x, y: gy(T), r: 4, fill: 'blue', stroke: 'ink' },
+      // 読み（線から離れた右の空いた所）
+      text(316, 84, '気温 ' + Math.round(T) + '℃', { anchor: 'end', size: 13, bold: true }),
+      text(316, 104, 'イヌ ' + DOG_TEMP + '℃', { anchor: 'end', size: 13, color: 'orange', bold: true }),
+      text(316, 124, 'トカゲ ' + Math.round(T) + '℃', { anchor: 'end', size: 13, color: 'blue', bold: true }),
+    ]);
+    return items;
+  }
+
+  // ---- 生物のからだのつくりとはたらき（body）----
+
+  const BRONCHUS = [[24, 30], [60, 70], [88, 96]];   // 気管支（静止図と同じ点）
+  const AIR_PATH = [[24, 30], [60, 70], [88, 96], [104, 112]];   // 空気の粒の道すじ（気管支 → 肺胞の 1 つ目の中心）
+  const CAPILLARY = [[70, 160], [100, 168], [140, 162], [168, 138], [166, 104], [146, 84], [118, 84]];   // 毛細血管（静止図と同じ点）
+  const ALVEOLI = [[104, 112], [132, 104], [146, 132], [120, 144], [94, 140]];
+  const CAP_LEN = pathLen(CAPILLARY);
+  // 気体の交換の場所: [肺胞の中の点, 毛細血管の上の点]（どちらも静止図の丸・線の上）
+  const O2_MOVE = [[150, 134], [lerp(140, 168, 24 / 28), lerp(162, 138, 24 / 28)]];   // 酸素: 肺胞 (146,132) → 毛細血管（(140,162)–(168,138) の辺の上）
+  const CO2_MOVE = [[120, 165], [120, 148]];      // 二酸化炭素: 毛細血管（(100,168)–(140,162) の辺の中点）→ 肺胞 (120,144)
+  // 毛細血管の始点からの長さ（酸素が血管に入る所・二酸化炭素が血管を出る所）
+  const O2_ARC = pathLen(CAPILLARY.slice(0, 3)) + pathLen([[140, 162], O2_MOVE[1]]);
+  const CO2_ARC = pathLen(CAPILLARY.slice(0, 2)) + pathLen([[100, 168], CO2_MOVE[0]]);
+  // 血液の粒の数と位相（1 周に毛細血管 1 本分進む。BLOOD_PHASE ずらして、はしで始めにもどる時刻を t = 0 からはずす）
+  const BLOOD_N = 4, BLOOD_PHASE = 0.075;
+  const bloodArc = (t, k) => CAP_LEN * frac(t + k / BLOOD_N + BLOOD_PHASE);
+  // 気体の粒は、血液の粒から RIDE_GAP（px）はなれて、いっしょに流れる（重ならない）
+  const RIDE_GAP = 8;
+  const O2_IN = 0.15;      // 酸素が肺胞から血管へ移る時間（1 周の割合）
+  const CO2_OUT = 0.12;    // 二酸化炭素が血管から肺胞へ移る時間
+  const CAP_EDGE = 2;      // 毛細血管のはし 2px は描かない（はしで出入りする）
+  // 酸素が血管に着く時刻: 血液の粒がちょうど RIDE_GAP うしろにいる時刻（1 周に 2 回: これと 0.5 後）
+  const O2_ARRIVE = frac((O2_ARC - RIDE_GAP) / CAP_LEN - BLOOD_PHASE);
+  // 二酸化炭素が血管の始点に出る時刻: 血液の粒がちょうど RIDE_GAP 前にいる時刻（1 周に 2 回）
+  const CO2_START = frac(RIDE_GAP / CAP_LEN - BLOOD_PHASE);
+  // 酸素の粒の位置: 肺胞の中 → 血管へ移り、着いたら血液の粒の RIDE_GAP 前を、血管の終わりまでいっしょに流れる
+  function o2Dots(t) {
+    const out = [];
+    for (let e = 0; e < 2; e++) {
+      const r = frac(t - O2_ARRIVE + O2_IN - 0.5 * e);   // r = O2_IN で血管に着く
+      if (r < O2_IN) {
+        const k = r / O2_IN;
+        out.push({ x: lerp(O2_MOVE[0][0], O2_MOVE[1][0], k), y: lerp(O2_MOVE[0][1], O2_MOVE[1][1], k) });
+        continue;
+      }
+      const arc = O2_ARC + CAP_LEN * (r - O2_IN);
+      if (arc <= CAP_LEN - CAP_EDGE) out.push(along(CAPILLARY, arc / CAP_LEN));
+    }
+    return out;
+  }
+  // 二酸化炭素の粒の位置: 血液の粒の RIDE_GAP うしろを血管の始点から流れ、交換の場所で分かれて肺胞へ移る
+  function co2Dots(t) {
+    const out = [];
+    for (let e = 0; e < 2; e++) {
+      const r = frac(t - CO2_START - 0.5 * e);
+      const arc = CAP_LEN * r;
+      if (arc < CAP_EDGE) continue;
+      if (arc < CO2_ARC) { out.push(along(CAPILLARY, arc / CAP_LEN)); continue; }
+      const k = (r - CO2_ARC / CAP_LEN) / CO2_OUT;
+      if (k <= 1) out.push({ x: lerp(CO2_MOVE[0][0], CO2_MOVE[1][0], k), y: lerp(CO2_MOVE[0][1], CO2_MOVE[1][1], k) });
+    }
+    return out;
+  }
+  // 肺胞で、空気が出入りし、毛細血管を血液が流れ、酸素は肺胞から血液へ、二酸化炭素は血液から肺胞へ移る（body-4-c1）。
+  // じん臓の側は静止図のまま動かさない
+  function boAlveoli(t) {
+    const items = [
+      { type: 'line', points: BRONCHUS, color: 'pink', width: 8 },
+      ...ALVEOLI.map(([x, y]) => ({ type: 'circle', x, y, r: 16, fill: 'white', stroke: 'line' })),
+      { type: 'line', points: CAPILLARY, color: 'red', width: 2 },
+    ];
+    // 空気の粒 3 つ（吸うと奥へ、はくと外へ。u(t) で行き来する）
+    for (let k = 0; k < 3; k++) {
+      const p = along(AIR_PATH, Math.min(1, 0.15 * k + 0.6 * u(t)));
+      items.push(dot(p, 3, 'white'));
+    }
+    // 血液の粒 4 つ（毛細血管の上を流れる）
+    for (let k = 0; k < BLOOD_N; k++) items.push(dot(along(CAPILLARY, bloodArc(t, k) / CAP_LEN), 3, 'red'));
+    o2Dots(t).forEach(p => items.push(dot(p, 3, 'blue')));
+    co2Dots(t).forEach(p => items.push(dot(p, 3, 'gray')));
+    items.push(
+      text(70, 50, '気管支', { size: 13 }),
+      { type: 'line', points: [[40, 128], [78, 138]], color: 'gray', width: 1, dashed: true },
+      text(6, 126, '肺胞', { size: 13 }),
+      { type: 'line', points: [[150, 182], [142, 164]], color: 'gray', width: 1, dashed: true },
+      text(120, 196, '毛細血管', { size: 13 }),
+      text(98, 222, '酸素と二酸化炭素を交換', { size: 12, anchor: 'middle' }),
+      // 凡例（肺の側の上の空いた所）
+      text(88, 18, '白: 空気　青: 酸素'),
+      text(88, 34, '灰: 二酸化炭素'),
+      { type: 'line', points: [[200, 16], [200, 224]], color: 'gray', width: 1 },
+      text(262, 46, 'じん臓', { size: 13, anchor: 'middle' }),
+      { type: 'ellipse', x: 232, y: 84, rx: 16, ry: 26, fill: 'brown' },
+      { type: 'ellipse', x: 292, y: 84, rx: 16, ry: 26, fill: 'brown' },
+      { type: 'line', points: [[236, 108], [254, 160]], color: 'line', width: 2 },
+      { type: 'line', points: [[288, 108], [270, 160]], color: 'line', width: 2 },
+      { type: 'ellipse', x: 262, y: 172, rx: 22, ry: 15, fill: 'yellow', stroke: 'line' },
+      text(262, 206, 'ぼうこう', { size: 13, anchor: 'middle' }),
+      text(262, 228, '尿をためる', { size: 12, anchor: 'middle' }),
+    );
+    return items;
+  }
+
+  // ---- 自然と人間（nature）----
+
+  const SUN_RAY = [[44, 54], [60, 190]];
+  const HEAT_OUT = [[[120, 192], [96, 22]], [[150, 192], [170, 112]]];
+  const HEAT_BACK = [[182, 112], [202, 190]];
+  // 時刻: 太陽の光 0〜0.2 → 地表から出る熱 0.2〜0.45 → 地表へもどる熱 0.45〜0.65 → 止まって見せる
+  const GH_SUN_TO = 0.2, GH_OUT_TO = 0.45, GH_BACK_TO = 0.65;
+  // 太陽の光が地表をあたため、地表から出る熱の一部は宇宙へ逃げ、一部は温室効果ガスで地表へもどる（nature-3-c3）。
+  // 矢印は静止図と同じ点・色・太さの line（矢じりつき）で伸ばす
+  function naGreenhouse(t) {
+    const sun = stage(t, 0, GH_SUN_TO), out = stage(t, GH_SUN_TO, GH_OUT_TO), back = stage(t, GH_OUT_TO, GH_BACK_TO);
+    const items = [
+      { type: 'rect', x: 0, y: 196, width: 320, height: 44, fill: 'brown', stroke: 'none' },
+      { type: 'text', x: 12, y: 224, text: '地表', size: 13, color: 'white', bold: true },
+      { type: 'text', x: 312, y: 224, text: '赤い矢印: 地表から出る熱', anchor: 'end', size: 12, color: 'white' },
+      { type: 'rect', x: 0, y: 84, width: 320, height: 24, fill: 'glass', stroke: 'none' },
+      { type: 'text', x: 314, y: 101, text: '温室効果ガス', anchor: 'end', size: 12 },
+      { type: 'circle', x: 30, y: 32, r: 18, fill: 'yellow', stroke: 'orange' },
+      { type: 'text', x: 54, y: 24, text: '太陽の光', size: 12 },
+      ...growLine(SUN_RAY, sun, { color: 'orange' }),
+      ...HEAT_OUT.flatMap(p => growLine(p, out, { color: 'red', width: 2 })),
+      ...growLine(HEAT_BACK, back, { color: 'red', width: 2 }),
+    ];
+    // 矢印の文字は、その矢印が伸び始めてから出す
+    if (out > 0) items.push({ type: 'text', x: 106, y: 40, text: '宇宙へ逃げる熱', size: 12 });
+    if (back > 0) items.push({ type: 'text', x: 210, y: 160, text: '地表へもどる熱', size: 12 });
+    if (back >= 1) items.push(text(216, 186, '地表があたたまる', { color: 'red', bold: true }));
+    return items;
+  }
+
   const DEFS = [
     ['bo-reflex', boReflex, { restT: 0.99 }],
     ['he-chromosome-copy', heChromosomeCopy, { restT: 0.99 }],
@@ -356,9 +534,13 @@
     ['he-segregation', heSegregation, { restT: 0.99 }],
     ['na-balance', naBalance, { restT: 0, period: 8000 }],
     ['na-carbon-cycle', naCarbonCycle, { restT: 0 }],
+    // 優先度 B
+    ['an-body-temp', anBodyTemp, { restT: 0 }],
+    ['bo-alveoli', boAlveoli, { restT: 0 }],
+    ['na-greenhouse', naGreenhouse, { restT: 0.99 }],
   ];
   DEFS.forEach(([kind, fn, opts]) => anim.register(kind, fn, opts));
   // このファイルで足した kind（テスト用）と、テストで使う値
-  const api = { KINDS: DEFS.map(d => d[0]), balanceAmounts, CARBON_PATHS };
+  const api = { KINDS: DEFS.map(d => d[0]), balanceAmounts, CARBON_PATHS, airTemp, gy, CAPILLARY, AIR_PATH, O2_MOVE, CO2_MOVE, RIDE_GAP };
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

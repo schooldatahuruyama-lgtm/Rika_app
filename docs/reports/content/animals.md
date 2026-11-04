@@ -66,11 +66,11 @@
 | animals-3-w1 | C | an-arthropod | 予想: クモは昆虫のなかま？【昆虫のなかまではない】 |
 | animals-3-p1 | C | an-arthropod | 昆虫のあし【胸部に 6 本ある】 |
 | animals-3-t1 | F | an-arthropod | 体をおおうかたい殻＝【外骨格】、エビ・カニのなかま＝【甲殻類】 |
-| animals-3-p2 | FC | an-arthropod | 節足動物の図。昆虫は？【ア】 |
+| animals-3-p2 | FC | an-arthropod | （写真）節足動物の図。昆虫は？【ア】 |
 | animals-3-p3 | D | an-arthropod | あしを取りのぞいた昆虫（上から）。あしがつく部分に印 → 胸部 (124, 120)。axis 'xy'。正解例 (124, 120)、不正解例 (220, 120)（腹部の中心、96px）。頭部の中心も 56px はなれる |
 | animals-3-p4 | C | an-mollusc | 軟体動物は？ カニ／イカ／ミミズ／ウニ【イカ】 |
 | animals-3-p5 | C | an-mollusc | 外とう膜が包んでいるもの【内臓】 |
-| animals-3-r1 | FC | an-arthropod | 節足動物の図。クモのなかまは？【イ】 |
+| animals-3-r1 | FC | an-arthropod | （写真）節足動物の図。クモのなかまは？【イ】 |
 | animals-3-r2 | C | an-arthropod | 昆虫は？ クモ／ダンゴムシ／カブトムシ／ムカデ【カブトムシ】 |
 | animals-3-t2 | C | an-mollusc | 「内臓が膜で包まれ節がない動物のなかま」【軟体動物】 |
 | animals-3-r3 | FC | an-mollusc | イカの図。ア 胴の外側／イ 胴の中／ウ 頭から下にのびる部分。外とう膜は？【ア】 |

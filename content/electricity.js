@@ -49,6 +49,22 @@
   // 小さな文字（中央寄せ）
   function note(x, y, text, size) { return { type: 'text', x, y, text, size: size || 13, anchor: 'middle' }; }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/electricity/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/electricity/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // グラフの軸と方眼（原点 (50,200)。横 1 目盛り 40px、縦 1 目盛り 25px）
   // xTicks・yTicks は目盛りの文字の配列（'' なら文字を書かず方眼だけ）
   function axes(xName, yName, xTicks, yTicks) {
@@ -141,22 +157,16 @@
       {
         id: 'elec-1-c3',
         text: '電流計の−端子は 5 A・500 mA・50 mA、電圧計の−端子は 300 V・15 V・3 V の 3 つがあります。はかる値の大きさが分からないときは、針がふり切れないように、いちばん大きい値の端子からつなぎます。',
-        // 電流計の外観。＋端子 1 つと−端子 3 つ。最初は 5 A の端子
+        // 写真: 電流計の正面。下の端子は左から黒い−端子 3 つ (85, 162)・(136, 162)・(186, 162) と赤い＋端子 (236, 162)。
+        // −端子は左から 5 A・500 mA・50 mA とした（写真の端子には文字がない）。最初は 5 A の端子（だいだい色の輪）
         figure: scene([
-          { type: 'rect', x: 40, y: 24, width: 240, height: 128, fill: 'white', rx: 10 },
-          { type: 'line', points: [[80, 110], [100, 82], [130, 66], [160, 62], [190, 66], [220, 82], [240, 110]], color: 'line', width: 2 },
-          { type: 'line', points: [[160, 138], [118, 76]], width: 2 },
-          { type: 'text', x: 205, y: 132, text: 'A', size: 18, anchor: 'middle', bold: true },
-          { type: 'circle', x: 70, y: 182, r: 11, fill: 'red' },
-          { type: 'circle', x: 140, y: 182, r: 11, fill: 'ink' },
-          { type: 'circle', x: 200, y: 182, r: 11, fill: 'ink' },
-          { type: 'circle', x: 260, y: 182, r: 11, fill: 'ink' },
-          { type: 'circle', x: 260, y: 182, r: 16, fill: 'none', stroke: 'blue' },
-          note(70, 214, '＋'),
-          note(140, 214, '50 mA'),
-          note(200, 214, '500 mA'),
-          note(260, 214, '5 A'),
-          note(160, 236, '最初は 5 A の端子につなぐ'),
+          photo('elec-1-c3'),
+          { type: 'circle', x: 85, y: 162, r: 22, fill: 'none', stroke: 'orange' },
+          tag(85, 199, '5 A', { size: 13 }),
+          pointer(136, 184, 136, 206), tag(136, 218, '500 mA', { size: 13 }),
+          tag(186, 199, '50 mA', { size: 13 }),
+          tag(236, 199, '＋', { size: 13, bold: true }),
+          tag(160, 236, '最初は 5 A の端子につなぐ', { size: 13 }),
         ]),
       },
       {
@@ -547,6 +557,7 @@
       },
       {
         id: 'elec-3-c3',
+        anim: 'el-heat-rise',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '電熱線で水をあたためるとき、水の上昇温度は、電力が大きいほど、また電流を流す時間が長いほど大きくなり、どちらにも**比例**します。6 W で 5 分間（300 秒）電流を流すと、熱量は 6 × 300 ＝ 1800 J です。',
         // 6 W と 3 W の電熱線で、同じ量の水をあたためたときのグラフ
         figure: scene([
@@ -683,6 +694,7 @@
     lessons: [
       {
         id: 'elec-4-c1',
+        anim: 'el-static-charge',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '種類のちがう物質どうしをこすり合わせると、−の電気をもつ**電子**が一方からもう一方へ移り、物体が電気を帯びます。この電気を**静電気**といいます。同じ種類の電気はしりぞけ合い、ちがう種類の電気は引き合います。',
         // 左: −どうし（しりぞけ合う）、右: −と＋（引き合う）
         figure: scene([
@@ -704,34 +716,39 @@
       {
         id: 'elec-4-c2',
         text: 'たまっていた電気が流れ出したり、電気が空間を移動したりする現象を**放電**といいます。空気をぬいた管の中で起こる放電を**真空放電**といいます。このとき−極から出ている電子の流れを**陰極線**といいます。',
-        // 放電管。−極から＋極へ電子が流れる
+        // 写真: 蛍光板入りの放電管（35〜305, 90〜145）に緑色の光のすじ (75〜245, 118)。左の電極 (28, 118) に黒い導線、右の電極 (294, 118) に赤い導線。
+        // すじの明るい左はしと黒い導線の側を−極とした（写真の電極の形では陰極・陽極は見分けにくい）
         figure: scene([
-          { type: 'ellipse', x: 160, y: 120, rx: 140, ry: 44, fill: 'glass' },
-          { type: 'rect', x: 34, y: 104, width: 10, height: 32, fill: 'ink' },
-          { type: 'rect', x: 276, y: 104, width: 10, height: 32, fill: 'ink' },
-          { type: 'line', points: [[50, 120], [266, 120]], color: 'green', width: 4, arrow: true },
-          note(160, 106, '陰極線（電子の流れ）', 14),
-          note(39, 190, '−極', 14),
-          note(281, 190, '＋極', 14),
-          note(160, 40, '空気をぬいた管（放電管）', 14),
-          note(160, 224, '高い電圧を加える'),
+          photo('elec-4-c2'),
+          tag(160, 22, '空気をぬいた管（放電管）'),
+          tag(160, 50, '陰極線（電子の流れ）'),
+          { type: 'arrow', x1: 100, y1: 72, x2: 220, y2: 72, color: 'blue', width: 2 },
+          pointer(40, 174, 28, 124), tag(42, 188, '−極'),
+          pointer(282, 174, 294, 124), tag(280, 188, '＋極'),
+          tag(160, 226, '高い電圧を加える', { size: 13 }),
         ]),
       },
       {
         id: 'elec-4-c3',
         text: '磁石の力（磁力）がはたらく空間を**磁界**といい、そのようすを表す線を**磁力線**といいます。まっすぐな導線に電流を流すと、導線を中心に同心円状の磁界ができます。電流の向きに**右ねじ**を進めるとき、ねじを回す向きが磁界の向きです。',
-        // 紙の表から裏へ流れる電流（×）のまわりの磁界は時計回り
+        // 写真: 厚紙（17〜222, 89〜220）を導線 (118, 0〜145) が垂直につらぬき、砂鉄が導線を中心 (118, 145) に同心円状に並ぶ。
+        // 方位磁針 4 つ（上 (115, 103)・左 (49, 145)・右 (179, 146)・下 (116, 188)）の N 極は、上から見て反時計回りにそろっている
+        // → 電流は下から上へ流れている（右ねじ）。磁界の向きの矢印（青）は、だ円の上で反時計回り
         figure: scene([
-          { type: 'circle', x: 160, y: 118, r: 45, fill: 'none', stroke: 'gray' },
-          { type: 'circle', x: 160, y: 118, r: 80, fill: 'none', stroke: 'gray' },
-          ...wireIn(160, 118),
-          { type: 'arrow', x1: 148, y1: 73, x2: 172, y2: 73, color: 'blue' },
-          { type: 'arrow', x1: 172, y1: 163, x2: 148, y2: 163, color: 'blue' },
-          { type: 'arrow', x1: 146, y1: 38, x2: 174, y2: 38, color: 'blue' },
-          { type: 'arrow', x1: 174, y1: 198, x2: 146, y2: 198, color: 'blue' },
-          { type: 'arrow', x1: 240, y1: 104, x2: 240, y2: 132, color: 'blue' },
-          { type: 'arrow', x1: 80, y1: 132, x2: 80, y2: 104, color: 'blue' },
-          note(160, 232, '×: 電流が紙の表から裏へ流れる'),
+          photo('elec-4-c3'),
+          { type: 'arrow', x1: 130, y1: 84, x2: 130, y2: 28, color: 'orange', width: 3 },
+          tag(152, 60, '電流'),
+          tag(240, 22, '同心円状の磁界'),
+          tag(240, 42, '（砂鉄のもよう）', { size: 13 }),
+          pointer(222, 48, 186, 122),   // 砂鉄の輪の上を指す
+          { type: 'arrow', x1: 82, y1: 108, x2: 62, y2: 122, color: 'blue', width: 3 },
+          { type: 'arrow', x1: 62, y1: 168, x2: 82, y2: 182, color: 'blue', width: 3 },
+          { type: 'arrow', x1: 154, y1: 182, x2: 174, y2: 168, color: 'blue', width: 3 },
+          { type: 'arrow', x1: 174, y1: 122, x2: 154, y2: 108, color: 'blue', width: 3 },
+          pointer(244, 148, 200, 147), tag(274, 152, '方位磁針', { size: 13 }),
+          tag(270, 190, '電流が上向き', { size: 13 }),
+          tag(270, 208, '→ 上から見て', { size: 13 }),
+          tag(270, 226, '反時計回り', { size: 13 }),
         ]),
       },
       {

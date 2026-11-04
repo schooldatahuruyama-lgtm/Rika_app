@@ -149,44 +149,6 @@
     return items;
   }
 
-  // クモを上から見た図（左が頭胸部）。8 本のあしは頭胸部から出る。x は cx−36s〜cx+33s、y は cy±30s
-  function spider(cx, cy, s) {
-    const k = v => v * s;
-    const items = [];
-    [[-20, -10, -16], [-15, -4, -6], [-10, 4, 6], [-5, 10, 18]].forEach(([dx, bx, ex]) => {
-      [-1, 1].forEach(side => {
-        items.push({ type: 'line', points: [
-          [cx + k(dx), cy + side * k(7)], [cx + k(dx + bx), cy + side * k(19)], [cx + k(dx + ex), cy + side * k(29)],
-        ], width: 2 });
-      });
-    });
-    items.push(
-      { type: 'ellipse', x: cx - k(12), y: cy, rx: k(13), ry: k(10), fill: 'gray' },
-      { type: 'ellipse', x: cx + k(16), y: cy, rx: k(17), ry: k(14), fill: 'gray' },
-    );
-    return items;
-  }
-
-  // ムカデを上から見た図（左が頭）。節ごとにあしがある。x は cx−76〜cx+54
-  function centipede(cx, cy) {
-    const items = [
-      { type: 'line', points: [[cx - 64, cy - 3], [cx - 76, cy - 14]], width: 2 },
-      { type: 'line', points: [[cx - 64, cy + 3], [cx - 76, cy + 14]], width: 2 },
-    ];
-    for (let i = 0; i < 9; i++) {
-      const x = cx - 48 + i * 12;
-      items.push(
-        { type: 'line', points: [[x, cy - 4], [x - 3, cy - 14]], width: 2 },
-        { type: 'line', points: [[x, cy + 4], [x - 3, cy + 14]], width: 2 },
-      );
-    }
-    for (let i = 0; i < 9; i++) {
-      items.push({ type: 'ellipse', x: cx - 48 + i * 12, y: cy, rx: 6, ry: 5, fill: 'brown' });
-    }
-    items.push({ type: 'circle', x: cx - 60, y: cy, r: 6, fill: 'brown' });
-    return items;
-  }
-
   // イカ（上が胴）。胴（外とう膜）の右のふち (190, 96)、内臓 (160, 92)、あし (132〜, 200)
   function squid() {
     const items = [
@@ -277,12 +239,14 @@
     VERT_ROWS.map((y, i) => ({ type: 'region', id: 'r' + (i + 1), x: 280, y, r: 22, label: 'アイウエオ'[i] })),
   ));
 
-  // 節足動物 3 種（ア 昆虫・イ クモ・ウ ムカデ）を 1 段ずつ並べ、左に選ぶ場所
-  const ARTHROPODS_Q = scene(insect(160, 44, 1).concat(spider(160, 124, 1.2), centipede(170, 206), [
-    { type: 'region', id: 'r1', x: 36, y: 44, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 36, y: 124, r: 22, label: 'イ' },
-    { type: 'region', id: 'r3', x: 36, y: 206, r: 22, label: 'ウ' },
-  ]));
+  // 写真: 上から見た節足動物 3 種を左から ア トノサマバッタ・イ ジョロウグモ・ウ ムカデ。選ぶ場所は それぞれの下
+  // 画像は 640×480（座標は画像の位置 × 0.5）。3 つの x の範囲: 7〜98、102〜215、232〜305（y は 190 まで）
+  const ARTHROPODS_Q = scene([
+    photo('animals-3-p2'),
+    { type: 'region', id: 'r1', x: 52, y: 216, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 216, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 268, y: 216, r: 22, label: 'ウ' },
+  ]);
 
   // ================================================================
   // 領域 1: セキツイ動物
@@ -474,6 +438,7 @@
       },
       {
         id: 'animals-2-c2',
+        anim: 'an-body-temp',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: 'まわりの温度によって体温が変わる動物を**変温動物**（魚類・両生類・ハチュウ類）、まわりの温度が変わっても体温をほぼ一定に保つ動物を**恒温動物**（鳥類・ホニュウ類）といいます。',
         // 気温と体温のグラフ
         figure: scene(tempGraph().concat([
@@ -643,18 +608,19 @@
       {
         id: 'animals-3-c2',
         text: '節足動物のうち、**昆虫類**は体が頭部・胸部・腹部に分かれ、胸部に 6 本のあしがあります。腹部などにある気門から空気をとり入れます。エビ・カニなどは**甲殻類**、クモはクモ類のなかまです。',
-        // 写真: 上から見たトノサマバッタ（左）、クモ（右上）、エビ（右下）。バッタの体の区切りに青い線
+        // 写真: 横から見たトノサマバッタ（左）、クモ（右上）、エビ（右下）。バッタの体の区切りに青い線
+        // 画像は 640×480（座標は画像の位置 × 0.5）。バッタの頭部 (28〜45, 98〜128)、胸部 (44〜90。後ろあしのつけ根 (84, 132) も胸部)、腹部 (92〜155, 115〜138)
         figure: scene([
           photo('animals-3-c2'),
-          { type: 'line', points: [[64, 64], [98, 64]], color: 'blue', width: 2 },
-          { type: 'line', points: [[62, 90], [100, 90]], color: 'blue', width: 2 },
-          pointer(148, 54, 93, 54), tag(166, 58, '頭部', { size: 13 }),
-          pointer(148, 78, 95, 77), tag(166, 82, '胸部', { size: 13 }),
-          pointer(148, 122, 87, 124), tag(166, 126, '腹部', { size: 13 }),
-          tag(136, 184, '昆虫類', { bold: true }),
-          tag(136, 202, 'あし6本', { size: 13 }),
-          tag(248, 134, 'クモ類: あし8本', { size: 13 }),
-          tag(240, 234, '甲殻類（エビ）', { size: 13 }),
+          { type: 'line', points: [[44, 94], [44, 132]], color: 'blue', width: 2 },
+          { type: 'line', points: [[92, 100], [92, 138]], color: 'blue', width: 2 },
+          pointer(28, 60, 37, 102), tag(28, 56, '頭部', { size: 13 }),
+          pointer(70, 60, 58, 104), tag(70, 56, '胸部', { size: 13 }),
+          pointer(120, 60, 118, 130), tag(120, 56, '腹部', { size: 13 }),
+          tag(80, 192, '昆虫類', { bold: true }),
+          tag(80, 212, 'あし 6 本（胸部から）', { size: 13 }),
+          tag(240, 137, 'クモ類: あし 8 本', { size: 13 }),
+          tag(262, 236, '甲殻類（エビ）', { size: 13 }),
         ]),
       },
       {
@@ -713,7 +679,7 @@
       }),
       figureChoice({
         id: 'animals-3-p2', concept: 'an-arthropod',
-        prompt: '節足動物を上から見た図です（ア: 体が 3 つに分かれ、あしが 6 本、イ: 体が 2 つに分かれ、あしが 8 本、ウ: 体にたくさんの節があり、あしもたくさんある）。昆虫はどれ？',
+        prompt: '節足動物を上から見た写真です（ア: 体が 3 つに分かれ、あしが 6 本、イ: 体が 2 つに分かれ、あしが 8 本、ウ: 体にたくさんの節があり、あしもたくさんある）。昆虫はどれ？',
         figure: ARTHROPODS_Q,
         answer: 'r1',
         explanation: '体が頭部・胸部・腹部の 3 つに分かれ、あしが 6 本のア が昆虫です。イはクモのなかま、ウはムカデのなかまです。',
@@ -753,7 +719,7 @@
     retryPool: [
       figureChoice({
         id: 'animals-3-r1', concept: 'an-arthropod',
-        prompt: '節足動物を上から見た図です（ア: 体が 3 つに分かれ、あしが 6 本、イ: 体が 2 つに分かれ、あしが 8 本、ウ: 体にたくさんの節があり、あしもたくさんある）。クモのなかまはどれ？',
+        prompt: '節足動物を上から見た写真です（ア: 体が 3 つに分かれ、あしが 6 本、イ: 体が 2 つに分かれ、あしが 8 本、ウ: 体にたくさんの節があり、あしもたくさんある）。クモのなかまはどれ？',
         figure: ARTHROPODS_Q,
         answer: 'r2',
         explanation: 'クモのなかまは、体が 2 つに分かれ、あしが 8 本です（イ）。昆虫ではありませんが、外骨格と節のある節足動物です。',

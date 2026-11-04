@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
   const anim = typeof require === 'function' ? require('./anim.js') : root.RikaQuest.anim;
-  const { stage, lerp, clamp, ease, osc, tri, along, partial, pathLen, onCircle, mix, TOKEN_HEX } = anim.helpers;
+  const { stage, lerp, clamp, ease, osc, tri, along, partial, pathLen, onCircle, mix, deg, TOKEN_HEX } = anim.helpers;
 
   function frac(x) { return x - Math.floor(x); }
 
@@ -66,6 +66,133 @@
         { type: 'text', x: 110, y: 78, text: 'おし出す', size: 13, color: 'blue' },
       );
     }
+    return items;
+  }
+
+  // ---- 上方置換法・下方置換法（sub-3-c2・sub-3-c3） ----
+  // 2 つは同じ作り。動く部品の座標は上方置換法（口を下に向けた試験管: 底の中央 (160, 50)、tilt 180、口は y 150）で決め、
+  // 下方置換法（口を上に向けた試験管: 底の中央 (160, 210)、口は y 110）では上下を入れかえる（y → 260 − y）。
+  // 静止図は content/substance.js の sub-3-c2・sub-3-c3
+  const DISP = {
+    up: {
+      gas: 'purple', fill: '#E9DDF8',
+      items: [
+        { type: 'text', x: 20, y: 34, text: '上方置換法', size: 16, bold: true },
+        { type: 'tube', x: 160, y: 50, height: 100, tilt: 180, level: 0 },
+        { type: 'line', points: [[40, 210], [160, 210], [160, 66]], width: 3 },
+      ],
+      after: [
+        { type: 'arrow', x1: 210, y1: 150, x2: 210, y2: 70, color: 'blue' },
+        { type: 'text', x: 222, y: 104, text: '軽い気体は', size: 13 },
+        { type: 'text', x: 222, y: 122, text: '上にたまる', size: 13 },
+        { type: 'text', x: 40, y: 200, text: '気体', size: 13 },
+        { type: 'text', x: 20, y: 236, text: '口を下に向ける', size: 13 },
+      ],
+    },
+    down: {
+      gas: 'gray', fill: '#E6E8EC',
+      items: [
+        { type: 'text', x: 20, y: 34, text: '下方置換法', size: 16, bold: true },
+        { type: 'tube', x: 160, y: 210, height: 100, level: 0 },
+        { type: 'line', points: [[40, 60], [160, 60], [160, 194]], width: 3 },
+      ],
+      after: [
+        { type: 'arrow', x1: 210, y1: 120, x2: 210, y2: 200, color: 'blue' },
+        { type: 'text', x: 222, y: 154, text: '重い気体は', size: 13 },
+        { type: 'text', x: 222, y: 172, text: '下にたまる', size: 13 },
+        { type: 'text', x: 40, y: 52, text: '気体', size: 13 },
+        { type: 'text', x: 20, y: 236, text: '口を上に向ける', size: 13 },
+      ],
+    },
+  };
+  // 以下は上方置換法の向きの座標。試験管の内側は x 150〜170、底の丸み（中心 (160, 62)、半径 10）のいちばん奥は y 52
+  const DISP_FULL = 146;    // たまった気体の先（口 y 150 の少し手前まで）
+  const DISP_PUSH = 132;    // 気体の先の進む量。DISP_FULL をこえた分は、口から出ていく空気をさらにおし出す
+  // たまった気体の粒（気体の先が通りすぎると、うすい色から濃くなって見えてくる）。ガラス管（x 160）をよける 2 列（x 153・167）
+  const DISP_GAS_DOTS = [0, 1, 2, 3, 4, 5, 6, 7].map(j => [j % 2 ? 167 : 153, 59 + 10 * j]);
+  // もとの空気の粒 [はじめの x, y, 口から出たあとに止まる x, y]。下の粒ほど先に口から出て遠くへ行く
+  const DISP_AIR = [[153, 74, 130, 172], [167, 92, 190, 172], [153, 110, 116, 188], [167, 128, 204, 188]];
+
+  // 気体の先 front（y）までの、試験管の奥からたまった所の形（底の丸みに沿う）
+  function dispGasShape(front, Y, fill) {
+    const pts = [[150, front], [150, Math.min(62, front)]];
+    for (let a = 170; a >= 10; a -= 10) {
+      const [x, y] = onCircle(160, 62, 10, a);
+      pts.push([x, Math.min(y, front)]);   // 気体の先より口側は気体の先の高さにそろえる
+    }
+    pts.push([170, Math.min(62, front)], [170, front]);
+    return { type: 'polygon', points: pts.map(([x, y]) => [x, Y(y)]), fill, stroke: 'none' };
+  }
+
+  // ガラス管の先から気体が出て、試験管の奥から順にたまり、もとの空気が口から外へおし出される
+  function displacement(dir) {
+    const d = DISP[dir];
+    const Y = dir === 'up' ? (y => y) : (y => 260 - y);
+    const pipe = d.items[2].points;
+    return function (t) {
+      const push = 52 + DISP_PUSH * stage(t, 0, 0.85);   // 気体の先（口の外までふくめた、おし出す位置）
+      const front = Math.min(DISP_FULL, push);            // 試験管の中の気体の先
+      const items = [d.items[0]];
+      if (front > 52.5) items.push(dispGasShape(front, Y, d.fill));
+      DISP_GAS_DOTS.forEach(([x, y]) => {
+        const k = clamp((front - (y + 3)) / 10, 0, 1);
+        if (k > 0) items.push({ type: 'circle', x, y: Y(y), r: 3, fill: mix(d.fill, TOKEN_HEX[d.gas], k), stroke: 'none' });
+      });
+      items.push(d.items[1], d.items[2]);
+      // ガラス管の中を流れる気体の粒（1 周に 2 回、3 つ）。管の先で試験管の気体に加わる。0.85 のあとは流れを止める
+      for (let k = 0; k < 3; k++) {
+        const s = 2 * t + k / 3;
+        const start = (Math.floor(s) - k / 3) / 2;   // この粒が管の入口を出た時刻
+        if (start + 0.5 > 0.86) continue;
+        const q = along(pipe, frac(s));
+        items.push({ type: 'circle', x: q.x, y: q.y, r: 3, fill: d.gas, stroke: 'none' });
+      }
+      // もとの空気の粒: 気体の先におされて口へ動き、口から外へ出て止まる（粒の間は 9 以上あけて重ならない）
+      DISP_AIR.forEach(([x0, y0, x1, y1], k) => {
+        const path = [[x0, y0], [x0, 152], [x1, y1]];
+        const q = along(path, clamp(push + 5 + 9 * k - y0, 0, pathLen(path)) / pathLen(path));
+        items.push({ type: 'circle', x: q.x, y: Y(q.y), r: 3, fill: 'white', stroke: 'line' });
+      });
+      return items.concat(d.after);
+    };
+  }
+
+  // 石灰石にうすい塩酸を加えて出た二酸化炭素が導管を通り、石灰水の中で泡になり、石灰水が白くにごる（sub-4-c2）
+  // 静止図は content/substance.js の sub-4-c2（石灰水の液面は y 215 − 90 × 0.6 = 161）
+  const CO2_PIPE = [[60, 108], [60, 70], [210, 70], [210, 200]];
+  // にごりの白い粒（出てくる順）。ガラス管（x 210）と泡の通り道（x 216）をよける
+  const CO2_CLOUD = [[188, 170], [226, 170], [198, 182], [250, 170], [186, 188], [238, 180],
+    [202, 196], [254, 190], [192, 204], [230, 196], [240, 192], [244, 206]];
+  function suCo2Limewater(t) {
+    const items = [{ type: 'tube', x: 60, y: 190, height: 90, level: 0.35 }];
+    items.push(
+      { type: 'rect', x: 46, y: 94, width: 28, height: 12, rx: 3, fill: 'gray', stroke: 'ink' },
+      { type: 'polygon', points: [[52, 186], [60, 178], [68, 186], [62, 190]], fill: 'rock' },
+    );
+    // 石灰石から出る泡（液面 y 158.5 まで上がって消える）
+    [0, 1].forEach(k => items.push({ type: 'circle', x: 56 + 8 * k, y: 176 - 15 * frac(2 * t + k / 2), r: 2.5, fill: 'white', stroke: 'line' }));
+    items.push({ type: 'line', points: CO2_PIPE, width: 3 });
+    // 導管の中を流れる二酸化炭素（1 周に 2 回、3 つ）
+    for (let k = 0; k < 3; k++) {
+      const q = along(CO2_PIPE, frac(2 * t + k / 3));
+      items.push({ type: 'circle', x: q.x, y: q.y, r: 3, fill: 'white', stroke: 'line' });
+    }
+    items.push({ type: 'beaker', x: 220, y: 215, width: 80, height: 90, level: 0.6, liquid: 'glass' });
+    // にごり: 白い粒（ふちなし。ふちのある泡と見分ける）が 1 つずつ、石灰水の色から白くなって出てくる
+    CO2_CLOUD.forEach(([x, y], i) => {
+      const f = stage(t, 0.15 + 0.05 * i, 0.3 + 0.05 * i);
+      if (f > 0) items.push({ type: 'circle', x, y, r: 3.5, fill: mix(TOKEN_HEX.glass, TOKEN_HEX.white, f), stroke: 'none' });
+    });
+    // ガラス管の先から出る泡（液面まで上がって消える）
+    for (let k = 0; k < 3; k++) {
+      const q = along([[210, 201], [216, 195], [216, 164]], frac(2 * t + k / 3));
+      items.push({ type: 'circle', x: q.x, y: q.y, r: 3, fill: 'white', stroke: 'line' });
+    }
+    items.push(
+      { type: 'text', x: 4, y: 236, text: '石灰石＋うすい塩酸', size: 12 },
+      { type: 'text', x: 228, y: 236, text: '石灰水が白くにごる', size: 12, anchor: 'middle' },
+      { type: 'text', x: 110, y: 60, text: '二酸化炭素', size: 14 },
+    );
     return items;
   }
 
@@ -222,6 +349,46 @@
     return items;
   }
 
+  // 蒸留で出てきた液体を、試験管 3 本に順に集める（state-4-c2）。静止図は content/state-change.js の state-4-c2
+  const DISTILL_X = [60, 160, 260];
+  const DISTILL_NAMES = ['1 本目', '2 本目', '3 本目'];
+  // 試験管 k に液がたまる区間（0.28 ごと。3 本目は 0.82 でたまり終わり、そのあとは 3 本とも静止図と同じ level 0.3）
+  function distillFill(t, k) { return stage(t, 0.28 * k, 0.28 * k + 0.26); }
+  // 試験管 k の液の level（1 てき目が着く f = 0.25 から増え、0.3 になる）
+  // 少ない level では液面が試験管の丸い底からはみ出して描かれるので、1 てき目が着いたら 0.06 から始める
+  function distillLevel(t, k) { const f = distillFill(t, k); return f < 0.25 ? 0 : 0.06 + 0.24 * stage(f, 0.25, 1); }
+  function stDistillOrder(t) {
+    const items = [];
+    DISTILL_X.forEach((x, k) => items.push({ type: 'tube', x, y: 170, height: 90, level: distillLevel(t, k) }));
+    DISTILL_X.forEach((x, k) => {
+      const f = distillFill(t, k);
+      if (!(f > 0 && f < 1)) return;
+      // たまっている試験管の口の上でしずくができ（大きくなる）、液面まで落ちる。1 本に 4 てき
+      const s = frac(4 * f);
+      const surface = 170 - 90 * distillLevel(t, k) - 3;
+      if (s < 0.4) items.push({ type: 'circle', x, y: 74, r: 1 + 2 * s / 0.4, fill: 'water', stroke: 'line' });
+      else {
+        const q = (s - 0.4) / 0.6;
+        items.push({ type: 'circle', x, y: 74 + (surface - 74) * q * q, r: 3, fill: 'water', stroke: 'line' });
+      }
+    });
+    DISTILL_X.forEach((x, k) => {
+      const f = distillFill(t, k);
+      items.push(Object.assign({ type: 'text', x, y: 66, text: DISTILL_NAMES[k], size: 14, anchor: 'middle', bold: true }, f > 0 && f < 1 ? { color: 'blue' } : {}));
+    });
+    items.push(
+      { type: 'text', x: 60, y: 196, text: 'においが強い', size: 12, anchor: 'middle' },
+      { type: 'text', x: 160, y: 196, text: '少しにおう', size: 12, anchor: 'middle' },
+      { type: 'text', x: 260, y: 196, text: 'ほとんどない', size: 12, anchor: 'middle' },
+      { type: 'text', x: 60, y: 214, text: 'よく燃える', size: 12, anchor: 'middle' },
+      { type: 'text', x: 160, y: 214, text: '少し燃える', size: 12, anchor: 'middle' },
+      { type: 'text', x: 260, y: 214, text: '燃えない', size: 12, anchor: 'middle' },
+      { type: 'text', x: 160, y: 236, text: '沸点の低いエタノールが先に多く出る', size: 13, anchor: 'middle' },
+      { type: 'arrow', x1: 90, y1: 40, x2: 230, y2: 40, color: 'gray', label: '集めた順' },
+    );
+    return items;
+  }
+
   // ================================================================
   // 水溶液（solution）
   // ================================================================
@@ -265,6 +432,109 @@
       { type: 'text', x: 80, y: 74, text: '溶媒（水）', size: 13, anchor: 'middle' },
       { type: 'text', x: 240, y: 74, text: '溶液（砂糖水）', size: 13, anchor: 'middle' },
       { type: 'text', x: 160, y: 228, text: '溶質 ＋ 溶媒 → 溶液', size: 14, anchor: 'middle' },
+    );
+    return items;
+  }
+
+  // ---- 飽和水溶液（sol-3-c1） ----
+  // ビーカー（底の中央 (140, 200)、幅 130・高さ 130、level 0.7 → 水面 y 109）。静止図は content/solution.js の sol-3-c1
+  const SAT_PILE = [[100, 196], [112, 186], [126, 190], [136, 184], [150, 190], [164, 185], [178, 196]];   // とけ残り（静止図）
+  const SAT_SURFACE = 109;
+  const SAT_SPOON = [150, 60];   // 薬さじの先（結晶はここから落ちる）
+  // 結晶 i（0〜10）を落とす時刻（0.07 ごと）。はじめの 6 つ（0.02〜0.37）はとけ、とけた粒が広がり終わってから落とす
+  // あとの 5 つ（0.58〜0.86）は底にたまる（とける結晶の粒が広がっているあいだに、とけない結晶がしずんでこないように）
+  function satDrop(i) { return i < SAT_DISSOLVE ? 0.02 + 0.07 * i : 0.58 + 0.07 * (i - SAT_DISSOLVE); }
+  const SAT_DISSOLVE = 6;
+  const SAT_AIR = 0.025, SAT_SINK = 0.05, SAT_MERGE = 0.04;   // 空気中を落ちる・水の中をしずむ・山に加わる時間
+  // とける結晶は薬さじの真下（x 150）でしずみながら小さくなり、(150, 135) でとけきって粒 2 つになる
+  const SAT_GONE = [SAT_SPOON[0], SAT_SURFACE + 26];
+  // とけた粒の止まる所。とけきった所から、粒ごとにちがう向き（度、画面の下向きが正）に距離 d だけ進む。
+  // 向きがみなちがうので、あとから広がる粒が先に止まった粒の上を通らない。真上の −135〜−45° は結晶がしずんでくる道、
+  // 真下の 55〜125° のあいだは、とけない結晶が底へしずむ道なのであける。2 つずつ（左へ行く粒・右へ行く粒）が 1 つの結晶から出る
+  // 距離を変えて、水の中に散らばって見えるようにする（近い向きの粒どうしは、あとの粒が通るときも 5 以上はなれる）
+  const SAT_RAYS = [[-150, 40], [-30, 40], [-165, 26], [-15, 26], [180, 48], [0, 48],
+    [155, 30], [25, 30], [140, 48], [40, 48], [125, 40], [55, 40]];
+  const SAT_DOTS = SAT_RAYS.map(([a, d]) => [SAT_GONE[0] + d * Math.cos(deg(a)), SAT_GONE[1] + d * Math.sin(deg(a))]);
+  // とけない結晶（6〜10 番目）が、とけ残りの山の上でたまる x（薬さじの真下の近く）
+  const SAT_PILE_X = [138, 150, 162, 144, 156];
+  function satCrystal(x, y, k) {
+    return { type: 'polygon', points: [[x, y - 5 * k], [x + 4 * k, y], [x, y + 5 * k], [x - 4 * k, y]], fill: 'white' };
+  }
+  // とけ残りの山の高さの割合（0〜1）。とけない結晶が 1 つ着くごとに 1/5 ずつ大きくなる
+  function satPileK(t) {
+    let k = 0;
+    for (let i = SAT_DISSOLVE; i <= 10; i++) {
+      const land = satDrop(i) + SAT_AIR + SAT_SINK;
+      k += stage(t, land, land + SAT_MERGE) / (11 - SAT_DISSOLVE);
+    }
+    return k;
+  }
+  // 山の上の面の y（x の位置。山の外は底 196）
+  function satPileTop(x, k) {
+    for (let i = 1; i < SAT_PILE.length; i++) {
+      const [x0, y0] = SAT_PILE[i - 1], [x1, y1] = SAT_PILE[i];
+      if (x >= x0 && x <= x1) return 196 - (196 - lerp(y0, y1, (x - x0) / (x1 - x0))) * k;
+    }
+    return 196;
+  }
+
+  // 結晶を 1 つずつ加えると、はじめはとけて粒が増え、やがてとけきれなくなって底にたまる（sol-3-c1）
+  function slSaturate(t) {
+    const saturated = t >= satDrop(SAT_DISSOLVE) + SAT_AIR + SAT_SINK;   // とけない結晶がはじめて底に着いたあと
+    const pileK = satPileK(t);
+    const items = [{ type: 'beaker', x: 140, y: 200, width: 130, height: 130, level: 0.7 }];
+    if (pileK > 0.01) items.push({ type: 'polygon', points: SAT_PILE.map(([x, y]) => [x, 196 - (196 - y) * pileK]), fill: 'white' });
+    // とけた粒（結晶が消えた所から水の中へ広がる）
+    for (let i = 0; i < SAT_DISSOLVE; i++) {
+      const gone = satDrop(i) + SAT_AIR + SAT_SINK;   // 結晶がとけきる時刻
+      const e = ease(stage(t, gone, gone + 0.12));
+      if (!(t >= gone)) continue;
+      [0, 1].forEach(h => {
+        const j = 2 * i + h;
+        const [rx, ry] = SAT_DOTS[j];
+        const sx = 1.5 * osc(t, 3, j / 12) * e, sy = 1.5 * osc(t, 3, j / 12 + 0.25) * e;
+        // 結晶が消えた所の左右（3 ずつ）から出る
+        items.push({ type: 'circle', x: lerp(SAT_GONE[0] + (h ? 3 : -3), rx, e) + sx, y: lerp(SAT_GONE[1], ry, e) + sy, r: 2.5, fill: 'purple', stroke: 'none' });
+      });
+    }
+    // 落ちている結晶
+    for (let i = 0; i <= 10; i++) {
+      const d0 = satDrop(i);
+      if (t < d0) continue;
+      const a = stage(t, d0, d0 + SAT_AIR);                  // 空気中（薬さじの先 → 水面）
+      const w = stage(t, d0 + SAT_AIR, d0 + SAT_AIR + SAT_SINK);   // 水の中
+      let x, y, k = 1;
+      if (a < 1) {
+        x = SAT_SPOON[0]; y = SAT_SPOON[1] + 5 + (SAT_SURFACE - SAT_SPOON[1] - 5) * a * a;
+      } else if (i < SAT_DISSOLVE) {
+        if (w >= 1) continue;   // とけきった
+        x = SAT_GONE[0]; y = lerp(SAT_SURFACE, SAT_GONE[1], w); k = 1 - w;   // しずみながら小さくなる
+      } else {
+        const m = stage(t, d0 + SAT_AIR + SAT_SINK, d0 + SAT_AIR + SAT_SINK + SAT_MERGE);   // 山に加わる
+        if (m >= 1) continue;
+        const px = SAT_PILE_X[i - SAT_DISSOLVE];
+        x = lerp(SAT_SPOON[0], px, ease(w));
+        y = lerp(SAT_SURFACE, satPileTop(px, satPileK(d0 + SAT_AIR + SAT_SINK)) - 4, w);
+        k = 1 - m;
+      }
+      if (k > 0.05) items.push(satCrystal(x, y, k));
+    }
+    // 薬さじ
+    items.push(
+      { type: 'line', points: [[206, 48], [SAT_SPOON[0] + 6, SAT_SPOON[1] - 1]], color: 'gray', width: 4 },
+      { type: 'ellipse', x: SAT_SPOON[0], y: SAT_SPOON[1], rx: 8, ry: 3, fill: 'gray', stroke: 'none' },
+    );
+    if (saturated) {
+      items.push(
+        { type: 'arrow', x1: 236, y1: 178, x2: 186, y2: 190, color: 'gray' },
+        { type: 'text', x: 240, y: 172, text: 'とけ残り', size: 14 },
+        { type: 'arrow', x1: 236, y1: 118, x2: 196, y2: 128, color: 'gray' },
+        { type: 'text', x: 240, y: 112, text: '飽和水溶液', size: 14 },
+      );
+    }
+    items.push(
+      { type: 'text', x: 140, y: 36, text: saturated ? 'もうこれ以上とけない' : 'まだとける', size: 14, anchor: 'middle' },
+      { type: 'text', x: 140, y: 228, text: '水 100 g', size: 13, anchor: 'middle' },
     );
     return items;
   }
@@ -422,6 +692,43 @@
       { type: 'text', x: 240, y: 214, text: '二酸化炭素が出て', size: 12, anchor: 'middle' },
       { type: 'text', x: 240, y: 232, text: '質量が小さくなる', size: 12, anchor: 'middle' },
     );
+    return items;
+  }
+
+  // 反応後の容器の中で二酸化炭素の泡が上がって上の空間にたまっても、はかりの値は変わらない（chem-4-c1）
+  // 静止図は content/chemical-change.js の chem-4-c1。泡 j は 0.08 + 0.1j に液の中から出て、0.1 で止まる所に着く。
+  // 上にある所から順にたまるので、上がっていく泡が先にたまった泡の前を通らない。0.99 で 4・3 番目は静止図の泡 (250,88)・(230,100)
+  const MASS_BUBBLES = [[262, 76], [224, 78], [250, 88], [230, 100], [258, 106], [242, 112]];
+  const MASS_REST = 0.99;
+  function chMassConservation(t) {
+    const items = [
+      { type: 'text', x: 80, y: 40, text: '反応前', size: 14, anchor: 'middle', bold: true },
+      { type: 'text', x: 240, y: 40, text: '反応後', size: 14, anchor: 'middle', bold: true },
+      { type: 'rect', x: 66, y: 52, width: 28, height: 12, rx: 3, fill: 'gray' },
+      { type: 'rect', x: 50, y: 64, width: 60, height: 96, rx: 8, fill: 'none' },
+      { type: 'rect', x: 52, y: 120, width: 56, height: 38, fill: 'water', stroke: 'none' },
+      { type: 'rect', x: 35, y: 162, width: 90, height: 28, fill: 'glass', label: '80.0 g' },
+      { type: 'arrow', x1: 138, y1: 112, x2: 182, y2: 112, color: 'gray' },
+      { type: 'rect', x: 226, y: 52, width: 28, height: 12, rx: 3, fill: 'gray' },
+      { type: 'rect', x: 210, y: 64, width: 60, height: 96, rx: 8, fill: 'none' },
+      { type: 'rect', x: 212, y: 120, width: 56, height: 38, fill: 'water', stroke: 'none' },
+    ];
+    MASS_BUBBLES.forEach(([sx, sy], j) => {
+      const start = 0.08 + 0.1 * j;
+      if (t < start) return;
+      // たまったあとは上の空間でゆっくり動く（0.99 でずれ 0）
+      const ph = j / 6;
+      const ex = sx + 2 * (osc(t, 1, ph) - osc(MASS_REST, 1, ph));
+      const ey = sy + 1.5 * (osc(t, 1, ph + 0.25) - osc(MASS_REST, 1, ph + 0.25));
+      const s = stage(t, start, start + 0.1);
+      const q = along([[sx, 154], [sx, 120], [ex, ey]], s);
+      items.push({ type: 'circle', x: q.x, y: q.y, r: 2 + 2 * Math.min(1, 4 * s), fill: 'white', stroke: 'line' });
+    });
+    items.push(
+      { type: 'rect', x: 195, y: 162, width: 90, height: 28, fill: 'glass', label: '80.0 g' },
+      { type: 'text', x: 160, y: 226, text: '原子の種類と数は変わらない', size: 13, anchor: 'middle' },
+    );
+    if (t >= 0.7) items.push({ type: 'text', x: 240, y: 206, text: '変わらない', size: 12, anchor: 'middle', color: 'blue', bold: true });
     return items;
   }
 
@@ -656,6 +963,89 @@
     return items;
   }
 
+  // 塩酸 10 cm³ に水酸化ナトリウム水溶液を加えていったときのイオンの数（ion-4-c4）。静止図は content/ion.js の ion-4-c4。
+  // 加えた量のカーソルが 0 → 20 cm³（x 60 → 290）へ動き、中性（x 175）で少し止まる。左上の小さなビーカーで BTB 溶液の色
+  const BTB_YELLOW = '#FFE27A', BTB_GREEN = '#7CCB8E', BTB_BLUE = '#7FA8F5';
+  function ionCountX(t) {
+    return t < 0.35 ? lerp(60, 175, ease(stage(t, 0, 0.35))) : lerp(175, 290, ease(stage(t, 0.55, 0.88)));
+  }
+  // x の位置のイオンの数の線の y（静止図の 4 本の折れ線と同じ）
+  function ionCountYs(x) {
+    const acid = x <= 175;
+    return {
+      Na: 200 - 160 * (x - 60) / 230,
+      Cl: 120,
+      H: acid ? 120 + 80 * (x - 60) / 115 : 200,
+      OH: acid ? 200 : 200 - 80 * (x - 175) / 115,
+    };
+  }
+  // 交点の丸の位置。数が同じイオンの丸（中性での Na+ と Cl-、H+ と OH- など）は同じ所に重なるので、重なるときは
+  // それぞれの線に沿って左右に少しずつずらし、中心の間を ION_DOT_GAP 以上あける（丸は半径 4。線の上からは出ない）
+  const ION_ORDER = ['OH', 'H', 'Na', 'Cl'];   // 描く順
+  const ION_DOT_GAP = 9;
+  function ionCountDots(x) {
+    const px = { OH: x, H: x, Na: x, Cl: x };
+    const pos = k => [px[k], ionCountYs(px[k])[k]];
+    for (let i = 0; i < ION_ORDER.length; i++) {
+      for (let j = i + 1; j < ION_ORDER.length; j++) {
+        const a = ION_ORDER[i], b = ION_ORDER[j];
+        const a0 = px[a], b0 = px[b];
+        for (let s = 0; s <= 12; s += 0.25) {
+          let la = a0 - s, lb = b0 + s;
+          if (la < 60) { lb += 60 - la; la = 60; }
+          if (lb > 290) { la -= lb - 290; lb = 290; }
+          px[a] = la; px[b] = lb;
+          const [ax, ay] = pos(a), [bx, by] = pos(b);
+          if (Math.hypot(ax - bx, ay - by) >= ION_DOT_GAP) break;
+        }
+      }
+    }
+    const out = {};
+    ION_ORDER.forEach(k => { const [dx, dy] = pos(k); out[k] = { x: dx, y: dy }; });
+    return out;
+  }
+  function ioIonCount(t) {
+    const x = ionCountX(t);
+    const ys = ionCountYs(x);
+    // カーソル（いちばん上の交点の少し上まで。左上のビーカーと文字にかからない）。線と文字の下に描く
+    const top = Math.min(ys.Na, ys.Cl, ys.H, ys.OH) - 10;
+    const items = [
+      { type: 'line', points: [[175, 200], [175, 40]], color: 'gray', width: 2, dashed: true },
+      { type: 'text', x: 175, y: 32, text: '中性', size: 12, anchor: 'middle' },
+      { type: 'line', points: [[x, 200], [x, top]], color: 'blue', width: 2, dashed: true },
+      { type: 'line', points: [[60, 30], [60, 200], [300, 200]], width: 2 },
+      { type: 'text', x: 8, y: 20, text: 'イオンの数', size: 12 },
+      { type: 'text', x: 54, y: 218, text: '0', size: 12, anchor: 'end' },
+      { type: 'text', x: 175, y: 218, text: '10', size: 12, anchor: 'middle' },
+      { type: 'text', x: 290, y: 218, text: '20', size: 12, anchor: 'middle' },
+      { type: 'text', x: 312, y: 236, text: '加えた水酸化ナトリウム水溶液〔cm³〕', size: 12, anchor: 'end' },
+      { type: 'line', points: [[60, 120], [290, 120]], color: 'green', width: 3 },
+      { type: 'line', points: [[60, 200], [290, 40]], color: 'orange', width: 3 },
+      { type: 'line', points: [[60, 120], [175, 200], [290, 200]], color: 'blue', width: 3 },
+      { type: 'line', points: [[175, 200], [290, 120]], color: 'purple', width: 3 },
+    ];
+    // 交点（線と同じ色。白いふち）。重なるときは線に沿って少しずらす
+    const dots = ionCountDots(x);
+    [['OH', 'purple'], ['H', 'blue'], ['Na', 'orange'], ['Cl', 'green']].forEach(([k, c]) => {
+      items.push({ type: 'circle', x: dots[k].x, y: dots[k].y, r: 4, fill: c, stroke: 'white' });
+    });
+    items.push(
+      { type: 'text', x: 284, y: 34, text: 'Na+', size: 13, anchor: 'end', color: 'orange' },
+      { type: 'text', x: 232, y: 114, text: 'Cl-', size: 13, color: 'green' },
+      { type: 'text', x: 64, y: 160, text: 'H+', size: 13, color: 'blue' },
+      { type: 'text', x: 258, y: 172, text: 'OH-', size: 13, color: 'purple' },
+    );
+    // BTB 溶液の色（中性の前後で少しずつ変わる）と文字
+    const color = x <= 175 ? mix(BTB_YELLOW, BTB_GREEN, stage(x, 163, 175)) : mix(BTB_GREEN, BTB_BLUE, stage(x, 175, 187));
+    const name = x < 171 ? '黄色（酸性）' : x <= 179 ? '緑色（中性）' : '青色（アルカリ性）';
+    items.push(
+      { type: 'beaker', x: 118, y: 84, width: 40, height: 40, level: 0.6, liquid: color },
+      { type: 'text', x: 118, y: 104, text: name, size: 12, anchor: 'middle', bold: true },
+      { type: 'text', x: 8, y: 236, text: 'いま ' + Math.round((x - 60) / 11.5) + ' cm³', size: 12, color: 'blue', bold: true },
+    );
+    return items;
+  }
+
   const DEFS = [
     ['su-water-displacement', suWaterDisplacement, { restT: 0 }],
     ['st-particles', stParticles, { restT: 0 }],
@@ -669,12 +1059,21 @@
     ['io-daniell', ioDaniell, { restT: 0 }],
     ['io-migration', ioMigration, { restT: MIGRATION_REST }],
     ['io-neutralize', ioNeutralize, { restT: 0.99 }],
+    // 優先度 B（docs/anim-plan.md 6 章）
+    ['su-upward-displacement', displacement('up'), { restT: 0.99 }],
+    ['su-downward-displacement', displacement('down'), { restT: 0.99 }],
+    ['su-co2-limewater', suCo2Limewater, { restT: 0.99 }],
+    ['st-distill-order', stDistillOrder, { restT: 0.99 }],
+    ['sl-saturate', slSaturate, { restT: 0.99 }],
+    ['ch-mass-conservation', chMassConservation, { restT: MASS_REST }],
+    ['io-ion-count', ioIonCount, { restT: 0.99 }],
   ];
   DEFS.forEach(([kind, fn, opts]) => anim.register(kind, fn, opts));
   // このファイルで足した kind と、テストで値を確かめるための式
   const api = {
     KINDS: DEFS.map(d => d[0]), kno3At, recrystTemp, migrationLeft,
     daniell: { ion: daniellIon, ZN_PATH, ZN_PHASES, CU_PATH, CU_PHASES },
+    distillFill, distillLevel, satPileK, ionCountX, ionCountYs, ionCountDots,
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

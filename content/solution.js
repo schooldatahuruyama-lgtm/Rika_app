@@ -35,6 +35,19 @@
 
   // ---- 図の部品をまとめる道具 ----
 
+  // 写真（assets/images/solution/<name>.jpg。640×480 を場面いっぱいに描く。座標は画像の位置 × 0.5）
+  function photo(name) { return { type: 'image', src: 'assets/images/solution/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // 粒子の並び方（ビーカーの底の中央からのずれ [dx, dy]。幅 80・高さ 110・level 0.85 のビーカー用）
   const DOTS = {
     bottom: [[-26, -8], [-15, -12], [-4, -7], [7, -13], [18, -8], [27, -12], [-20, -20], [0, -22], [20, -20]],
@@ -174,38 +187,30 @@
       {
         id: 'sol-1-c2',
         text: '**水溶液**はすきとおっています（**透明**）。硫酸銅の水溶液のように色がついていても、すきとおっていれば水溶液です。泥水のようににごっていて、しばらくおくと下にたまるものは水溶液ではありません。',
-        // 色つきでも透明な水溶液と、にごって下にたまる泥水
+        // 写真: 左はすきとおった青い硫酸銅の水溶液、右はにごった泥水（底に泥がたまる (228, 128〜140)）
         figure: scene([
-          { type: 'beaker', x: 80, y: 180, width: 100, height: 120, level: 0.75, liquid: '#9CC3FF' },
-          { type: 'beaker', x: 240, y: 180, width: 100, height: 120, level: 0.75, liquid: 'sand' },
-          { type: 'circle', x: 214, y: 172, r: 5, fill: 'brown', stroke: 'none' },
-          { type: 'circle', x: 228, y: 174, r: 5, fill: 'brown', stroke: 'none' },
-          { type: 'circle', x: 242, y: 171, r: 5, fill: 'brown', stroke: 'none' },
-          { type: 'circle', x: 256, y: 174, r: 5, fill: 'brown', stroke: 'none' },
-          { type: 'circle', x: 268, y: 172, r: 5, fill: 'brown', stroke: 'none' },
-          { type: 'circle', x: 236, y: 163, r: 5, fill: 'brown', stroke: 'none' },
-          { type: 'text', x: 80, y: 40, text: '硫酸銅の水溶液', size: 14, anchor: 'middle' },
-          { type: 'text', x: 240, y: 40, text: '泥水', size: 14, anchor: 'middle' },
-          { type: 'text', x: 80, y: 206, text: '青色でも', size: 13, anchor: 'middle' },
-          { type: 'text', x: 80, y: 224, text: 'すきとおっている', size: 13, anchor: 'middle' },
-          { type: 'text', x: 240, y: 206, text: 'にごっていて', size: 13, anchor: 'middle' },
-          { type: 'text', x: 240, y: 224, text: '下にたまる', size: 13, anchor: 'middle' },
+          photo('sol-1-c2'),
+          tag(90, 168, '硫酸銅の水溶液'),
+          tag(90, 190, '青色でも', { size: 13 }),
+          tag(90, 208, 'すきとおっている', { size: 13 }),
+          tag(228, 168, '泥水'),
+          tag(228, 190, 'にごっていて', { size: 13 }),
+          tag(228, 208, '下にたまる', { size: 13 }),
         ]),
       },
       {
         id: 'sol-1-c3',
         text: '物質が水にとけると、目に見えないほど小さな**粒子**に分かれ、水の中に**均一**に広がります。だから水溶液はどこも同じ濃さで、時間がたっても下にたまりません。粒子はとても小さいので、ろ過をしてもろ紙を通りぬけます。',
-        // 粒子のモデル: 入れた直後 → 広がっていく → 均一に広がる
+        // 写真: 水に入れた硫酸銅の結晶がとけて広がる（左から 入れた直後 → 数日後 → しばらくたつと均一）
         figure: scene([
-          ...particleBeaker(50, 190, 'lump'),
-          ...particleBeaker(160, 190, 'spread'),
-          ...particleBeaker(270, 190, 'even'),
-          { type: 'arrow', x1: 94, y1: 140, x2: 114, y2: 140, color: 'gray' },
-          { type: 'arrow', x1: 204, y1: 140, x2: 224, y2: 140, color: 'gray' },
-          { type: 'text', x: 160, y: 40, text: '● はとけた物質の粒子', size: 13, anchor: 'middle' },
-          { type: 'text', x: 50, y: 214, text: '入れた直後', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 214, text: '広がっていく', size: 12, anchor: 'middle' },
-          { type: 'text', x: 270, y: 214, text: '均一に広がる', size: 12, anchor: 'middle' },
+          photo('sol-1-c3'),
+          { type: 'arrow', x1: 92, y1: 100, x2: 128, y2: 100, color: 'gray', width: 3 },
+          { type: 'arrow', x1: 190, y1: 100, x2: 226, y2: 100, color: 'gray', width: 3 },
+          tag(64, 186, '入れた直後', { size: 13 }),
+          tag(160, 186, '数日後', { size: 13 }),
+          tag(257, 186, 'しばらくたつと', { size: 13 }),
+          tag(257, 203, '均一になる', { size: 13 }),
+          tag(160, 228, 'とけた物質は全体に均一に広がる', { size: 13 }),
         ]),
       },
     ],
@@ -484,6 +489,7 @@
     lessons: [
       {
         id: 'sol-3-c1',
+        anim: 'sl-saturate',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '物質を水にとかしていくと、やがてそれ以上とけなくなります。物質がそれ以上とけきれなくなった水溶液を**飽和水溶液**といいます。水 100 g にとける物質の最大の質量を**溶解度**といい、物質の種類と水の温度で決まります。',
         // とけ残りが出た飽和水溶液
         figure: scene([
@@ -634,21 +640,18 @@
       {
         id: 'sol-4-c1',
         text: '固体の物質をいったん水にとかし、水溶液を冷やしたり水を蒸発させたりして、再び固体として取り出すことを**再結晶**といいます。このとき出てくる、規則正しい形をした固体を**結晶**といいます。',
-        // 60 ℃ の水溶液を冷やすと、結晶が出てくる
+        // 写真: 冷やした硝酸カリウムの水溶液。液の中と底に針のような結晶 (150〜300, 75〜210) が出ている
         figure: scene([
-          { type: 'beaker', x: 70, y: 190, width: 90, height: 110, level: 0.7, liquid: 'water' },
-          { type: 'arrow', x1: 128, y1: 140, x2: 186, y2: 140, color: 'blue', label: '冷やす' },
-          { type: 'beaker', x: 250, y: 190, width: 90, height: 110, level: 0.7, liquid: 'water' },
-          // 底に出てきた小さな結晶
-          { type: 'polygon', points: [[218, 186], [242, 178], [243, 181], [219, 189]], fill: 'white' },
-          { type: 'polygon', points: [[236, 187], [258, 182], [259, 185], [237, 190]], fill: 'white' },
-          { type: 'polygon', points: [[252, 186], [276, 176], [277, 179], [253, 189]], fill: 'white' },
-          { type: 'polygon', points: [[228, 180], [250, 172], [251, 175], [229, 183]], fill: 'white' },
-          { type: 'polygon', points: [[262, 188], [282, 184], [283, 187], [263, 191]], fill: 'white' },
-          { type: 'text', x: 70, y: 52, text: '60 ℃', size: 16, anchor: 'middle', bold: true },
-          { type: 'text', x: 250, y: 52, text: '20 ℃', size: 16, anchor: 'middle', bold: true },
-          { type: 'text', x: 70, y: 214, text: 'すべてとけている', size: 13, anchor: 'middle' },
-          { type: 'text', x: 250, y: 214, text: '結晶が出てくる', size: 13, anchor: 'middle' },
+          photo('sol-4-c1'),
+          tag(54, 44, '60 ℃', { size: 16, bold: true }),
+          tag(54, 66, 'すべて', { size: 13 }),
+          tag(54, 84, 'とけていた', { size: 13 }),
+          { type: 'arrow', x1: 54, y1: 96, x2: 54, y2: 134, color: 'blue', width: 3 },
+          tag(82, 120, '冷やす', { size: 13 }),
+          tag(54, 156, '20 ℃', { size: 16, bold: true }),
+          tag(54, 178, '結晶が', { size: 13 }),
+          tag(54, 196, '出てくる', { size: 13 }),
+          pointer(86, 192, 152, 180),
         ]),
       },
       {
@@ -666,18 +669,16 @@
       {
         id: 'sol-4-c3',
         text: '塩化ナトリウムは温度で溶解度がほとんど変わらないので、冷やしても**結晶**はあまり出ません。水を**蒸発**させて取り出します。結晶の形は物質によって決まっていて、塩化ナトリウムは立方体、ミョウバンは正八面体のような形です。',
-        // 結晶の形（物質によって決まっている）
+        // 写真: 黒い台紙の上の結晶（左から 硝酸カリウムの針・塩化ナトリウムの立方体・ミョウバンの正八面体）
         figure: scene([
-          ...needleItems(60, 120),
-          ...cubeItems(160, 120),
-          ...octaItems(260, 120),
-          { type: 'text', x: 160, y: 40, text: '結晶の形は物質で決まっている', size: 14, anchor: 'middle' },
-          { type: 'text', x: 60, y: 186, text: '硝酸カリウム', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 186, text: '塩化ナトリウム', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 186, text: 'ミョウバン', size: 12, anchor: 'middle' },
-          { type: 'text', x: 60, y: 206, text: '（針のような形）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 206, text: '（立方体）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 206, text: '（正八面体）', size: 12, anchor: 'middle' },
+          photo('sol-4-c3'),
+          tag(62, 184, '硝酸カリウム', { size: 13 }),
+          tag(167, 184, '塩化ナトリウム', { size: 13 }),
+          tag(260, 184, 'ミョウバン', { size: 13 }),
+          tag(62, 204, '（針のような形）', { size: 13 }),
+          tag(167, 204, '（立方体）', { size: 13 }),
+          tag(260, 204, '（正八面体）', { size: 13 }),
+          tag(160, 230, '結晶の形は物質で決まっている', { size: 13 }),
         ]),
       },
       {

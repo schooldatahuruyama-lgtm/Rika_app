@@ -53,7 +53,6 @@
   }
 
   // 河口から沖までの海の断面。海面は y=70、海底は (60,110) から (320,200) へ下がる
-  function floorY(x) { return 110 + (x - 60) * 90 / 260; }
   function seaItems() {
     return [
       { type: 'rect', x: 60, y: 70, width: 260, height: 170, fill: 'water', stroke: 'none' },
@@ -68,16 +67,6 @@
       { type: 'text', x: 314, y: 232, text: '沖', size: 12, anchor: 'end' },
     ];
   }
-  // 海底に積もった れき・砂・泥（厚さ 14 の帯）
-  function depositItems() {
-    const band = (x1, x2, fillName) => ({
-      type: 'polygon',
-      points: [[x1, r1(floorY(x1) - 14)], [x2, r1(floorY(x2) - 14)], [x2, r1(floorY(x2))], [x1, r1(floorY(x1))]],
-      fill: fillName, stroke: 'line',
-    });
-    return [band(60, 140, 'rock'), band(140, 230, 'sand'), band(230, 320, MUD)];
-  }
-
   // 岩石の粒のようす（80×80 の枠。左上 (x0, y0)）。kind は 'gravel' | 'sand' | 'mud' | 'tuff'
   // gravel: 大きく丸い粒／sand: 小さく丸い粒／mud: とても細かい粒／tuff: 角ばった粒
   const GRAVEL_DOTS = [[18, 18, 11], [50, 15, 10], [66, 42, 11], [32, 44, 10], [54, 66, 11], [16, 68, 10]];
@@ -209,6 +198,22 @@
     return items;
   }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」。content/plants.js と同じ） ----
+  // 画像は assets/images/strata/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/strata/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // ================================================================
   // 領域 1: 地層のでき方
   // ================================================================
@@ -219,6 +224,7 @@
     lessons: [
       {
         id: 'strata-1-c1',
+        anim: 'sr-erosion-flow',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '岩石は、気温の変化や水のはたらきで、表面からもろくなってくずれていきます。これを**風化**といいます。くずれた岩石は、流れる水によってけずられます。このはたらきを**侵食**といいます。',
         // 山から海までの断面と、流れる水のはたらき
         figure: scene(riverItems().concat([
@@ -240,44 +246,41 @@
       {
         id: 'strata-1-c2',
         text: 'けずられた土砂は、流れる水に運ばれます（**運搬**）。流れがゆるやかになると、土砂は積もります（**堆積**）。山から平地に出たところには扇状地、河口には三角州ができます。',
-        // 川がつくる地形（V 字谷・扇状地・三角州）
-        figure: scene(riverItems().concat([
-          { type: 'text', x: 64, y: 36, text: 'V字谷', size: 13 },
-          { type: 'line', points: [[76, 40], [62, 70]], color: 'gray', width: 2 },
-          { type: 'text', x: 92, y: 80, text: '扇状地', size: 13 },
-          { type: 'line', points: [[110, 84], [116, 110]], color: 'gray', width: 2 },
-          { type: 'text', x: 200, y: 112, text: '三角州', size: 13 },
-          { type: 'line', points: [[214, 116], [202, 136]], color: 'gray', width: 2 },
-          { type: 'text', x: 100, y: 200, text: '流れがゆるやかに', size: 12, anchor: 'middle' },
-          { type: 'text', x: 100, y: 218, text: 'なると堆積する', size: 12, anchor: 'middle' },
-          { type: 'text', x: 290, y: 176, text: '海', size: 14 },
-        ])),
+        // 写真: 川がつくる地形（左から V字谷 (52, 30〜148)・扇状地 (160, 28〜145)・三角州 (268, 30〜142)。下半分は白い余白）
+        figure: scene([
+          photo('strata-1-c2'),
+          tag(52, 168, 'V字谷', { size: 15, bold: true }), tag(160, 168, '扇状地', { size: 15, bold: true }), tag(268, 168, '三角州', { size: 15, bold: true }),
+          tag(52, 190, '山の中', { size: 13 }), tag(160, 190, '山から平地に', { size: 13 }), tag(268, 190, '河口', { size: 13 }),
+          tag(160, 208, '出たところ', { size: 13 }),
+          tag(160, 232, '流れがゆるやかになると堆積する', { size: 13 }),
+        ]),
       },
       {
         id: 'strata-1-c3',
         text: '土砂は粒の大きさで、**れき**（2 mm 以上）、**砂**、**泥**（0.06 mm 以下）に分けます。大きく重い粒ほど早くしずむので、河口に近いところにはれき、沖へ行くほど砂、泥と小さい粒が積もります。',
-        // 海底に積もる粒（河口の近くは大きく、沖ほど小さい）
-        figure: scene(seaItems().concat(depositItems(), [
-          { type: 'text', x: 84, y: 100, text: 'れき', size: 14 },
-          { type: 'text', x: 176, y: 130, text: '砂', size: 14 },
-          { type: 'text', x: 266, y: 162, text: '泥', size: 14 },
-          { type: 'text', x: 200, y: 30, text: '河口に近いほど粒が大きい', size: 13, anchor: 'middle' },
-        ])),
+        // 写真: れき・砂・泥の 3 つの山（左から (57, 50〜122)・(164, 56〜125)・(266, 55〜125)。下半分は白い余白）
+        figure: scene([
+          photo('strata-1-c3'),
+          tag(57, 148, 'れき', { size: 15, bold: true }), tag(164, 148, '砂', { size: 15, bold: true }), tag(266, 148, '泥', { size: 15, bold: true }),
+          tag(57, 168, '2mm以上', { size: 13 }), tag(258, 168, '0.06mm以下', { size: 13 }),
+          tag(160, 200, '粒が大きい ←　　→ 粒が小さい', { size: 14 }),
+          tag(160, 224, '大きく重い粒ほど河口の近くに積もる', { size: 13 }),
+        ]),
       },
       {
         id: 'strata-1-c4',
         text: '海や湖の底では、運ばれてきた土砂が長い年月をかけて積み重なり、**地層**ができます。地層は下から順に積もるので、ふつう、下にある層ほど古く、上にある層ほど新しくなります。',
-        // 積み重なった地層（下ほど古い）
+        // 写真: しま模様の地層が見えるがけ（上から 泥 (y 37〜75)・砂 (75〜102)・れき (102〜137)・泥 (137〜172)・砂 (172〜215)。右は白い余白）
         figure: scene([
-          { type: 'rect', x: 40, y: 40, width: 200, height: 30, fill: MUD, label: '泥' },
-          { type: 'rect', x: 40, y: 70, width: 200, height: 30, fill: 'sand', label: '砂' },
-          { type: 'rect', x: 40, y: 100, width: 200, height: 30, fill: 'rock', label: 'れき' },
-          { type: 'rect', x: 40, y: 130, width: 200, height: 30, fill: MUD, label: '泥' },
-          { type: 'rect', x: 40, y: 160, width: 200, height: 30, fill: 'sand', label: '砂' },
-          { type: 'arrow', x1: 266, y1: 52, x2: 266, y2: 182, color: 'gray' },
-          { type: 'text', x: 276, y: 58, text: '新しい', size: 12 },
-          { type: 'text', x: 276, y: 186, text: '古い', size: 12 },
-          { type: 'text', x: 140, y: 222, text: '下の層ほど古い', size: 14, anchor: 'middle' },
+          photo('strata-1-c4'),
+          pointer(222, 56, 180, 56), tag(236, 61, '泥'),
+          pointer(222, 88, 180, 88), tag(236, 93, '砂'),
+          pointer(218, 120, 180, 120), tag(240, 125, 'れき'),
+          pointer(222, 155, 180, 155), tag(236, 160, '泥'),
+          pointer(222, 192, 180, 192), tag(236, 197, '砂'),
+          { type: 'arrow', x1: 290, y1: 64, x2: 290, y2: 188, color: 'blue' },
+          tag(290, 54, '新しい', { size: 13 }), tag(290, 206, '古い', { size: 13 }),
+          tag(240, 232, '下の層ほど古い', { size: 14, bold: true }),
         ]),
       },
     ],
@@ -411,41 +414,24 @@
       {
         id: 'strata-2-c1',
         text: '積もった土砂が長い年月をかけて押し固められると、**堆積岩**になります。粒の大きさで、**れき岩**・**砂岩**・**泥岩**に分けます。流れる水に運ばれる間に角がけずられるので、粒は丸みをおびています。',
-        // れき岩・砂岩・泥岩の粒のようす
-        figure: scene(textureBox(20, 50, 'gravel').concat(textureBox(120, 50, 'sand'), textureBox(220, 50, 'mud'), [
-          { type: 'text', x: 160, y: 34, text: '粒の大きさで分ける（粒は丸い）', size: 14, anchor: 'middle' },
-          { type: 'text', x: 60, y: 156, text: 'れき岩', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 156, text: '砂岩', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 260, y: 156, text: '泥岩', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 60, y: 176, text: '2 mm 以上', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 176, text: '2〜0.06 mm', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 176, text: '0.06 mm 以下', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 214, text: '粒が大きい ← → 粒が小さい', size: 13, anchor: 'middle' },
-        ])),
+        // 写真: れき岩・砂岩・泥岩の標本（左から (52, 42〜152)・(159, 45〜152)・(265, 45〜150)。下は白い余白）
+        figure: scene([
+          photo('strata-2-c1'),
+          tag(52, 178, 'れき岩', { size: 15, bold: true }), tag(159, 178, '砂岩', { size: 15, bold: true }), tag(265, 178, '泥岩', { size: 15, bold: true }),
+          tag(160, 202, '粒が大きい ←　　→ 粒が小さい', { size: 14 }),
+          tag(160, 226, '運ばれる間に角がけずられ、粒は丸い', { size: 13 }),
+        ]),
       },
       {
         id: 'strata-2-c2',
         text: '生物の殻などが積もってできた**石灰岩**に、うすい塩酸をかけると、二酸化炭素のあわが出ます。**チャート**はとてもかたく、鉄くぎでこすっても傷がつきません。塩酸をかけてもあわは出ません。',
-        // 石灰岩とチャートに、うすい塩酸をかける
+        // 写真: 石灰岩（左 (75, 50〜165)。うすい塩酸をかけてあわが出る）とチャート（右 (240, 60〜160)。あわは出ない）。スポイトの先は (57, 52)・(257, 50)
         figure: scene([
-          { type: 'text', x: 160, y: 28, text: 'うすい塩酸をかけると…', size: 14, anchor: 'middle' },
-          { type: 'rect', x: 74, y: 52, width: 12, height: 40, fill: 'white', rx: 3 },
-          { type: 'circle', x: 80, y: 104, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'rect', x: 224, y: 52, width: 12, height: 40, fill: 'white', rx: 3 },
-          { type: 'circle', x: 230, y: 104, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'polygon', points: [[24, 160], [50, 132], [110, 134], [136, 160], [110, 182], [44, 182]], fill: 'glass', stroke: 'line' },
-          { type: 'polygon', points: [[174, 160], [200, 132], [260, 134], [286, 160], [260, 182], [194, 182]], fill: 'rock', stroke: 'line' },
-          { type: 'circle', x: 64, y: 124, r: 4, fill: 'white', stroke: 'blue' },
-          { type: 'circle', x: 74, y: 114, r: 4, fill: 'white', stroke: 'blue' },
-          { type: 'circle', x: 92, y: 120, r: 4, fill: 'white', stroke: 'blue' },
-          { type: 'circle', x: 102, y: 110, r: 4, fill: 'white', stroke: 'blue' },
-          { type: 'text', x: 80, y: 164, text: '石灰岩', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 230, y: 164, text: 'チャート', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 80, y: 206, text: 'あわが出る', size: 12, anchor: 'middle' },
-          { type: 'text', x: 80, y: 224, text: '（二酸化炭素）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 230, y: 206, text: 'あわは出ない', size: 12, anchor: 'middle' },
-          { type: 'text', x: 230, y: 224, text: 'とてもかたい', size: 12, anchor: 'middle' },
-          { type: 'text', x: 156, y: 70, text: 'うすい塩酸', size: 12, anchor: 'middle' },
+          photo('strata-2-c2'),
+          pointer(102, 22, 50, 30), pointer(218, 22, 270, 24), tag(160, 26, 'うすい塩酸', { size: 14 }),
+          tag(75, 188, '石灰岩', { size: 15, bold: true }), tag(240, 188, 'チャート', { size: 15, bold: true }),
+          tag(75, 208, 'あわが出る', { size: 13 }), tag(75, 228, '（二酸化炭素）', { size: 13 }),
+          tag(240, 208, 'あわは出ない', { size: 13 }), tag(240, 228, 'とてもかたい', { size: 13 }),
         ]),
       },
       {
@@ -571,63 +557,37 @@
       {
         id: 'strata-3-c1',
         text: '大昔の生物の死がいや、足あと・巣あななどの生活のあとが、地層の中に残ったものを**化石**といいます。化石を調べると、地層が積もったころのようすや、その時代が分かります。',
-        // 地層の中に残った化石（貝がら・足あと）
+        // 写真: 貝の化石をふくむ岩（左 (77, 18〜148)）と、恐竜の足あとの化石（右 (239, 22〜150)。足あと (248, 75)）。下は白い余白
         figure: scene([
-          { type: 'text', x: 160, y: 28, text: '地層の中に残る化石', size: 14, anchor: 'middle' },
-          { type: 'rect', x: 20, y: 64, width: 280, height: 50, fill: 'sand' },
-          { type: 'rect', x: 20, y: 114, width: 280, height: 50, fill: MUD },
-          { type: 'rect', x: 20, y: 164, width: 280, height: 50, fill: 'rock' },
-          { type: 'polygon', points: [[90, 154], [70, 134], [76, 126], [90, 122], [104, 126], [110, 134]], fill: 'white', stroke: 'ink' },
-          { type: 'line', points: [[90, 154], [78, 130]], color: 'line', width: 1 },
-          { type: 'line', points: [[90, 154], [90, 124]], color: 'line', width: 1 },
-          { type: 'line', points: [[90, 154], [102, 130]], color: 'line', width: 1 },
-          { type: 'ellipse', x: 200, y: 96, rx: 7, ry: 10, fill: 'white' },
-          { type: 'ellipse', x: 222, y: 82, rx: 7, ry: 10, fill: 'white' },
-          { type: 'ellipse', x: 244, y: 96, rx: 7, ry: 10, fill: 'white' },
-          { type: 'ellipse', x: 266, y: 82, rx: 7, ry: 10, fill: 'white' },
-          { type: 'text', x: 122, y: 146, text: '貝がらの化石', size: 13 },
-          { type: 'text', x: 196, y: 56, text: '足あとの化石', size: 13 },
-          { type: 'text', x: 160, y: 232, text: '生物の死がいや生活のあとが残ったもの', size: 12, anchor: 'middle' },
+          photo('strata-3-c1'),
+          tag(77, 172, '貝がらの化石', { size: 15, bold: true }), tag(239, 172, '足あとの化石', { size: 15, bold: true }),
+          tag(77, 192, '（生物の死がい）', { size: 13 }), tag(239, 192, '（生活のあと）', { size: 13 }),
+          tag(160, 226, '大昔の生物のようすが地層に残ったもの', { size: 13 }),
         ]),
       },
       {
         id: 'strata-3-c2',
         text: '地層が積もった当時の環境を知る手がかりになる化石を**示相化石**といいます。サンゴならあたたかくて浅い海、シジミなら河口や湖、ブナならやや寒い気候の土地だったと分かります。',
-        // 示相化石と、分かる環境の表
+        // 写真: 示相化石（左から サンゴ (50, 55〜150)・シジミ (154, 68〜146)・ブナの葉 (262, 42〜157)）。下は白い余白
         figure: scene([
-          { type: 'text', x: 160, y: 34, text: '示相化石 → 当時の環境が分かる', size: 14, anchor: 'middle' },
-          { type: 'rect', x: 30, y: 50, width: 260, height: 160, fill: 'white' },
-          { type: 'rect', x: 32, y: 52, width: 256, height: 28, fill: 'sky', stroke: 'none' },
-          { type: 'line', points: [[30, 82], [290, 82]], width: 2 },
-          { type: 'line', points: [[30, 124], [290, 124]], width: 1 },
-          { type: 'line', points: [[30, 166], [290, 166]], width: 1 },
-          { type: 'line', points: [[110, 50], [110, 210]], width: 1 },
-          { type: 'text', x: 70, y: 71, text: '化石', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 200, y: 71, text: '当時の環境', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 70, y: 108, text: 'サンゴ', size: 14, anchor: 'middle' },
-          { type: 'text', x: 200, y: 108, text: 'あたたかくて浅い海', size: 14, anchor: 'middle' },
-          { type: 'text', x: 70, y: 150, text: 'シジミ', size: 14, anchor: 'middle' },
-          { type: 'text', x: 200, y: 150, text: '河口や湖', size: 14, anchor: 'middle' },
-          { type: 'text', x: 70, y: 192, text: 'ブナ', size: 14, anchor: 'middle' },
-          { type: 'text', x: 200, y: 192, text: 'やや寒い気候の土地', size: 14, anchor: 'middle' },
+          photo('strata-3-c2'),
+          tag(50, 176, 'サンゴ', { size: 15, bold: true }), tag(154, 176, 'シジミ', { size: 15, bold: true }), tag(262, 176, 'ブナ', { size: 15, bold: true }),
+          tag(50, 196, 'あたたかくて', { size: 13 }), tag(154, 196, '河口や湖', { size: 13 }), tag(262, 196, 'やや寒い', { size: 13 }),
+          tag(50, 214, '浅い海', { size: 13 }), tag(262, 214, '気候の土地', { size: 13 }),
+          tag(160, 235, '示相化石 → 当時の環境が分かる', { size: 13, bold: true }),
         ]),
       },
       {
         id: 'strata-3-c3',
         text: '地層が積もった時代を知る手がかりになる化石を**示準化石**といいます。短い期間に広い範囲で栄えた生物の化石が役に立ちます。古生代・中生代・新生代の順に新しくなります。',
-        // 地質年代と示準化石
+        // 写真: 示準化石（列ごとに 古生代: サンヨウチュウ・フズリナ、中生代: アンモナイト・恐竜の歯、新生代: ビカリア・ナウマンゾウの歯。上の段 y 20〜112、下の段 y 131〜218）
         figure: scene([
-          { type: 'arrow', x1: 24, y1: 54, x2: 296, y2: 54, color: 'gray', label: '時代が新しくなる' },
-          { type: 'rect', x: 16, y: 70, width: 96, height: 40, fill: 'sky', label: '古生代' },
-          { type: 'rect', x: 112, y: 70, width: 96, height: 40, fill: 'sky', label: '中生代' },
-          { type: 'rect', x: 208, y: 70, width: 96, height: 40, fill: 'sky', label: '新生代' },
-          { type: 'text', x: 64, y: 136, text: 'サンヨウチュウ', size: 12, anchor: 'middle' },
-          { type: 'text', x: 64, y: 156, text: 'フズリナ', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 136, text: 'アンモナイト', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 156, text: '恐竜', size: 12, anchor: 'middle' },
-          { type: 'text', x: 256, y: 136, text: 'ビカリア', size: 12, anchor: 'middle' },
-          { type: 'text', x: 256, y: 156, text: 'ナウマンゾウ', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 200, text: '示準化石 → 地層が積もった時代が分かる', size: 13, anchor: 'middle' },
+          photo('strata-3-c3'),
+          tag(51, 15, '古生代', { bold: true }), tag(152, 15, '中生代', { bold: true }), tag(260, 15, '新生代', { bold: true }),
+          { type: 'line', points: [[80, 10], [122, 10]], color: 'blue', width: 2, arrow: true },
+          { type: 'line', points: [[182, 10], [230, 10]], color: 'blue', width: 2, arrow: true },
+          tag(51, 127, 'サンヨウチュウ', { size: 13 }), tag(152, 126, 'アンモナイト', { size: 13 }), tag(260, 127, 'ビカリア', { size: 13 }),
+          tag(48, 233, 'フズリナ', { size: 13 }), tag(150, 233, '恐竜の歯', { size: 13 }), tag(261, 233, 'ナウマンゾウの歯', { size: 13 }),
         ]),
       },
     ],
@@ -774,17 +734,18 @@
       {
         id: 'strata-4-c4',
         text: '地層に大きな力がはたらくと、押されて曲がったり（**しゅう曲**）、切れてずれたり（**断層**）します。土地がもち上がることを**隆起**、しずむことを**沈降**といいます。',
-        // しゅう曲と断層
-        figure: scene(deformPanel(24, 44, 120, 100, 'fold').concat(deformPanel(176, 44, 120, 100, 'fault'), [
-          { type: 'arrow', x1: 2, y1: 94, x2: 20, y2: 94, color: 'orange' },
-          { type: 'arrow', x1: 166, y1: 94, x2: 148, y2: 94, color: 'orange' },
-          { type: 'text', x: 84, y: 170, text: 'しゅう曲', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 236, y: 170, text: '断層', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 84, y: 34, text: '押す力で曲がる', size: 12, anchor: 'middle' },
-          { type: 'text', x: 236, y: 34, text: '切れてずれる', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 204, text: '土地がもち上がる: 隆起', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 224, text: '土地がしずむ: 沈降', size: 13, anchor: 'middle' },
-        ])),
+        // 写真: 曲がった地層のがけ（左 (5〜155, 8〜120)）と、ずれた地層のがけ（右 (168〜318, 12〜120)。断層の線 (260, 47)〜(230, 115)、右側がずれ下がる）。下半分は白い余白
+        figure: scene([
+          photo('strata-4-c4'),
+          tag(80, 142, 'しゅう曲', { size: 15, bold: true }), tag(243, 142, '断層', { size: 15, bold: true }),
+          pointer(236, 128, 232, 114),
+          { type: 'arrow', x1: 4, y1: 158, x2: 26, y2: 158, color: 'orange' },
+          { type: 'arrow', x1: 156, y1: 158, x2: 134, y2: 158, color: 'orange' },
+          tag(80, 163, '押す力で曲がる', { size: 13 }), tag(243, 163, '切れてずれる', { size: 13 }),
+          { type: 'arrow', x1: 296, y1: 46, x2: 296, y2: 70, color: 'blue' },
+          tag(160, 204, '土地がもち上がる: 隆起', { size: 13 }),
+          tag(160, 224, '土地がしずむ: 沈降', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({

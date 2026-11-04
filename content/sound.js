@@ -106,6 +106,22 @@
     return items;
   }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/sound/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/sound/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // 花火と人（距離の計算の図）。note は上に書く一言
   function fireworks(note) {
     return [
@@ -160,34 +176,23 @@
       {
         id: 'sound-1-c1',
         text: 'たいこやギターの弦、おんさのように、音を出しているものを**音源**といいます。音源をよく見たりさわったりすると、どれも細かくふるえています。このふるえを**振動**といいます。',
-        // 振動しているおんさとたいこ
+        // 写真: 共鳴箱つきのおんさとハンマー（左）、たいことばち（右）。おんさ (84〜148, 3〜152)、たいこ (170〜278, 72〜155)
         figure: scene([
-          ...fork(80, 50, true),
-          { type: 'rect', x: 190, y: 140, width: 90, height: 56 },
-          { type: 'ellipse', x: 235, y: 140, rx: 45, ry: 12, fill: 'sand' },
-          { type: 'line', points: [[200, 112], [235, 102], [270, 112]], color: 'blue', width: 2, dashed: true },
-          { type: 'text', x: 80, y: 226, text: 'おんさ', anchor: 'middle', size: 14 },
-          { type: 'text', x: 235, y: 222, text: 'たいこ', anchor: 'middle', size: 14 },
-          { type: 'text', x: 160, y: 30, text: '音源は振動している', anchor: 'middle', size: 16 },
+          photo('sound-1-c1'),
+          tag(96, 198, 'おんさ'),
+          tag(224, 198, 'たいこ'),
+          tag(160, 228, '音源は振動している', { size: 16, bold: true }),
         ]),
       },
       {
         id: 'sound-1-c2',
         text: '鳴っているおんさの先を水にふれさせると、水しぶきが上がります。鳴っているおんさを手でにぎって**振動**を止めると、音も止まります。音が出ているとき、音源は振動しています。',
-        // さかさにした鳴っているおんさの先を水にふれさせる
+        // 写真: 手に持った鳴っているおんさの先を、ビーカーの水面にふれさせる。おんさの先 (112, 110)、水しぶき (80〜170, 40〜115)、右側は白い余白
         figure: scene([
-          { type: 'rect', x: 155, y: 16, width: 10, height: 44, fill: 'glass' },
-          { type: 'rect', x: 140, y: 60, width: 40, height: 10, fill: 'glass' },
-          { type: 'rect', x: 140, y: 70, width: 10, height: 80, fill: 'glass' },
-          { type: 'rect', x: 170, y: 70, width: 10, height: 80, fill: 'glass' },
-          { type: 'beaker', x: 160, y: 224, width: 130, height: 90, level: 0.8 },
-          { type: 'circle', x: 124, y: 132, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 112, y: 116, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 196, y: 130, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 208, y: 112, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 160, y: 132, r: 4, fill: 'sky', stroke: 'blue' },
-          { type: 'text', x: 214, y: 100, text: '水しぶき', size: 14 },
-          { type: 'text', x: 190, y: 40, text: '鳴っているおんさ', size: 14 },
+          photo('sound-1-c2'),
+          pointer(208, 58, 152, 62), tag(214, 62, '水しぶき', { anchor: 'start' }),
+          pointer(186, 104, 114, 106), tag(192, 108, '鳴っているおんさ', { anchor: 'start' }),
+          pointer(186, 154, 140, 154), tag(192, 158, '水', { size: 13, anchor: 'start' }),
         ]),
       },
       {
@@ -312,20 +317,20 @@
       {
         id: 'sound-2-c1',
         text: '容器の中でブザーを鳴らし、ポンプで中の空気をぬいていくと、音はしだいに小さくなります。空気が音を伝えていたからです。空気などの物質がまったくない**真空**の中では、音は伝わりません。',
-        // 容器の中のブザーと、空気をぬくポンプ
+        // 写真: 透明な容器（10〜122, 107〜220）の中のブザー (52, 190)。ゴム管 (122, 177)〜(197, 187) で右の手動の真空ポンプ（197〜315, 122〜215）につなぐ。上は白い余白
         figure: scene([
-          { type: 'rect', x: 30, y: 50, width: 170, height: 150, fill: 'glass', rx: 10 },
-          { type: 'line', points: [[115, 50], [115, 116]], width: 2 },
-          { type: 'circle', x: 115, y: 136, r: 20, fill: 'yellow', label: 'ブザー', labelPos: 'below' },
-          { type: 'line', points: [[200, 180], [250, 180]], color: 'line', width: 6 },
-          { type: 'rect', x: 250, y: 150, width: 56, height: 56, fill: 'white', label: 'ポンプ' },
-          { type: 'arrow', x1: 206, y1: 160, x2: 244, y2: 160, color: 'blue', width: 2 },
-          { type: 'text', x: 204, y: 146, text: '空気', size: 13 },
-          { type: 'text', x: 20, y: 34, text: '空気をぬくと、音が小さくなる', size: 14 },
+          photo('sound-2-c1'),
+          tag(160, 36, '空気をぬくと、音が小さくなる', { size: 15, bold: true }),
+          tag(160, 62, '真空の中では、音は伝わらない', { size: 13 }),
+          pointer(60, 156, 54, 180), tag(62, 150, 'ブザー'),
+          { type: 'arrow', x1: 132, y1: 164, x2: 186, y2: 170, color: 'blue', width: 2 },
+          tag(158, 152, '空気', { size: 13 }),
+          tag(256, 234, 'ポンプ'),
         ]),
       },
       {
         id: 'sound-2-c2',
+        anim: 'so-string-phone',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '音は空気などの気体だけでなく、水などの液体や、金属・木などの固体の中も伝わります。糸電話で声が聞こえるのは、ぴんと張った糸が声の**振動**を伝えるからです。',
         // 糸電話
         figure: scene([
@@ -514,16 +519,17 @@
       {
         id: 'sound-3-c3',
         text: 'モノコードでは、弦の振動する部分を短くする、弦を強く張る、弦を細くすると、**振動数**が多くなり、高い音が出ます。音の高さは、振幅ではなく振動数で決まります。',
-        // モノコード（ことじを左へ動かすと、はじく部分が短くなる）
+        // 写真: ななめ上から見たモノコード。弦は左の留め具 (37, 67) から右の滑車 (295, 120) へ。ことじ (148, 96)、おもり (305, 185)。
+        // ことじを左へ動かすと、はじく部分（留め具〜ことじ）が短くなる
         figure: scene([
-          ...monochord(70),
-          bridge(200, 70),
-          { type: 'arrow', x1: 196, y1: 140, x2: 140, y2: 140, color: 'blue', width: 2 },
-          { type: 'text', x: 60, y: 60, text: 'はじく部分', size: 13 },
-          { type: 'text', x: 214, y: 60, text: 'ことじ', size: 13 },
-          { type: 'text', x: 254, y: 150, text: 'おもり', size: 13 },
-          { type: 'text', x: 20, y: 176, text: '短くする・強く張る・細くする', size: 14 },
-          { type: 'text', x: 20, y: 200, text: '→ 振動数が多く、高い音', size: 14 },
+          photo('sound-3-c3'),
+          pointer(84, 46, 92, 79), tag(80, 40, 'はじく部分', { size: 13 }),
+          pointer(166, 62, 151, 88), tag(172, 56, 'ことじ', { size: 13 }),
+          { type: 'arrow', x1: 152, y1: 114, x2: 110, y2: 105, color: 'blue', width: 2 },
+          tag(100, 132, 'ことじを左へ', { size: 13, anchor: 'start' }),
+          pointer(278, 196, 296, 190), tag(256, 200, 'おもり', { size: 13 }),
+          tag(10, 196, '短くする・強く張る・細くする', { anchor: 'start' }),
+          tag(10, 222, '→ 振動数が多く、高い音', { anchor: 'start' }),
         ]),
       },
     ],

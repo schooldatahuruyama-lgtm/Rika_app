@@ -33,6 +33,19 @@
 
   // ---- 図の部品をまとめる道具 ----
 
+  // 写真（assets/images/state-change/<name>.jpg。640×480 を場面いっぱいに描く。座標は画像の位置 × 0.5）
+  function photo(name) { return { type: 'image', src: 'assets/images/state-change/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // 粒子のモデル（80×80 の枠。左上 (x0, y0)）。kind は 'solid' | 'liquid' | 'gas'
   // 固体: 規則正しく並ぶ／液体: 並びがくずれ、すき間なく集まる／気体: 間隔が広く、飛び回る（短い矢印）
   const SOLID_DOTS = [13, 31, 49, 67].flatMap(y => [13, 31, 49, 67].map(x => [x, y]));
@@ -157,18 +170,17 @@
       {
         id: 'state-1-c2',
         text: '液体のろうを冷やして固体にすると、まん中がへこみ、体積は小さくなります。でも質量は変わりません。**状態変化**では、体積は変わりますが、質量は変わりません。ふつうは、同じ質量なら固体＜液体＜気体の順に体積が大きくなります。',
-        // 液体のろう → 固体のろう（体積は減る、質量は同じ）
+        // 写真: 左は液体のろう（とけてすきとおる）、右は冷えて固まった白いろう（まん中がへこむ）
         figure: scene([
-          { type: 'text', x: 160, y: 40, text: '体積は減るが、質量は変わらない', size: 14, anchor: 'middle' },
-          { type: 'beaker', x: 80, y: 190, width: 80, height: 100, level: 0.6, liquid: 'yellow' },
-          { type: 'beaker', x: 240, y: 190, width: 80, height: 100, level: 0 },
-          { type: 'polygon', points: [[201, 188], [279, 188], [279, 132], [262, 136], [240, 146], [218, 136], [201, 132]], fill: 'white', stroke: 'line' },
-          { type: 'line', points: [[198, 130], [282, 130]], color: 'gray', width: 2, dashed: true },
-          { type: 'arrow', x1: 128, y1: 150, x2: 190, y2: 150, color: 'blue', label: '冷やす' },
-          { type: 'text', x: 80, y: 212, text: '液体のろう', size: 14, anchor: 'middle' },
-          { type: 'text', x: 240, y: 212, text: '固体のろう', size: 14, anchor: 'middle' },
-          { type: 'text', x: 80, y: 232, text: '質量 50 g', size: 13, anchor: 'middle' },
-          { type: 'text', x: 240, y: 232, text: '質量 50 g', size: 13, anchor: 'middle' },
+          photo('state-1-c2'),
+          { type: 'arrow', x1: 128, y1: 110, x2: 188, y2: 110, color: 'blue', width: 3 },
+          tag(158, 96, '冷やす', { size: 13 }),
+          pointer(244, 30, 245, 98), tag(244, 22, 'まん中がへこむ', { size: 13 }),
+          tag(70, 176, '液体のろう'),
+          tag(244, 176, '固体のろう'),
+          tag(70, 198, '質量 50 g', { size: 13 }),
+          tag(244, 198, '質量 50 g', { size: 13 }),
+          tag(160, 228, '体積は減るが、質量は変わらない'),
         ]),
       },
       {
@@ -635,18 +647,22 @@
       {
         id: 'state-4-c1',
         text: '液体を加熱して沸とうさせ、出てきた気体を冷やして再び液体にして集める方法を**蒸留**といいます。物質によって沸点がちがうことを利用すると、混合物から物質を分けて取り出すことができます。',
-        // 蒸留の装置
-        figure: scene(distillItems({ thermo: 80 }).concat([
-          { type: 'text', x: 8, y: 108, text: '枝付き', size: 12 },
-          { type: 'text', x: 8, y: 124, text: 'フラスコ', size: 12 },
-          { type: 'text', x: 150, y: 82, text: 'ガラス管', size: 12 },
-          { type: 'text', x: 256, y: 120, text: '試験管', size: 12 },
-          { type: 'text', x: 282, y: 204, text: '氷水', size: 12 },
-          { type: 'text', x: 110, y: 230, text: '加熱', size: 12 },
-        ])),
+        // 写真: 蒸留の装置。温度計 (90, 5〜94。球は枝の高さ)、枝付きフラスコ (91, 131)、沸とう石 (91, 146)、
+        // ガスバーナーの炎 (90, 161)、ガラス管 (100, 98)→(252, 132)、氷水のビーカー (232〜290, 157〜220) の中の試験管 (255, 140〜)
+        figure: scene([
+          photo('state-4-c1'),
+          pointer(109, 27, 93, 30), tag(130, 30, '温度計', { size: 13 }),
+          pointer(185, 100, 185, 113), tag(185, 96, 'ガラス管', { size: 13 }),
+          pointer(278, 104, 262, 142), tag(292, 98, '試験管', { size: 13 }),
+          pointer(124, 148, 110, 140), tag(175, 152, '枝付きフラスコ', { size: 13 }),
+          pointer(138, 170, 96, 148), tag(165, 174, '沸とう石', { size: 13 }),
+          pointer(121, 193, 96, 164), tag(136, 198, '加熱', { size: 13 }),
+          tag(262, 234, '氷水', { size: 13 }),
+        ]),
       },
       {
         id: 'state-4-c2',
+        anim: 'st-distill-order',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '水とエタノールの混合物を蒸留し、出てきた液体を試験管 3 本に順に集めます。1 本目は沸点の低いエタノールを多くふくみ、においが強く、火を近づけるとよく燃えます。あとの試験管ほど水が多くなります。',
         // 集めた順に 3 本の試験管
         figure: scene([

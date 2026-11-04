@@ -42,6 +42,22 @@
   // ア・イ・ウの選ぶ場所（xs は中心の x の配列、y は共通）
   function regionsAt(xs, y) { return xs.map((x, i) => region('r' + (i + 1), x, y, 'アイウ'[i])); }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/weather/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/weather/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // 直方体を斜めから見た形（(x, yb) は前の面の左下。w 幅、h 高さ、d 奥行き）
   function box3d(x, yb, w, h, d) {
     const dx = d * 0.5, dy = d * 0.5;
@@ -291,57 +307,44 @@
       {
         id: 'weather-1-c1',
         text: '面を垂直におす力を、1 m² あたりの大きさで表したものを**圧力**といいます。単位は**パスカル**（記号 Pa）です。圧力〔Pa〕＝面を垂直におす力〔N〕÷力がはたらく面積〔m²〕。同じ力でも、面積が小さいほど圧力は大きくなります。',
-        // 同じれんがをスポンジに置く。広い面を下にするとへこみが小さく、せまい面を下にするとへこみが大きい
+        // 写真: 同じれんがをスポンジに置く。左は広い面を下に（へこみが小さい）、右はせまい面を下に立てる（へこみが大きい）
         figure: scene([
-          { type: 'rect', x: 15, y: 170, width: 140, height: 40, fill: 'yellow' },
-          { type: 'rect', x: 175, y: 170, width: 140, height: 40, fill: 'yellow' },
-          ...box3d(25, 174, 100, 25, 30),
-          ...box3d(225, 186, 30, 100, 25),
-          { type: 'text', x: 160, y: 24, text: '同じれんがをスポンジに置く', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 82, y: 122, text: 'へこみが小さい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 245, y: 60, text: 'へこみが大きい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 85, y: 230, text: '面積が大きい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 245, y: 230, text: '面積が小さい', size: 13, anchor: 'middle' },
+          photo('weather-1-c1'),
+          tag(160, 22, '同じれんがをスポンジに置く', { bold: true }),
+          tag(86, 202, '面積が大きい', { bold: true }),
+          tag(86, 224, '→ へこみが小さい', { size: 13 }),
+          tag(237, 202, '面積が小さい', { bold: true }),
+          tag(237, 224, '→ へこみが大きい', { size: 13 }),
         ]),
       },
       {
         id: 'weather-1-c2',
         text: '空気にも重さがあり、その重さによる圧力を**大気圧**（気圧）といいます。海面での大気圧は約 1013 hPa（**ヘクトパスカル**。1 hPa＝100 Pa）です。大気圧はあらゆる向きからはたらき、上空ほど小さくなります。',
-        // 山頂と海面の気圧、あらゆる向きからおす大気圧
+        // 写真: 同じ菓子の袋。左はふもと（ふつうのふくらみ）、右は山頂（ぱんぱんにふくらむ）
         figure: scene([
-          { type: 'rect', x: 0, y: 200, width: 320, height: 40, fill: 'water', stroke: 'none' },
-          { type: 'polygon', points: [[20, 200], [110, 70], [200, 200]], fill: 'rock' },
-          { type: 'rect', x: 236, y: 100, width: 40, height: 40, fill: 'white' },
-          { type: 'arrow', x1: 256, y1: 64, x2: 256, y2: 94, color: 'blue' },
-          { type: 'arrow', x1: 256, y1: 176, x2: 256, y2: 146, color: 'blue' },
-          { type: 'arrow', x1: 206, y1: 120, x2: 230, y2: 120, color: 'blue' },
-          { type: 'arrow', x1: 306, y1: 120, x2: 282, y2: 120, color: 'blue' },
-          { type: 'text', x: 110, y: 56, text: '山頂：気圧が小さい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 10, y: 226, text: '海面：約 1013 hPa', size: 13 },
-          { type: 'text', x: 256, y: 194, text: 'あらゆる向き', size: 12, anchor: 'middle' },
-          { type: 'text', x: 256, y: 212, text: 'からはたらく', size: 12, anchor: 'middle' },
+          photo('weather-1-c2'),
+          tag(78, 200, 'ふもと', { size: 15, bold: true }),
+          tag(80, 222, '海面 約1013hPa', { size: 13 }),
+          tag(236, 200, '山頂', { size: 15, bold: true }),
+          tag(240, 222, '気圧が小さい→ふくらむ', { size: 13 }),
         ]),
       },
       {
         id: 'weather-1-c3',
         text: '空全体を 10 としたとき、雲がおおっている割合を**雲量**といいます。雨や雪が降っていなければ、雲量 0〜1 は快晴、2〜8 は晴れ、9〜10 はくもりです。天気は**天気記号**で表します。',
-        // 天気記号 5 つと雲量
+        // 写真: 快晴・晴れ・くもりの空。下に天気記号と雲量
         figure: scene([
-          ...weatherSymbol(36, 100, 'clear', 16),
-          ...weatherSymbol(98, 100, 'sunny', 16),
-          ...weatherSymbol(160, 100, 'cloudy', 16),
-          ...weatherSymbol(222, 100, 'rain', 16),
-          ...weatherSymbol(284, 100, 'snow', 16),
-          { type: 'text', x: 160, y: 50, text: '天気記号', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 36, y: 142, text: '快晴', size: 13, anchor: 'middle' },
-          { type: 'text', x: 98, y: 142, text: '晴れ', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 142, text: 'くもり', size: 13, anchor: 'middle' },
-          { type: 'text', x: 222, y: 142, text: '雨', size: 13, anchor: 'middle' },
-          { type: 'text', x: 284, y: 142, text: '雪', size: 13, anchor: 'middle' },
-          { type: 'text', x: 36, y: 166, text: '0〜1', size: 12, anchor: 'middle' },
-          { type: 'text', x: 98, y: 166, text: '2〜8', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 166, text: '9〜10', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 200, text: '数は雲量（空全体を 10 とする）', size: 12, anchor: 'middle' },
+          photo('weather-1-c3'),
+          tag(160, 20, '雲量：空全体を 10 としたときの雲の割合', { size: 13 }),
+          ...weatherSymbol(56, 160, 'clear', 14),
+          ...weatherSymbol(160, 160, 'sunny', 14),
+          ...weatherSymbol(264, 160, 'cloudy', 14),
+          tag(56, 198, '快晴', { bold: true }),
+          tag(160, 198, '晴れ', { bold: true }),
+          tag(264, 198, 'くもり', { bold: true }),
+          tag(56, 220, '雲量 0〜1', { size: 13 }),
+          tag(160, 220, '雲量 2〜8', { size: 13 }),
+          tag(264, 220, '雲量 9〜10', { size: 13 }),
         ]),
       },
       {
@@ -488,21 +491,16 @@
       {
         id: 'weather-2-c2',
         text: '水蒸気をふくむ空気を冷やしていくと、ある温度で水蒸気の一部が水滴に変わり始めます。この温度を**露点**といいます。金属のコップに冷たい水を少しずつ入れ、表面がくもり始めたときの水温が露点です。',
-        // 露点を調べる実験（金属のコップ、温度計、表面の水滴）
+        // 写真: 氷水と温度計を入れた金属のコップ。表面が細かい水滴でくもり始めている
         figure: scene([
-          { type: 'beaker', x: 110, y: 210, width: 80, height: 110, level: 0.6, label: '金属のコップ' },
-          { type: 'rect', x: 128, y: 70, width: 6, height: 128, fill: 'white' },
-          { type: 'circle', x: 131, y: 200, r: 5, fill: 'red', stroke: 'none' },
-          { type: 'circle', x: 65, y: 150, r: 3, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 66, y: 170, r: 3, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 64, y: 188, r: 3, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 155, y: 142, r: 3, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 156, y: 164, r: 3, fill: 'sky', stroke: 'blue' },
-          { type: 'circle', x: 154, y: 186, r: 3, fill: 'sky', stroke: 'blue' },
-          { type: 'text', x: 160, y: 40, text: '冷たい水を少しずつ入れる', size: 13, anchor: 'middle' },
-          { type: 'text', x: 174, y: 130, text: '表面がくもり', size: 13 },
-          { type: 'text', x: 174, y: 148, text: '始めたときの水温', size: 13 },
-          { type: 'text', x: 174, y: 170, text: '＝露点', size: 15, bold: true },
+          photo('weather-2-c2'),
+          pointer(214, 30, 144, 34), tag(244, 34, '温度計', { size: 13 }),
+          pointer(206, 70, 110, 86), tag(250, 74, '冷たい水', { size: 13 }),
+          pointer(206, 108, 158, 118), tag(254, 112, '金属のコップ', { size: 13 }),
+          pointer(190, 150, 138, 150),
+          tag(250, 154, '表面がくもり', { size: 13 }),
+          tag(250, 174, '始めたときの水温', { size: 13 }),
+          tag(250, 198, '＝露点', { size: 16, bold: true }),
         ]),
       },
       {
@@ -726,6 +724,7 @@
       },
       {
         id: 'weather-3-c3',
+        anim: 'we-front-move',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '気温や湿度がほぼ一様な大きな空気のかたまりを**気団**といいます。性質のちがう気団が接すると、すぐには混じり合わず境の面（前線面）ができます。前線面が地表と交わるところが**前線**です。前線には 4 つの種類があり、記号で表します。',
         // 前線の記号（右へ進む向き）
         figure: scene([
@@ -746,12 +745,15 @@
       {
         id: 'weather-3-c4',
         text: '**寒冷前線**では寒気が暖気をおし上げ、**積乱雲**ができて、せまい範囲に強い雨が短時間降ります。通過後は気温が下がり、風は北寄りに変わります。**温暖前線**では暖気が寒気の上をはい上がり、**乱層雲**などができて、広い範囲に弱い雨が長時間降ります。',
-        // 上: 寒冷前線の断面、下: 温暖前線の断面（どちらも右へ進む）
+        // 写真: 左は積乱雲（下で強い雨）、右は空一面の乱層雲（弱い雨）。前線の断面は weather-3-c3 にある
         figure: scene([
-          ...coldSection(10, 6, 300, '寒冷前線'),
-          { type: 'text', x: 10, y: 114, text: '積乱雲：せまい範囲に強い雨（短時間）', size: 12 },
-          ...warmSection(10, 126, 300, '温暖前線'),
-          { type: 'text', x: 10, y: 236, text: '乱層雲：広い範囲に弱い雨（長時間）', size: 12 },
+          photo('weather-3-c4'),
+          tag(80, 184, '寒冷前線 → 積乱雲', { bold: true }),
+          tag(80, 206, 'せまい範囲に強い雨', { size: 13 }),
+          tag(80, 226, '（短時間）', { size: 13 }),
+          tag(242, 184, '温暖前線 → 乱層雲', { bold: true }),
+          tag(242, 206, '広い範囲に弱い雨', { size: 13 }),
+          tag(242, 226, '（長時間）', { size: 13 }),
         ]),
       },
     ],
@@ -892,18 +894,19 @@
       {
         id: 'weather-4-c1',
         text: '冬は大陸で冷たく乾いた**シベリア気団**が発達し、西に高気圧、東に低気圧がある**西高東低**の気圧配置になります。北西の**季節風**が日本海で水蒸気をふくみ、山にぶつかって日本海側に雪を降らせます。太平洋側は乾いた晴れの日が多くなります。',
-        // 冬の断面。北西の季節風 → 日本海で水蒸気 → 山の手前で雪雲 → 山をこえると晴れ
-        figure: scene(winterSectionBase().concat([
-          { type: 'ellipse', x: 150, y: 112, rx: 28, ry: 13, fill: 'white', stroke: 'gray' },
-          { type: 'ellipse', x: 198, y: 100, rx: 26, ry: 14, fill: 'white', stroke: 'gray' },
-          { type: 'circle', x: 186, y: 124, r: 2.5, fill: 'gray', stroke: 'none' },
-          { type: 'circle', x: 200, y: 130, r: 2.5, fill: 'gray', stroke: 'none' },
-          { type: 'circle', x: 212, y: 124, r: 2.5, fill: 'gray', stroke: 'none' },
-          { type: 'arrow', x1: 250, y1: 106, x2: 276, y2: 150, color: 'blue' },
-          { type: 'text', x: 6, y: 78, text: 'シベリア気団', size: 12 },
-          { type: 'text', x: 184, y: 150, text: '雪', size: 13, bold: true },
-          { type: 'text', x: 262, y: 92, text: '晴れ', size: 13, bold: true },
-        ])),
+        // 写真（気象衛星の雲画像のようす。AI で作った画像）: 冬の日本付近。日本海に北西から南東へのびる筋状の雲
+        figure: scene([
+          photo('weather-4-c1'),
+          tag(52, 20, 'シベリア気団', { size: 13, bold: true }),
+          { type: 'arrow', x1: 62, y1: 40, x2: 110, y2: 90, color: 'blue', width: 4 },
+          tag(132, 52, '北西の季節風', { size: 13 }),
+          tag(92, 150, '日本海', { size: 13 }),
+          tag(212, 150, '太平洋', { size: 13 }),
+          pointer(270, 106, 160, 134), tag(288, 108, '雪', { size: 15, bold: true }),
+          tag(284, 128, '日本海側', { size: 13 }),
+          pointer(266, 190, 160, 178), tag(288, 192, '晴れ', { size: 15, bold: true }),
+          tag(284, 212, '太平洋側', { size: 13 }),
+        ]),
       },
       {
         id: 'weather-4-c2',
@@ -938,14 +941,18 @@
       {
         id: 'weather-4-c4',
         text: '6〜7 月ごろ、北の**オホーツク海気団**と南の小笠原気団の勢力がつり合い、あいだに停滞前線（**梅雨前線**）ができて雨の日が続きます。夏から秋には、熱帯で発達した**台風**が日本付近にやってきて、大雨や強風をもたらします。',
-        // 梅雨のころの日本付近。北と南の高気圧のあいだの停滞前線
-        figure: scene(japanItems().concat(frontItems([[20, 200], [100, 196], [170, 182], [240, 160], [310, 146]], 'stationary', -1)).concat([
-          { type: 'text', x: 120, y: 50, text: '高', size: 20, anchor: 'middle', bold: true },
-          { type: 'text', x: 120, y: 70, text: 'オホーツク海気団', size: 12, anchor: 'middle' },
-          { type: 'text', x: 236, y: 212, text: '高', size: 20, anchor: 'middle', bold: true },
-          { type: 'text', x: 236, y: 232, text: '小笠原気団', size: 12, anchor: 'middle' },
-          { type: 'text', x: 10, y: 228, text: '停滞前線（梅雨前線）', size: 12 },
-        ])),
+        // 写真（気象衛星の雲画像のようす。AI で作った画像）: 左は梅雨のころの東西にのびる雲の帯、右は日本の南の台風
+        figure: scene([
+          photo('weather-4-c4'),
+          tag(96, 30, 'オホーツク海気団', { size: 13 }),
+          pointer(60, 124, 60, 108), tag(62, 134, '梅雨前線の雲の帯', { size: 13 }),
+          tag(108, 157, '小笠原気団', { size: 13 }),
+          tag(80, 188, '梅雨のころ', { size: 15, bold: true }),
+          tag(80, 210, '停滞前線（梅雨前線）', { size: 13 }),
+          pointer(240, 176, 248, 140),
+          tag(240, 188, '台風', { size: 15, bold: true }),
+          tag(240, 210, '中心に目があるうず', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({

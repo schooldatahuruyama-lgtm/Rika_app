@@ -33,6 +33,22 @@
   function word(id, opts, answer) { return { id, kind: 'word', options: opts, answer }; }
   function number(id, answer, tolerance, unit) { return { id, kind: 'number', answer, tolerance, unit }; }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/ion/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/ion/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // ---- 図の部品をまとめる道具 ----
 
   // イオンのモデルの塗り（イオン式 → 色トークンか色コード）。文字が読めるよう、うすい色だけを使う
@@ -380,24 +396,16 @@
       {
         id: 'ion-2-c2',
         text: '金属には、陽イオンへのなりやすさのちがいがあり、マグネシウム＞亜鉛＞銅の順になりやすいです。硫酸銅水溶液に亜鉛板を入れると、亜鉛が電子を失って亜鉛イオンになってとけ出し、銅イオンが電子を受け取って銅になり、亜鉛板に付きます。',
-        // イオンへのなりやすさの順と、硫酸銅水溶液に入れた亜鉛板
+        // イオンへのなりやすさの順と、硫酸銅水溶液に入れた亜鉛板（写真: ペトリ皿 (15〜222, 105〜230)、
+        // 亜鉛板の液の外の部分 (20〜105, 80〜150)、亜鉛板に付いた赤い銅 (57〜150, 135〜190)。上と右は白い余白）
         figure: scene([
-          { type: 'text', x: 160, y: 24, text: '← 陽イオンになりやすい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 80, y: 62, text: 'Mg', size: 18, anchor: 'middle', bold: true },
-          { type: 'text', x: 120, y: 62, text: '＞', size: 18, anchor: 'middle' },
-          { type: 'text', x: 160, y: 62, text: 'Zn', size: 18, anchor: 'middle', bold: true },
-          { type: 'text', x: 200, y: 62, text: '＞', size: 18, anchor: 'middle' },
-          { type: 'text', x: 240, y: 62, text: 'Cu', size: 18, anchor: 'middle', bold: true },
-          { type: 'text', x: 80, y: 84, text: 'マグネシウム', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 84, text: '亜鉛', size: 12, anchor: 'middle' },
-          { type: 'text', x: 240, y: 84, text: '銅', size: 12, anchor: 'middle' },
-          { type: 'beaker', x: 100, y: 215, width: 110, height: 100, level: 0.7, liquid: 'sky' },
-          { type: 'rect', x: 94, y: 104, width: 12, height: 100, fill: 'rock' },
-          { type: 'rect', x: 92, y: 160, width: 16, height: 44, fill: 'brown', stroke: 'none' },
-          { type: 'text', x: 100, y: 236, text: '硫酸銅水溶液', size: 12, anchor: 'middle' },
-          { type: 'text', x: 176, y: 130, text: '亜鉛板', size: 13 },
-          { type: 'text', x: 176, y: 170, text: '赤い銅が付く', size: 13 },
-          { type: 'text', x: 176, y: 196, text: '亜鉛は Zn2+ になる', size: 12 },
+          photo('ion-2-c2'),
+          tag(160, 22, '← 陽イオンになりやすい', { size: 13 }),
+          tag(160, 46, 'Mg ＞ Zn ＞ Cu', { size: 16, bold: true }),
+          pointer(40, 79, 46, 98), tag(36, 74, '亜鉛板'),
+          tag(312, 78, '亜鉛は Zn2+ になる', { size: 13, anchor: 'end' }),
+          pointer(230, 104, 140, 158), tag(268, 104, '赤い銅が付く'),
+          pointer(228, 212, 202, 196), tag(270, 216, '硫酸銅水溶液'),
         ]),
       },
       {
@@ -617,29 +625,20 @@
       {
         id: 'ion-3-c3',
         text: '酸性・アルカリ性の強さは **pH** で表します。pH 7 が中性で、7 より小さいほど酸性が強く、7 より大きいほどアルカリ性が強くなります。色の変化で液の性質を調べる薬品を**指示薬**といい、BTB 溶液は酸性で黄色、中性で緑色、アルカリ性で青色になります。',
-        // pH の目盛りと、BTB 溶液の色
+        // pH の目盛りと、BTB 溶液の色（写真: 試験管立て (72〜250, 85〜200) に試験管 3 本。左 (115) 黄色、
+        // 中央 (160) 緑色、右 (205) 青色、液は 122〜190。試験管の口は 42 で、上は白い余白）
         figure: scene([
-          { type: 'text', x: 85, y: 50, text: '酸性', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 50, text: '中性', size: 13, anchor: 'middle' },
-          { type: 'text', x: 235, y: 50, text: 'アルカリ性', size: 13, anchor: 'middle' },
-          { type: 'rect', x: 20, y: 60, width: 130, height: 32, fill: 'yellow' },
-          { type: 'rect', x: 150, y: 60, width: 20, height: 32, fill: 'green' },
-          { type: 'rect', x: 170, y: 60, width: 130, height: 32, fill: BLUE_LITMUS },
-          { type: 'text', x: 20, y: 110, text: '0', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 110, text: '7', size: 13, anchor: 'middle' },
-          { type: 'text', x: 300, y: 110, text: '14', size: 13, anchor: 'middle' },
-          { type: 'text', x: 8, y: 30, text: 'pH', size: 15, bold: true },
-          { type: 'arrow', x1: 140, y1: 124, x2: 30, y2: 124, color: 'gray', width: 2 },
-          { type: 'arrow', x1: 180, y1: 124, x2: 290, y2: 124, color: 'gray', width: 2 },
-          { type: 'text', x: 85, y: 144, text: '酸性が強い', size: 12, anchor: 'middle' },
-          { type: 'text', x: 235, y: 144, text: 'アルカリ性が強い', size: 12, anchor: 'middle' },
-          { type: 'text', x: 8, y: 200, text: 'BTB', size: 12 },
-          { type: 'tube', x: 70, y: 228, height: 58, level: 0.7, liquid: 'yellow' },
-          { type: 'text', x: 90, y: 214, text: '黄色', size: 12 },
-          { type: 'tube', x: 160, y: 228, height: 58, level: 0.7, liquid: 'green' },
-          { type: 'text', x: 180, y: 214, text: '緑色', size: 12 },
-          { type: 'tube', x: 250, y: 228, height: 58, level: 0.7, liquid: 'blue' },
-          { type: 'text', x: 270, y: 214, text: '青色', size: 12 },
+          photo('ion-3-c3'),
+          { type: 'text', x: 4, y: 22, text: 'pH', size: 14, bold: true },
+          { type: 'rect', x: 30, y: 9, width: 120, height: 14, fill: 'yellow' },
+          { type: 'rect', x: 150, y: 9, width: 20, height: 14, fill: 'green' },
+          { type: 'rect', x: 170, y: 9, width: 130, height: 14, fill: BLUE_LITMUS },
+          { type: 'text', x: 30, y: 37, text: '0', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 37, text: '7', size: 13, anchor: 'middle' },
+          { type: 'text', x: 300, y: 37, text: '14', size: 13, anchor: 'middle' },
+          pointer(58, 146, 108, 146), tag(34, 150, '酸性'), tag(34, 170, '（黄色）', { size: 13 }),
+          pointer(160, 207, 160, 188), tag(160, 222, '中性（緑色）', { size: 13 }),
+          pointer(242, 146, 212, 146), tag(312, 150, 'アルカリ性', { size: 13, anchor: 'end' }), tag(284, 170, '（青色）', { size: 13 }),
         ]),
       },
       {
@@ -846,6 +845,7 @@
       },
       {
         id: 'ion-4-c4',
+        anim: 'io-ion-count',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '塩酸に水酸化ナトリウム水溶液を加えていくと、H+ は OH- と結びついて水になるので減り、中性で 0 になります。Na+ は加えた分だけ増え、Cl- は変わりません。OH- は中性になるまでは 0 で、その後は増えていきます。',
         // 塩酸 10 cm³ に水酸化ナトリウム水溶液を加えたときのイオンの数（10 cm³ で中性）
         figure: scene([

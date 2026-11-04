@@ -111,48 +111,14 @@
     ];
   }
 
-  // 葉（ア 網状脈・イ 平行脈）と根（ウ 主根と側根・エ ひげ根）を 4 つに分けて並べた図
+  // 写真: 左から 網状脈の葉（ア）・平行脈の葉（イ）・主根と側根（ウ）・ひげ根（エ）。選ぶ場所は それぞれの下
+  // 画像は 640×480（座標は画像の位置 × 0.5）。4 つの x の範囲: 6〜80、92〜138、148〜228、235〜315（y は 185 まで）
   const LEAF_ROOT = scene([
-    { type: 'line', points: [[160, 0], [160, 240]], color: 'gray', width: 1 },
-    { type: 'line', points: [[0, 120], [320, 120]], color: 'gray', width: 1 },
-    // ア: 網状脈の葉
-    { type: 'line', points: [[100, 106], [100, 118]], color: 'green', width: 3 },
-    { type: 'ellipse', x: 100, y: 62, rx: 30, ry: 46, fill: 'lightgreen', stroke: 'green' },
-    { type: 'line', points: [[100, 106], [100, 18]], color: 'green', width: 2 },
-    { type: 'line', points: [[100, 50], [80, 38]], color: 'green', width: 2 },
-    { type: 'line', points: [[100, 50], [120, 38]], color: 'green', width: 2 },
-    { type: 'line', points: [[100, 74], [76, 62]], color: 'green', width: 2 },
-    { type: 'line', points: [[100, 74], [124, 62]], color: 'green', width: 2 },
-    { type: 'line', points: [[100, 96], [82, 88]], color: 'green', width: 2 },
-    { type: 'line', points: [[100, 96], [118, 88]], color: 'green', width: 2 },
-    { type: 'line', points: [[88, 43], [84, 56]], color: 'green', width: 1 },
-    { type: 'line', points: [[112, 43], [116, 56]], color: 'green', width: 1 },
-    { type: 'line', points: [[86, 67], [82, 80]], color: 'green', width: 1 },
-    { type: 'line', points: [[114, 67], [118, 80]], color: 'green', width: 1 },
-    // イ: 平行脈の葉
-    { type: 'ellipse', x: 260, y: 62, rx: 16, ry: 50, fill: 'lightgreen', stroke: 'green' },
-    { type: 'line', points: [[260, 16], [260, 110]], color: 'green', width: 2 },
-    { type: 'line', points: [[253, 26], [253, 100]], color: 'green', width: 2 },
-    { type: 'line', points: [[267, 26], [267, 100]], color: 'green', width: 2 },
-    // ウ: 主根と側根
-    { type: 'line', points: [[100, 128], [100, 232]], color: 'brown', width: 5 },
-    { type: 'line', points: [[100, 150], [78, 164]], color: 'brown', width: 2 },
-    { type: 'line', points: [[100, 150], [122, 164]], color: 'brown', width: 2 },
-    { type: 'line', points: [[100, 174], [74, 190]], color: 'brown', width: 2 },
-    { type: 'line', points: [[100, 174], [126, 190]], color: 'brown', width: 2 },
-    { type: 'line', points: [[100, 198], [80, 212]], color: 'brown', width: 2 },
-    { type: 'line', points: [[100, 198], [120, 212]], color: 'brown', width: 2 },
-    // エ: ひげ根
-    { type: 'line', points: [[260, 128], [240, 180], [226, 226]], color: 'brown', width: 2 },
-    { type: 'line', points: [[260, 128], [248, 184], [240, 232]], color: 'brown', width: 2 },
-    { type: 'line', points: [[260, 128], [256, 184], [254, 234]], color: 'brown', width: 2 },
-    { type: 'line', points: [[260, 128], [264, 184], [268, 234]], color: 'brown', width: 2 },
-    { type: 'line', points: [[260, 128], [272, 184], [282, 230]], color: 'brown', width: 2 },
-    { type: 'line', points: [[260, 128], [280, 180], [296, 222]], color: 'brown', width: 2 },
-    { type: 'region', id: 'r1', x: 30, y: 30, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 190, y: 30, r: 22, label: 'イ' },
-    { type: 'region', id: 'r3', x: 30, y: 150, r: 22, label: 'ウ' },
-    { type: 'region', id: 'r4', x: 190, y: 150, r: 22, label: 'エ' },
+    photo('plants-3-p2'),
+    { type: 'region', id: 'r1', x: 43, y: 212, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 115, y: 212, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 188, y: 212, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 275, y: 212, r: 22, label: 'エ' },
   ]);
 
   // イヌワラビ（シダ植物）: 地面 y=130、地下茎 y=160、地上に出ているのは葉
@@ -508,22 +474,18 @@
     retryPool: [
       figureChoice({
         id: 'plants-2-r1', concept: 'pl-seed',
-        prompt: 'マツのりん片を大きくした図です。ア〜ウのうち、受粉したあと種子になるのはどれ？（ア: 雌花のりん片の根もとにある粒、イ: 雄花のりん片についているふくろ、ウ: 雌花のりん片の先）',
+        prompt: 'マツのりん片を大きくした写真です。ア〜ウのうち、受粉したあと種子になるのはどれ？（ア: 雌花のりん片の根もとにある粒、イ: 雄花のりん片についているふくろ、ウ: 雌花のりん片の先）',
+        // 写真: 左が雌花のりん片（根もとに胚珠 2 つ (69, 190)・(88, 190)、先 (88, 38)）、右が雄花のりん片（下に花粉のう (172〜278, 155〜198)）
         figure: scene([
-          { type: 'polygon', points: [[90, 40], [130, 90], [118, 150], [62, 150], [50, 90]], fill: 'lightgreen' },
-          { type: 'circle', x: 74, y: 136, r: 10, fill: 'white' },
-          { type: 'circle', x: 106, y: 136, r: 10, fill: 'white' },
-          { type: 'polygon', points: [[230, 40], [270, 90], [258, 150], [202, 150], [190, 90]], fill: 'lightgreen' },
-          { type: 'ellipse', x: 214, y: 132, rx: 12, ry: 9, fill: 'yellow' },
-          { type: 'ellipse', x: 246, y: 132, rx: 12, ry: 9, fill: 'yellow' },
-          { type: 'text', x: 90, y: 178, text: '雌花のりん片', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 178, text: '雄花のりん片', anchor: 'middle', size: 13 },
-          leader(24, 206, 70, 145),
-          leader(296, 206, 250, 140),
-          leader(150, 40, 100, 52),
-          { type: 'region', id: 'r1', x: 24, y: 206, r: 22, label: 'ア' },
-          { type: 'region', id: 'r2', x: 296, y: 206, r: 22, label: 'イ' },
-          { type: 'region', id: 'r3', x: 150, y: 40, r: 22, label: 'ウ' },
+          photo('plants-2-r1'),
+          tag(125, 18, '雌花のりん片', { size: 13 }),
+          tag(225, 18, '雄花のりん片', { size: 13 }),
+          pointer(51, 206, 70, 192),
+          pointer(275, 206, 262, 190),
+          pointer(61, 36, 84, 40),
+          { type: 'region', id: 'r1', x: 30, y: 214, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 296, y: 214, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 40, y: 30, r: 22, label: 'ウ' },
         ]),
         answer: 'r1',
         explanation: '雌花のりん片の根もとにある粒（ア）が胚珠で、受粉すると種子になります。イは花粉の入った花粉のうです。',

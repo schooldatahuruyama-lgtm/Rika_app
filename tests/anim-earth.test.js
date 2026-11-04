@@ -10,17 +10,28 @@ const EXPECTED = [
   'vo-quake-spread', 'vo-seismogram', 'vo-ps-graph', 'vo-plate-rebound',
   'we-cloud-form', 'we-high-low', 'we-westerly',
   'sp-rotation', 'sp-annual-orion', 'sp-orbit-midnight', 'sp-seasons', 'sp-moon-phase',
+  // 優先度 B
+  'sr-erosion-flow', 'we-front-move', 'sp-noon-altitude', 'sp-sunspot',
 ];
 // 1 周がつながる kind（計画の各 kind の欄に「つながる」と書いたもの）
 const LOOPING = ['vo-quake-spread', 'we-high-low', 'we-westerly',
-  'sp-rotation', 'sp-orbit-midnight', 'sp-seasons', 'sp-moon-phase'];
-const PERIOD_8000 = ['sp-rotation', 'sp-annual-orion', 'sp-orbit-midnight', 'sp-seasons', 'sp-moon-phase'];
+  'sp-rotation', 'sp-orbit-midnight', 'sp-seasons', 'sp-moon-phase', 'sp-noon-altitude'];
+const PERIOD_8000 = ['sp-rotation', 'sp-annual-orion', 'sp-orbit-midnight', 'sp-seasons', 'sp-moon-phase', 'sp-noon-altitude', 'sp-sunspot'];
 const PREFIXES = ['vo-', 'sr-', 'we-', 'sp-'];
 
 const items = (kind, t) => anim.frame(kind, t).items;
 const texts = (kind, t) => items(kind, t).filter(it => it.type === 'text' || it.type === 'label');
 const findText = (kind, t, s) => texts(kind, t).find(it => it.text === s);
 const near = (a, b, eps) => Math.abs(a - b) <= (eps === undefined ? 1e-9 : eps);
+
+// 文字の重なりを見るための箱（全角 1 文字 ＝ size、半角 ＝ size × 0.6 の概算。tests/anim-physics.test.js と同じ）。y はベースライン
+function textBox(it) {
+  const size = Math.max(12, it.size || 16);
+  const w = Array.from(String(it.text)).reduce((s, c) => s + (/[ -~]/.test(c) ? 0.6 : 1) * size, 0);
+  const left = it.anchor === 'middle' ? it.x - w / 2 : it.anchor === 'end' ? it.x - w : it.x;
+  return { left, right: left + w, top: it.y - size * 0.85, bottom: it.y + size * 0.15 };
+}
+const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 // item の座標の数（x 系と y 系）。points は [x, y] の組
 const X_KEYS = ['x', 'x1', 'x2', 'cx'], Y_KEYS = ['y', 'y1', 'y2', 'cy'], SIZE_KEYS = ['r', 'rx', 'ry', 'width', 'height'];
@@ -31,7 +42,7 @@ function coords(it) {
   return out;
 }
 
-test('anim-earth: KINDS は計画の 12 本で、名前は地学の単元の接頭辞で始まり、anim.KINDS に入っている', () => {
+test('anim-earth: KINDS は計画の 16 本（優先度 A 12 本・B 4 本）で、名前は地学の単元の接頭辞で始まり、anim.KINDS に入っている', () => {
   assert.deepEqual(earth.KINDS, EXPECTED);
   earth.KINDS.forEach(kind => {
     assert.ok(PREFIXES.some(p => kind.startsWith(p)), kind + ' の接頭辞');
@@ -42,7 +53,7 @@ test('anim-earth: KINDS は計画の 12 本で、名前は地学の単元の接�
 
 test('anim-earth: 周期は天体の 1 周が 8000 ms、それ以外は 4000 ms。restT は計画どおり', () => {
   earth.KINDS.forEach(kind => assert.equal(anim.periodOf(kind), PERIOD_8000.includes(kind) ? 8000 : 4000, kind));
-  const REST = { 'vo-seismogram': 0.99, 'vo-ps-graph': 0.99, 'we-cloud-form': 0.99 };
+  const REST = { 'vo-seismogram': 0.99, 'vo-ps-graph': 0.99, 'we-cloud-form': 0.99, 'sr-erosion-flow': 0.99, 'sp-sunspot': 0.425 };
   earth.KINDS.forEach(kind => assert.equal(anim.restT(kind), REST[kind] || 0, kind));
 });
 
@@ -299,4 +310,144 @@ test('sp-moon-phase: θ = 180 で k = 0（新月）、θ = 0 で k = 1（満月�
   // 動く月は軌道（半径 80）の上
   const moon = items('sp-moon-phase', 0.1).find(it => it.type === 'circle' && it.r === 11 && it.fill === 'yellow');
   assert.ok(near(Math.hypot(moon.x - 160, moon.y - 120), 80, 1e-9));
+});
+
+// ---- 優先度 B ----
+
+const lessonOf = (unitFile, id) => require('../content/' + unitFile).unit.areas.flatMap(a => a.stages).flatMap(s => s.lessons).find(c => c.id === id);
+// かけら（8 角形）の中心と、中心からいちばん遠い点までの距離
+function fragmentShape(it) {
+  const cx = it.points.reduce((s, p) => s + p[0], 0) / it.points.length;
+  const cy = it.points.reduce((s, p) => s + p[1], 0) / it.points.length;
+  return { x: cx, y: cy, r: Math.max(...it.points.map(p => Math.hypot(p[0] - cx, p[1] - cy))) };
+}
+const fragments = t => items('sr-erosion-flow', t).filter(it => it.type === 'polygon' && it.fill === 'rock' && it.points.length === 8).map(fragmentShape);
+
+test('sr-erosion-flow: かけら 5 つが山から川を通って海へ運ばれ、小さく丸くなって河口の近くの海底に積もる。かけらは重ならない', () => {
+  // t = 0 は 5 つとも静止図の山のかけら（中心 (12,57)）の後ろ
+  fragments(0).forEach(f => assert.ok(near(f.x, 12, 1.5) && near(f.y, 57, 1.5) && f.r <= 6.5));   // 頂点の平均なので、かどばった形では中心から少しずれる
+  // 0.99 では 5 つとも海底の上に止まり、丸い（半径 3）。「④」の文字（x 228〜）にかからない
+  const end = fragments(0.99);
+  assert.equal(end.length, 5);
+  end.forEach(f => {
+    assert.ok(near(f.r, 3, 1e-6), '丸くなっていない r = ' + f.r);
+    assert.ok(f.x > 200 && f.x + f.r < 228, 'x = ' + f.x);
+    assert.ok(f.y + f.r <= earth.seaFloorY(f.x) + 1e-6 && f.y - f.r > 139, '海底の上・海面の下にない y = ' + f.y);
+  });
+  // 運ばれているあいだ、かけらは小さくなっていく
+  const r = t => fragments(t)[0].r;
+  assert.ok(r(0.05) > r(0.2) && r(0.2) > r(0.4));
+  // 山を出たあとのかけらどうしは重ならない
+  for (let n = 0; n < 1000; n++) {
+    const fs = fragments(n / 1000).filter(f => Math.hypot(f.x - 12, f.y - 57) > 8);
+    for (let i = 0; i < fs.length; i++) for (let j = i + 1; j < fs.length; j++) {
+      assert.ok(Math.hypot(fs[i].x - fs[j].x, fs[i].y - fs[j].y) >= fs[i].r + fs[j].r - 1e-9, 't = ' + n / 1000 + ' でかけらが重なる');
+    }
+  }
+});
+
+test('we-front-move: 前線は記号の向き（上）へ進み、動く量は 寒冷 ＞ 温暖 ＞ 停滞。t = 0 は静止図と同じ', () => {
+  const most = kind => {
+    let m = 0;
+    for (let n = 0; n < 200; n++) m = Math.max(m, Math.abs(earth.frontShift(n / 200, kind, { cold: 14, warm: 8, stationary: 0, occluded: 6 }[kind])));
+    return m;
+  };
+  assert.ok(most('cold') > most('warm') && most('warm') > most('stationary') && most('occluded') > most('stationary'));
+  assert.ok(earth.frontShift(0.5, 'cold', 14) < 0, '寒冷前線が上（記号の向き）へ進まない');
+  // t = 0 の前線の線と記号は静止図と同じ（静止図は 0.1 に丸めてある）
+  const card = lessonOf('weather.js', 'weather-3-c3');
+  const shapes = list => list.filter(it => it.type === 'polygon' || (it.type === 'line' && !it.dashed));
+  const got = shapes(items('we-front-move', 0)), want = shapes(card.figure.items);
+  assert.equal(got.length, want.length);
+  got.forEach((it, i) => {
+    assert.equal(it.type, want[i].type);
+    assert.equal(it.fill || it.color, want[i].fill || want[i].color);
+    it.points.forEach((p, j) => assert.ok(near(p[0], want[i].points[j][0], 0.06) && near(p[1], want[i].points[j][1], 0.06), i + ' 番目の点 ' + j));
+  });
+  // 進んでいるときは、もとの位置にうすい点線が残る
+  assert.ok(items('we-front-move', 0.8).some(it => it.type === 'line' && it.dashed && it.points[0][1] === 50));
+});
+
+test('sp-noon-altitude: t = 0 で 78.4°（夏至）、0.25・0.75 で 55°、0.5 で 31.6°（冬至）。いまの太陽は天球の少し内側を動き、文字にかからない', () => {
+  assert.ok(near(earth.noonAltitude(0), 78.4));
+  assert.ok(near(earth.noonAltitude(0.25), 55));
+  assert.ok(near(earth.noonAltitude(0.5), 31.6));
+  assert.ok(near(earth.noonAltitude(0.75), 55));
+  for (let n = 0; n < 1000; n++) {
+    const t = n / 1000, list = items('sp-noon-altitude', t);
+    const sun = list.find(it => it.type === 'circle' && it.fill === 'yellow' && Math.hypot(it.x - 150, it.y - 200) < 130);
+    assert.ok(near(Math.hypot(sun.x - 150, sun.y - 200), earth.NOON_NOW_R, 1e-9));
+    assert.ok(near(Math.atan2(200 - sun.y, sun.x - 150) * 180 / Math.PI, earth.noonAltitude(t), 1e-9));
+    // いまの太陽と観測地点からの線は、どの文字の箱にもかからない
+    const line = list.find(it => it.type === 'line' && it.color === 'orange');
+    list.filter(it => it.type === 'text').forEach(tx => {
+      const b = textBox(tx);
+      const cx = Math.max(b.left, Math.min(sun.x, b.right)), cy = Math.max(b.top, Math.min(sun.y, b.bottom));
+      assert.ok(Math.hypot(cx - sun.x, cy - sun.y) >= sun.r, 't = ' + t + ' で太陽が「' + tx.text + '」にかかる');
+      for (let k = 0; k <= 20; k++) {
+        const x = lerpPt(line.points, k / 20, 0), y = lerpPt(line.points, k / 20, 1);
+        assert.ok(!(x > b.left && x < b.right && y > b.top && y < b.bottom), 't = ' + t + ' で線が「' + tx.text + '」の上を通る');
+      }
+    });
+  }
+  assert.ok(findText('sp-noon-altitude', 0, 'いまの南中高度 78.4°'));
+  assert.ok(findText('sp-noon-altitude', 0.5, 'いまの南中高度 31.6°'));
+  assert.equal(findText('sp-noon-altitude', 0.5, '冬至 31.6°').color, 'blue');
+  assert.equal(findText('sp-noon-altitude', 0.25, '春分・秋分 55°').color, 'blue');
+  // 「春分・秋分 55°」が青い時間は 1 周の 1 割以上（2 回ある）
+  let blue = 0;
+  for (let n = 0; n < 1000; n++) if (findText('sp-noon-altitude', n / 1000, '春分・秋分 55°').color === 'blue') blue++;
+  assert.ok(blue >= 100, '春分・秋分が青い時間 ' + blue / 1000);
+});
+
+test('sp-sunspot: 黒点は 12 日で経度 160° 進み（自転の周期 約 27 日）、左のふちの近く（1 日目）から右のふちの近く（13 日目）へ。真ん中では円（rx = ry = 6）、ふちでは細長い', () => {
+  const spot = t => items('sp-sunspot', t).find(it => it.type === 'ellipse' && it.x > 110 && it.x < 210);
+  const rest = anim.restT('sp-sunspot');
+  assert.ok(near(spot(rest).x, 160, 1e-9) && near(spot(rest).rx, 6, 1e-9) && spot(rest).ry === 6 && spot(rest).y === 112);
+  assert.ok(findText('sp-sunspot', rest, '7 日目'));
+  // 1 日目 −80°・13 日目 +80°（12 日で 160°。1 日に 13.3° なので 360° は 27 日）
+  assert.ok(near(earth.sunspotPhi(0), -80) && near(earth.sunspotPhi(0.85), 80) && near(earth.sunspotPhi(rest), 0));
+  assert.ok(Math.abs(360 / (160 / 12) - 27) < 0.1);
+  const half = Math.sqrt(46 * 46 - 64) - 2;   // 黒点の高さ（y 112）で見える円の半径から 2 引いた所まで
+  assert.ok(near(spot(0).x, 160 - half * Math.sin(80 * Math.PI / 180), 1e-9));
+  assert.ok(findText('sp-sunspot', 0, '1 日目') && findText('sp-sunspot', 0.85, '13 日目'));
+  // 左右の太陽の 1 日目・13 日目の黒点も、同じ ±80° の位置
+  const spots = items('sp-sunspot', rest).filter(it => it.type === 'ellipse');
+  assert.ok(near(spots[0].x - 56, spot(0).x - 160, 1e-9) && near(spots[2].x - 264, spot(0.85).x - 160, 1e-9));
+  // 黒点は太陽の円の中、左から右へ進み、中央ほど丸い（横の半径は 6·cos φ）
+  let prevX = -Infinity;
+  for (let n = 0; n <= 85; n++) {
+    const s = spot(n / 100);
+    assert.ok(s.x >= prevX - 1e-9);
+    prevX = s.x;
+    assert.ok(s.rx <= 6 + 1e-9 && s.rx > 0);
+    assert.ok(Math.hypot(s.x + s.rx - 160, s.y - 120) <= 46 && Math.hypot(s.x - s.rx - 160, s.y - 120) <= 46, '黒点が太陽の外');
+  }
+  assert.ok(spot(0.2).rx < spot(0.4).rx);
+});
+
+const KINDS_B = EXPECTED.slice(12);
+// 折れ線 pts の割合 k の点の x（i = 0）または y（i = 1）。2 点の線だけで使う
+function lerpPt(pts, k, i) { return pts[0][i] + (pts[pts.length - 1][i] - pts[0][i]) * k; }
+
+test('B の kind: 各 t で文字（text）どうしが重ならず、場面（320×240）の中にある', () => {
+  KINDS_B.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const boxes = items(kind, t).filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+    }
+  });
+});
+
+test('B の kind: 矢印（arrow）の両はしが場面（320×240）の中にある', () => {
+  KINDS_B.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      items(kind, i / 100).filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + i / 100 + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
 });

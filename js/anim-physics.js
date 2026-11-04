@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
   const anim = typeof require === 'function' ? require('./anim.js') : root.RikaQuest.anim;
-  const { stage, lerp, clamp01, ease, osc, wrap, pathLen, along, onCircle } = anim.helpers;
+  const { stage, lerp, clamp01, ease, osc, wrap, pathLen, along, partial, onCircle, u } = anim.helpers;
 
   // 小数 1 けたに丸める（content の静止図の関数と同じ round1。静止図の点をそのまま写すときだけ使う）
   const round1 = (v) => Math.round(v * 10) / 10;
@@ -499,6 +499,457 @@
     ];
   }
 
+  // ================================================================
+  // 優先度 B（計画 5 章の B の 10 本）
+  // ================================================================
+
+  // figures.js の矢じりは線の太さ × 4。矢印はこれより長いときだけ描く（矢じりだけの形にならないように）
+  const ARROW_HEAD = 4;
+  const minArrow = (width) => ARROW_HEAD * (width || 3) + 2;
+
+  // ---- 音の世界（sound）----
+
+  // 糸電話の糸（静止図の (74,130)–(246,130)）を 17 点の折れ線にし、振動が左の紙コップから右へ伝わる（sound-2-c2）。
+  // 両はしは y = 130 に固定（sin(π·k) を掛ける）。振れはばは u(t) で 0 → 最大 → 0（t = 0 で静止図と同じ直線）
+  const PHONE_X1 = 74, PHONE_X2 = 246, PHONE_Y = 130, PHONE_AMP = 4;
+  function phoneString(t) {
+    const a = PHONE_AMP * u(t);
+    const pts = [];
+    for (let i = 0; i <= 16; i++) {
+      const k = i / 16;
+      pts.push([PHONE_X1 + (PHONE_X2 - PHONE_X1) * k, PHONE_Y + a * Math.sin(Math.PI * k) * osc(3 * k - 6 * t, 1)]);
+    }
+    return pts;
+  }
+  function soStringPhone(t) {
+    return [
+      { type: 'polygon', points: [[40, 100], [74, 112], [74, 148], [40, 160]], fill: 'white' },
+      { type: 'line', points: phoneString(t), width: 2 },
+      { type: 'polygon', points: [[246, 112], [280, 100], [280, 160], [246, 148]], fill: 'white' },
+      { type: 'text', x: 160, y: 120, text: '糸', anchor: 'middle', size: 14 },
+      { type: 'text', x: 160, y: 190, text: '糸が振動を伝える', anchor: 'middle', size: 14 },
+      { type: 'text', x: 20, y: 40, text: '気体・液体・固体も音を伝える', size: 14 },
+    ];
+  }
+
+  // ---- 力のはたらき（force）----
+
+  // 箱が右へすべり、摩擦力でだんだん遅くなって止まる（force-1-c3）。箱は 140 → 200。
+  // 「動く向き」の矢印は動かさない（箱といっしょに 60 動かすと場面の右はしから出るため）
+  const FRICTION_RUN = 60;
+  function frictionBoxX(t) {
+    const p = stage(t, 0.05, 0.7);
+    return 140 + FRICTION_RUN * (1 - (1 - p) * (1 - p));
+  }
+  function foFriction(t) {
+    const x = frictionBoxX(t);
+    const moving = t < 0.7;   // 止まったら（stage が 1）摩擦力の矢印と文字を消す
+    const items = [
+      { type: 'line', points: [[20, 110], [300, 110]], color: 'line', width: 3 },
+      { type: 'rect', x, y: 70, width: 60, height: 40, fill: 'sand', label: '箱' },
+      { type: 'arrow', x1: 210, y1: 60, x2: 280, y2: 60, color: 'gray', label: '動く向き' },
+    ];
+    if (moving) {
+      items.push({ type: 'arrow', x1: x + 30, y1: 110, x2: x - 30, y2: 110, color: 'blue' });
+      items.push({ type: 'text', x: 40, y: 134, text: '摩擦力', size: 14 });
+    } else {
+      items.push(text(230, 134, '摩擦力で止まった', 13, { anchor: 'middle' }));
+    }
+    items.push(
+      { type: 'rect', x: 60, y: 160, width: 70, height: 34, fill: 'red', label: 'N' },
+      { type: 'rect', x: 190, y: 160, width: 70, height: 34, fill: 'sky', label: 'S' },
+      { type: 'text', x: 160, y: 222, text: '離れていても引き合う', size: 14, anchor: 'middle' },
+    );
+    return items;
+  }
+
+  // content/force.js の hookeGraph() と同じ部品（原点 (50,200)。横 0.1 N ＝ 45px、縦 1 cm ＝ 30px）。
+  // shownUpTo: 測った点（黒丸）は x がこの値以下のものだけ描く
+  const HOOKE_LINE = [[50, 200], [275, 50]];
+  function hookeGraph(shownUpTo) {
+    const items = [
+      { type: 'line', points: [[50, 200], [305, 200]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [50, 28]], width: 2, arrow: true },
+      { type: 'text', x: 8, y: 22, text: '伸び〔cm〕', size: 12 },
+      { type: 'text', x: 312, y: 236, text: '力の大きさ〔N〕', size: 12, anchor: 'end' },
+      { type: 'text', x: 42, y: 216, text: '0', size: 12, anchor: 'end' },
+    ];
+    for (let i = 1; i <= 5; i++) {
+      const gx = 50 + 45 * i, gy = 200 - 30 * i;
+      items.push({ type: 'line', points: [[gx, 200], [gx, 50]], color: 'gray', width: 1, dashed: true });
+      items.push({ type: 'line', points: [[50, gy], [275, gy]], color: 'gray', width: 1, dashed: true });
+      items.push({ type: 'text', x: gx, y: 218, text: '0.' + i, size: 12, anchor: 'middle' });
+      items.push({ type: 'text', x: 42, y: gy + 5, text: String(i), size: 12, anchor: 'end' });
+    }
+    items.push({ type: 'line', points: HOOKE_LINE, color: 'blue', width: 3 });
+    for (let i = 1; i <= 5; i++) {
+      if (50 + 45 * i <= shownUpTo + 1e-9) items.push({ type: 'circle', x: 50 + 45 * i, y: 200 - 30 * i, r: 5, fill: 'ink' });
+    }
+    return items;
+  }
+  // 動く点の位置（直線の上を原点から (275,50) まで）と、そのときの力〔N〕・伸び〔cm〕
+  function hookePoint(t) {
+    const p = along(HOOKE_LINE, stage(t, 0, 0.85));
+    return { x: p.x, y: p.y, force: (p.x - 50) / 450, stretch: (200 - p.y) / 30 };
+  }
+  // ばねを引く力を大きくしていくと、伸びが比例して大きくなる。点が直線の上を進み、軸へ点線を下ろす（force-3-c2）
+  // 「原点を通る直線」(100,60) の文字の範囲（横の点線はこの範囲を通らない）
+  const HOOKE_TITLE = { left: 96, right: 202, top: 44, bottom: 64 };
+  function foHookeGraph(t) {
+    const p = hookePoint(t);
+    const items = hookeGraph(p.x);
+    const guide = (points) => ({ type: 'line', points, color: 'orange', width: 1.5, dashed: true });
+    items.push(
+      { type: 'text', x: 100, y: 60, text: '原点を通る直線', size: 14 },
+      guide([[p.x, p.y], [p.x, 200]]),
+    );
+    // 横の点線（点 → 縦軸）。文字の高さを通るときは、文字の左と右に分けて描く
+    if (p.y >= HOOKE_TITLE.top && p.y <= HOOKE_TITLE.bottom && p.x > HOOKE_TITLE.left) {
+      items.push(guide([[50, p.y], [HOOKE_TITLE.left, p.y]]));
+      if (p.x > HOOKE_TITLE.right) items.push(guide([[HOOKE_TITLE.right, p.y], [p.x, p.y]]));
+    } else {
+      items.push(guide([[p.x, p.y], [50, p.y]]));
+    }
+    items.push(
+      { type: 'circle', x: p.x, y: p.y, r: 6, fill: 'orange', stroke: 'orange' },
+      // 読み（横軸の目盛りの下。点線・方眼の線が通らない所）
+      text(46, 236, '力 ' + p.force.toFixed(2) + ' N → 伸び ' + p.stretch.toFixed(1) + ' cm', 12, { color: 'orange', bold: true }),
+    );
+    return items;
+  }
+
+  // content/force.js の force(x1, y1, x2, y2, label) と同じ部品（力の矢印と作用点）
+  function forceArrow(x1, y1, x2, y2, label) {
+    const a = { type: 'arrow', x1, y1, x2, y2, color: 'blue' };
+    if (label) a.label = label;
+    return [a, { type: 'circle', x: x1, y: y1, r: 5, fill: 'blue', stroke: 'blue' }];
+  }
+  // 右の力のずれ（N）: 0〜0.2 は 0（つり合い）、0.2〜0.5 で 0 → +1（0.23〜0.47 は +1 のまま）→ 0、0.5〜0.7 は 0、
+  // 0.7〜1 で 0 → −1（0.73〜0.97 は −1 のまま）→ 0。
+  // （計画の osc(t, 1) だと、つり合っている時間が一瞬で「つり合っている」が読めない。また、ずれが小さい時間が長いと
+  // 合力の矢印が矢じりより短くなるので、速く変えて ±1 N で止める）
+  const BAL_RAMP = 0.03;
+  function balancePulse(t, from, to) {
+    return ease(stage(t, from, from + BAL_RAMP)) * (1 - ease(stage(t, to - BAL_RAMP, to)));
+  }
+  function balanceShift(t) {
+    if (t < 0.2) return 0;
+    if (t < 0.5) return balancePulse(t, 0.2, 0.5);
+    if (t < 0.7) return 0;
+    return -balancePulse(t, 0.7, 1);
+  }
+  const BALANCE_PX = 70 / 3;   // 1 N の矢印の長さ（静止図の 3 N ＝ 70px）
+  // 右の力の大きさが変わると、2 力がつり合ったり、つり合わなくなったりする（force-4-c1）。箱は動かさない
+  function foBalance(t) {
+    const F = 3 + balanceShift(t);
+    const net = F - 3;
+    const balanced = Math.abs(net) < 0.05;
+    const items = [
+      { type: 'line', points: [[30, 120], [290, 120]], color: 'gray', width: 1, dashed: true },
+      { type: 'rect', x: 130, y: 100, width: 60, height: 40, fill: 'sand', label: '箱' },
+      ...forceArrow(130, 120, 60, 120, '3 N'),
+      ...forceArrow(190, 120, 190 + BALANCE_PX * F, 120, balanced ? '3 N' : (Math.round(F * 10) / 10).toFixed(1) + ' N'),
+      { type: 'text', x: 160, y: 190, text: '大きさが等しい・向きが反対', size: 14, anchor: 'middle' },
+      { type: 'text', x: 160, y: 214, text: '一直線上にある', size: 14, anchor: 'middle' },
+    ];
+    // 合力の矢印は矢じりより長いときだけ（|F − 3| ≧ 0.6 N。ずれが小さいのは変わるときの一瞬だけ）
+    if (!balanced && Math.abs(BALANCE_PX * net) >= minArrow()) {
+      items.push({ type: 'arrow', x1: 160, y1: 84, x2: 160 + BALANCE_PX * net, y2: 84, color: 'green', label: '合力' });
+    }
+    items.push(text(160, 166, balanced ? 'つり合っている' : 'つり合っていない → 動きだす', 13,
+      { anchor: 'middle', color: balanced ? 'blue' : 'red', bold: true }));
+    return items;
+  }
+
+  // ---- 電流とその利用（electricity）----
+
+  // content/electricity.js の axes・heatAxes と同じ部品（原点 (50,200)。横 1 分 ＝ 40px。縦の目盛りの数は書かない）
+  function heatAxes() {
+    const items = [
+      { type: 'line', points: [[50, 200], [305, 200]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [50, 28]], width: 2, arrow: true },
+      { type: 'text', x: 8, y: 22, text: '上昇温度〔℃〕', size: 12 },
+      { type: 'text', x: 312, y: 236, text: '時間〔分〕', size: 12, anchor: 'end' },
+      { type: 'text', x: 42, y: 216, text: '0', size: 12, anchor: 'end' },
+    ];
+    ['1', '2', '3', '4', '5'].forEach((s, i) => {
+      const gx = 50 + 40 * (i + 1);
+      items.push({ type: 'line', points: [[gx, 200], [gx, 50]], color: 'gray', width: 1, dashed: true });
+      items.push({ type: 'text', x: gx, y: 218, text: s, size: 12, anchor: 'middle' });
+    });
+    for (let i = 0; i < 6; i++) {
+      const gy = 200 - 25 * (i + 1);
+      items.push({ type: 'line', points: [[50, gy], [290, gy]], color: 'gray', width: 1, dashed: true });
+    }
+    return items;
+  }
+  const HEAT_6W = [[50, 200], [250, 50]];
+  const HEAT_3W = [[50, 200], [250, 125]];
+  const HEAT_GROW_TO = 0.7;   // 0.7 で 5 分まで伸び、そのあとは止まって見せる
+  // 6 W と 3 W の電熱線の上昇温度のグラフが、時間とともに伸びる。同じ時刻の上昇温度は 2 : 1（elec-3-c3）
+  function elHeatRise(t) {
+    const p = stage(t, 0, HEAT_GROW_TO);
+    const a = partial(HEAT_6W, p), b = partial(HEAT_3W, p);
+    const items = heatAxes();
+    if (a.length) items.push({ type: 'line', points: a, color: 'blue', width: 3 });
+    if (b.length) items.push({ type: 'line', points: b, color: 'green', width: 3 });
+    const tipA = along(HEAT_6W, p), tipB = along(HEAT_3W, p);
+    if (p < 1) {
+      items.push({ type: 'circle', x: tipA.x, y: tipA.y, r: 4, fill: 'blue', stroke: 'blue' });
+      items.push({ type: 'circle', x: tipB.x, y: tipB.y, r: 4, fill: 'green', stroke: 'green' });
+    }
+    // 「6 W」「3 W」は線の先といっしょに動く（伸びきったとき静止図と同じ位置）。
+    // 2 本の先が近い伸び始め（p < 0.25）は文字が重なるので出さない
+    if (p >= 0.25) {
+      items.push(
+        { type: 'text', x: 258 + (tipA.x - 250), y: 55 + (tipA.y - 50), text: '6 W', size: 14 },
+        { type: 'text', x: 258 + (tipB.x - 250), y: 130 + (tipB.y - 125), text: '3 W', size: 14 },
+      );
+    }
+    items.push(text(60, 42, '時間 ' + (5 * p).toFixed(1) + ' 分', 13, { bold: true }));
+    return items;
+  }
+
+  // 静電気（elec-4-c1）の時刻: こする 0〜0.4 → 右の 2 つを手で離す 0.4〜0.5 → 引き合って近づく 0.5〜0.62
+  // → 左のストローを近づける 0.62〜0.69 → 離す（しりぞけ合う）0.69〜0.9
+  const RUB_TO = 0.4, PART_TO = 0.5, ATTRACT_TO = 0.62, PUSH_TO = 0.69, REPEL_TO = 0.9;
+  const RUB_X = 226;   // こすっているときのストローの x（ティッシュ 270 と半径 22 どうしで接する）
+  const APART_STRAW = 190, APART_TISSUE = 286;   // 手で離したところ（そこから引き合って静止図の 205・270 へ近づく）
+  // 電子 k（0〜2）がティッシュからストローへ移る時刻
+  const electronStage = (t, k) => stage(t, 0.06 + 0.09 * k, 0.16 + 0.09 * k);
+  // ストローとティッシュをこすり合わせると電子がティッシュからストローへ移り、ストローは −、ティッシュは ＋ になって引き合う。
+  // −どうしのストローは近づけてもしりぞけ合う（elec-4-c1）
+  function elStaticCharge(t) {
+    const rub = t < RUB_TO;
+    const charged = t >= RUB_TO;
+    const part = ease(stage(t, RUB_TO, PART_TO)), pull = ease(stage(t, PART_TO, ATTRACT_TO));
+    const strawX = rub ? RUB_X : lerp(lerp(RUB_X, APART_STRAW, part), 205, pull);
+    const tissueX = lerp(lerp(270, APART_TISSUE, part), 270, pull);
+    const strawY = 110 + (rub ? 6 * osc(stage(t, 0, RUB_TO), 3) : 0);   // こする（上下に 3 往復）
+    // 左の 2 本: 0.62〜0.69 で 60・120 → 68・112（接する）に近づけ、0.69〜0.9 で離れて 60・120 にもどる
+    const close = t < PUSH_TO ? ease(stage(t, ATTRACT_TO, PUSH_TO)) : 1 - ease(stage(t, PUSH_TO, REPEL_TO));
+    const lx = 60 + 8 * close, rx = 120 - 8 * close;
+    const items = [
+      note(60, 76, 'ストロー'), note(120, 76, 'ストロー'),
+      { type: 'circle', x: lx, y: 110, r: 22, fill: 'sky', label: '−' },
+      { type: 'circle', x: rx, y: 110, r: 22, fill: 'sky', label: '−' },
+    ];
+    if (t >= PUSH_TO) {
+      items.push({ type: 'arrow', x1: lx, y1: 150, x2: lx - 30, y2: 150, color: 'blue' });
+      items.push({ type: 'arrow', x1: rx, y1: 150, x2: rx + 30, y2: 150, color: 'blue' });
+    }
+    items.push(
+      note(90, 196, 'しりぞけ合う', 14),
+      note(205, 76, 'ストロー'), note(270, 76, 'ティッシュ'),
+      Object.assign({ type: 'circle', x: strawX, y: strawY, r: 22, fill: 'sky' }, charged ? { label: '−' } : {}),
+      Object.assign({ type: 'circle', x: tissueX, y: 110, r: 22, fill: 'white' }, charged ? { label: '＋' } : {}),
+    );
+    // 電子（青い点）: ティッシュの中 (262, 100〜120) → ストローの中 (232, ストローの y −10〜+10)。−と＋の文字が出たら消す
+    if (rub) {
+      for (let k = 0; k < 3; k++) {
+        const e = ease(electronStage(t, k));
+        items.push({ type: 'circle', x: lerp(262, strawX + 6, e), y: lerp(100 + 10 * k, strawY - 10 + 10 * k, e), r: 4, fill: 'blue', stroke: 'blue' });
+      }
+    }
+    // 「引き合う」の矢印は、手を離して近づき始めてから（丸といっしょに動く）
+    if (t >= PART_TO) {
+      items.push({ type: 'arrow', x1: strawX, y1: 150, x2: strawX + 25, y2: 150, color: 'blue' });
+      items.push({ type: 'arrow', x1: tissueX, y1: 150, x2: tissueX - 25, y2: 150, color: 'blue' });
+    }
+    items.push(note(238, 196, '引き合う', 14), note(160, 30, 'こすり合わせたストローとティッシュ', 13));
+    if (t < PART_TO) items.push(note(238, 226, '青い点: 電子（−の電気）', 12));
+    return items;
+  }
+
+  // ---- 運動とエネルギー（motion）----
+
+  // 斜面の上の物体（motion-1-c3）: 物体は下の辺の中点 SLOPE_Q（静止図の点 (120,160)・(164.7,137.6) の中点）を中心に
+  // 斜面といっしょに回る（物体の位置を変えずに傾きだけを変える）。傾き θ = 26 + 9·cos(2πt) 度（17°〜35°）。
+  // （計画の 15°〜35° で左下の点を中心に回すと、傾きが小さいとき重力の矢印と「重力」が場面の下から出るため）
+  const SLOPE_Q = [(120 + 164.7) / 2, (160 + 137.6) / 2];
+  const SLOPE_MID = 26, SLOPE_AMP = 9;
+  const SLOPE_DEG0 = Math.atan(0.5) * 180 / Math.PI;   // 静止図の傾き（約 26.6°）
+  const SPLIT_REST = Math.acos((SLOPE_DEG0 - SLOPE_MID) / SLOPE_AMP) / (2 * Math.PI);   // 傾きが静止図と同じになる t（約 0.24）
+  const GRAVITY = 80;
+  const slopeDeg = (t) => SLOPE_MID + SLOPE_AMP * Math.cos(2 * Math.PI * t);
+  // 傾き deg のときの物体の形・重力と 2 つの分力の先
+  function slopeForces(t) {
+    const th = slopeDeg(t) * Math.PI / 180;
+    const c = Math.cos(th), s = Math.sin(th);
+    const dir = [c, -s];      // 斜面に沿って上へ
+    const n = [-s, -c];       // 斜面から外へ（上向き）
+    const [qx, qy] = SLOPE_Q;
+    const p0 = [qx - 25 * dir[0], qy - 25 * dir[1]], p1 = [qx + 25 * dir[0], qy + 25 * dir[1]];
+    const block = [p0, p1, [p1[0] + 50 * n[0], p1[1] + 50 * n[1]], [p0[0] + 50 * n[0], p0[1] + 50 * n[1]]];
+    const o = [qx + 25 * n[0], qy + 25 * n[1]];   // 物体の中心（重力の作用点）
+    const par = GRAVITY * s, per = GRAVITY * c;    // 平行な分力・垂直な分力の大きさ
+    return {
+      deg: slopeDeg(t), tan: s / c, block, o,
+      gravity: [o[0], o[1] + GRAVITY],
+      parallel: [o[0] - par * c, o[1] + par * s],    // 斜面に沿って下へ
+      perpendicular: [o[0] + per * s, o[1] + per * c],   // 斜面に垂直に押す向き
+    };
+  }
+  const SPLIT_AT_REST = slopeForces(SPLIT_REST);
+  // 斜面の三角形（左下は地面 y 210 の上。x 20 より左に出るときは x 20 で切った四角形にする）
+  function slopeShape(tan) {
+    const [qx, qy] = SLOPE_Q;
+    const yAt = (x) => qy - (x - qx) * tan;
+    const left = qx - (210 - qy) / tan;
+    const top = [300, yAt(300)];
+    if (left >= 20) return [[left, 210], [300, 210], top];
+    return [[20, yAt(20)], [20, 210], [300, 210], top];
+  }
+  // 斜面の傾きを変えると、重力（大きさは同じ）の斜面に平行な分力と垂直な分力の大きさが変わる（motion-1-c3）
+  function moSlopeSplit(t) {
+    const f = slopeForces(t);
+    const mv = (p, p0) => [p[0] - p0[0], p[1] - p0[1]];   // 止まった絵からのずれ（文字を矢印の先といっしょに動かす）
+    const dg = mv(f.gravity, SPLIT_AT_REST.gravity), dpa = mv(f.parallel, SPLIT_AT_REST.parallel), dpe = mv(f.perpendicular, SPLIT_AT_REST.perpendicular);
+    return [
+      { type: 'polygon', points: slopeShape(f.tan), fill: 'sand', stroke: 'line' },
+      { type: 'polygon', points: f.block, fill: 'brown', stroke: 'ink' },
+      { type: 'line', points: [f.parallel, f.gravity], color: 'gray', width: 2, dashed: true },
+      { type: 'line', points: [f.perpendicular, f.gravity], color: 'gray', width: 2, dashed: true },
+      { type: 'arrow', x1: f.o[0], y1: f.o[1], x2: f.gravity[0], y2: f.gravity[1], color: 'blue' },
+      { type: 'arrow', x1: f.o[0], y1: f.o[1], x2: f.parallel[0], y2: f.parallel[1], color: 'green' },
+      { type: 'arrow', x1: f.o[0], y1: f.o[1], x2: f.perpendicular[0], y2: f.perpendicular[1], color: 'green' },
+      { type: 'circle', x: f.o[0], y: f.o[1], r: 4, fill: 'blue', stroke: 'blue' },
+      mnote(131 + dg[0], 230 + dg[1], '重力', 14, 'middle'),
+      mnote(92 + dpa[0], 150 + dpa[1], '平行な分力', 13, 'end'),
+      mnote(172 + dpe[0], 200 + dpe[1], '垂直な分力', 13),
+      mnote(20, 30, '傾き ' + Math.round(f.deg) + '°', 14),
+      mnote(20, 48, '傾きが大きいほど平行な分力が大きい', 12),
+    ];
+  }
+
+  // 水中の物体（motion-1-c4）: 水面 y 86（ビーカーの底 214、高さ 160、水の割合 0.8）。物体（60×44）の上の辺を 4 → 124 へ下ろす
+  const WATER_TOP = 214 - 160 * 0.8;
+  const BLOCK_H = 44;
+  const buoyBlockY = (t) => lerp(4, 124, ease(stage(t, 0, 0.7)));
+  const PRESSURE_PX = 32 / (168 - WATER_TOP);   // 水圧の矢印の長さ ÷ 深さ（約 0.39）
+  // 水につかった割合（0〜1）とばねばかりの読み（N）
+  function buoyancy(t) {
+    const y = buoyBlockY(t);
+    const s = clamp01((y + BLOCK_H - WATER_TOP) / BLOCK_H);
+    return { y, s, reading: 3.0 - 0.8 * s };
+  }
+  // 物体を水に入れていくと、水につかった分だけ浮力がはたらき、ばねばかりの読みが 3.0 N → 2.2 N に減る。
+  // 水圧の矢印は水中にある面にだけ描き、長さは深さに比例する（静止図の位置で 上 14.8・横 23.4・下 32。
+  // 静止図の 上 18・横 22 は面ごとに比がちがうので、動く図では 1 つの比にそろえた）（motion-1-c4）
+  function moBuoyancy(t) {
+    const { y, reading } = buoyancy(t);
+    const depth = (yy) => Math.max(0, yy - WATER_TOP);   // 水面からの深さ
+    // 水圧の矢印の長さは深さに比例する（1 つの比。静止図の位置で下の面が静止図と同じ 32 になる比）
+    const top = PRESSURE_PX * depth(y);
+    const bottom = PRESSURE_PX * depth(y + BLOCK_H);
+    const side = PRESSURE_PX * depth(y + 22);
+    const items = [
+      { type: 'beaker', x: 100, y: 214, width: 140, height: 160, level: 0.8 },
+      { type: 'line', points: [[100, 0], [100, y]], color: 'ink', width: 1.5 },   // ばねばかりの糸
+      { type: 'rect', x: 70, y, width: 60, height: BLOCK_H, fill: 'gray' },
+    ];
+    const MIN = minArrow();   // 矢じりより短い矢印は描かない
+    if (top >= MIN) items.push({ type: 'arrow', x1: 100, y1: y - 2 - top, x2: 100, y2: y - 2, color: 'blue' });
+    if (bottom >= MIN) items.push({ type: 'arrow', x1: 100, y1: y + BLOCK_H + 2 + bottom, x2: 100, y2: y + BLOCK_H + 2, color: 'blue' });
+    if (side >= MIN) {
+      items.push({ type: 'arrow', x1: 68 - side, y1: y + 22, x2: 68, y2: y + 22, color: 'blue' });
+      items.push({ type: 'arrow', x1: 132 + side, y1: y + 22, x2: 132, y2: y + 22, color: 'blue' });
+    }
+    items.push(
+      text(186, 40, 'いまの読み ' + reading.toFixed(1) + ' N', 13, { color: 'blue', bold: true }),
+      mnote(186, 70, '空気中: 3.0 N', 14),
+      mnote(186, 98, '水中: 2.2 N', 14),
+      mnote(186, 140, '浮力 ＝', 14),
+      mnote(186, 164, '3.0 N − 2.2 N', 14),
+      mnote(186, 210, '下の面ほど水圧が大きい', 12),
+    );
+    return items;
+  }
+
+  // 作用・反作用（motion-3-c4）: 0〜0.25 は A が B を押している（腕がつながる。0.05〜0.25 は力の矢印を太く）、
+  // 0.25〜0.8 で 2 人が反対向きに 36px ずつ離れ、そのあとは止まって見せる。
+  // 離れると力ははたらかないので、力の矢印は押しているあいだだけ描く（離れたあとは「離れると力ははたらかない」）
+  const PUSH_END = 0.25, APART = 36;
+  const apart = (t) => APART * ease(stage(t, PUSH_END, 0.8));
+  // A が B を押すと、A も B から同じ大きさで反対向きの力を受け、2 人とも反対向きに動きだす（motion-3-c4）
+  function moActionReaction(t) {
+    const d = apart(t);
+    const pushing = t < PUSH_END;
+    const w = t >= 0.05 && pushing ? { width: 5 } : {};
+    const a = (x) => x - d, b = (x) => x + d;
+    return [
+      ...(pushing ? [
+        Object.assign({ type: 'arrow', x1: 120, y1: 60, x2: 50, y2: 60, color: 'green', label: 'A が受ける力' }, w),
+        Object.assign({ type: 'arrow', x1: 200, y1: 60, x2: 270, y2: 60, color: 'blue', label: 'B が受ける力' }, w),
+      ] : [text(160, 56, '離れると力ははたらかない', 13, { anchor: 'middle', color: 'gray', bold: true })]),
+      { type: 'circle', x: a(75), y: 96, r: 14, fill: 'pink' },
+      { type: 'rect', x: a(62), y: 112, width: 26, height: 64, fill: 'sky', label: 'A' },
+      { type: 'circle', x: b(235), y: 96, r: 14, fill: 'pink' },
+      { type: 'rect', x: b(222), y: 112, width: 26, height: 64, fill: 'lightgreen', label: 'B' },
+      ...(pushing
+        ? [{ type: 'line', points: [[88, 130], [222, 130]], color: 'pink', width: 5 }]
+        : [
+          { type: 'line', points: [[a(88), 130], [a(102), 130]], color: 'pink', width: 5 },
+          { type: 'line', points: [[b(208), 130], [b(222), 130]], color: 'pink', width: 5 },
+        ]),
+      { type: 'rect', x: a(40), y: 178, width: 70, height: 8, fill: 'brown' },
+      { type: 'circle', x: a(52), y: 192, r: 6, fill: 'ink', stroke: 'ink' },
+      { type: 'circle', x: a(98), y: 192, r: 6, fill: 'ink', stroke: 'ink' },
+      { type: 'rect', x: b(200), y: 178, width: 70, height: 8, fill: 'brown' },
+      { type: 'circle', x: b(212), y: 192, r: 6, fill: 'ink', stroke: 'ink' },
+      { type: 'circle', x: b(258), y: 192, r: 6, fill: 'ink', stroke: 'ink' },
+      mnote(160, 226, '同じ大きさ・反対向き・別々の物体', 14, 'middle'),
+    ];
+  }
+
+  // 動滑車（motion-4-c2）: 静止図の位置から、手をゆるめておもりを PULLEY_D 下げ（0.08〜0.3）、
+  // 手でひもを引いて静止図の位置へ引き上げる（0.36〜0.66）。引き上げてから 0.96 まで、引いた長さと上がった高さを見せる。
+  // （計画の「静止図の位置から 20 上げる」だと、手が天井と場面の上はしから出るため、下げてから引き上げる形にした）
+  const PULLEY_D = 14;
+  const PULL_FROM = 0.36, PULL_TO = 0.66, SHOW_TO = 0.96;
+  // おもりが静止図の位置より下にある量（0〜PULLEY_D）。手はその 2 倍下にある
+  function pulleyLow(t) {
+    if (t < PULL_FROM) return PULLEY_D * ease(stage(t, 0.08, 0.3));
+    return PULLEY_D * (1 - ease(stage(t, PULL_FROM, PULL_TO)));
+  }
+  // 動滑車を使うと、手がひもを引く長さは、おもりが上がる高さの 2 倍になる（motion-4-c2）
+  function moPulley(t) {
+    const d = pulleyLow(t), h = 2 * d;
+    // content/motion.js の pulley('おもり') と同じ部品（滑車・ひも・おもりは d、手は 2d だけ下）
+    const rope = [[138, 18], [138, 120 + d], [141, 131 + d], [149, 139 + d], [160, 142 + d], [171, 139 + d], [179, 131 + d], [182, 120 + d], [182, 54 + h]];
+    const items = [
+      { type: 'rect', x: 40, y: 10, width: 240, height: 8, fill: 'gray', stroke: 'line' },
+      { type: 'circle', x: 160, y: 120 + d, r: 22, fill: 'white', stroke: 'ink' },
+      { type: 'line', points: rope, color: 'brown', width: 2 },
+      { type: 'ellipse', x: 182, y: 44 + h, rx: 10, ry: 12, fill: 'pink' },
+      { type: 'circle', x: 160, y: 120 + d, r: 4, fill: 'ink', stroke: 'ink' },
+      { type: 'line', points: [[160, 120 + d], [160, 160 + d]], width: 2 },
+      { type: 'rect', x: 132, y: 160 + d, width: 56, height: 36, fill: 'gray', label: 'おもり' },
+      mnote(210, 126, '動滑車', 14),
+      { type: 'arrow', x1: 200, y1: 96, x2: 200, y2: 48, color: 'blue' },
+      mnote(208, 68, '引く力', 13),
+      mnote(160, 226, '力は半分・ひもを引く距離は 2 倍', 14, 'middle'),
+    ];
+    // 引き上げているあいだと、そのあと: 引き始めの位置（点線）から、手が引いた長さ（右）と、おもりが上がった高さ（左）
+    if (t >= PULL_FROM && t < SHOW_TO) {
+      const pulled = 2 * PULLEY_D - h, raised = PULLEY_D - d;
+      items.push(
+        { type: 'line', points: [[170, 44 + 2 * PULLEY_D], [194, 44 + 2 * PULLEY_D]], color: 'gray', width: 1, dashed: true },
+        { type: 'line', points: [[126, 196 + PULLEY_D], [194, 196 + PULLEY_D]], color: 'gray', width: 1, dashed: true },
+      );
+      // 引き始めの位置から上向きの矢印（片向き。矢じりより長くなってから描く）
+      const up = (x, y1, y2, label, lx, ly, anchor) => (y1 - y2 >= minArrow(2) ? [
+        { type: 'line', points: [[x, y1], [x, y2]], color: 'blue', width: 2, arrow: true },
+        text(lx, ly, label, 12, { anchor, color: 'blue' }),
+      ] : []);
+      items.push(
+        ...up(262, 44 + 2 * PULLEY_D, 44 + h, '引いた長さ', 262, 88, 'middle'),
+        ...up(110, 196 + PULLEY_D, 196 + d, '上がった高さ', 104, 200, 'end'),
+      );
+    }
+    return items;
+  }
+
   const DEFS = [
     ['so-air-wave', soAirWave, { restT: 0 }],
     ['so-light-vs-sound', soLightVsSound, { restT: 0.99 }],
@@ -511,8 +962,20 @@
     ['mo-slope-accel', moSlopeAccel, { restT: 0.99 }],
     ['mo-inertia', moInertia, { restT: 0.65 }],
     ['mo-pendulum', moPendulum, { restT: 0 }],
+    // 優先度 B
+    ['so-string-phone', soStringPhone, { restT: 0 }],
+    ['fo-friction', foFriction, { restT: 0 }],
+    ['fo-hooke-graph', foHookeGraph, { restT: 0.99 }],
+    ['fo-balance', foBalance, { restT: 0 }],
+    ['el-heat-rise', elHeatRise, { restT: 0.99 }],
+    ['el-static-charge', elStaticCharge, { restT: 0.99 }],
+    ['mo-slope-split', moSlopeSplit, { restT: SPLIT_REST }],
+    ['mo-buoyancy', moBuoyancy, { restT: 0.99 }],
+    ['mo-action-reaction', moActionReaction, { restT: 0 }],
+    ['mo-pulley', moPulley, { restT: 0 }],
   ];
   DEFS.forEach(([kind, fn, opts]) => anim.register(kind, fn, opts));
-  const api = { KINDS: DEFS.map(d => d[0]) };   // このファイルで足した kind（テスト用）
+  // このファイルで足した kind（テスト用）と、テストで使う値
+  const api = { KINDS: DEFS.map(d => d[0]), phoneString, frictionBoxX, hookePoint, balanceShift, slopeForces, buoyancy, pulleyLow, PULLEY_D, PRESSURE_PX };
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

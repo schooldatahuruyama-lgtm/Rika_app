@@ -53,6 +53,22 @@
   }
   // 円弧の線（opts に color・width・dashed・arrow）
   function arcLine(cx, cy, r, a0, a1, opts) { return Object.assign({ type: 'line', points: arc(cx, cy, r, a0, a1) }, opts); }
+
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/space/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/space/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
   // 半円（dir の向きに丸い側がある）
   function halfDisk(cx, cy, r, dir, fill) {
     return { type: 'polygon', points: arc(cx, cy, r, dir - 90, dir + 90, 12), fill, stroke: 'none' };
@@ -64,21 +80,6 @@
       halfDisk(cx, cy, r, sunDir + 180, nightFill),
       { type: 'circle', x: cx, y: cy, r, fill: 'none', stroke: 'line' },
     ];
-  }
-
-  // 地球から見た月の形。k は 0（新月）〜 1（満月）。waning: true なら欠けていく月（左側が光る）
-  function moonShape(cx, cy, r, k, waning) {
-    const items = [{ type: 'circle', x: cx, y: cy, r, fill: DARK, stroke: 'none' }];
-    if (k > 0) {
-      const t = Math.cos(Math.PI * k);   // 明暗の境目の楕円の横の半径（r の倍率。1 新月、0 半月、-1 満月）
-      const sx = waning ? -1 : 1;
-      const pts = [];
-      for (let i = 0; i <= 12; i++) { const s = Math.PI * i / 12; pts.push([r1(cx + sx * r * Math.sin(s)), r1(cy - r * Math.cos(s))]); }
-      for (let i = 12; i >= 0; i--) { const s = Math.PI * i / 12; pts.push([r1(cx + sx * r * t * Math.sin(s)), r1(cy - r * Math.cos(s))]); }
-      items.push({ type: 'polygon', points: pts, fill: 'yellow', stroke: 'none' });
-    }
-    items.push({ type: 'circle', x: cx, y: cy, r, fill: 'none', stroke: 'line' });
-    return items;
   }
 
   // ---- 透明半球（観測者は北側から南を向いて見下ろす。東が左、西が右、南が奥、北が手前） ----
@@ -328,15 +329,20 @@
       {
         id: 'space-1-c2',
         text: '**透明半球**を使うと、太陽の動きを記録できます。ペン先の影が半球の中心にくるようにして、1 時間ごとに印をつけます。印の間隔は等しく、印を結んだ曲線をのばして底の円と交わる点が、日の出・日の入りの位置です。',
-        // 夏の日の記録（8〜16 時の●）と、のばした点線
-        figure: scene(hemisphereBase().concat(sunPathItems(SUMMER, 8, 16)).concat([
-          { type: 'circle', x: HX, y: HY, r: 3, fill: 'blue', stroke: 'none' },
-          { type: 'text', x: 166, y: 188, text: '中心', size: 12 },
-          { type: 'text', x: 48, y: 212, text: '日の出', size: 12, anchor: 'end' },
-          { type: 'text', x: 270, y: 212, text: '日の入り', size: 12 },
-          { type: 'text', x: 8, y: 20, text: '●：1 時間ごとの記録', size: 12 },
-          { type: 'text', x: 8, y: 38, text: '点線：曲線をのばす', size: 12 },
-        ])),
+        // 写真: 画用紙の上の透明半球（北側のななめ上から見る）。1 時間ごとの●と、ふちまでのばした点線
+        // 画像の位置: 半球の中心 (157, 131)、東のはし (70, 128)、西のはし (247, 142)、手前（北）のはし (137, 192)
+        figure: scene([
+          photo('space-1-c2'),
+          tag(6, 18, '●：1 時間ごとの印', { size: 13, anchor: 'start' }),
+          tag(314, 18, '点線：曲線をのばす', { size: 13, anchor: 'end' }),
+          tag(176, 26, '南', { size: 15, bold: true }),
+          tag(132, 216, '北', { size: 15, bold: true }),
+          tag(46, 118, '東', { size: 15, bold: true }),
+          tag(274, 132, '西', { size: 15, bold: true }),
+          pointer(52, 138, 68, 130), tag(38, 148, '日の出', { size: 13 }),
+          pointer(268, 152, 250, 144), tag(284, 162, '日の入り', { size: 13 }),
+          pointer(112, 164, 152, 134), tag(100, 176, '中心', { size: 13 }),
+        ]),
       },
       {
         id: 'space-1-c3',
@@ -354,13 +360,19 @@
       {
         id: 'space-1-c4',
         text: '星も東から西へ動いて見えます。北の空の星は、**北極星**を中心に反時計回りに回ります。北極星は地軸をのばした先の近くにあるので、ほとんど動きません。東の空では右上へ、南の空では左から右へ、西の空では右下へ動きます。',
-        // 方角ごとの星の動き
+        // 写真: 北の空の星を長い時間写したもの。北極星 (88, 98) を中心に星が光のすじをえがく
         figure: scene([
-          ...skyPanel(4, 4, 152, 112, 'north', '北の空'),
-          ...skyPanel(164, 4, 152, 112, 'south', '南の空'),
-          ...skyPanel(4, 124, 152, 112, 'east', '東の空'),
-          ...skyPanel(164, 124, 152, 112, 'west', '西の空'),
-          { type: 'text', x: 60, y: 110, text: '北極星（中心）', size: 12 },
+          photo('space-1-c4'),
+          tag(108, 30, '北の空の星の動き', { size: 13 }),
+          pointer(226, 88, 94, 98),
+          tag(260, 86, '北極星', { size: 15, bold: true }),
+          tag(262, 104, 'ほとんど動かない', { size: 13 }),
+          arcLine(88, 98, 34, 200, 300, { color: 'blue', width: 3, arrow: true }),
+          tag(262, 138, '北極星を中心に', { size: 13 }),
+          tag(262, 156, '反時計回りに回る', { size: 13, bold: true }),
+          tag(260, 192, '東の空：右上へ', { size: 13 }),
+          tag(254, 210, '南の空：左から右へ', { size: 13 }),
+          tag(260, 228, '西の空：右下へ', { size: 13 }),
         ]),
       },
     ],
@@ -542,6 +554,7 @@
       },
       {
         id: 'space-2-c4',
+        anim: 'sp-noon-altitude',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '**春分**・**秋分**の日の南中高度は、90° −（その地点の緯度）で求められます。夏至は 23.4° 高く、冬至は 23.4° 低くなります。北緯 35° の地点では、春分・秋分 55°、夏至 78.4°、冬至 31.6° です。',
         // 北緯 35° の地点の南中高度（北と南を結ぶ面で見た図）
         figure: scene(noonBase().concat([
@@ -707,45 +720,31 @@
       {
         id: 'space-3-c2',
         text: '月は、**新月** → 三日月 → **上弦の月** → **満月** → **下弦の月** → 新月 の順に満ち欠けし、約 29.5 日でもとにもどります。夕方、南の空に見える右半分が光った月が上弦の月です。',
-        // 地球から見た月の形の変わり方
+        // 写真: 左から 新月・三日月・上弦の月・満月・下弦の月（月の中心 x = 34, 96, 160, 222, 286、y = 56）
         figure: scene([
-          ...moonShape(32, 110, 22, 0),
-          ...moonShape(94, 110, 22, 0.2),
-          ...moonShape(156, 110, 22, 0.5),
-          ...moonShape(218, 110, 22, 1),
-          ...moonShape(280, 110, 22, 0.5, true),
-          { type: 'text', x: 32, y: 152, text: '新月', size: 12, anchor: 'middle' },
-          { type: 'text', x: 94, y: 152, text: '三日月', size: 12, anchor: 'middle' },
-          { type: 'text', x: 156, y: 152, text: '上弦の月', size: 12, anchor: 'middle' },
-          { type: 'text', x: 218, y: 152, text: '満月', size: 12, anchor: 'middle' },
-          { type: 'text', x: 280, y: 152, text: '下弦の月', size: 12, anchor: 'middle' },
-          { type: 'arrow', x1: 30, y1: 180, x2: 290, y2: 180, color: 'blue' },
-          { type: 'text', x: 160, y: 206, text: '約 29.5 日でもとの形にもどる', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 40, text: '地球から見た月の形', size: 13, anchor: 'middle', bold: true },
+          photo('space-3-c2'),
+          tag(34, 108, '新月', { size: 13 }),
+          tag(96, 108, '三日月', { size: 13 }),
+          tag(160, 108, '上弦の月', { size: 13 }),
+          tag(222, 108, '満月', { size: 13 }),
+          tag(286, 108, '下弦の月', { size: 13 }),
+          { type: 'arrow', x1: 24, y1: 130, x2: 296, y2: 130, color: 'blue' },
+          tag(160, 156, '約 29.5 日でもとの形にもどる', { size: 13 }),
+          tag(160, 188, '地球から見た月の形（日本で見たとき）', { size: 13 }),
         ]),
       },
       {
         id: 'space-3-c3',
         text: '太陽・月・地球の順に一直線に並び、月が太陽をかくす現象を**日食**といいます（新月のとき）。太陽・地球・月の順に並び、月が地球の影に入る現象を**月食**といいます（満月のとき）。',
-        // 上: 日食の並び方、下: 月食の並び方
+        // 写真: 左は皆既日食（黒い月のまわりにコロナ）、右は皆既月食（赤銅色の月）
         figure: scene([
-          { type: 'polygon', points: [[175, 64], [246, 64], [246, 76], [175, 76]], fill: '#D5DBE5', stroke: 'none' },
-          { type: 'circle', x: 40, y: 70, r: 28, fill: 'yellow', stroke: 'orange' },
-          { type: 'circle', x: 175, y: 70, r: 7, fill: DARK, stroke: 'line' },
-          { type: 'circle', x: 260, y: 70, r: 20, fill: 'sky', stroke: 'line' },
-          { type: 'text', x: 8, y: 22, text: '日食（新月のころ）', size: 13, bold: true },
-          { type: 'text', x: 40, y: 114, text: '太陽', size: 12, anchor: 'middle' },
-          { type: 'text', x: 175, y: 94, text: '月', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 106, text: '地球', size: 12, anchor: 'middle' },
-          { type: 'polygon', points: [[170, 162], [290, 170], [290, 194], [170, 202]], fill: '#D5DBE5', stroke: 'none' },
-          { type: 'circle', x: 40, y: 182, r: 28, fill: 'yellow', stroke: 'orange' },
-          { type: 'circle', x: 170, y: 182, r: 20, fill: 'sky', stroke: 'line' },
-          { type: 'circle', x: 262, y: 182, r: 7, fill: 'brown', stroke: 'line' },
-          { type: 'text', x: 8, y: 138, text: '月食（満月のころ）', size: 13, bold: true },
-          { type: 'text', x: 40, y: 228, text: '太陽', size: 12, anchor: 'middle' },
-          { type: 'text', x: 170, y: 222, text: '地球', size: 12, anchor: 'middle' },
-          { type: 'text', x: 262, y: 208, text: '月', size: 12, anchor: 'middle' },
-          { type: 'text', x: 316, y: 22, text: '大きさ・距離は実際の比ではない', size: 12, anchor: 'end' },
+          photo('space-3-c3'),
+          tag(84, 186, '日食（新月のころ）', { bold: true }),
+          tag(84, 208, '月が太陽をかくす', { size: 13 }),
+          tag(84, 228, 'まわりはコロナ', { size: 13 }),
+          tag(238, 186, '月食（満月のころ）', { bold: true }),
+          tag(238, 208, '月が地球の影に入る', { size: 13 }),
+          tag(238, 228, '赤黒い色に見える', { size: 13 }),
         ]),
       },
     ],
@@ -870,25 +869,20 @@
       {
         id: 'space-4-c1',
         text: '太陽は、自ら光を出す**恒星**で、高温の気体でできています。表面の温度は約 6000 ℃ です。表面に見える黒い斑点を**黒点**といい、まわりより温度が低い（約 4000 ℃）ので黒く見えます。',
-        // 太陽のようす（黒点、プロミネンス、コロナ）
+        // 写真: 特別なフィルターで写した太陽。表面に黒点の集まり、ふちからプロミネンスが吹き出す
         figure: scene([
-          { type: 'circle', x: 160, y: 120, r: 92, fill: '#FFF4C8', stroke: 'none' },
-          { type: 'polygon', points: [onCircle(160, 120, 70, 40), onCircle(160, 120, 92, 46), onCircle(160, 120, 96, 52), onCircle(160, 120, 70, 58)], fill: 'red', stroke: 'none' },
-          { type: 'circle', x: 160, y: 120, r: 70, fill: 'yellow', stroke: 'orange' },
-          { type: 'ellipse', x: 134, y: 104, rx: 7, ry: 6, fill: '#5A4A2A', stroke: 'none' },
-          { type: 'ellipse', x: 148, y: 112, rx: 4, ry: 3.5, fill: '#5A4A2A', stroke: 'none' },
-          { type: 'ellipse', x: 186, y: 142, rx: 6, ry: 5, fill: '#5A4A2A', stroke: 'none' },
-          { type: 'line', points: [[60, 100], [124, 104]], color: 'ink', width: 1.5 },
-          { type: 'text', x: 8, y: 98, text: '黒点', size: 13, bold: true },
-          { type: 'text', x: 8, y: 116, text: '約 4000 ℃', size: 12 },
-          { type: 'text', x: 160, y: 168, text: '表面 約 6000 ℃', size: 12, anchor: 'middle' },
-          { type: 'text', x: 316, y: 22, text: 'プロミネンス（紅炎）', size: 12, anchor: 'end' },
-          { type: 'text', x: 316, y: 226, text: 'コロナ', size: 12, anchor: 'end' },
-          { type: 'line', points: [[272, 214], [228, 186]], color: 'ink', width: 1.5 },
+          photo('space-4-c1'),
+          pointer(230, 64, 196, 94), tag(270, 60, 'プロミネンス', { size: 13, bold: true }),
+          tag(270, 78, '（紅炎）', { size: 13 }),
+          pointer(250, 124, 148, 92), tag(274, 128, '黒点', { size: 15, bold: true }),
+          tag(274, 146, '約4000℃', { size: 13 }),
+          pointer(250, 188, 162, 160), tag(274, 192, '表面', { size: 13, bold: true }),
+          tag(274, 210, '約6000℃', { size: 13 }),
         ]),
       },
       {
         id: 'space-4-c2',
+        anim: 'sp-sunspot',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '黒点を何日か続けて観察すると、少しずつ同じ向きに動いて見えます。これは太陽が**自転**しているからです。また、中央で円形に見える黒点が、ふちの近くでは細長いだ円形に見えることから、太陽は**球形**だと分かります。',
         // 黒点の位置の変わり方（1 日目、7 日目、13 日目）
         figure: scene([
@@ -909,41 +903,32 @@
       {
         id: 'space-4-c3',
         text: '太陽と、そのまわりを公転する 8 つの**惑星**などの集まりを**太陽系**といいます。水星・金星・地球・火星は小さく密度が大きい**地球型惑星**、木星・土星・天王星・海王星は大きく密度が小さい**木星型惑星**です。',
-        // 太陽系の惑星（太陽に近い順。大きさは実際の比ではない）
+        // 写真: 左はしに太陽、右へ 水星〜海王星（惑星の中心 x = 44, 68, 94, 120, 163, 225, 270, 300、y = 118）
         figure: scene([
-          { type: 'circle', x: -40, y: 120, r: 70, fill: 'yellow', stroke: 'orange' },
-          { type: 'circle', x: 44, y: 120, r: 3, fill: 'gray', stroke: 'none' },
-          { type: 'circle', x: 62, y: 120, r: 6, fill: '#E8C77A', stroke: 'none' },
-          { type: 'circle', x: 82, y: 120, r: 6, fill: 'blue', stroke: 'none' },
-          { type: 'circle', x: 100, y: 120, r: 4, fill: 'red', stroke: 'none' },
-          { type: 'circle', x: 136, y: 120, r: 20, fill: '#E3C29B', stroke: 'brown' },
-          { type: 'ellipse', x: 190, y: 120, rx: 28, ry: 6, fill: 'none', stroke: 'brown' },
-          { type: 'circle', x: 190, y: 120, r: 15, fill: '#EFE0B0', stroke: 'brown' },
-          { type: 'circle', x: 240, y: 120, r: 11, fill: '#BFE6E6', stroke: 'line' },
-          { type: 'circle', x: 282, y: 120, r: 11, fill: '#7FA6E6', stroke: 'line' },
-          ...[['水', 44], ['金', 62], ['地', 82], ['火', 100], ['木', 136], ['土', 190], ['天', 240], ['海', 282]]
-            .map(([t, x]) => ({ type: 'text', x, y: 90, text: t, size: 12, anchor: 'middle' })),
-          { type: 'line', points: [[38, 150], [106, 150]], color: 'line', width: 2 },
-          { type: 'line', points: [[116, 150], [300, 150]], color: 'line', width: 2 },
-          { type: 'text', x: 72, y: 170, text: '地球型惑星', size: 12, anchor: 'middle', bold: true },
-          { type: 'text', x: 208, y: 170, text: '木星型惑星', size: 12, anchor: 'middle', bold: true },
-          { type: 'text', x: 72, y: 188, text: '小さい・密度大', size: 12, anchor: 'middle' },
-          { type: 'text', x: 208, y: 188, text: '大きい・密度小', size: 12, anchor: 'middle' },
-          { type: 'text', x: 8, y: 22, text: '太陽に近い順（大きさは実際の比ではない）', size: 12 },
-          { type: 'text', x: 4, y: 226, text: '太陽', size: 12 },
+          photo('space-4-c3'),
+          tag(160, 20, '太陽に近い順（大きさは実際の比ではない）', { size: 13 }),
+          tag(18, 202, '太陽', { size: 13 }),
+          ...[['水', 44], ['金', 68], ['地', 94], ['火', 120], ['木', 163], ['土', 225], ['天', 270], ['海', 300]]
+            .map(([t, x]) => tag(x, 52, t, { size: 13 })),
+          { type: 'line', points: [[36, 182], [128, 182]], color: 'ink', width: 2 },
+          { type: 'line', points: [[140, 182], [314, 182]], color: 'ink', width: 2 },
+          tag(82, 202, '地球型惑星', { size: 13, bold: true }),
+          tag(227, 202, '木星型惑星', { size: 13, bold: true }),
+          tag(82, 222, '小さい・密度大', { size: 13 }),
+          tag(227, 222, '大きい・密度小', { size: 13 }),
         ]),
       },
       {
         id: 'space-4-c4',
         text: '金星は地球より内側を公転する**内惑星**なので、いつも太陽に近い方向にあり、真夜中には見えません。夕方の西の空に見えるものを**よいの明星**、明け方の東の空に見えるものを**明けの明星**といいます。',
-        // 太陽・金星・地球（北極側から見た図）
-        figure: scene(venusBase().concat([
-          { type: 'text', x: 84, y: 80, text: 'よいの明星', size: 12, anchor: 'end' },
-          { type: 'text', x: 84, y: 96, text: '（夕方・西）', size: 12, anchor: 'end' },
-          { type: 'text', x: 236, y: 80, text: '明けの明星', size: 12 },
-          { type: 'text', x: 236, y: 96, text: '（明け方・東）', size: 12 },
-          { type: 'text', x: 8, y: 20, text: '北極側から見た図', size: 12 },
-        ])),
+        // 写真: 日の入りのあとの西の空に明るく光る金星 (178, 156)。位置関係の図は space-4-p2・r1 にある
+        figure: scene([
+          photo('space-4-c4'),
+          tag(160, 30, 'よいの明星（夕方・西の空）', { size: 15, bold: true }),
+          tag(160, 54, '明け方の東の空に見えるときは 明けの明星', { size: 13 }),
+          pointer(222, 134, 184, 153), tag(240, 128, '金星', { size: 15, bold: true }),
+          tag(160, 192, '西', { size: 15, bold: true }),
+        ]),
       },
     ],
     warmup: choice({

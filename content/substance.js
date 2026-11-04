@@ -33,6 +33,19 @@
 
   // ---- 図の部品をまとめる道具 ----
 
+  // 写真（assets/images/substance/<name>.jpg。640×480 を場面いっぱいに描く。座標は画像の位置 × 0.5）
+  function photo(name) { return { type: 'image', src: 'assets/images/substance/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // 気体の集め方 3 種を横に並べた図（ア 水上置換・イ 上方置換・ウ 下方置換）。選ぶ場所は下の段
   function collectScene() {
     return scene([
@@ -88,50 +101,40 @@
       {
         id: 'sub-1-c1',
         text: 'コップのように、形や使い方で見たときのものを**物体**といいます。ガラス・紙・プラスチックのように、ものをつくっている材料で見たときは**物質**といいます。同じコップでも、物質はいろいろです。',
-        // 形は同じコップ、材料（物質）がちがう
+        // 写真: 左からガラス・紙・プラスチックのコップ（形は同じ、材料（物質）がちがう）
         figure: scene([
-          { type: 'text', x: 160, y: 50, text: '物体として見ると、どれも「コップ」', size: 14, anchor: 'middle' },
-          { type: 'polygon', points: [[40, 80], [100, 80], [92, 170], [48, 170]], fill: 'glass' },
-          { type: 'polygon', points: [[130, 80], [190, 80], [182, 170], [138, 170]], fill: 'white' },
-          { type: 'polygon', points: [[220, 80], [280, 80], [272, 170], [228, 170]], fill: 'sky' },
-          { type: 'text', x: 70, y: 196, text: 'ガラス', size: 14, anchor: 'middle' },
-          { type: 'text', x: 160, y: 196, text: '紙', size: 14, anchor: 'middle' },
-          { type: 'text', x: 250, y: 196, text: 'プラスチック', size: 14, anchor: 'middle' },
-          { type: 'text', x: 160, y: 228, text: '材料（物質）はちがう', size: 14, anchor: 'middle' },
+          photo('sub-1-c1'),
+          tag(58, 172, 'ガラス'),
+          tag(160, 172, '紙'),
+          tag(261, 172, 'プラスチック'),
+          tag(160, 204, '物体として見ると、どれも「コップ」', { size: 13 }),
+          tag(160, 228, '材料（物質）はちがう', { size: 13 }),
         ]),
       },
       {
         id: 'sub-1-c2',
         text: '鉄・銅・アルミニウムなどの**金属**には共通の性質があります。みがくと光る（**金属光沢**）、電気を通す、熱を伝えやすい、たたくとうすく広がり引っぱるとのびる、の 4 つです。磁石につくのは鉄など一部の金属だけです。',
-        // 金属をはさむと豆電球がつく回路
+        // 写真: みがいた鉄・銅・アルミニウムの板（どれも光を反射して光る）
         figure: scene([
-          { type: 'text', x: 160, y: 22, text: '金属は電気を通す', size: 14, anchor: 'middle' },
-          { type: 'circle', x: 160, y: 60, r: 24, fill: 'yellow', stroke: 'none' },
-          { type: 'line', points: [[60, 110], [60, 60], [140, 60]] },
-          { type: 'line', points: [[180, 60], [260, 60], [260, 200], [200, 200]] },
-          { type: 'line', points: [[120, 200], [60, 200], [60, 150]] },
-          { type: 'symbol', x: 60, y: 130, kind: 'battery', rotate: 90 },
-          { type: 'symbol', x: 160, y: 60, kind: 'bulb' },
-          { type: 'rect', x: 116, y: 190, width: 88, height: 20, fill: 'gray' },
-          { type: 'text', x: 160, y: 234, text: '金属（アルミニウムはく）', size: 13, anchor: 'middle' },
-          { type: 'text', x: 76, y: 136, text: '電池', size: 13 },
+          photo('sub-1-c2'),
+          tag(56, 164, '鉄'),
+          tag(159, 164, '銅'),
+          tag(262, 164, 'アルミニウム'),
+          tag(160, 200, 'みがくと光る（金属光沢）'),
+          tag(160, 226, '電気を通す・熱を伝えやすい', { size: 13 }),
         ]),
       },
       {
         id: 'sub-1-c3',
         text: '砂糖・ろう・プラスチックのように**炭素**をふくむ物質を**有機物**といいます。有機物を燃やすと**二酸化炭素**ができ、**石灰水**が白くにごります。有機物でない物質を**無機物**といいます（食塩・鉄・ガラス。炭素や二酸化炭素も無機物に分けます）。',
-        // ろうを燃やしたびんに石灰水を入れてふると、白くにごる
+        // 写真: 左は集気びんの中で燃えるろうそく、右は石灰水を入れてふった集気びん（白くにごった）
         figure: scene([
-          { type: 'rect', x: 30, y: 60, width: 90, height: 140, fill: 'none', rx: 6 },
-          { type: 'rect', x: 65, y: 150, width: 20, height: 48, fill: 'white' },
-          { type: 'flame', x: 75, y: 150 },
-          { type: 'arrow', x1: 132, y1: 130, x2: 188, y2: 130, color: 'gray' },
-          { type: 'rect', x: 200, y: 60, width: 90, height: 140, fill: 'none', rx: 6 },
-          { type: 'rect', x: 202, y: 160, width: 86, height: 38, fill: 'glass', stroke: 'none' },
-          { type: 'text', x: 75, y: 50, text: 'ろうを燃やす', size: 14, anchor: 'middle' },
-          { type: 'text', x: 245, y: 50, text: '石灰水を入れてふる', size: 13, anchor: 'middle' },
-          { type: 'text', x: 245, y: 226, text: '白くにごる', size: 14, anchor: 'middle' },
-          { type: 'text', x: 75, y: 226, text: '有機物', size: 14, anchor: 'middle' },
+          photo('sub-1-c3'),
+          { type: 'arrow', x1: 116, y1: 90, x2: 206, y2: 90, color: 'blue', width: 3 },
+          tag(64, 190, 'ろうを燃やす'),
+          tag(64, 214, 'ろう（有機物）', { size: 13 }),
+          tag(255, 190, '石灰水を入れてふる', { size: 13 }),
+          tag(255, 214, '→ 白くにごる', { size: 13 }),
         ]),
       },
     ],
@@ -303,46 +306,47 @@
       {
         id: 'sub-2-c2',
         text: '密度は物質ごとに決まっているので、物質を見分ける手がかりになります。水の密度は約 1.0 g/cm³ です。水より密度が大きい物質は水に沈み、小さい物質は水に浮きます。',
-        // 鉄は沈み、木は浮く
+        // 写真: 水の入ったビーカー。木片は水面に浮き、鉄のかたまりは底に沈む
         figure: scene([
-          { type: 'text', x: 160, y: 40, text: '水の密度 約 1.0 g/cm³', size: 14, anchor: 'middle' },
-          { type: 'beaker', x: 160, y: 200, width: 200, height: 130, level: 0.7 },
-          { type: 'rect', x: 85, y: 165, width: 36, height: 34, fill: 'gray' },
-          { type: 'rect', x: 185, y: 94, width: 50, height: 30, fill: 'brown' },
-          { type: 'text', x: 103, y: 228, text: '鉄（沈む）', size: 14, anchor: 'middle' },
-          { type: 'text', x: 210, y: 228, text: '木（浮く）', size: 14, anchor: 'middle' },
+          photo('sub-2-c2'),
+          tag(248, 22, '水の密度', { size: 13 }),
+          tag(248, 40, '約1.0 g/cm³', { size: 13 }),
+          pointer(212, 74, 140, 74), tag(250, 78, '木（浮く）'),
+          tag(250, 98, '水より密度が小さい', { size: 13 }),
+          pointer(212, 186, 134, 190), tag(250, 190, '鉄（沈む）'),
+          tag(250, 210, '水より密度が大きい', { size: 13 }),
         ]),
       },
       {
         id: 'sub-2-c3',
         text: '液体の体積は**メスシリンダー**で測ります。水平な台に置き、液面のへこんだ平らなところを真横から見て、1 目盛りの 10 分の 1 まで目分量で読みます。1 mL は 1 cm³ です。',
-        // 液面のへこんだところを真横から読む
-        figure: scene(cylinderItems(170).concat([
-          { type: 'eye', x: 60, y: 120 },
-          { type: 'line', points: [[78, 120], [186, 120]], color: 'gray', width: 2, dashed: true },
-          { type: 'text', x: 20, y: 60, text: '真横から', size: 14 },
-          { type: 'text', x: 20, y: 80, text: '見る', size: 14 },
-          { type: 'text', x: 160, y: 236, text: 'へこんだ平らなところを読む', size: 13, anchor: 'middle' },
-        ])),
+        // 写真: メスシリンダーの液面のクローズアップ（まん中がへこむ）。長い目盛りは y 37・112・188（10 mL ごと）、
+        // 1 目盛りは約 7.6（1 mL）。へこんだ平らなところは y 約 122
+        figure: scene([
+          photo('sub-2-c3'),
+          tag(36, 41, '50', { size: 13 }),
+          tag(36, 117, '40', { size: 13 }),
+          tag(36, 193, '30', { size: 13 }),
+          tag(36, 16, '(mL)', { size: 13 }),
+          { type: 'arrow', x1: 300, y1: 122, x2: 152, y2: 122, color: 'red', width: 3 },
+          tag(248, 84, 'へこんだ平らな', { size: 13 }),
+          tag(248, 104, 'ところを真横から読む', { size: 13 }),
+          tag(248, 150, '1目盛りの10分の1', { size: 13 }),
+          tag(248, 168, 'まで目分量で読む', { size: 13 }),
+        ]),
       },
       {
         id: 'sub-2-c4',
         text: '質量は**上皿てんびん**で測ります。水平な台に置き、針が左右に等しくふれるように調節してから使います。はかるものを一方の皿にのせ、もう一方に重い分銅から順にピンセットでのせます。',
-        // 上皿てんびん（はかるもの・分銅・針）
+        // 写真: 上皿てんびん。左の皿にはかるもの (92, 92)、右の皿に分銅 (232, 92)、中央の針 (161, 47〜95)、
+        // 手前に分銅の箱 (37〜147, 167〜230) とピンセット (167〜282, 197〜220)
         figure: scene([
-          { type: 'polygon', points: [[150, 104], [170, 104], [185, 200], [135, 200]], fill: 'glass' },
-          { type: 'line', points: [[70, 100], [250, 100]], width: 5 },
-          { type: 'ellipse', x: 75, y: 92, rx: 42, ry: 7, fill: 'glass' },
-          { type: 'ellipse', x: 245, y: 92, rx: 42, ry: 7, fill: 'glass' },
-          { type: 'rect', x: 60, y: 62, width: 30, height: 24, fill: 'green' },
-          { type: 'rect', x: 230, y: 64, width: 14, height: 22, fill: 'gray' },
-          { type: 'rect', x: 250, y: 72, width: 10, height: 14, fill: 'gray' },
-          { type: 'line', points: [[160, 100], [160, 170]], color: 'blue', width: 2 },
-          { type: 'line', points: [[140, 176], [180, 176]], width: 2 },
-          { type: 'text', x: 75, y: 50, text: 'はかるもの', size: 13, anchor: 'middle' },
-          { type: 'text', x: 245, y: 50, text: '分銅', size: 13, anchor: 'middle' },
-          { type: 'text', x: 196, y: 150, text: '針', size: 13 },
-          { type: 'text', x: 160, y: 230, text: '針が左右に等しくふれればつり合い', size: 13, anchor: 'middle' },
+          photo('sub-2-c4'),
+          pointer(76, 36, 90, 86), tag(64, 28, 'はかるもの'),
+          pointer(240, 36, 232, 84), tag(250, 28, '分銅'),
+          pointer(131, 63, 159, 70), tag(120, 66, '針'),
+          tag(92, 180, '分銅の箱', { size: 13 }),
+          tag(226, 236, 'ピンセット', { size: 13 }),
         ]),
       },
     ],
@@ -486,6 +490,7 @@
       },
       {
         id: 'sub-3-c2',
+        anim: 'su-upward-displacement',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '水にとけやすく、空気より軽い気体は、試験管の口を下に向けて、ガラス管を奥まで入れて集めます。これを**上方置換法**といいます。アンモニアを集めるときに使います。',
         // 口を下に向けた試験管に、下からガラス管を入れる
         figure: scene([
@@ -501,6 +506,7 @@
       },
       {
         id: 'sub-3-c3',
+        anim: 'su-downward-displacement',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '水にとけやすく、空気より重い気体は、試験管の口を上に向けて、ガラス管を底近くまで入れて集めます。これを**下方置換法**といいます。二酸化炭素は空気より重いので、この方法でも集められます。',
         // 口を上に向けた試験管に、上からガラス管を入れる
         figure: scene([
@@ -646,6 +652,7 @@
       },
       {
         id: 'sub-4-c2',
+        anim: 'su-co2-limewater',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '**石灰石**に**うすい塩酸**を加えると、**二酸化炭素**が発生します。二酸化炭素は空気より重く、水に少しとけ、その水溶液は酸性を示します。**石灰水**に通すと、石灰水が白くにごります。',
         // 二酸化炭素を石灰水に通す
         figure: scene([

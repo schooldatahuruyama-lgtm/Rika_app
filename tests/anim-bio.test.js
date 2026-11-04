@@ -4,11 +4,13 @@ const anim = require('../js/anim.js');
 const bio = require('../js/anim-bio.js');
 const figures = require('../js/figures.js');
 
-// 計画 7 章の優先度 A（生物 A）
-const BIO_KINDS = ['bo-reflex', 'he-chromosome-copy', 'he-meiosis-fertilize', 'he-segregation', 'na-balance', 'na-carbon-cycle'];
+// 計画 7 章の優先度 A（生物 A 6 本）と優先度 B（3 本）
+const BIO_KINDS_B = ['an-body-temp', 'bo-alveoli', 'na-greenhouse'];
+const BIO_KINDS = ['bo-reflex', 'he-chromosome-copy', 'he-meiosis-fertilize', 'he-segregation', 'na-balance', 'na-carbon-cycle']
+  .concat(BIO_KINDS_B);
 const PREFIXES = ['an-', 'bo-', 'he-', 'na-'];
 // 1 周がつながる kind（計画の「つながる」）
-const LOOPING = ['na-balance', 'na-carbon-cycle'];
+const LOOPING = ['na-balance', 'na-carbon-cycle', 'an-body-temp', 'bo-alveoli'];
 // つながりを見ないもの: na-balance の小さなピラミッドは、強調する箱（①〜④）が変わるたびに次の箱へ移る（④ → ① も同じ）。
 // 量（幅）はつながるので、段の y だけを除く
 const LOOP_SKIP = { 'na-balance': (it) => it.type === 'rect' && it.height === 8 ? Object.assign({}, it, { y: undefined }) : it };
@@ -21,17 +23,17 @@ function chromsIn(list, cx, cy, r, color) {
 }
 const len = (it) => Math.hypot(it.points[1][0] - it.points[0][0], it.points[1][1] - it.points[0][1]);
 
-test('anim-bio: KINDS は計画の 6 本で、単元の接頭辞で始まり、anim.KINDS に入っている', () => {
+test('anim-bio: KINDS は計画の 9 本（A 6・B 3）で、単元の接頭辞で始まり、anim.KINDS に入っている', () => {
   assert.deepEqual(bio.KINDS, BIO_KINDS);
   bio.KINDS.forEach(k => {
     assert.ok(PREFIXES.some(p => k.startsWith(p)), k);
     assert.ok(anim.KINDS.includes(k), k);
   });
   assert.equal(anim.periodOf('na-balance'), 8000);
-  ['bo-reflex', 'he-chromosome-copy', 'he-meiosis-fertilize', 'he-segregation', 'na-carbon-cycle']
+  ['bo-reflex', 'he-chromosome-copy', 'he-meiosis-fertilize', 'he-segregation', 'na-carbon-cycle', 'an-body-temp', 'bo-alveoli', 'na-greenhouse']
     .forEach(k => assert.equal(anim.periodOf(k), 4000, k));
-  ['bo-reflex', 'he-chromosome-copy', 'he-meiosis-fertilize', 'he-segregation'].forEach(k => assert.equal(anim.restT(k), 0.99, k));
-  ['na-balance', 'na-carbon-cycle'].forEach(k => assert.equal(anim.restT(k), 0, k));
+  ['bo-reflex', 'he-chromosome-copy', 'he-meiosis-fertilize', 'he-segregation', 'na-greenhouse'].forEach(k => assert.equal(anim.restT(k), 0.99, k));
+  ['na-balance', 'na-carbon-cycle', 'an-body-temp', 'bo-alveoli'].forEach(k => assert.equal(anim.restT(k), 0, k));
 });
 
 test('anim-bio: 各 kind の frame は item があり、描ける種類で、座標が有限で場面のまわりに収まり、sceneSvg が <svg を返す', () => {
@@ -211,4 +213,119 @@ test('na-carbon-cycle: 各 t で点が 14 個、どれも道すじの上', () =>
     assert.equal(dots.length, 14, 't = ' + t);
     dots.forEach(it => assert.ok(onPath(it.x, it.y), 't = ' + t + ' の点 ' + it.x + ',' + it.y));
   });
+});
+
+// ================================================================
+// 優先度 B
+// ================================================================
+
+const near = (a, b, eps) => Math.abs(a - b) <= (eps === undefined ? 1e-9 : eps);
+// 点 (x, y) が折れ線 path の上（距離 eps 以内）にある
+const onPolyline = (path, x, y, eps) => path.some((p, i) => {
+  if (i === 0) return false;
+  const [x1, y1] = path[i - 1], [x2, y2] = p;
+  const L = Math.hypot(x2 - x1, y2 - y1);
+  const d = Math.abs((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)) / L;
+  const k = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (L * L);
+  return d <= eps && k >= -1e-9 && k <= 1 + 1e-9;
+});
+// 文字の重なりを見るための箱（全角 1 文字 ＝ size、半角 ＝ size × 0.6 の概算）。y はベースライン
+function textBox(it) {
+  const size = Math.max(12, it.size || 16);
+  const w = Array.from(String(it.text)).reduce((s, c) => s + (/[ -~]/.test(c) ? 0.6 : 1) * size, 0);
+  const left = it.anchor === 'middle' ? it.x - w / 2 : it.anchor === 'end' ? it.x - w : it.x;
+  return { left, right: left + w, top: it.y - size * 0.85, bottom: it.y + size * 0.15 };
+}
+const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+test('B の kind: 各 t で文字（text）どうしが重ならず、場面（320×240）の中にある', () => {
+  BIO_KINDS_B.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const boxes = items(kind, t).filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+    }
+  });
+});
+
+test('an-body-temp: イヌの点の y が一定（38 ℃）、トカゲの点が青い線の上（体温 ＝ 気温）、気温は 4〜36 ℃', () => {
+  for (let t = 0; t < 1; t += 0.05) {
+    const list = items('an-body-temp', t);
+    const dog = list.find(it => it.type === 'circle' && it.fill === 'orange');
+    const lizard = list.find(it => it.type === 'circle' && it.fill === 'blue');
+    const T = bio.airTemp(t);
+    assert.ok(T >= 4 - 1e-9 && T <= 36 + 1e-9, 't = ' + t);
+    assert.equal(dog.y, bio.gy(38), 't = ' + t);
+    assert.ok(near(lizard.y, bio.gy(T)) && near(lizard.x, 60 + 5 * T) && near(dog.x, lizard.x), 't = ' + t);
+    assert.ok(onPolyline([[80, 184], [240, 56]], lizard.x, lizard.y, 1e-6), 't = ' + t);   // 青い線 (gx(4), gy(4))–(gx(36), gy(36))
+  }
+});
+
+test('bo-alveoli: 血液の粒は毛細血管の上、空気の粒は気管支の上、酸素は肺胞 → 毛細血管、二酸化炭素は毛細血管 → 肺胞。粒どうしは重ならない', () => {
+  let o2Seen = 0, co2Seen = 0;
+  for (let i = 0; i < 400; i++) {
+    const t = i / 400;
+    const dots = items('bo-alveoli', t).filter(it => it.type === 'circle' && it.r === 3);
+    const red = dots.filter(d => d.fill === 'red'), white = dots.filter(d => d.fill === 'white');
+    assert.equal(red.length, 4, 't = ' + t);
+    assert.equal(white.length, 3, 't = ' + t);
+    red.forEach(d => assert.ok(onPolyline(bio.CAPILLARY, d.x, d.y, 1e-6), 't = ' + t));
+    white.forEach(d => assert.ok(onPolyline(bio.AIR_PATH, d.x, d.y, 1e-6), 't = ' + t));
+    dots.forEach((p, j) => dots.slice(j + 1).forEach(q => assert.ok(Math.hypot(p.x - q.x, p.y - q.y) >= 6, 't = ' + t + ' で粒が重なる')));
+    // 酸素・二酸化炭素は、肺胞と毛細血管のあいだの道すじか、毛細血管の上（血液の粒が RIDE_GAP はなれていっしょに流れる）
+    dots.filter(d => d.fill === 'blue' || d.fill === 'gray').forEach(g => {
+      if (g.fill === 'blue') o2Seen++; else co2Seen++;
+      const move = g.fill === 'blue' ? bio.O2_MOVE : bio.CO2_MOVE;
+      if (onPolyline([move[0], move[1]], g.x, g.y, 1e-6)) return;
+      assert.ok(onPolyline(bio.CAPILLARY, g.x, g.y, 1e-6), 't = ' + t + ' の ' + g.fill + ' が道すじの外');
+      assert.ok(red.some(b => near(Math.hypot(b.x - g.x, b.y - g.y), bio.RIDE_GAP, 0.5) || Math.hypot(b.x - g.x, b.y - g.y) <= bio.RIDE_GAP + 1e-6),
+        't = ' + t + ' の ' + g.fill + ' のそばに血液の粒がない');
+    });
+  }
+  assert.ok(o2Seen > 0 && co2Seen > 0);
+  // 気体の粒は連続して動く（となりの時刻で 6px より大きくとばない。現れる・消えるのは道すじのはしだけ）
+  const gas = (t, fill) => items('bo-alveoli', t).filter(it => it.type === 'circle' && it.r === 3 && it.fill === fill);
+  const ends = (fill) => fill === 'blue' ? [bio.O2_MOVE[0], bio.CAPILLARY[bio.CAPILLARY.length - 1]] : [bio.CAPILLARY[0], bio.CO2_MOVE[1]];
+  ['blue', 'gray'].forEach(fill => {
+    for (let i = 1; i <= 1000; i++) {
+      const a = gas((i - 1) / 1000, fill), b = gas(i / 1000, fill);
+      b.forEach(p => {
+        if (a.some(q => Math.hypot(p.x - q.x, p.y - q.y) <= 6)) return;
+        assert.ok(ends(fill).some(e => Math.hypot(p.x - e[0], p.y - e[1]) <= 6), fill + ' t = ' + i / 1000 + ' で ' + p.x + ',' + p.y + ' にとつぜん現れる');
+      });
+      a.forEach(q => {
+        if (b.some(p => Math.hypot(p.x - q.x, p.y - q.y) <= 6)) return;
+        assert.ok(ends(fill).some(e => Math.hypot(q.x - e[0], q.y - e[1]) <= 6), fill + ' t = ' + i / 1000 + ' で ' + q.x + ',' + q.y + ' でとつぜん消える');
+      });
+    }
+  });
+});
+
+test('an-body-temp: 気温の縦の点線は「変温動物（トカゲ）」の文字の上を通らない', () => {
+  for (let i = 0; i < 100; i++) {
+    const list = items('an-body-temp', i / 100);
+    const label = textBox(list.find(it => it.type === 'text' && it.text === '変温動物（トカゲ）'));
+    list.filter(it => it.type === 'line' && it.color === 'gray' && it.dashed).forEach(l => {
+      const [[x1, y1], [x2, y2]] = l.points;
+      const hit = Math.max(x1, x2) >= label.left && Math.min(x1, x2) <= label.right && Math.max(y1, y2) > label.top && Math.min(y1, y2) < label.bottom;
+      assert.ok(!hit, 't = ' + i / 100);
+    });
+  }
+});
+
+test('na-greenhouse: 太陽の光 → 地表から出る熱 → 地表へもどる熱の順に伸び、0.99 で静止図と同じ点・色・太さの矢印', () => {
+  const lines = (t) => items('na-greenhouse', t).filter(it => it.type === 'line');
+  const done = (t, color, end) => lines(t).some(l => l.color === color &&
+    near(l.points[l.points.length - 1][0], end[0]) && near(l.points[l.points.length - 1][1], end[1]));
+  assert.equal(lines(0).length, 0);
+  assert.ok(done(0.2, 'orange', [60, 190]) && !lines(0.2).some(l => l.color === 'red'));
+  assert.ok(done(0.45, 'red', [96, 22]) && done(0.45, 'red', [170, 112]) && !done(0.45, 'red', [202, 190]));
+  const rest = lines(0.99);
+  [[[44, 54], [60, 190], 'orange', undefined], [[120, 192], [96, 22], 'red', 2], [[150, 192], [170, 112], 'red', 2], [[182, 112], [202, 190], 'red', 2]]
+    .forEach(([a, b, color, width]) => assert.ok(rest.some(l => l.arrow && l.color === color && l.width === width &&
+      JSON.stringify(l.points) === JSON.stringify([a, b])), '静止図の矢印 ' + a + ' → ' + b));
+  assert.ok(items('na-greenhouse', 0.99).some(it => it.type === 'text' && it.text === '地表があたたまる'));
 });

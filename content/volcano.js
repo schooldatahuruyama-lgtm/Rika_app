@@ -188,6 +188,22 @@
     return items;
   }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」。content/plants.js と同じ） ----
+  // 画像は assets/images/volcano/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/volcano/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // ================================================================
   // 領域 1: 火山
   // ================================================================
@@ -199,46 +215,42 @@
       {
         id: 'volcano-1-c1',
         text: '地下深くで岩石がとけて、どろどろになったものを**マグマ**といいます。マグマは地下のマグマだまりにたまり、地表へ上がってきてふき出します。これが噴火です。地表に流れ出たマグマや、それが冷えて固まったものを**溶岩**といいます。',
-        // 火山の断面。マグマだまりからマグマが上がる
-        figure: scene(volcanoSection().concat([
-          { type: 'arrow', x1: 204, y1: 196, x2: 204, y2: 120, color: 'orange' },
-          { type: 'text', x: 160, y: 217, text: 'マグマ', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 36, text: '地下の岩石がとけたもの＝マグマ', size: 14, anchor: 'middle' },
-          { type: 'text', x: 216, y: 182, text: '上がってくる', size: 12 },
-        ])),
+        // 写真: 夜に噴火して赤い溶岩が流れ出る火山（火口 (236, 86)、溶岩の流れ (100〜225, 165〜205)。左は白くぼかした余白）
+        figure: scene([
+          photo('volcano-1-c1'),
+          pointer(92, 62, 228, 86), tag(70, 62, '噴火', { size: 16, bold: true }),
+          pointer(150, 152, 200, 172), tag(100, 126, '溶岩', { size: 16, bold: true }),
+          tag(100, 146, '（地表に流れ出たマグマ）', { size: 13 }),
+          tag(160, 230, 'マグマ＝地下の岩石がとけたもの', { size: 14 }),
+        ]),
       },
       {
         id: 'volcano-1-c2',
         text: '火山の形は、マグマの**ねばりけ**で変わります。ねばりけが強いと盛り上がった形になり、爆発的な噴火をして、溶岩は白っぽくなります。ねばりけが弱いと傾斜のゆるやかな形になり、おだやかに噴火して、溶岩は黒っぽくなります。',
-        // 3 つの火山の形と、ねばりけ・例・溶岩の色
-        figure: scene(volcanoShapes(['dome', 'cone', 'shield'], true).concat([
-          { type: 'text', x: 160, y: 30, text: 'マグマのねばりけ', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 60, y: 82, text: '強い', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 82, text: '中間', size: 13, anchor: 'middle' },
-          { type: 'text', x: 260, y: 82, text: '弱い', size: 13, anchor: 'middle' },
-          { type: 'text', x: 60, y: 192, text: '雲仙普賢岳', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 192, text: '富士山・桜島', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 192, text: 'マウナロア', size: 12, anchor: 'middle' },
-          { type: 'text', x: 60, y: 214, text: '白っぽい溶岩', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 214, text: '中間の色', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 214, text: '黒っぽい溶岩', size: 12, anchor: 'middle' },
-        ])),
+        // 写真: 昭和新山（盛り上がった形）・富士山（円すいの形）・マウナロア（ゆるやかな形）。山は (52, 120)・(152, 120)・(262, 128) で、上下は白い余白
+        figure: scene([
+          photo('volcano-1-c2'),
+          tag(160, 30, 'マグマのねばりけ', { size: 15, bold: true }),
+          tag(52, 60, '強い'), tag(152, 60, '中間'), tag(262, 60, '弱い'),
+          pointer(78, 55, 126, 55), pointer(178, 55, 236, 55),
+          tag(52, 164, '昭和新山', { size: 13 }), tag(152, 164, '富士山', { size: 13 }), tag(262, 164, 'マウナロア', { size: 13 }),
+          tag(52, 186, '盛り上がった形', { size: 13 }), tag(152, 186, '円すいの形', { size: 13 }), tag(262, 186, 'ゆるやかな形', { size: 13 }),
+          tag(52, 208, '白っぽい溶岩', { size: 13 }), tag(152, 208, '中間の色', { size: 13 }), tag(262, 208, '黒っぽい溶岩', { size: 13 }),
+          tag(52, 230, '爆発的な噴火', { size: 13 }), tag(262, 230, 'おだやかな噴火', { size: 13 }),
+        ]),
       },
       {
         id: 'volcano-1-c3',
         text: '噴火のときに火山からふき出されたものを**火山噴出物**といいます。溶岩のほか、細かい粒の**火山灰**、空中で固まった**火山弾**、おもに水蒸気からなる**火山ガス**などがあります。',
-        // 噴火のようす。火山灰・火山ガス、火山弾、溶岩
-        figure: scene(volcanoSection().concat([
-          { type: 'ellipse', x: 150, y: 46, rx: 44, ry: 17, fill: '#C8C8C8', stroke: 'none' },
-          { type: 'ellipse', x: 184, y: 36, rx: 30, ry: 13, fill: '#C8C8C8', stroke: 'none' },
-          { type: 'circle', x: 96, y: 56, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'circle', x: 82, y: 76, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'circle', x: 236, y: 52, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'polygon', points: [[176, 72], [184, 70], [236, 138], [226, 142]], fill: 'orange', stroke: 'none' },
-          { type: 'text', x: 160, y: 18, text: '火山灰・火山ガス', size: 13, anchor: 'middle' },
-          { type: 'text', x: 50, y: 50, text: '火山弾', size: 13, anchor: 'middle' },
-          { type: 'text', x: 262, y: 130, text: '溶岩', size: 13 },
-        ])),
+        // 写真: 火山噴出物の標本（左から 火山弾 (45, 82)・皿に入れた火山灰 (125, 82)・軽石 (200, 75)・溶岩 (278, 80)。下半分は白い余白）
+        figure: scene([
+          photo('volcano-1-c3'),
+          tag(45, 132, '火山弾', { size: 15, bold: true }), tag(125, 132, '火山灰', { size: 15, bold: true }),
+          tag(200, 132, '軽石', { size: 15, bold: true }), tag(278, 132, '溶岩', { size: 15, bold: true }),
+          tag(45, 154, '空中で固まる', { size: 13 }), tag(125, 154, '細かい粒', { size: 13 }),
+          tag(200, 154, 'あなが多い', { size: 13 }), tag(278, 154, '冷えて固まる', { size: 13 }),
+          tag(160, 204, '火山噴出物（ほかに火山ガス）', { size: 14 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -361,60 +373,37 @@
       {
         id: 'volcano-2-c2',
         text: '火山岩は、細かい粒やガラスのような部分の中に、大きな鉱物が散らばっています。細かい部分を**石基**、大きな鉱物を**斑晶**といい、このようなつくりを**斑状組織**といいます。',
-        // 斑状組織のスケッチ
-        figure: scene(porphyryItems(30, 60).concat([
-          { type: 'text', x: 160, y: 36, text: '火山岩のつくり（斑状組織）', size: 14, anchor: 'middle', bold: true },
-          { type: 'line', points: [[86, 122], [176, 104]], color: 'blue', width: 2 },
-          { type: 'line', points: [[96, 160], [176, 168]], color: 'blue', width: 2 },
-          { type: 'text', x: 180, y: 100, text: '斑晶', size: 14, bold: true },
-          { type: 'text', x: 180, y: 118, text: '（大きな鉱物）', size: 12 },
-          { type: 'text', x: 180, y: 164, text: '石基', size: 14, bold: true },
-          { type: 'text', x: 180, y: 182, text: '（細かい粒など）', size: 12 },
-        ])),
+        // 写真: 安山岩の表面をルーペで見たようす（円の中心 (107, 115)・半径 102。黒い斑晶 (112, 98)、白い斑晶 (170, 148)、石基は灰色の細かい粒。右は白い余白）
+        figure: scene([
+          photo('volcano-2-c2'),
+          tag(268, 30, '斑状組織', { size: 16, bold: true }), tag(268, 50, '火山岩のつくり', { size: 13 }),
+          pointer(244, 92, 124, 98), pointer(226, 96, 186, 140),
+          tag(268, 98, '斑晶', { size: 15, bold: true }), tag(268, 118, '（大きな鉱物）', { size: 13 }),
+          pointer(240, 172, 142, 204),
+          tag(268, 178, '石基', { size: 15, bold: true }), tag(268, 198, '（細かい粒など）', { size: 13 }),
+        ]),
       },
       {
         id: 'volcano-2-c3',
         text: '深成岩は、同じくらいの大きさの鉱物がすき間なく組み合わさっています。このようなつくりを**等粒状組織**といいます。地下深くでゆっくり冷えるので、鉱物が大きく育ちます。',
-        // 等粒状組織のスケッチ
-        figure: scene(granularItems(30, 60).concat([
-          { type: 'text', x: 160, y: 36, text: '深成岩のつくり（等粒状組織）', size: 14, anchor: 'middle', bold: true },
-          { type: 'line', points: [[118, 115], [176, 112]], color: 'blue', width: 2 },
-          { type: 'text', x: 180, y: 108, text: '同じくらいの', size: 13 },
-          { type: 'text', x: 180, y: 126, text: '大きさの鉱物', size: 13 },
-          { type: 'text', x: 180, y: 160, text: '石基がない', size: 13 },
-        ])),
+        // 写真: 花こう岩の表面をルーペで見たようす（円の中心 (107, 115)・半径 102。黒い鉱物 (127, 75)・(185, 135)、うす赤い鉱物 (150, 105)。右は白い余白）
+        figure: scene([
+          photo('volcano-2-c3'),
+          tag(268, 30, '等粒状組織', { size: 16, bold: true }), tag(268, 50, '深成岩のつくり', { size: 13 }),
+          pointer(226, 104, 152, 104), pointer(226, 116, 186, 134),
+          tag(268, 108, '同じくらいの', { size: 13 }), tag(268, 126, '大きさの鉱物', { size: 13 }),
+          tag(268, 184, '石基がない', { size: 14, bold: true }),
+        ]),
       },
       {
         id: 'volcano-2-c4',
         text: 'マグマが冷えてできた結晶を**鉱物**といいます。セキエイ・チョウ石は白っぽい**無色鉱物**、クロウンモ・カクセン石・キ石・カンラン石は黒っぽい**有色鉱物**です。無色鉱物が多い岩石ほど白っぽくなります。',
-        // 火成岩の分類の表（色と鉱物）
+        // 写真: 火成岩 6 種の標本（上の段 火山岩: 流紋岩・安山岩・玄武岩、下の段 深成岩: 花こう岩・閃緑岩・斑れい岩。左ほど白っぽい。上の段 y 10〜90、下の段 y 132〜218）
         figure: scene([
-          { type: 'rect', x: 10, y: 40, width: 300, height: 100, fill: 'white' },
-          { type: 'rect', x: 12, y: 42, width: 296, height: 26, fill: 'sky', stroke: 'none' },
-          { type: 'line', points: [[10, 70], [310, 70]], width: 2 },
-          { type: 'line', points: [[10, 105], [310, 105]], width: 1 },
-          { type: 'line', points: [[74, 40], [74, 140]], width: 1 },
-          { type: 'line', points: [[152, 40], [152, 140]], width: 1 },
-          { type: 'line', points: [[230, 40], [230, 140]], width: 1 },
-          { type: 'text', x: 42, y: 60, text: '色', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 113, y: 60, text: '白っぽい', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 191, y: 60, text: '中間', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 270, y: 60, text: '黒っぽい', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 42, y: 93, text: '火山岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 113, y: 93, text: '流紋岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 191, y: 93, text: '安山岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 270, y: 93, text: '玄武岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 42, y: 128, text: '深成岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 113, y: 128, text: '花こう岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 191, y: 128, text: '閃緑岩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 270, y: 128, text: '斑れい岩', size: 13, anchor: 'middle' },
-          { type: 'rect', x: 80, y: 152, width: 66, height: 20, fill: '#F1EDE6' },
-          { type: 'rect', x: 158, y: 152, width: 66, height: 20, fill: '#A8A39A' },
-          { type: 'rect', x: 236, y: 152, width: 66, height: 20, fill: '#3A3A3A' },
-          { type: 'text', x: 113, y: 194, text: '無色鉱物が', size: 12, anchor: 'middle' },
-          { type: 'text', x: 113, y: 210, text: '多い', size: 12, anchor: 'middle' },
-          { type: 'text', x: 270, y: 194, text: '有色鉱物が', size: 12, anchor: 'middle' },
-          { type: 'text', x: 270, y: 210, text: '多い', size: 12, anchor: 'middle' },
+          photo('volcano-2-c4'),
+          tag(52, 104, '流紋岩'), tag(160, 104, '安山岩'), tag(265, 104, '玄武岩'),
+          tag(160, 126, '上: 火山岩　下: 深成岩　左ほど白っぽい', { size: 13, bold: true }),
+          tag(52, 233, '花こう岩'), tag(158, 233, '閃緑岩'), tag(265, 233, '斑れい岩'),
         ]),
       },
     ],
@@ -745,17 +734,12 @@
       {
         id: 'volcano-4-c4',
         text: '大地に大きな力が加わって岩盤がずれたものを**断層**といい、今後もずれる可能性のある断層を**活断層**といいます。震源が海底のときは**津波**が起こることがあり、うめ立て地などでは地面がやわらかくなる液状化も起こります。',
-        // 断層。右側の岩盤がずれ下がり、地層の線がくいちがう
+        // 写真: 地震で地表に現れた断層（畑のあぜと道路を横切って段差ができた。段差の線は (5, 127)〜(180, 150)〜(310, 160)、道路の段差 (218, 150)。上は白くぼかした余白）
         figure: scene([
-          { type: 'polygon', points: [[20, 80], [160, 80], [130, 220], [20, 220]], fill: 'sand' },
-          { type: 'polygon', points: [[156, 100], [300, 100], [300, 220], [130, 220]], fill: 'sand' },
-          { type: 'line', points: [[20, 140], [147, 140]], color: 'brown', width: 3 },
-          { type: 'line', points: [[143, 160], [300, 160]], color: 'brown', width: 3 },
-          { type: 'line', points: [[166, 52], [126, 228]], color: 'red', width: 3, dashed: true },
-          { type: 'arrow', x1: 240, y1: 50, x2: 240, y2: 88, color: 'blue' },
-          { type: 'text', x: 174, y: 46, text: '断層', size: 14, bold: true },
-          { type: 'text', x: 252, y: 74, text: 'ずれる', size: 13 },
-          { type: 'text', x: 30, y: 170, text: '地層', size: 13 },
+          photo('volcano-4-c4'),
+          tag(160, 26, '地面が切れてずれた', { size: 13 }), tag(160, 50, '断層', { size: 16, bold: true }),
+          pointer(144, 56, 90, 136), pointer(176, 56, 216, 146),
+          tag(160, 230, '道路やあぜに段差ができた', { size: 13 }),
         ]),
       },
     ],
