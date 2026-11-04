@@ -185,6 +185,7 @@
       },
       {
         id: 'state-1-c4',
+        anim: 'st-particles',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '物質は、とても小さな**粒子**が集まってできています。固体では粒子が規則正しく並び、液体では並び方がくずれて動き回り、気体では粒子が自由に飛び回ります。加熱すると粒子の運動が激しくなり、粒子どうしの間隔が広がります。',
         // 固体・液体・気体の粒子のモデル
         figure: scene(particleBox(20, 40, 'solid').concat(particleBox(120, 40, 'liquid'), particleBox(220, 40, 'gas'), [
@@ -343,6 +344,7 @@
       },
       {
         id: 'state-2-c2',
+        anim: 'st-heating-curve',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '氷を加熱し続けると、温度は 0℃ でしばらく一定になり、氷がすべてとけると再び上がります。100℃ で沸とうが始まると、また一定になります。状態が変わっている間は、加えた熱が状態変化に使われるので、グラフが横ばいになります。',
         // 氷を加熱したときの温度変化（0℃ と 100℃ で横ばい）
         figure: scene(heatGraphItems().concat([

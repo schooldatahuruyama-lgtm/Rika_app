@@ -192,6 +192,7 @@
       },
       {
         id: 'sound-1-c3',
+        anim: 'so-air-wave',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '音源の**振動**は、まわりの空気を次々に振動させて伝わっていきます。空気の振動が耳に届き、耳の中の鼓膜（こまく）を振動させると、音が聞こえます。',
         // おんさ → 空気の振動 → 耳
         figure: scene([
@@ -338,6 +339,7 @@
       },
       {
         id: 'sound-2-c3',
+        anim: 'so-light-vs-sound',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '音が空気中を伝わる速さは、およそ秒速 340 m（340 m/s）です。光の速さはおよそ秒速 30 万 km なので、音は光よりずっとおそく伝わります。だから、花火は光が見えてから音が聞こえます。',
         figure: scene(fireworks('光が先、音があと').concat([
           { type: 'text', x: 110, y: 100, text: '光: 秒速 約30万km', size: 13 },
@@ -483,6 +485,7 @@
     lessons: [
       {
         id: 'sound-3-c1',
+        anim: 'so-amplitude',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '音源の振動の振れるはばを**振幅**といいます。弦を強くはじくと振幅が大きくなり、大きい音が出ます。弱くはじくと振幅が小さくなり、小さい音になります。',
         // 弱くはじいた弦（振幅が小さい）と強くはじいた弦（振幅が大きい）
         figure: scene([
@@ -496,6 +499,7 @@
       },
       {
         id: 'sound-3-c2',
+        anim: 'so-frequency',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '音源が 1 秒間に振動する回数を**振動数**といいます。単位は**ヘルツ**（記号 **Hz**）です。振動数が多いほど高い音、少ないほど低い音になります。',
         // 振動数が少ない（低い音）と多い（高い音）
         figure: scene([

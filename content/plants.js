@@ -61,19 +61,28 @@
     ];
   }
 
-  // 花の図に付ける名前（文字と引き出し線）
-  const FLOWER_LABELS = {
-    'がく': [{ type: 'text', x: 226, y: 230, text: 'がく', size: 14 }, leader(224, 222, 206, 200)],
-    '花弁': [{ type: 'text', x: 266, y: 92, text: '花弁', size: 14 }, leader(264, 96, 228, 132)],
-    'おしべ': [{ type: 'text', x: 12, y: 62, text: 'おしべ', size: 14 }, leader(56, 58, 122, 98)],
-    'やく': [{ type: 'text', x: 12, y: 62, text: 'やく', size: 14 }, leader(42, 58, 120, 98)],
-    'めしべ': [{ type: 'text', x: 204, y: 52, text: 'めしべ', size: 14 }, leader(202, 48, 163, 120)],
-    '柱頭': [{ type: 'text', x: 204, y: 52, text: '柱頭', size: 14 }, leader(202, 48, 166, 88)],
-    '子房': [{ type: 'text', x: 250, y: 176, text: '子房', size: 14 }, leader(248, 172, 181, 178)],
-    '胚珠': [{ type: 'text', x: 14, y: 232, text: '胚珠', size: 14 }, leader(44, 226, 148, 184)],
-  };
-  function labeledFlower(names) {
-    return flower().concat(...names.map(n => FLOWER_LABELS[n]));
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/plants/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/plants/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
+  // アブラナの花をたてに切った写真（plants-1-c2 の画像）: 柱頭 (155, 34)、やく (185〜210, 40〜84)、子房の右はし (181, 172)、胚珠 (154, 176)
+  function flowerPhotoOvary() {
+    return [
+      pointer(242, 180, 183, 176), tag(262, 184, '子房'),
+      pointer(56, 196, 151, 178), tag(40, 200, '胚珠'),
+    ];
   }
 
   // マツの枝: 新しい枝の先に雌花 (196, 36)・(206, 46)、根もとに雄花の集まり (140〜172, 128〜146)、古い枝に 1 年前の雌花 (92, 194)
@@ -177,27 +186,6 @@
     ];
   }
 
-  // ゼニゴケ（コケ植物）: 左が雌株、右が雄株。地面 y=184 の下に仮根
-  function liverwort() {
-    return [
-      { type: 'line', points: [[10, 184], [310, 184]], color: 'brown', width: 2 },
-      { type: 'line', points: [[70, 184], [66, 212]], color: 'line', width: 2 },
-      { type: 'line', points: [[90, 184], [92, 214]], color: 'line', width: 2 },
-      { type: 'line', points: [[110, 184], [116, 212]], color: 'line', width: 2 },
-      { type: 'line', points: [[210, 184], [206, 212]], color: 'line', width: 2 },
-      { type: 'line', points: [[230, 184], [232, 214]], color: 'line', width: 2 },
-      { type: 'line', points: [[250, 184], [256, 212]], color: 'line', width: 2 },
-      // 雌株（かさのふちが指のように分かれる）
-      { type: 'ellipse', x: 90, y: 170, rx: 60, ry: 14, fill: 'green' },
-      { type: 'line', points: [[90, 160], [90, 90]], color: 'green', width: 4 },
-      { type: 'polygon', points: [[62, 104], [70, 90], [80, 84], [90, 82], [100, 84], [110, 90], [118, 104], [108, 96], [99, 104], [90, 96], [81, 104], [72, 96]], fill: 'green' },
-      // 雄株（かさが平たい円盤）
-      { type: 'ellipse', x: 230, y: 170, rx: 60, ry: 14, fill: 'green' },
-      { type: 'line', points: [[230, 160], [230, 100]], color: 'green', width: 4 },
-      { type: 'ellipse', x: 230, y: 96, rx: 22, ry: 7, fill: 'green' },
-    ];
-  }
-
   // 種子植物の分け方（4 つのなかまに ア〜エ）。行の y: ア 36、イ 92、ウ 148、エ 204
   const SEED_TREE = scene([
     { type: 'line', points: [[16, 36], [16, 134]], width: 2 },
@@ -232,56 +220,58 @@
       {
         id: 'plants-1-c1',
         text: '花は、外側から**がく**・**花弁**・**おしべ**・**めしべ**の順に並んでいます。アブラナやサクラの花を、外側から 1 つずつピンセットではずしていくと、この順に出てきます。',
-        // 花の断面と 4 つの部分の名前
-        figure: scene(labeledFlower(['がく', '花弁', 'おしべ', 'めしべ'])),
+        // 写真: アブラナの花を分解し、外側から順に左→右に並べた（がく 4・花弁 4・おしべ 6・めしべ 1）
+        figure: scene([
+          photo('plants-1-c1'),
+          tag(38, 176, 'がく'),
+          tag(126, 176, '花弁'),
+          tag(226, 176, 'おしべ'),
+          tag(294, 176, 'めしべ'),
+          { type: 'arrow', x1: 62, y1: 210, x2: 260, y2: 210, color: 'blue', width: 2 },
+          tag(34, 215, '外側', { size: 13 }),
+          tag(288, 215, '内側', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-1-c2',
         text: 'おしべの先の小さなふくろを**やく**といい、中に花粉が入っています。めしべの先を**柱頭**、根もとのふくらんだ部分を**子房**といいます。子房の中には、**胚珠**という小さな粒があります。',
-        figure: scene(labeledFlower(['やく', '柱頭', '子房', '胚珠'])),
+        // 写真: アブラナの花をたてに切った断面（子房の中に胚珠が並ぶ）
+        figure: scene([
+          photo('plants-1-c2'),
+          pointer(46, 24, 149, 33), tag(30, 26, '柱頭'),
+          pointer(266, 26, 201, 58), tag(282, 26, 'やく'),
+        ].concat(flowerPhotoOvary())),
       },
       {
         id: 'plants-1-c3',
         text: '花粉がめしべの柱頭につくことを**受粉**といいます。受粉すると、子房は成長して**果実**になり、子房の中の胚珠は**種子**になります。',
-        // 受粉した めしべ → 果実と種子
+        // 写真: アブラナの花 → 花のあとのさや（果実）→ さやを開いた中の種子
         figure: scene([
-          { type: 'line', points: [[70, 96], [70, 52]], color: 'green', width: 4 },
-          { type: 'circle', x: 70, y: 46, r: 7, fill: 'green' },
-          { type: 'circle', x: 63, y: 39, r: 4, fill: 'yellow' },
-          { type: 'circle', x: 77, y: 41, r: 4, fill: 'yellow' },
-          { type: 'ellipse', x: 70, y: 130, rx: 30, ry: 34, fill: 'lightgreen' },
-          { type: 'circle', x: 62, y: 134, r: 6, fill: 'white' },
-          { type: 'circle', x: 78, y: 134, r: 6, fill: 'white' },
-          { type: 'arrow', x1: 118, y1: 130, x2: 180, y2: 130, color: 'blue', width: 3 },
-          { type: 'ellipse', x: 240, y: 130, rx: 50, ry: 52, fill: 'orange' },
-          { type: 'ellipse', x: 226, y: 132, rx: 8, ry: 11, fill: 'brown' },
-          { type: 'ellipse', x: 254, y: 132, rx: 8, ry: 11, fill: 'brown' },
-          { type: 'text', x: 20, y: 24, text: '花粉が柱頭につく', size: 13 },
-          { type: 'text', x: 149, y: 120, text: '受粉', anchor: 'middle', size: 14 },
-          { type: 'text', x: 160, y: 212, text: '子房 → 果実', anchor: 'middle', size: 14 },
-          { type: 'text', x: 160, y: 234, text: '胚珠 → 種子', anchor: 'middle', size: 14 },
+          photo('plants-1-c3'),
+          { type: 'arrow', x1: 115, y1: 86, x2: 153, y2: 86, color: 'blue', width: 3 },
+          tag(134, 76, '受粉', { size: 13 }),
+          { type: 'arrow', x1: 186, y1: 86, x2: 250, y2: 86, color: 'blue', width: 2 },
+          tag(218, 76, 'さやを開く', { size: 13 }),
+          tag(60, 184, '花', { size: 16, bold: true }),
+          tag(60, 204, '（アブラナ）', { size: 13 }),
+          tag(165, 184, '果実', { size: 16, bold: true }),
+          tag(165, 204, '（もとは子房）', { size: 13 }),
+          tag(268, 184, '種子', { size: 16, bold: true }),
+          tag(268, 204, '（もとは胚珠）', { size: 13 }),
+          pointer(266, 167, 258, 124),
         ]),
       },
       {
         id: 'plants-1-c4',
         text: '花を観察するときは、**ルーペ**を目に近づけて持ちます。観察するものが動かせるときは、花を前後に動かして、よく見える位置をさがします。ルーペで太陽を見てはいけません。',
-        // ルーペを目に近づけ、花を前後に動かす
+        // 写真: ルーペを目のすぐ近くに持ち、手に持った花を前後に動かして見る
         figure: scene([
-          { type: 'circle', x: 44, y: 120, r: 30, fill: 'white' },
-          { type: 'circle', x: 60, y: 112, r: 4, fill: 'ink' },
-          { type: 'line', points: [[86, 128], [86, 170]], color: 'brown', width: 5 },
-          { type: 'circle', x: 86, y: 112, r: 16, fill: 'sky' },
-          { type: 'line', points: [[220, 190], [220, 124]], color: 'green', width: 3 },
-          { type: 'circle', x: 220, y: 98, r: 10, fill: 'pink' },
-          { type: 'circle', x: 234, y: 112, r: 10, fill: 'pink' },
-          { type: 'circle', x: 220, y: 126, r: 10, fill: 'pink' },
-          { type: 'circle', x: 206, y: 112, r: 10, fill: 'pink' },
-          { type: 'circle', x: 220, y: 112, r: 7, fill: 'yellow' },
-          { type: 'arrow', x1: 220, y1: 206, x2: 270, y2: 206, color: 'blue', width: 2 },
-          { type: 'arrow', x1: 220, y1: 206, x2: 170, y2: 206, color: 'blue', width: 2 },
-          { type: 'text', x: 20, y: 60, text: 'ルーペは目に近づける', size: 14 },
-          { type: 'text', x: 64, y: 192, text: 'ルーペ', size: 13 },
-          { type: 'text', x: 220, y: 232, text: '花を前後に動かす', anchor: 'middle', size: 14 },
+          photo('plants-1-c4'),
+          pointer(188, 46, 137, 84),
+          tag(250, 42, 'ルーペは目に近づける', { size: 13 }),
+          { type: 'arrow', x1: 207, y1: 104, x2: 184, y2: 104, color: 'blue', width: 2 },
+          { type: 'arrow', x1: 207, y1: 104, x2: 234, y2: 104, color: 'blue', width: 2 },
+          tag(262, 136, '花を前後に動かす', { size: 13 }),
         ]),
       },
     ],
@@ -406,28 +396,24 @@
       {
         id: 'plants-2-c1',
         text: '花をさかせ、種子をつくってなかまをふやす植物を**種子植物**といいます。種子植物のうち、アブラナやサクラのように、胚珠が子房の中にある植物を**被子植物**といいます。',
-        figure: scene(labeledFlower(['子房', '胚珠']).concat([
-          { type: 'text', x: 160, y: 30, text: '被子植物: 胚珠が子房の中にある', anchor: 'middle', size: 14 },
-        ])),
+        // 写真: アブラナの花の断面（plants-1-c2 の画像）に 子房・胚珠
+        figure: scene([
+          photo('plants-1-c2'),
+          tag(44, 18, '被子植物', { size: 15, bold: true }),
+          tag(50, 36, '胚珠が子房の中', { size: 13 }),
+        ].concat(flowerPhotoOvary())),
       },
       {
         id: 'plants-2-c2',
         text: 'マツには**雌花**と**雄花**があり、どちらにも花弁やがくはありません。雌花のりん片には子房がなく、**胚珠**がむき出しでついています。雄花のりん片には**花粉のう**があり、中に花粉が入っています。',
-        // マツの枝（雌花・雄花）と、りん片を大きくした図
-        figure: scene(pineBranch().concat([
-          { type: 'text', x: 150, y: 34, text: '雌花', size: 14 },
-          { type: 'text', x: 102, y: 128, text: '雄花', size: 14 },
-          { type: 'polygon', points: [[270, 44], [296, 70], [286, 100], [254, 100], [244, 70]], fill: 'lightgreen' },
-          { type: 'circle', x: 260, y: 90, r: 7, fill: 'white' },
-          { type: 'circle', x: 280, y: 90, r: 7, fill: 'white' },
-          { type: 'text', x: 234, y: 34, text: '雌花のりん片', size: 13 },
-          { type: 'text', x: 240, y: 96, text: '胚珠', anchor: 'end', size: 13 },
-          { type: 'polygon', points: [[270, 150], [296, 174], [286, 200], [254, 200], [244, 174]], fill: 'lightgreen' },
-          { type: 'ellipse', x: 260, y: 188, rx: 8, ry: 6, fill: 'yellow' },
-          { type: 'ellipse', x: 280, y: 188, rx: 8, ry: 6, fill: 'yellow' },
-          { type: 'text', x: 234, y: 140, text: '雄花のりん片', size: 13 },
-          { type: 'text', x: 240, y: 194, text: '花粉のう', anchor: 'end', size: 13 },
-        ])),
+        // 写真: 春のマツの枝先（新しい枝の先に雌花、根もとに雄花、古い枝に 1 年前の雌花とまつかさ）
+        figure: scene([
+          photo('plants-2-c2'),
+          pointer(198, 18, 153, 15), tag(214, 22, '雌花'),
+          pointer(44, 70, 105, 95), tag(28, 72, '雄花'),
+          pointer(220, 130, 189, 151), tag(268, 132, '1 年前の雌花', { size: 13 }),
+          pointer(268, 220, 248, 207), tag(290, 232, 'まつかさ', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-2-c3',
@@ -581,98 +567,52 @@
       {
         id: 'plants-3-c1',
         text: '被子植物は、芽ばえのときに出る子葉の数で 2 つに分けられます。子葉が 2 枚のなかまを**双子葉類**、子葉が 1 枚のなかまを**単子葉類**といいます。',
-        // 双子葉類と単子葉類の芽ばえ
+        // 写真: ホウセンカの芽ばえ（子葉 2 枚）とトウモロコシの芽ばえ（子葉 1 枚）
         figure: scene([
-          { type: 'line', points: [[20, 180], [300, 180]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 180], [90, 110]], color: 'green', width: 3 },
-          { type: 'ellipse', x: 70, y: 104, rx: 20, ry: 10, fill: 'green' },
-          { type: 'ellipse', x: 110, y: 104, rx: 20, ry: 10, fill: 'green' },
-          { type: 'polygon', points: [[227, 180], [233, 180], [238, 100], [232, 84], [226, 100]], fill: 'green' },
-          { type: 'text', x: 90, y: 40, text: '双子葉類', anchor: 'middle', size: 16, bold: true },
-          { type: 'text', x: 90, y: 62, text: 'アブラナ・ホウセンカ', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 40, text: '単子葉類', anchor: 'middle', size: 16, bold: true },
-          { type: 'text', x: 230, y: 62, text: 'イネ・トウモロコシ', anchor: 'middle', size: 13 },
-          { type: 'text', x: 90, y: 212, text: '子葉 2 枚', anchor: 'middle', size: 14 },
-          { type: 'text', x: 230, y: 212, text: '子葉 1 枚', anchor: 'middle', size: 14 },
+          photo('plants-3-c1'),
+          tag(70, 30, '双子葉類', { size: 16, bold: true }),
+          tag(70, 50, '（子葉 2 枚）', { size: 13 }),
+          pointer(58, 55, 45, 93), pointer(82, 55, 87, 89),
+          tag(188, 30, '単子葉類', { size: 16, bold: true }),
+          tag(188, 50, '（子葉 1 枚）', { size: 13 }),
+          pointer(216, 55, 240, 84),
         ]),
       },
       {
         id: 'plants-3-c2',
         text: '葉にあるすじを**葉脈**といいます。双子葉類の葉脈は網の目のように広がる**網状脈**、単子葉類の葉脈は平行に並ぶ**平行脈**です。',
-        // 網状脈の葉と平行脈の葉
+        // 写真: 光にすかしたホウセンカの葉（網状脈）とトウモロコシの葉（平行脈）
         figure: scene([
-          { type: 'line', points: [[90, 190], [90, 214]], color: 'green', width: 3 },
-          { type: 'ellipse', x: 90, y: 120, rx: 50, ry: 70, fill: 'lightgreen', stroke: 'green' },
-          { type: 'line', points: [[90, 190], [90, 52]], color: 'green', width: 3 },
-          { type: 'line', points: [[90, 90], [60, 70]], color: 'green', width: 2 },
-          { type: 'line', points: [[90, 90], [120, 70]], color: 'green', width: 2 },
-          { type: 'line', points: [[90, 130], [56, 110]], color: 'green', width: 2 },
-          { type: 'line', points: [[90, 130], [124, 110]], color: 'green', width: 2 },
-          { type: 'line', points: [[90, 165], [64, 150]], color: 'green', width: 2 },
-          { type: 'line', points: [[90, 165], [116, 150]], color: 'green', width: 2 },
-          { type: 'line', points: [[75, 80], [70, 96]], color: 'green', width: 1 },
-          { type: 'line', points: [[105, 80], [110, 96]], color: 'green', width: 1 },
-          { type: 'line', points: [[73, 120], [68, 138]], color: 'green', width: 1 },
-          { type: 'line', points: [[107, 120], [112, 138]], color: 'green', width: 1 },
-          { type: 'ellipse', x: 230, y: 128, rx: 22, ry: 88, fill: 'lightgreen', stroke: 'green' },
-          { type: 'line', points: [[230, 46], [230, 210]], color: 'green', width: 2 },
-          { type: 'line', points: [[221, 60], [221, 196]], color: 'green', width: 2 },
-          { type: 'line', points: [[239, 60], [239, 196]], color: 'green', width: 2 },
-          { type: 'line', points: [[214, 90], [214, 166]], color: 'green', width: 2 },
-          { type: 'line', points: [[246, 90], [246, 166]], color: 'green', width: 2 },
-          { type: 'text', x: 160, y: 24, text: '葉のすじ＝葉脈', anchor: 'middle', size: 14 },
-          { type: 'text', x: 90, y: 234, text: '網状脈（双子葉類）', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 234, text: '平行脈（単子葉類）', anchor: 'middle', size: 13 },
+          photo('plants-3-c2'),
+          tag(128, 30, '葉脈', { bold: true }),
+          pointer(118, 36, 96, 72), pointer(140, 36, 180, 64),
+          tag(80, 214, '網状脈（双子葉類）'),
+          tag(233, 214, '平行脈（単子葉類）'),
         ]),
       },
       {
         id: 'plants-3-c3',
         text: '双子葉類の根は、太い**主根**と、そこから出る細い**側根**からなります。単子葉類の根は、同じくらいの太さの根がたくさん出ている**ひげ根**です。',
-        // 主根と側根、ひげ根
+        // 写真: 土を洗い落としたホウセンカの根（主根と側根）とトウモロコシの根（ひげ根）
         figure: scene([
-          { type: 'line', points: [[90, 20], [90, 40]], color: 'green', width: 4 },
-          { type: 'line', points: [[90, 40], [90, 200]], color: 'brown', width: 6 },
-          { type: 'line', points: [[90, 70], [60, 90]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 70], [120, 90]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 100], [56, 124]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 100], [124, 124]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 130], [62, 150]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 130], [118, 150]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 160], [70, 176]], color: 'brown', width: 2 },
-          { type: 'line', points: [[90, 160], [110, 176]], color: 'brown', width: 2 },
-          { type: 'line', points: [[230, 20], [230, 50]], color: 'green', width: 4 },
-          { type: 'line', points: [[230, 50], [212, 120], [190, 190]], color: 'brown', width: 2 },
-          { type: 'line', points: [[230, 50], [220, 124], [206, 200]], color: 'brown', width: 2 },
-          { type: 'line', points: [[230, 50], [226, 128], [222, 206]], color: 'brown', width: 2 },
-          { type: 'line', points: [[230, 50], [234, 128], [238, 206]], color: 'brown', width: 2 },
-          { type: 'line', points: [[230, 50], [240, 124], [254, 200]], color: 'brown', width: 2 },
-          { type: 'line', points: [[230, 50], [248, 120], [270, 190]], color: 'brown', width: 2 },
-          { type: 'text', x: 98, y: 194, text: '主根', size: 13 },
-          { type: 'text', x: 126, y: 96, text: '側根', size: 13 },
-          { type: 'text', x: 90, y: 232, text: '主根と側根（双子葉類）', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 232, text: 'ひげ根（単子葉類）', anchor: 'middle', size: 13 },
+          photo('plants-3-c3'),
+          tag(42, 22, '双子葉類', { bold: true }),
+          tag(270, 22, '単子葉類', { bold: true }),
+          pointer(42, 66, 66, 84), tag(28, 66, '側根'),
+          pointer(46, 196, 90, 196), tag(30, 200, '主根'),
+          pointer(268, 64, 248, 76), tag(292, 66, 'ひげ根'),
         ]),
       },
       {
         id: 'plants-3-c4',
         text: '双子葉類は、花弁のようすでさらに分けられます。アサガオやタンポポのように花弁がくっついているなかまを**合弁花類**、アブラナやサクラのように花弁が 1 枚ずつ離れているなかまを**離弁花類**といいます。',
-        // 花弁がくっついた花と、離れている花
+        // 写真: アサガオの花（花弁がつながる）とサクラの花（5 枚の花弁が離れる）
         figure: scene([
-          { type: 'polygon', points: [[60, 64], [120, 64], [96, 140], [84, 140]], fill: 'pink' },
-          { type: 'ellipse', x: 90, y: 64, rx: 30, ry: 10, fill: 'pink' },
-          { type: 'line', points: [[90, 140], [90, 160]], color: 'green', width: 3 },
-          { type: 'circle', x: 230, y: 74, r: 14, fill: 'pink' },
-          { type: 'circle', x: 255, y: 92, r: 14, fill: 'pink' },
-          { type: 'circle', x: 245, y: 121, r: 14, fill: 'pink' },
-          { type: 'circle', x: 215, y: 121, r: 14, fill: 'pink' },
-          { type: 'circle', x: 205, y: 92, r: 14, fill: 'pink' },
-          { type: 'circle', x: 230, y: 100, r: 8, fill: 'yellow' },
-          { type: 'text', x: 90, y: 182, text: '合弁花類', anchor: 'middle', size: 16, bold: true },
-          { type: 'text', x: 90, y: 204, text: '花弁がくっつく', anchor: 'middle', size: 13 },
-          { type: 'text', x: 90, y: 226, text: 'アサガオ・タンポポ', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 182, text: '離弁花類', anchor: 'middle', size: 16, bold: true },
-          { type: 'text', x: 230, y: 204, text: '花弁が離れている', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 226, text: 'アブラナ・サクラ', anchor: 'middle', size: 13 },
+          photo('plants-3-c4'),
+          tag(86, 190, '合弁花類（アサガオ）', { bold: true }),
+          tag(86, 212, '花弁がくっついている', { size: 13 }),
+          tag(245, 190, '離弁花類（サクラ）', { bold: true }),
+          tag(245, 212, '花弁が離れている', { size: 13 }),
         ]),
       },
     ],
@@ -780,31 +720,29 @@
       {
         id: 'plants-4-c1',
         text: 'イヌワラビなどの**シダ植物**には、根・茎・葉の区別があります。茎は地面の下を横にのびる**地下茎**です。葉の裏には**胞子のう**がたくさんあり、その中にできる**胞子**でなかまをふやします。',
-        // イヌワラビ（地上に出ているのは葉、茎は地下茎）
-        figure: scene(fern().concat([
-          { type: 'ellipse', x: 275, y: 60, rx: 30, ry: 16, fill: 'lightgreen', stroke: 'green' },
-          { type: 'circle', x: 258, y: 60, r: 4, fill: 'brown' },
-          { type: 'circle', x: 270, y: 60, r: 4, fill: 'brown' },
-          { type: 'circle', x: 282, y: 60, r: 4, fill: 'brown' },
-          { type: 'circle', x: 294, y: 60, r: 4, fill: 'brown' },
-          { type: 'text', x: 244, y: 36, text: '胞子のう', size: 13 },
-          { type: 'text', x: 246, y: 98, text: '（葉の裏）', size: 13 },
-          { type: 'text', x: 60, y: 46, text: '葉', size: 14 },
-          { type: 'text', x: 14, y: 124, text: '地面', size: 13 },
-          { type: 'text', x: 256, y: 166, text: '地下茎', size: 13 },
-          { type: 'text', x: 40, y: 206, text: '根', size: 13 },
-        ])),
+        // 写真: 掘り出したイヌワラビ（地上は葉、土の中を横にのびる地下茎と根。右の葉は裏返して胞子のうが見える）
+        figure: scene([
+          photo('plants-4-c1'),
+          pointer(36, 101, 76, 70), tag(30, 112, '葉'),
+          tag(300, 144, '地面', { size: 13 }),
+          pointer(270, 176, 266, 188), tag(270, 172, '地下茎（茎）', { size: 13 }),
+          pointer(48, 210, 96, 204), tag(36, 214, '根'),
+          pointer(272, 38, 250, 64),
+          tag(286, 18, '胞子のう', { size: 13 }),
+          tag(284, 34, '（葉の裏）', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-4-c2',
         text: 'ゼニゴケなどの**コケ植物**には、根・茎・葉の区別がありません。根のように見える**仮根**は、おもにからだを地面に固定します。**雌株**と**雄株**があり、雌株にできる胞子でなかまをふやします。',
-        // ゼニゴケの雌株と雄株
-        figure: scene(liverwort().concat([
-          { type: 'text', x: 90, y: 40, text: '雌株', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 90, y: 62, text: '胞子ができる', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 40, text: '雄株', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 160, y: 232, text: '仮根（からだを固定する）', anchor: 'middle', size: 13 },
-        ])),
+        // 写真: ゼニゴケの雌株（かさの形）と雄株（円盤の形）。裏に白い仮根
+        figure: scene([
+          photo('plants-4-c2'),
+          tag(88, 26, '雌株（胞子ができる）', { bold: true }),
+          tag(238, 52, '雄株', { bold: true }),
+          pointer(104, 211, 64, 176), pointer(216, 211, 248, 172),
+          tag(160, 224, '仮根（からだを固定する）', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-4-c3',

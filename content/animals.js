@@ -36,6 +36,22 @@
     return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'gray', width: 1, dashed: true };
   }
 
+  // ---- 写真ふうの画像に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/animals/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/animals/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
+  }
+
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
   // 魚（左向き）。x は cx−30〜cx+44
   function fish(cx, cy) {
     return [
@@ -279,56 +295,46 @@
       {
         id: 'animals-1-c1',
         text: '動物は、背骨があるかどうかで大きく 2 つに分けられます。メダカ・ハト・ヒトのように背骨がある動物を**セキツイ動物**、昆虫やイカのように背骨がない動物を**無セキツイ動物**といいます。',
-        // 背骨のある魚と、背骨のない昆虫
+        // 写真: 魚（タイ）の骨格標本（背骨がある）と、カブトムシ・イカ（背骨がない）
         figure: scene([
-          { type: 'polygon', points: [[214, 80], [256, 44], [256, 116]], fill: 'sky' },
-          { type: 'ellipse', x: 140, y: 80, rx: 84, ry: 36, fill: 'sky' },
-          { type: 'circle', x: 78, y: 72, r: 6, fill: 'white' },
-          { type: 'circle', x: 78, y: 72, r: 3, fill: 'ink' },
-          { type: 'line', points: [[92, 84], [214, 84]], color: 'line', width: 4 },
-          ...[100, 114, 128, 142, 156, 170, 184, 198].map(x => ({ type: 'line', points: [[x, 77], [x, 91]], color: 'line', width: 2 })),
-          leader(176, 32, 170, 80),
-          { type: 'text', x: 182, y: 30, text: '背骨', size: 14 },
-          { type: 'text', x: 160, y: 146, text: '背骨がある動物 ＝ セキツイ動物', anchor: 'middle', size: 14, bold: true },
-          ...insect(75, 200, 0.8),
-          { type: 'text', x: 140, y: 196, text: '背骨がない動物', size: 14 },
-          { type: 'text', x: 140, y: 218, text: '＝ 無セキツイ動物', size: 14, bold: true },
+          photo('animals-1-c1'),
+          pointer(100, 34, 108, 89), tag(100, 30, '背骨', { bold: true }),
+          tag(50, 160, 'タイの骨格', { size: 13 }),
+          tag(160, 30, 'カブトムシ', { size: 13 }),
+          tag(296, 156, 'イカ', { size: 13 }),
+          tag(85, 202, '背骨がある'),
+          tag(85, 222, '→ セキツイ動物', { bold: true }),
+          tag(245, 202, '背骨がない'),
+          tag(245, 222, '→ 無セキツイ動物', { bold: true }),
         ]),
       },
       {
         id: 'animals-1-c2',
         text: 'セキツイ動物は、**魚類**・**両生類**・**ハチュウ類**・**鳥類**・**ホニュウ類**の 5 つのなかまに分けられます。メダカは魚類、カエルは両生類、トカゲはハチュウ類、ハトは鳥類、イヌはホニュウ類です。',
-        // 5 つのなかまの代表
-        figure: scene(fiveAnimals().concat([
-          { type: 'text', x: 60, y: 112, text: '魚類', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 60, y: 130, text: '（メダカ）', anchor: 'middle', size: 12 },
-          { type: 'text', x: 165, y: 112, text: '両生類', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 165, y: 130, text: '（カエル）', anchor: 'middle', size: 12 },
-          { type: 'text', x: 262, y: 112, text: 'ハチュウ類', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 262, y: 130, text: '（トカゲ）', anchor: 'middle', size: 12 },
-          { type: 'text', x: 105, y: 210, text: '鳥類', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 105, y: 228, text: '（ハト）', anchor: 'middle', size: 12 },
-          { type: 'text', x: 225, y: 210, text: 'ホニュウ類', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 225, y: 228, text: '（イヌ）', anchor: 'middle', size: 12 },
-        ])),
+        // 写真: 上段 メダカ・トノサマガエル・ニホントカゲ、下段 ハト・柴犬
+        figure: scene([
+          photo('animals-1-c2'),
+          tag(54, 90, '魚類', { bold: true }), tag(54, 106, '（メダカ）', { size: 13 }),
+          tag(160, 90, '両生類', { bold: true }), tag(160, 106, '（カエル）', { size: 13 }),
+          tag(234, 90, 'ハチュウ類', { bold: true }), tag(234, 106, '（トカゲ）', { size: 13 }),
+          tag(80, 228, '鳥類（ハト）', { bold: true }),
+          tag(240, 228, 'ホニュウ類（イヌ）', { bold: true }),
+        ]),
       },
       {
         id: 'animals-1-c3',
         text: '見た目だけで決めないように気をつけよう。クジラやイルカは海にすみますが、子を乳で育てるホニュウ類です。ペンギンは飛べませんが、羽毛がある鳥類です。イモリは両生類、ヤモリはハチュウ類です。',
-        // なかまごとの動物の例
+        // 写真: イルカ・ペンギン（上段）、イモリ・ヤモリ（下段）となかまの名前・見分ける手がかり
         figure: scene([
-          ...[56, 100, 144, 188].map(y => ({ type: 'line', points: [[10, y], [310, y]], color: 'gray', width: 1 })),
-          { type: 'line', points: [[110, 14], [110, 228]], color: 'gray', width: 1 },
-          { type: 'text', x: 16, y: 40, text: '魚類', size: 14, bold: true },
-          { type: 'text', x: 118, y: 40, text: 'メダカ・フナ・サメ', size: 13 },
-          { type: 'text', x: 16, y: 84, text: '両生類', size: 14, bold: true },
-          { type: 'text', x: 118, y: 84, text: 'カエル・イモリ', size: 13 },
-          { type: 'text', x: 16, y: 128, text: 'ハチュウ類', size: 14, bold: true },
-          { type: 'text', x: 118, y: 128, text: 'トカゲ・ヘビ・カメ・ヤモリ', size: 13 },
-          { type: 'text', x: 16, y: 172, text: '鳥類', size: 14, bold: true },
-          { type: 'text', x: 118, y: 172, text: 'ハト・スズメ・ペンギン', size: 13 },
-          { type: 'text', x: 16, y: 216, text: 'ホニュウ類', size: 14, bold: true },
-          { type: 'text', x: 118, y: 216, text: 'イヌ・ヒト・クジラ・コウモリ', size: 13 },
+          photo('animals-1-c3'),
+          tag(80, 118, 'ホニュウ類（イルカ）', { bold: true }),
+          tag(80, 136, '子を乳で育てる', { size: 13 }),
+          tag(244, 124, '鳥類（ペンギン）', { bold: true }),
+          tag(244, 140, '羽毛がある', { size: 13 }),
+          tag(80, 222, '両生類（イモリ）', { size: 13, bold: true }),
+          tag(80, 237, 'しめった皮ふ', { size: 13 }),
+          pointer(272, 208, 246, 178), tag(292, 214, 'うろこ', { size: 13 }),
+          tag(250, 236, 'ハチュウ類（ヤモリ）', { size: 13, bold: true }),
         ]),
       },
     ],
@@ -480,51 +486,34 @@
       {
         id: 'animals-2-c3',
         text: '卵で子が生まれることを**卵生**といいます。魚類・両生類は水中に殻のない卵を、ハチュウ類・鳥類は陸上に殻のある卵をうみます。ホニュウ類は、母親の体内である程度育ってから子が生まれる**胎生**です。',
-        // 殻のない卵・殻のある卵・母親の体内で育つ子
+        // 写真: 水中のカエルの卵（殻なし）、ニワトリとカメの卵（殻あり）、子イヌに乳をあたえる母イヌ
         figure: scene([
-          { type: 'rect', x: 15, y: 60, width: 80, height: 70, fill: 'water', stroke: 'none' },
-          ...[[34, 84], [50, 78], [66, 86], [42, 100], [58, 104], [74, 98]].map(([x, y]) => ({ type: 'circle', x, y, r: 6, fill: 'white', stroke: 'line' })),
-          { type: 'line', points: [[118, 132], [206, 132]], color: 'brown', width: 3 },
-          { type: 'ellipse', x: 148, y: 108, rx: 16, ry: 22, fill: 'white' },
-          { type: 'ellipse', x: 178, y: 112, rx: 14, ry: 19, fill: 'white' },
-          { type: 'ellipse', x: 265, y: 96, rx: 44, ry: 32, fill: 'pink' },
-          { type: 'ellipse', x: 270, y: 102, rx: 16, ry: 11, fill: 'white' },
-          { type: 'text', x: 270, y: 107, text: '子', anchor: 'middle', size: 12 },
-          { type: 'text', x: 55, y: 168, text: '卵生', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 55, y: 190, text: '水中に殻のない卵', anchor: 'middle', size: 12 },
-          { type: 'text', x: 55, y: 210, text: '魚類・両生類', anchor: 'middle', size: 12 },
-          { type: 'text', x: 160, y: 168, text: '卵生', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 160, y: 190, text: '陸上に殻のある卵', anchor: 'middle', size: 12 },
-          { type: 'text', x: 160, y: 210, text: 'ハチュウ類・鳥類', anchor: 'middle', size: 12 },
-          { type: 'text', x: 265, y: 168, text: '胎生', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 265, y: 190, text: '母親の体内で育つ', anchor: 'middle', size: 12 },
-          { type: 'text', x: 265, y: 210, text: 'ホニュウ類', anchor: 'middle', size: 12 },
+          photo('animals-2-c3'),
+          tag(48, 166, '卵生', { size: 15, bold: true }),
+          tag(48, 186, '水中・殻なし', { size: 13 }),
+          tag(48, 206, '魚類・両生類', { size: 13 }),
+          tag(145, 166, '卵生', { size: 15, bold: true }),
+          tag(145, 186, '陸上・殻あり', { size: 13 }),
+          tag(145, 206, 'ハチュウ類・鳥類', { size: 13 }),
+          tag(258, 166, '胎生', { size: 15, bold: true }),
+          tag(258, 186, '母親の体内で育つ', { size: 13 }),
+          tag(258, 206, 'ホニュウ類', { size: 13 }),
         ]),
       },
       {
         id: 'animals-2-c4',
         text: '体の表面のようすも、なかまによってちがいます。魚類とハチュウ類は**うろこ**、両生類はしめった皮ふ、鳥類は**羽毛**、ホニュウ類は**毛**でおおわれています。',
-        // なかまごとの体の表面
+        // 写真: 体の表面のクローズアップ（魚のうろこ・カエルの皮ふ・ハトの羽毛・イヌの毛）。写真の上に表面の名前、下になかま
         figure: scene([
-          { type: 'text', x: 160, y: 24, text: '体の表面', anchor: 'middle', size: 14, bold: true },
-          ...[78, 122, 166].map(y => ({ type: 'line', points: [[10, y], [310, y]], color: 'gray', width: 1 })),
-          { type: 'text', x: 16, y: 62, text: '魚類・ハチュウ類', size: 14, bold: true },
-          { type: 'circle', x: 172, y: 56, r: 7, fill: 'sky', stroke: 'line' },
-          { type: 'circle', x: 182, y: 56, r: 7, fill: 'sky', stroke: 'line' },
-          { type: 'circle', x: 177, y: 64, r: 7, fill: 'sky', stroke: 'line' },
-          { type: 'text', x: 204, y: 62, text: 'うろこ', size: 14 },
-          { type: 'text', x: 16, y: 106, text: '両生類', size: 14, bold: true },
-          { type: 'ellipse', x: 177, y: 100, rx: 14, ry: 9, fill: 'green' },
-          { type: 'circle', x: 172, y: 97, r: 2, fill: 'sky', stroke: 'none' },
-          { type: 'circle', x: 182, y: 102, r: 2, fill: 'sky', stroke: 'none' },
-          { type: 'text', x: 204, y: 106, text: 'しめった皮ふ', size: 14 },
-          { type: 'text', x: 16, y: 150, text: '鳥類', size: 14, bold: true },
-          { type: 'line', points: [[164, 152], [190, 136]], color: 'line', width: 2 },
-          { type: 'ellipse', x: 179, y: 143, rx: 14, ry: 6, fill: 'gray', stroke: 'none' },
-          { type: 'text', x: 204, y: 150, text: '羽毛', size: 14 },
-          { type: 'text', x: 16, y: 194, text: 'ホニュウ類', size: 14, bold: true },
-          ...[166, 172, 178, 184, 190].map(x => ({ type: 'line', points: [[x, 198], [x + 3, 182]], color: 'brown', width: 2 })),
-          { type: 'text', x: 204, y: 194, text: '毛', size: 14 },
+          photo('animals-2-c4'),
+          tag(82, 84, 'うろこ', { size: 15, bold: true }),
+          tag(82, 113, '魚類・ハチュウ類', { size: 13 }),
+          tag(239, 84, 'しめった皮ふ', { size: 15, bold: true }),
+          tag(239, 113, '両生類', { size: 13 }),
+          tag(82, 198, '羽毛', { size: 15, bold: true }),
+          tag(82, 228, '鳥類', { size: 13 }),
+          tag(239, 198, '毛', { size: 15, bold: true }),
+          tag(239, 228, 'ホニュウ類', { size: 13 }),
         ]),
       },
     ],
@@ -643,62 +632,54 @@
       {
         id: 'animals-3-c1',
         text: '背骨のない動物のうち、体の外側が**外骨格**というかたい殻でおおわれ、体やあしに節がある動物を**節足動物**といいます。外骨格は大きくならないので、成長するときは**脱皮**をします。',
-        // 昆虫（節足動物）の外骨格と節
-        figure: scene(insect(150, 96, 1.6).concat([
-          leader(226, 42, 214, 82),
-          { type: 'text', x: 228, y: 38, text: '外骨格', size: 14 },
-          leader(66, 34, 102, 64),
-          { type: 'text', x: 14, y: 30, text: 'あしの節', size: 14 },
-          { type: 'text', x: 160, y: 182, text: '体の外側がかたい殻（外骨格）', anchor: 'middle', size: 14 },
-          { type: 'text', x: 160, y: 206, text: '体やあしに節がある', anchor: 'middle', size: 14 },
-          { type: 'text', x: 160, y: 230, text: '→ 節足動物', anchor: 'middle', size: 14, bold: true },
-        ])),
+        // 写真: 横から見たトノサマバッタ（かたい殻の体、あしの節）
+        figure: scene([
+          photo('animals-3-c1'),
+          pointer(100, 38, 92, 100), tag(110, 34, '外骨格（かたい殻）'),
+          pointer(262, 36, 256, 70), tag(270, 30, 'あしの節'),
+          tag(160, 226, '体やあしに節がある → 節足動物', { bold: true }),
+        ]),
       },
       {
         id: 'animals-3-c2',
         text: '節足動物のうち、**昆虫類**は体が頭部・胸部・腹部に分かれ、胸部に 6 本のあしがあります。腹部などにある気門から空気をとり入れます。エビ・カニなどは**甲殻類**、クモはクモ類のなかまです。',
-        // 昆虫の体の 3 つの部分と、クモ・甲殻類
-        figure: scene(insect(130, 80, 1.4).concat(spider(262, 132, 1), [
-          { type: 'text', x: 16, y: 20, text: '昆虫類: あし 6 本（胸部から）', size: 12 },
-          { type: 'text', x: 66, y: 146, text: '頭部', anchor: 'middle', size: 13 },
-          { type: 'text', x: 105, y: 146, text: '胸部', anchor: 'middle', size: 13 },
-          { type: 'text', x: 172, y: 146, text: '腹部', anchor: 'middle', size: 13 },
-          { type: 'text', x: 262, y: 186, text: 'クモ類: あし 8 本', anchor: 'middle', size: 13 },
-          { type: 'text', x: 16, y: 206, text: '甲殻類: エビ・カニ・ダンゴムシ', size: 13 },
-          { type: 'text', x: 16, y: 228, text: 'ほかに ムカデ類 など', size: 13 },
-        ])),
+        // 写真: 上から見たトノサマバッタ（左）、クモ（右上）、エビ（右下）。バッタの体の区切りに青い線
+        figure: scene([
+          photo('animals-3-c2'),
+          { type: 'line', points: [[64, 64], [98, 64]], color: 'blue', width: 2 },
+          { type: 'line', points: [[62, 90], [100, 90]], color: 'blue', width: 2 },
+          pointer(148, 54, 93, 54), tag(166, 58, '頭部', { size: 13 }),
+          pointer(148, 78, 95, 77), tag(166, 82, '胸部', { size: 13 }),
+          pointer(148, 122, 87, 124), tag(166, 126, '腹部', { size: 13 }),
+          tag(136, 184, '昆虫類', { bold: true }),
+          tag(136, 202, 'あし6本', { size: 13 }),
+          tag(248, 134, 'クモ類: あし8本', { size: 13 }),
+          tag(240, 234, '甲殻類（エビ）', { size: 13 }),
+        ]),
       },
       {
         id: 'animals-3-c3',
         text: 'イカ・タコ・アサリ・ナメクジなどを**軟体動物**といいます。内臓が**外とう膜**というやわらかい膜で包まれていて、体やあしに節はありません。水中にすむものの多くは、えらで呼吸します。',
-        // イカのからだ（外とう膜・内臓・あし）
-        figure: scene(squid().concat([
-          leader(214, 96, 190, 96),
-          { type: 'text', x: 218, y: 101, text: '外とう膜', size: 14 },
-          leader(70, 92, 144, 92),
-          { type: 'text', x: 24, y: 97, text: '内臓', size: 14 },
-          leader(70, 196, 132, 200),
-          { type: 'text', x: 24, y: 201, text: 'あし', size: 14 },
-        ])),
+        // 写真: 腹側から切り開いたイカ（胴が上・あしが下。外とう膜を左右に開き、中の内臓とえらが見える）
+        figure: scene([
+          photo('animals-3-c3'),
+          pointer(242, 64, 207, 80), tag(272, 60, '外とう膜'),
+          pointer(258, 108, 180, 98), tag(272, 112, 'えら'),
+          pointer(52, 96, 156, 112), tag(36, 100, '内臓'),
+          pointer(52, 196, 108, 199), tag(36, 200, 'あし'),
+        ]),
       },
       {
         id: 'animals-3-c4',
         text: '無セキツイ動物には、節足動物や軟体動物のほかに、ミミズ・ウニ・ヒトデ・クラゲなどもいます。どれも背骨はありませんが、体のつくりはさまざまです。',
-        // 無セキツイ動物の分け方
+        // 写真: ミミズ・ウニ（上段）、ヒトデ・ミズクラゲ（下段）
         figure: scene([
-          { type: 'text', x: 8, y: 130, text: '無セキツイ', size: 14, bold: true },
-          { type: 'text', x: 8, y: 148, text: '動物', size: 14, bold: true },
-          { type: 'line', points: [[84, 132], [118, 132]], width: 2 },
-          { type: 'line', points: [[118, 50], [118, 200]], width: 2 },
-          { type: 'line', points: [[118, 50], [136, 50]], width: 2 },
-          { type: 'line', points: [[118, 125], [136, 125]], width: 2 },
-          { type: 'line', points: [[118, 200], [136, 200]], width: 2 },
-          { type: 'text', x: 142, y: 55, text: '節足動物', size: 14, bold: true },
-          { type: 'text', x: 142, y: 76, text: '昆虫類・甲殻類・クモ類 など', size: 12 },
-          { type: 'text', x: 142, y: 130, text: '軟体動物', size: 14, bold: true },
-          { type: 'text', x: 142, y: 151, text: 'イカ・タコ・アサリ など', size: 12 },
-          { type: 'text', x: 142, y: 205, text: 'その他', size: 14, bold: true },
-          { type: 'text', x: 142, y: 226, text: 'ミミズ・ウニ・ヒトデ・クラゲ', size: 12 },
+          photo('animals-3-c4'),
+          tag(90, 20, 'どれも背骨がない', { bold: true }),
+          tag(80, 112, 'ミミズ'),
+          tag(242, 118, 'ウニ'),
+          tag(80, 236, 'ヒトデ'),
+          tag(268, 236, 'クラゲ'),
         ]),
       },
     ],
@@ -855,54 +836,32 @@
       {
         id: 'animals-4-c3',
         text: 'ライオンのようにほかの動物を食べる**肉食動物**は、目が顔の前についていて、立体的に見える範囲が広く、えものとの距離をつかみやすいです。シマウマのように植物を食べる**草食動物**は、目が横につき、広い範囲を見わたせます。',
-        // 頭を上から見た図（黄色は両目で立体的に見える範囲）
+        // 写真: ライオンの顔（目が前に並ぶ）とシマウマの顔（目が横につく）を正面から。青い楕円と矢印は目の向き
         figure: scene([
-          { type: 'text', x: 160, y: 16, text: '黄色: 両目で立体的に見える範囲', anchor: 'middle', size: 12 },
-          { type: 'polygon', points: [[80, 114], [26, 26], [134, 26]], fill: 'yellow', stroke: 'none' },
-          { type: 'ellipse', x: 80, y: 150, rx: 30, ry: 40, fill: 'orange' },
-          { type: 'circle', x: 68, y: 122, r: 5, fill: 'ink' },
-          { type: 'circle', x: 92, y: 122, r: 5, fill: 'ink' },
-          { type: 'polygon', points: [[240, 104], [226, 26], [254, 26]], fill: 'yellow', stroke: 'none' },
-          { type: 'arrow', x1: 214, y1: 136, x2: 180, y2: 110, color: 'blue', width: 2 },
-          { type: 'arrow', x1: 266, y1: 136, x2: 300, y2: 110, color: 'blue', width: 2 },
-          { type: 'arrow', x1: 214, y1: 144, x2: 180, y2: 174, color: 'blue', width: 2 },
-          { type: 'arrow', x1: 266, y1: 144, x2: 300, y2: 174, color: 'blue', width: 2 },
-          { type: 'ellipse', x: 240, y: 150, rx: 24, ry: 44, fill: 'white' },
-          { type: 'circle', x: 218, y: 140, r: 5, fill: 'ink' },
-          { type: 'circle', x: 262, y: 140, r: 5, fill: 'ink' },
-          { type: 'text', x: 80, y: 210, text: '目が前向き', anchor: 'middle', size: 13 },
-          { type: 'text', x: 80, y: 230, text: '肉食動物（ライオン）', anchor: 'middle', size: 13, bold: true },
-          { type: 'text', x: 240, y: 210, text: '目が横向き', anchor: 'middle', size: 13 },
-          { type: 'text', x: 240, y: 230, text: '草食動物（シマウマ）', anchor: 'middle', size: 13, bold: true },
+          photo('animals-4-c3'),
+          { type: 'ellipse', x: 86, y: 78, rx: 34, ry: 12, fill: 'none', stroke: 'blue' },
+          { type: 'arrow', x1: 212, y1: 81, x2: 190, y2: 81, color: 'blue', width: 2 },
+          { type: 'arrow', x1: 286, y1: 81, x2: 310, y2: 81, color: 'blue', width: 2 },
+          tag(82, 201, '肉食動物（ライオン）', { size: 13, bold: true }),
+          tag(82, 218, '目が前向き', { size: 13 }),
+          tag(82, 235, '立体的に見える範囲が広い', { size: 13 }),
+          tag(252, 201, '草食動物（シマウマ）', { size: 13, bold: true }),
+          tag(252, 218, '目が横向き', { size: 13 }),
+          tag(252, 235, '広い範囲を見わたせる', { size: 13 }),
         ]),
       },
       {
         id: 'animals-4-c4',
         text: '歯の形も、食べ物に合っています。肉食動物は、するどくとがった**犬歯**でえものをとらえ、とがった臼歯で肉をさきます。草食動物は、**門歯**で草をかみ切り、平らで大きな**臼歯**ですりつぶします。',
-        // 歯の形（左: 肉食動物、右: 草食動物）
+        // 写真: ライオンの頭骨（上）とシマウマの頭骨（下）を横から
         figure: scene([
-          { type: 'rect', x: 20, y: 110, width: 120, height: 14, fill: 'pink' },
-          { type: 'polygon', points: [[24, 110], [30, 100], [36, 110]], fill: 'white' },
-          { type: 'polygon', points: [[36, 110], [42, 100], [48, 110]], fill: 'white' },
-          { type: 'polygon', points: [[50, 110], [58, 72], [66, 110]], fill: 'white' },
-          { type: 'polygon', points: [[76, 110], [86, 90], [96, 110]], fill: 'white' },
-          { type: 'polygon', points: [[96, 110], [106, 88], [116, 110]], fill: 'white' },
-          { type: 'polygon', points: [[116, 110], [126, 92], [136, 110]], fill: 'white' },
-          { type: 'text', x: 58, y: 62, text: '犬歯', anchor: 'middle', size: 13 },
-          { type: 'text', x: 110, y: 80, text: '臼歯', anchor: 'middle', size: 13 },
-          { type: 'rect', x: 180, y: 110, width: 124, height: 14, fill: 'pink' },
-          { type: 'rect', x: 184, y: 94, width: 8, height: 16, fill: 'white' },
-          { type: 'rect', x: 194, y: 94, width: 8, height: 16, fill: 'white' },
-          { type: 'rect', x: 204, y: 94, width: 8, height: 16, fill: 'white' },
-          { type: 'rect', x: 240, y: 98, width: 20, height: 12, fill: 'white' },
-          { type: 'rect', x: 262, y: 98, width: 20, height: 12, fill: 'white' },
-          { type: 'rect', x: 284, y: 98, width: 18, height: 12, fill: 'white' },
-          { type: 'text', x: 198, y: 84, text: '門歯', anchor: 'middle', size: 13 },
-          { type: 'text', x: 271, y: 84, text: '臼歯（平ら）', anchor: 'middle', size: 13 },
-          { type: 'text', x: 80, y: 160, text: '肉食動物（ライオン）', anchor: 'middle', size: 13, bold: true },
-          { type: 'text', x: 80, y: 182, text: '犬歯が大きくするどい', anchor: 'middle', size: 12 },
-          { type: 'text', x: 240, y: 160, text: '草食動物（シマウマ）', anchor: 'middle', size: 13, bold: true },
-          { type: 'text', x: 240, y: 182, text: '臼歯で草をすりつぶす', anchor: 'middle', size: 12 },
+          photo('animals-4-c4'),
+          tag(252, 20, '肉食動物（ライオン）', { size: 13, bold: true }),
+          pointer(206, 42, 126, 66), tag(252, 46, '臼歯（とがる）', { size: 13 }),
+          pointer(214, 76, 154, 78), tag(232, 80, '犬歯'),
+          tag(252, 140, '草食動物（シマウマ）', { size: 13, bold: true }),
+          pointer(212, 166, 122, 186), tag(252, 170, '臼歯（平ら）', { size: 13 }),
+          pointer(214, 204, 178, 205), tag(232, 208, '門歯'),
         ]),
       },
     ],

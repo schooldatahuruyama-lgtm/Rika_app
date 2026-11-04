@@ -37,6 +37,15 @@
     return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'gray', width: 1, dashed: true };
   }
 
+  // ---- 写真ふうの画像の上に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+
+  // 画像（場面いっぱい）。src は assets/images/body/<カード id>.jpg
+  function photo(id) { return { type: 'image', src: 'assets/images/body/' + id + '.jpg' }; }
+  // 写真の上の引き出し線（濃い実線）
+  function pin(x1, y1, x2, y2) { return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 }; }
+  // 白い下地つきの文字。o で size・anchor・bold・color を上書きする（size の既定 14）
+  function tag(x, y, text, o) { return Object.assign({ type: 'text', x, y, text, size: 14, bg: true }, o); }
+
   // 植物の細胞（細胞壁・細胞膜・液胞・葉緑体・核）。(cx, cy) が中心、s は倍率。幅 160s・高さ 200s
   // 細胞膜（内側の角の丸い四角）は細胞壁の 11s 内側。核の中心 (cx−42s, cy−50s)、液胞の中心 (cx+15s, cy+10s)
   const CHLOROPLASTS = [[-48, 0], [-50, 40], [-40, 76], [10, -72], [52, -68], [56, 80], [5, 80]];
@@ -48,14 +57,6 @@
       { type: 'ellipse', x: cx + k(15), y: cy + k(10), rx: k(42), ry: k(58), fill: 'sky', stroke: 'line' },
       ...CHLOROPLASTS.map(([dx, dy]) => ({ type: 'ellipse', x: cx + k(dx), y: cy + k(dy), rx: k(9), ry: k(5), fill: 'green', stroke: 'none' })),
       { type: 'circle', x: cx - k(42), y: cy - k(50), r: k(16), fill: 'purple', stroke: 'line' },
-    ];
-  }
-
-  // 動物の細胞（細胞膜と核だけ）。(cx, cy) が中心。横 140s・たて 108s
-  function animalCell(cx, cy, s) {
-    return [
-      { type: 'ellipse', x: cx, y: cy, rx: 70 * s, ry: 54 * s, fill: 'white', stroke: 'line' },
-      { type: 'circle', x: cx - 6 * s, y: cy - 4 * s, r: 16 * s, fill: 'purple', stroke: 'line' },
     ];
   }
 
@@ -113,31 +114,6 @@
     { type: 'region', id: 'r3', x: 68, y: 148, r: 22, label: 'ウ' },
     { type: 'region', id: 'r4', x: 210, y: 148, r: 22, label: 'エ' },
   ]);
-
-  // 気孔のまわり（表皮を顕微鏡で見たようす）。2 つの孔辺細胞のあいだのすきまが気孔。中心 (160, 124)
-  function guardCell(side) {
-    const pts = [];
-    for (let a = -90; a <= 90; a += 15) {
-      const t = a * Math.PI / 180;
-      pts.push([Math.round(160 + side * 50 * Math.cos(t)), Math.round(124 + 66 * Math.sin(t))]);
-    }
-    for (let a = 90; a >= -90; a -= 15) {
-      const t = a * Math.PI / 180;
-      pts.push([Math.round(160 + side * 12 * Math.cos(t)), Math.round(124 + 60 * Math.sin(t))]);
-    }
-    return { type: 'polygon', points: pts, fill: 'lightgreen', stroke: 'green' };
-  }
-  function stomaItems() {
-    return [
-      // まわりの表皮の細胞のしきり
-      ...[[[20, 70], [104, 82]], [[20, 180], [110, 168]], [[300, 70], [216, 82]], [[300, 180], [210, 168]], [[160, 36], [160, 58]], [[160, 190], [160, 212]]]
-        .map(points => ({ type: 'line', points, color: 'line', width: 1 })),
-      guardCell(-1),
-      guardCell(1),
-      // 孔辺細胞の中の葉緑体
-      ...[[128, 100], [124, 140], [136, 170], [192, 100], [196, 140], [184, 170]].map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'green', stroke: 'none' })),
-    ];
-  }
 
   // 茎の断面（双子葉類。維管束が輪のように並ぶ）と、いちばん上の維管束の拡大図。
   // 拡大図は上が茎の外側（表皮側）、下が茎の中心側。小さい丸の集まり（師管）の中心 (235, 82)、
@@ -250,67 +226,61 @@
       {
         id: 'body-1-c1',
         text: '生物のからだは、小さな**細胞**が集まってできています。細胞には、ふつう 1 個の**核**があり、細胞のいちばん外側はうすい**細胞膜**でおおわれています。核と細胞壁をのぞいた部分を**細胞質**といい、細胞膜も細胞質にふくまれます。',
-        // 動物の細胞の模式図（核・細胞膜・細胞質）
-        figure: scene(animalCell(150, 120, 1.5).concat([
-          leader(108, 34, 126, 96),
-          { type: 'text', x: 96, y: 30, text: '核', size: 14 },
-          leader(260, 70, 243, 80),
-          { type: 'text', x: 262, y: 72, text: '細胞膜', size: 14 },
-          leader(260, 176, 200, 150),
-          { type: 'text', x: 262, y: 180, text: '細胞質', size: 14 },
-          { type: 'text', x: 160, y: 228, text: '動物の細胞の模式図', size: 13, anchor: 'middle' },
-        ])),
+        // ヒトのほおの内側の細胞（酢酸カーミン液で染色した顕微鏡写真）に名前を重ねる
+        figure: scene([
+          photo('body-1-c1'),
+          pin(222, 52, 179, 109),
+          tag(226, 57, '核'),
+          pin(222, 128, 160, 151),
+          tag(226, 133, '細胞膜'),
+          pin(222, 196, 147, 179),
+          tag(226, 201, '細胞質'),
+          tag(268, 20, 'ヒトのほおの', { size: 13, anchor: 'middle' }),
+          tag(268, 38, '内側の細胞', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-1-c2',
         text: '植物の細胞には、動物の細胞にない**細胞壁**と**葉緑体**があり、**液胞**も大きく育っています。細胞壁は細胞膜の外側のじょうぶなしきりで、からだを支えます。ただし、根の細胞のように緑色でない部分には、葉緑体はありません。',
-        // 植物の細胞と動物の細胞のくらべ
-        figure: scene(plantCell(80, 112, 0.7).concat(animalCell(250, 110, 0.8), [
-          leader(142, 48, 133, 48),
-          { type: 'text', x: 144, y: 53, text: '細胞壁', size: 14 },
-          leader(142, 120, 112, 120),
-          { type: 'text', x: 144, y: 125, text: '液胞', size: 14 },
-          leader(142, 172, 124, 169),
-          { type: 'text', x: 144, y: 177, text: '葉緑体', size: 14 },
-          { type: 'text', x: 262, y: 112, text: '核', size: 13 },
-          { type: 'text', x: 80, y: 204, text: '植物の細胞', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 250, y: 204, text: '動物の細胞', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 230, text: 'どちらにもある: 核・細胞膜', size: 13, anchor: 'middle' },
-        ])),
+        // オオカナダモの葉の細胞（顕微鏡写真）に細胞壁と葉緑体の名前を重ねる
+        figure: scene([
+          photo('body-1-c2'),
+          pin(224, 91, 199, 93),
+          tag(228, 96, '細胞壁'),
+          pin(224, 141, 182, 160),
+          tag(228, 146, '葉緑体'),
+          tag(270, 22, 'オオカナダモの', { size: 13, anchor: 'middle' }),
+          tag(270, 40, '葉の細胞', { size: 13, anchor: 'middle' }),
+          tag(270, 196, '液胞・核は', { size: 13, anchor: 'middle' }),
+          tag(270, 214, '染めないと', { size: 13, anchor: 'middle' }),
+          tag(270, 232, '見えにくい', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-1-c3',
         text: 'ゾウリムシやミカヅキモのように、からだが 1 つの細胞でできている生物を**単細胞生物**、たくさんの細胞でできている生物を**多細胞生物**といいます。多細胞生物では、形やはたらきが同じ細胞が集まって**組織**、組織が集まって**器官**、器官が集まって個体ができます。',
-        // 単細胞生物と、多細胞生物のからだのなり立ち
+        // ゾウリムシとミカヅキモ（顕微鏡写真）。どちらも単細胞生物
         figure: scene([
-          { type: 'text', x: 16, y: 28, text: '単細胞生物', size: 14, bold: true },
-          { type: 'ellipse', x: 64, y: 64, rx: 36, ry: 15, fill: 'white', stroke: 'line' },
-          { type: 'circle', x: 60, y: 64, r: 6, fill: 'purple', stroke: 'line' },
-          { type: 'text', x: 116, y: 60, text: 'ゾウリムシ・ミカヅキモ など', size: 13 },
-          { type: 'text', x: 116, y: 80, text: '→ 1 つの細胞でできている', size: 13 },
-          { type: 'line', points: [[10, 100], [310, 100]], color: 'gray', width: 1 },
-          { type: 'text', x: 16, y: 126, text: '多細胞生物', size: 14, bold: true },
-          ...[['細胞', 'からだの単位'], ['組織', '細胞の集まり'], ['器官', '胃・葉など'], ['個体', '1 つの生物']].flatMap(([name, note], i) => [
-            { type: 'rect', x: 12 + i * 80, y: 140, width: 56, height: 36, fill: i === 0 ? 'white' : 'lightgreen', label: name },
-            { type: 'text', x: 40 + i * 80, y: 200, text: note, size: 12, anchor: 'middle' },
-          ]),
-          { type: 'arrow', x1: 70, y1: 158, x2: 90, y2: 158, width: 2 },
-          { type: 'arrow', x1: 150, y1: 158, x2: 170, y2: 158, width: 2 },
-          { type: 'arrow', x1: 230, y1: 158, x2: 250, y2: 158, width: 2 },
+          photo('body-1-c3'),
+          tag(83, 194, 'ゾウリムシ', { anchor: 'middle', bold: true }),
+          tag(236, 194, 'ミカヅキモ', { anchor: 'middle', bold: true }),
+          tag(160, 228, '1 つの細胞でできている＝単細胞生物', { anchor: 'middle' }),
         ]),
       },
       {
         id: 'body-1-c4',
         text: '細胞を観察するときは、**酢酸カーミン液**（赤色）や酢酸オルセイン液（赤紫色）で染めると、核がよく染まって見やすくなります。顕微鏡の倍率は「接眼レンズの倍率 × 対物レンズの倍率」で、10 倍と 10 倍なら 100 倍です。',
-        // 染色したタマネギの表皮と、顕微鏡の倍率の求め方
+        // 酢酸カーミン液で染めたタマネギの表皮（顕微鏡写真）と、顕微鏡の倍率の求め方
         figure: scene([
-          ...[0, 1, 2].flatMap(c => [0, 1].flatMap(r => [
-            { type: 'rect', x: 70 + c * 60, y: 30 + r * 40, width: 60, height: 40, fill: 'white', stroke: 'line' },
-            { type: 'circle', x: 92 + c * 60, y: 52 + r * 40, r: 6, fill: 'red', stroke: 'none' },
-          ])),
-          { type: 'text', x: 160, y: 134, text: '酢酸カーミン液で染めたタマネギの表皮', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 176, text: '倍率 ＝ 接眼レンズ × 対物レンズ', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 206, text: '（例）10 倍 × 10 倍 ＝ 100 倍', size: 14, anchor: 'middle' },
+          photo('body-1-c4'),
+          pin(222, 94, 172, 113),
+          tag(226, 99, '核', { size: 15, bold: true }),
+          tag(220, 119, '（赤く染まる）', { size: 13 }),
+          tag(268, 22, 'タマネギの', { size: 13, anchor: 'middle' }),
+          tag(268, 40, '表皮の細胞', { size: 13, anchor: 'middle' }),
+          tag(268, 170, '倍率 ＝', { anchor: 'middle', bold: true }),
+          tag(268, 190, '接眼レンズ', { anchor: 'middle', bold: true }),
+          tag(268, 210, '× 対物レンズ', { anchor: 'middle', bold: true }),
         ]),
       },
     ],
@@ -439,46 +409,52 @@
       {
         id: 'body-2-c2',
         text: '一晩暗い所に置いたふ入りの葉の一部を**アルミニウムはく**でおおい、光を当てます。葉をあたためた**エタノール**で脱色し、**ヨウ素液**につけると、緑色で光が当たった部分だけが青紫色になります。光合成には、光と葉緑体が必要だと分かります。',
-        // ふ入りの葉の実験と結果
+        // ふ入りの葉の実験（左: アルミニウムはくでおおって光を当てた葉、右: 脱色してヨウ素液につけた葉）
         figure: scene([
-          { type: 'text', x: 82, y: 24, text: '光を当てる', size: 13, anchor: 'middle' },
-          leafPart(82, 92, 70, 40, 12, 62, 0, 240, 'white'),
-          leafPart(82, 92, 70, 40, 62, 152, 0, 240, LEAF_GREEN),
-          { type: 'ellipse', x: 82, y: 92, rx: 70, ry: 40, fill: 'none', stroke: 'green' },
-          { type: 'rect', x: 6, y: 92, width: 152, height: 48, fill: 'glass', stroke: 'gray' },
-          { type: 'line', points: [[62, 92], [62, 130]], color: 'gray', width: 1, dashed: true },
-          leafLowerEdge(82, 92, 70, 40, 92),
-          { type: 'text', x: 18, y: 50, text: 'ふ', size: 13 },
-          { type: 'text', x: 82, y: 158, text: 'アルミニウムはく', size: 12, anchor: 'middle' },
-          { type: 'text', x: 238, y: 24, text: 'ヨウ素液の結果', size: 13, anchor: 'middle' },
-          leafPart(238, 92, 70, 40, 168, 308, 0, 240, 'white'),
-          leafPart(238, 92, 70, 40, 218, 308, 0, 92, 'purple'),
-          { type: 'ellipse', x: 238, y: 92, rx: 70, ry: 40, fill: 'none', stroke: 'green' },
-          { type: 'line', points: [[168, 92], [308, 92]], color: 'gray', width: 1, dashed: true },
-          { type: 'line', points: [[218, 52], [218, 132]], color: 'gray', width: 1, dashed: true },
-          { type: 'text', x: 264, y: 82, text: '青紫色', size: 13, anchor: 'middle', color: 'white', bold: true },
-          { type: 'text', x: 160, y: 196, text: '青紫色 ＝ デンプンがある', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 222, text: '緑色で光が当たった部分だけ青紫色になる', size: 13, anchor: 'middle' },
+          photo('body-2-c2'),
+          pin(16, 22, 25, 41),
+          tag(8, 18, 'ふ'),
+          pin(70, 182, 66, 110),
+          tag(70, 197, 'アルミニウムはく', { size: 13, anchor: 'middle' }),
+          { type: 'arrow', x1: 140, y1: 132, x2: 184, y2: 132, width: 3 },
+          pin(240, 182, 240, 136),
+          tag(240, 197, '青紫色＝デンプンがある', { size: 13, anchor: 'middle' }),
+          tag(160, 228, '緑色で光が当たった部分だけ青紫色になる', { size: 13, anchor: 'middle' }),
         ]),
       },
       {
         id: 'body-2-c3',
         text: '植物のからだから、水が水蒸気になって出ていくことを**蒸散**といいます。水蒸気は、葉の表皮にある**気孔**から出ていきます。気孔は 2 つの**孔辺細胞**に囲まれたすきまで、ふつう葉の裏側に多くあります。酸素や二酸化炭素も気孔から出入りします。',
-        // 気孔と孔辺細胞（表皮を顕微鏡で見たようす）
-        figure: scene(stomaItems().concat([
-          leader(74, 124, 118, 124),
-          { type: 'text', x: 16, y: 129, text: '孔辺細胞', size: 14 },
-          leader(248, 124, 164, 124),
-          { type: 'text', x: 252, y: 129, text: '気孔', size: 14 },
-          { type: 'text', x: 160, y: 22, text: '葉の表皮を顕微鏡で見たようす', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 232, text: '気孔から水蒸気が出ていく（蒸散）', size: 13, anchor: 'middle' },
-        ])),
+        // ツユクサの葉の裏の表皮（顕微鏡写真）に孔辺細胞と気孔の名前を重ねる
+        figure: scene([
+          photo('body-2-c3'),
+          pin(224, 96, 131, 112),
+          tag(228, 101, '孔辺細胞'),
+          pin(224, 146, 115, 131),
+          tag(228, 151, '気孔'),
+          tag(270, 22, 'ツユクサの', { size: 13, anchor: 'middle' }),
+          tag(270, 40, '葉の裏の表皮', { size: 13, anchor: 'middle' }),
+          tag(270, 196, '気孔から', { size: 13, anchor: 'middle' }),
+          tag(270, 214, '水蒸気が出る', { size: 13, anchor: 'middle' }),
+          tag(270, 232, '（蒸散）', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-2-c4',
         text: '根から吸い上げた水や水にとけた肥料分は**道管**を、葉でつくられた栄養分は**師管**を通って運ばれます。道管と師管の集まりを**維管束**といいます。茎の維管束では、道管が内側（茎の中心側）、師管が外側にあります。',
-        // 茎の断面と維管束の拡大図（名前つき）
-        figure: scene(stemItems(true)),
+        // 赤い色水を吸わせたホウセンカの茎の輪切り（左）と、1 つの維管束の拡大（右）
+        figure: scene([
+          photo('body-2-c4'),
+          pin(75, 164, 66, 134),
+          tag(75, 178, '維管束', { anchor: 'middle' }),
+          pin(226, 165, 226, 112),
+          tag(316, 179, '道管（内側・赤く染まる）', { size: 13, anchor: 'end' }),
+          pin(190, 18, 236, 58),
+          tag(160, 14, '師管（外側）', { size: 13, anchor: 'middle' }),
+          pin(296, 18, 290, 36),
+          tag(316, 14, '茎の外側', { size: 13, anchor: 'end' }),
+          tag(160, 230, '左: 茎の輪切り　右: 維管束の拡大', { size: 13, anchor: 'middle' }),
+        ]),
       },
     ],
     warmup: choice({
@@ -602,23 +578,25 @@
       {
         id: 'body-3-c1',
         text: '食物にふくまれる養分を、からだに吸収できる小さな物質に分解することを**消化**といいます。食物は、口 → 食道 → 胃 → 小腸 → 大腸 → 肛門と続く 1 本の管を通ります。この管を**消化管**といいます。肝臓やすい臓は、食物の通らない器官です。',
-        // ヒトの消化にかかわる器官（名前つき）
-        figure: scene(gutItems().concat([
-          { type: 'text', x: 176, y: 22, text: '口', size: 13 },
-          leader(250, 48, 174, 52),
-          { type: 'text', x: 252, y: 53, text: '食道', size: 13 },
-          leader(250, 100, 244, 100),
-          { type: 'text', x: 252, y: 105, text: '胃', size: 13 },
-          leader(250, 140, 236, 144),
-          { type: 'text', x: 252, y: 145, text: 'すい臓', size: 13 },
-          leader(250, 184, 204, 186),
-          { type: 'text', x: 252, y: 189, text: '小腸', size: 13 },
-          leader(250, 214, 230, 206),
-          { type: 'text', x: 252, y: 219, text: '大腸', size: 13 },
-          leader(42, 60, 90, 78),
-          { type: 'text', x: 8, y: 64, text: '肝臓', size: 13 },
-          { type: 'text', x: 178, y: 238, text: '肛門', size: 13 },
-        ])),
+        // 人体模型の消化にかかわる器官（正面から見た写真）に名前を重ねる
+        figure: scene([
+          photo('body-3-c1'),
+          pin(258, 16, 180, 16),
+          tag(262, 21, '食道'),
+          pin(258, 46, 212, 46),
+          tag(262, 51, '胃'),
+          pin(258, 84, 196, 82),
+          tag(262, 89, 'すい臓'),
+          pin(258, 136, 190, 144),
+          tag(262, 141, '小腸'),
+          pin(258, 222, 166, 224),
+          tag(262, 227, '肛門'),
+          pin(42, 46, 112, 52),
+          tag(8, 51, '肝臓'),
+          pin(42, 146, 100, 146),
+          tag(8, 151, '大腸'),
+          tag(4, 236, '図の左がからだの右', { size: 13 }),
+        ]),
       },
       {
         id: 'body-3-c2',
@@ -647,12 +625,15 @@
         text: 'デンプン溶液に、A にはだ液、B には水を加え、約 40 ℃ の湯に入れます。ヨウ素液を加えると B だけが青紫色になり、**ベネジクト液**を加えて加熱すると A だけが赤褐色になります。だ液がデンプンを麦芽糖などに変えたと分かります。',
         // だ液のはたらきを調べる実験
         figure: scene([
-          { type: 'text', x: 16, y: 24, text: 'A: デンプン溶液 ＋ だ液', size: 13 },
-          { type: 'text', x: 16, y: 44, text: 'B: デンプン溶液 ＋ 水', size: 13 },
-          { type: 'text', x: 304, y: 70, text: '約 40 ℃ の湯', size: 13, anchor: 'end' },
-          { type: 'beaker', x: 160, y: 206, width: 220, height: 120, level: 0.7, liquid: 'water' },
-          { type: 'tube', x: 125, y: 196, height: 100, level: 0.45, liquid: '#F6F1E1', label: 'A' },
-          { type: 'tube', x: 195, y: 196, height: 100, level: 0.45, liquid: '#F6F1E1', label: 'B' },
+          photo('body-3-c3'),
+          tag(8, 22, 'A: デンプン溶液＋だ液', { size: 13 }),
+          tag(8, 42, 'B: デンプン溶液＋水', { size: 13 }),
+          tag(145, 62, 'A', { size: 15, anchor: 'middle', bold: true }),
+          tag(172, 62, 'B', { size: 15, anchor: 'middle', bold: true }),
+          pin(218, 44, 205, 46),
+          tag(222, 49, '温度計', { size: 13 }),
+          pin(102, 172, 122, 182),
+          tag(98, 176, '約40℃の湯', { size: 13, anchor: 'end' }),
         ]),
       },
       {
@@ -806,46 +787,43 @@
       {
         id: 'body-4-c2',
         text: '血液は**心臓**から送り出され、全身をめぐってもどります。心臓から出る血液が流れる血管を**動脈**、心臓へもどる血液が流れる血管を**静脈**といい、静脈には逆流を防ぐ弁があります。心臓 → 肺 → 心臓を**肺循環**、心臓 → 全身 → 心臓を**体循環**といいます。',
-        // 心臓の 4 つの部屋と血液の流れ
-        figure: scene(heartRooms(true).concat([
-          { type: 'rect', x: 130, y: 8, width: 60, height: 28, fill: 'sky', label: '肺' },
-          { type: 'rect', x: 130, y: 194, width: 60, height: 28, fill: 'lightgreen', label: '全身' },
-          { type: 'line', points: [[128, 208], [40, 208], [40, 95], [98, 95]], color: 'blue', width: 3, arrow: true },
-          { type: 'line', points: [[100, 160], [70, 160], [70, 22], [128, 22]], color: 'blue', width: 3, arrow: true },
-          { type: 'line', points: [[192, 22], [250, 22], [250, 95], [222, 95]], color: 'red', width: 3, arrow: true },
-          { type: 'line', points: [[220, 160], [280, 160], [280, 208], [192, 208]], color: 'red', width: 3, arrow: true },
-          { type: 'text', x: 8, y: 236, text: '赤: 動脈血', size: 12, color: 'red' },
-          { type: 'text', x: 84, y: 236, text: '青: 静脈血', size: 12, color: 'blue' },
-          { type: 'text', x: 316, y: 236, text: '図の左がからだの右', size: 12, anchor: 'end' },
-        ])),
+        // 心臓の模型をたてに切った断面（正面から見た写真）に 4 つの部屋の名前を重ねる
+        figure: scene([
+          photo('body-4-c2'),
+          pin(52, 96, 108, 99),
+          tag(4, 101, '右心房'),
+          pin(52, 166, 115, 167),
+          tag(4, 171, '右心室'),
+          pin(240, 80, 188, 88),
+          tag(244, 85, '左心房'),
+          pin(240, 166, 184, 168),
+          tag(244, 171, '左心室'),
+          tag(4, 218, '青: 静脈血', { size: 13, color: 'blue' }),
+          tag(4, 236, '赤: 動脈血', { size: 13, color: 'red' }),
+          tag(316, 236, '図の左がからだの右', { size: 13, anchor: 'end' }),
+        ]),
       },
       {
         id: 'body-4-c3',
         text: '**赤血球**は**ヘモグロビン**をふくみ、酸素を運びます。白血球は細菌などを分解し、血小板は出血した血液を固めます。液体の血しょうは養分や不要な物質を運びます。酸素を多くふくむ血液を動脈血といい、肺静脈には動脈血、肺動脈には静脈血が流れます。',
-        // 血液の成分
+        // 染めた血液の顕微鏡写真に成分の名前を重ねる
         figure: scene([
-          { type: 'rect', x: 10, y: 20, width: 190, height: 180, fill: '#FFF1C1', stroke: 'none' },
-          ...[[40, 48], [84, 64], [150, 44], [176, 86], [44, 150], [130, 170], [56, 96], [176, 128]].flatMap(([x, y]) => [
-            { type: 'circle', x, y, r: 12, fill: 'red', stroke: 'none' },
-            { type: 'circle', x, y, r: 5, fill: '#E9908C', stroke: 'none' },
-          ]),
-          { type: 'circle', x: 112, y: 116, r: 20, fill: 'white', stroke: 'line' },
-          { type: 'ellipse', x: 105, y: 112, rx: 7, ry: 5, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 119, y: 121, rx: 7, ry: 5, fill: 'purple', stroke: 'none' },
-          ...[[34, 190], [162, 158], [90, 184], [178, 182]].map(([x, y]) => ({ type: 'polygon', points: [[x - 4, y], [x, y - 4], [x + 5, y - 1], [x + 1, y + 4]], fill: 'purple', stroke: 'none' })),
-          leader(208, 46, 162, 44),
-          { type: 'text', x: 210, y: 51, text: '赤血球', size: 13 },
-          leader(208, 116, 132, 116),
-          { type: 'text', x: 210, y: 121, text: '白血球', size: 13 },
-          leader(208, 160, 168, 158),
-          { type: 'text', x: 210, y: 165, text: '血小板', size: 13 },
-          leader(208, 192, 192, 192),
-          { type: 'text', x: 210, y: 197, text: '血しょう（液体）', size: 13 },
-          { type: 'text', x: 160, y: 228, text: '赤血球のヘモグロビンが酸素を運ぶ', size: 13, anchor: 'middle' },
+          photo('body-4-c3'),
+          pin(220, 46, 190, 60),
+          tag(224, 51, '赤血球'),
+          pin(220, 90, 156, 83),
+          tag(224, 95, '血小板'),
+          pin(220, 136, 173, 146),
+          tag(224, 141, '白血球'),
+          pin(220, 186, 160, 190),
+          tag(224, 191, '血しょう'),
+          tag(224, 209, '（液体）', { size: 13 }),
+          tag(266, 232, '染めた血液', { size: 13, anchor: 'middle' }),
         ]),
       },
       {
         id: 'body-4-c4',
+        anim: 'bo-reflex',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '目（網膜）や耳（うずまき管）などの**感覚器官**で受けとった刺激は、**感覚神経** → 脳や脊髄（中枢神経） → **運動神経** → 筋肉と伝わります。熱いものにふれて思わず手を引っこめるように、意識と関係なく起こる反応を**反射**といいます。このときの命令は脊髄から出るので、すばやく反応できます。',
         // 熱いものにふれたときの反射の道すじ
         figure: scene(nerveItems(true).concat([

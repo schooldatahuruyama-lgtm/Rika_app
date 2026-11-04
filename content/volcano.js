@@ -540,6 +540,7 @@
     lessons: [
       {
         id: 'volcano-3-c1',
+        anim: 'vo-quake-spread',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地震は、地下の岩盤がずれて起こります。地下で地震が起こった場所を**震源**、震源の真上の地表の点を**震央**といいます。ゆれは震源から、まわりへ同心円状に伝わっていきます。',
         // 地下の断面。震源と震央、広がるゆれ
         figure: scene([
@@ -557,6 +558,7 @@
       },
       {
         id: 'volcano-3-c2',
+        anim: 'vo-seismogram',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地震のゆれには 2 つあります。はじめの小さなゆれを**初期微動**、あとからくる大きなゆれを**主要動**といいます。初期微動は速い**P波**、主要動はおそい**S波**が届いて起こります。',
         // 地震計の記録
         figure: scene([
@@ -573,6 +575,7 @@
       },
       {
         id: 'volcano-3-c3',
+        anim: 'vo-ps-graph',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: 'P波が着いてからS波が着くまでの時間を**初期微動継続時間**といいます。P波は約 6 km/s、S波は約 3.5 km/s で伝わるので、震源から遠いほど差が開き、初期微動継続時間は長くなります。',
         // P 波・S 波のグラフ。210 km の地点の初期微動継続時間
         figure: scene(waveGraphItems().concat([
@@ -732,6 +735,7 @@
       },
       {
         id: 'volcano-4-c3',
+        anim: 'vo-plate-rebound',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地球の表面は、**プレート**という岩盤でおおわれています。日本付近では、海洋プレートが大陸プレートの下に沈みこみます。引きずられた大陸プレートがはね返ると、海溝の近くで大きな地震が起こります。',
         // 日本付近の地下の断面とプレートの動き
         figure: scene(plateItems({ arrows: true }).concat([

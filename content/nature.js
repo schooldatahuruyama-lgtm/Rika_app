@@ -30,10 +30,16 @@
   function word(id, opts, answer) { return { id, kind: 'word', options: opts, answer }; }
   function number(id, answer, tolerance, unit) { return { id, kind: 'number', answer, tolerance, unit }; }
 
-  // 引き出し線（細い点線）
-  function leader(x1, y1, x2, y2) {
-    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'gray', width: 1, dashed: true };
-  }
+  // ---- 写真ふうの画像の上に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+
+  // 画像（場面いっぱい）。src は assets/images/nature/<カード id>.jpg
+  function photo(id) { return { type: 'image', src: 'assets/images/nature/' + id + '.jpg' }; }
+  // 写真の上の引き出し線（濃い実線）
+  function pin(x1, y1, x2, y2) { return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 }; }
+  // 写真の上の矢印（食べられる → 食べる）
+  function eat(x1, y1, x2, y2) { return { type: 'arrow', x1, y1, x2, y2, width: 2 }; }
+  // 白い下地つきの文字。o で size・anchor・bold・color を上書きする（size の既定 14）
+  function tag(x, y, text, o) { return Object.assign({ type: 'text', x, y, text, size: 14, bg: true }, o); }
 
   // ---- 生物の図の部品（どれも (cx, cy) が中心あたり。横は cx±24 に収まる） ----
 
@@ -81,16 +87,6 @@
       { type: 'line', points: [[cx + 22, cy + 10], [cx + 10, cy - 2], [cx - 2, cy + 10], [cx - 12, cy - 2]], color: 'brown', width: 6 },
       { type: 'ellipse', x: cx - 16, y: cy - 6, rx: 8, ry: 6, fill: 'brown' },
       { type: 'circle', x: cx - 18, y: cy - 8, r: 2, fill: 'ink' },
-    ];
-  }
-
-  // 魚（左向き）。s は倍率。x は cx−38s〜cx+52s
-  function fish(cx, cy, s, color) {
-    const k = v => v * s;
-    return [
-      { type: 'polygon', points: [[cx + k(32), cy], [cx + k(52), cy - k(16)], [cx + k(52), cy + k(16)]], fill: color },
-      { type: 'ellipse', x: cx, y: cy, rx: k(38), ry: k(18), fill: color },
-      { type: 'circle', x: cx - k(24), y: cy - k(5), r: Math.max(1.5, k(3)), fill: 'ink' },
     ];
   }
 
@@ -207,39 +203,42 @@
       {
         id: 'nature-1-c1',
         text: 'ある地域にすむ生物と、水・空気・土などの環境をひとまとまりにとらえたものを**生態系**といいます。生物どうしの「食べる・食べられる」の関係のつながりを**食物連鎖**といい、図では食べられる生物から食べる生物へ矢印をかきます。',
-        // イネ → バッタ → カエル → ヘビ
-        figure: scene(chainRow().concat([
-          { type: 'text', x: 160, y: 40, text: '食べられる生物 → 食べる生物', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 160, y: 210, text: '矢印の先にいるのが、食べる生物', anchor: 'middle', size: 13 },
-        ])),
+        // イネ → バッタ → カエル → ヘビ（写真。生物の中心は x = 40・122・202・280、y = 108〜120）
+        figure: scene([
+          photo('nature-1-c1'),
+          tag(160, 36, '食べられる生物 → 食べる生物', { anchor: 'middle', bold: true }),
+          tag(42, 174, 'イネ', { anchor: 'middle' }),
+          tag(122, 174, 'バッタ', { anchor: 'middle' }),
+          tag(202, 174, 'カエル', { anchor: 'middle' }),
+          tag(280, 174, 'ヘビ', { anchor: 'middle' }),
+          eat(62, 169, 96, 169),
+          eat(148, 169, 176, 169),
+          eat(228, 169, 260, 169),
+          tag(160, 212, '矢印の先にいるのが、食べる生物', { anchor: 'middle', size: 13 }),
+        ]),
       },
       {
         id: 'nature-1-c2',
         text: '植物は光合成で無機物から有機物をつくるので**生産者**といいます。植物を食べる草食動物や、ほかの動物を食べる肉食動物は、生産者がつくった有機物をとり入れているので**消費者**といいます。食物連鎖は網の目のようにからみ合っていて、これを**食物網**といいます。',
-        // 食物網（生産者と消費者）
+        // 食物網（写真。上段 ヘビ・タカ、中段 バッタ・カエル・ネズミ、下段 草・木の実）。矢印は食べられる → 食べる
         figure: scene([
-          { type: 'rect', x: 168, y: 17, width: 64, height: 26, rx: 6, fill: 'white' },
-          { type: 'text', x: 200, y: 35, text: 'タカ', anchor: 'middle', size: 13 },
-          { type: 'rect', x: 78, y: 71, width: 64, height: 26, rx: 6, fill: 'white' },
-          { type: 'text', x: 110, y: 89, text: 'カエル', anchor: 'middle', size: 13 },
-          { type: 'rect', x: 218, y: 71, width: 64, height: 26, rx: 6, fill: 'white' },
-          { type: 'text', x: 250, y: 89, text: 'ヘビ', anchor: 'middle', size: 13 },
-          { type: 'rect', x: 78, y: 125, width: 64, height: 26, rx: 6, fill: 'white' },
-          { type: 'text', x: 110, y: 143, text: 'バッタ', anchor: 'middle', size: 13 },
-          { type: 'rect', x: 218, y: 125, width: 64, height: 26, rx: 6, fill: 'white' },
-          { type: 'text', x: 250, y: 143, text: 'ネズミ', anchor: 'middle', size: 13 },
-          { type: 'rect', x: 110, y: 187, width: 140, height: 26, rx: 6, fill: 'lightgreen' },
-          { type: 'text', x: 180, y: 205, text: '草・木の実', anchor: 'middle', size: 13 },
-          { type: 'arrow', x1: 150, y1: 186, x2: 120, y2: 155, width: 2 },
-          { type: 'arrow', x1: 210, y1: 186, x2: 240, y2: 155, width: 2 },
-          { type: 'arrow', x1: 110, y1: 124, x2: 110, y2: 101, width: 2 },
-          { type: 'arrow', x1: 143, y1: 84, x2: 214, y2: 84, width: 2 },
-          { type: 'arrow', x1: 250, y1: 124, x2: 250, y2: 101, width: 2 },
-          { type: 'arrow', x1: 238, y1: 70, x2: 214, y2: 47, width: 2 },
-          { type: 'line', points: [[283, 138], [304, 138], [304, 30], [236, 30]], width: 2, arrow: true },
-          { type: 'line', points: [[62, 20], [62, 150]], color: 'gray', width: 2 },
-          { type: 'text', x: 8, y: 90, text: '消費者', size: 14, bold: true },
-          { type: 'text', x: 8, y: 205, text: '生産者', size: 14, bold: true },
+          photo('nature-1-c2'),
+          tag(95, 84, 'ヘビ', { anchor: 'middle', size: 13 }),
+          tag(266, 44, 'タカ', { size: 13 }),
+          tag(62, 162, 'バッタ', { anchor: 'middle', size: 13 }),
+          tag(160, 162, 'カエル', { anchor: 'middle', size: 13 }),
+          tag(262, 162, 'ネズミ', { anchor: 'middle', size: 13 }),
+          tag(130, 214, '草', { size: 13 }),
+          tag(262, 190, '木の実', { anchor: 'middle', size: 13 }),
+          eat(100, 172, 96, 150),     // 草 → バッタ
+          eat(222, 194, 236, 154),    // 木の実 → ネズミ
+          eat(104, 126, 128, 126),    // バッタ → カエル
+          eat(150, 104, 122, 72),     // カエル → ヘビ
+          eat(232, 106, 146, 62),     // ネズミ → ヘビ
+          eat(144, 40, 184, 40),      // ヘビ → タカ
+          eat(258, 104, 242, 76),     // ネズミ → タカ
+          tag(312, 92, '消費者', { anchor: 'end', bold: true }),
+          tag(312, 230, '生産者', { anchor: 'end', bold: true }),
         ]),
       },
       {
@@ -256,6 +255,7 @@
       },
       {
         id: 'nature-1-c4',
+        anim: 'na-balance',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '生物の数量は、一時的に増えたり減ったりしても、やがてもとにもどり、ほぼ一定に保たれます（**つり合い**）。草食動物が増えると、植物は減り、肉食動物は増えます。すると草食動物は減り、やがてもとのつり合いにもどります。',
         // 数量のつり合いがもどるまで
         figure: scene([
@@ -401,78 +401,51 @@
       {
         id: 'nature-2-c1',
         text: '生物の死がいやふんなどの有機物を、二酸化炭素や水などの無機物に分解する生物を**分解者**といいます。カビ・キノコなどの菌類と、乳酸菌・大腸菌などの細菌類です。土の中のミミズやダンゴムシも、落ち葉を食べて細かくし、分解にかかわります。',
-        // 土の中と地面の分解者
+        // 分解者のなかま（写真。左上 アオカビの生えたパン、右上 落ち葉のキノコ、左下 ミミズ、右下 ダンゴムシ）
         figure: scene([
-          { type: 'rect', x: 0, y: 90, width: 320, height: 150, fill: 'sand', stroke: 'none' },
-          { type: 'line', points: [[0, 90], [320, 90]], color: 'brown', width: 3 },
-          { type: 'ellipse', x: 40, y: 86, rx: 18, ry: 5, fill: 'orange' },
-          { type: 'ellipse', x: 96, y: 87, rx: 16, ry: 4, fill: 'brown' },
-          { type: 'ellipse', x: 250, y: 86, rx: 18, ry: 5, fill: 'orange' },
-          { type: 'circle', x: 34, y: 79, r: 3, fill: 'gray', stroke: 'none' },
-          { type: 'circle', x: 41, y: 77, r: 3, fill: 'gray', stroke: 'none' },
-          { type: 'circle', x: 48, y: 79, r: 3, fill: 'gray', stroke: 'none' },
-          { type: 'text', x: 8, y: 62, text: 'カビ（菌類）', size: 12 },
-          { type: 'rect', x: 144, y: 66, width: 12, height: 24, fill: 'white' },
-          { type: 'polygon', points: [[126, 68], [150, 44], [174, 68]], fill: 'brown' },
-          { type: 'text', x: 180, y: 60, text: 'キノコ（菌類）', size: 12 },
-          { type: 'line', points: [[50, 150], [70, 140], [90, 150], [110, 140], [126, 148]], color: 'pink', width: 7 },
-          { type: 'text', x: 60, y: 176, text: 'ミミズ', size: 13 },
-          { type: 'ellipse', x: 200, y: 140, rx: 18, ry: 11, fill: 'gray' },
-          { type: 'line', points: [[194, 130], [194, 150]], color: 'line', width: 1 },
-          { type: 'line', points: [[202, 129], [202, 151]], color: 'line', width: 1 },
-          { type: 'line', points: [[210, 131], [210, 149]], color: 'line', width: 1 },
-          { type: 'text', x: 200, y: 172, text: 'ダンゴムシ', anchor: 'middle', size: 13 },
-          { type: 'circle', x: 274, y: 176, r: 28, fill: 'white', stroke: 'line' },
-          { type: 'ellipse', x: 264, y: 166, rx: 6, ry: 3, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 282, y: 172, rx: 6, ry: 3, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 270, y: 186, rx: 6, ry: 3, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 286, y: 188, rx: 6, ry: 3, fill: 'purple', stroke: 'none' },
-          { type: 'text', x: 274, y: 226, text: '細菌類（拡大）', anchor: 'middle', size: 12 },
+          photo('nature-2-c1'),
+          tag(78, 116, 'カビ（菌類）', { anchor: 'middle' }),
+          tag(239, 116, 'キノコ（菌類）', { anchor: 'middle' }),
+          tag(79, 232, 'ミミズ', { anchor: 'middle' }),
+          tag(240, 232, 'ダンゴムシ', { anchor: 'middle' }),
         ]),
       },
       {
         id: 'nature-2-c2',
         text: '**菌類**（カビ・キノコ）は、体が菌糸という糸のようなものでできていて、多くは胞子でふえます。**細菌類**は、1 つの細胞からなるとても小さな生物で、分裂してふえます。どちらも有機物を分解して、生きるためのエネルギーを得ています。',
-        // 菌類と細菌類のくらべ
+        // 菌類と細菌類のくらべ（写真。左 アオカビ、右 乳酸菌の顕微鏡の視野。視野の中心 (80, 93)・(240, 93)、半径 75）
         figure: scene([
-          { type: 'line', points: [[160, 10], [160, 230]], color: 'gray', width: 1 },
-          { type: 'text', x: 80, y: 28, text: '菌類', anchor: 'middle', size: 14, bold: true },
-          { type: 'text', x: 240, y: 28, text: '細菌類', anchor: 'middle', size: 14, bold: true },
-          { type: 'line', points: [[80, 112], [60, 130]], color: 'gray', width: 1 },
-          { type: 'line', points: [[80, 112], [80, 134]], color: 'gray', width: 1 },
-          { type: 'line', points: [[80, 112], [100, 130]], color: 'gray', width: 1 },
-          { type: 'rect', x: 72, y: 82, width: 16, height: 30, fill: 'white' },
-          { type: 'polygon', points: [[50, 84], [80, 48], [110, 84]], fill: 'brown' },
-          { type: 'ellipse', x: 214, y: 70, rx: 10, ry: 5, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 250, y: 84, rx: 10, ry: 5, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 230, y: 104, rx: 10, ry: 5, fill: 'purple', stroke: 'none' },
-          { type: 'ellipse', x: 266, y: 60, rx: 10, ry: 5, fill: 'purple', stroke: 'none' },
-          { type: 'text', x: 80, y: 160, text: 'カビ・キノコ', anchor: 'middle', size: 13 },
-          { type: 'text', x: 80, y: 184, text: '体は菌糸でできている', anchor: 'middle', size: 12 },
-          { type: 'text', x: 80, y: 206, text: '多くは胞子でふえる', anchor: 'middle', size: 12 },
-          { type: 'text', x: 240, y: 160, text: '乳酸菌・大腸菌', anchor: 'middle', size: 13 },
-          { type: 'text', x: 240, y: 184, text: '1 つの細胞でできている', anchor: 'middle', size: 12 },
-          { type: 'text', x: 240, y: 206, text: '分裂してふえる', anchor: 'middle', size: 12 },
+          photo('nature-2-c2'),
+          tag(160, 24, '胞子', { anchor: 'middle', size: 13 }),
+          pin(146, 20, 92, 42),
+          tag(160, 160, '菌糸', { anchor: 'middle', size: 13 }),
+          pin(146, 155, 100, 140),
+          tag(80, 190, '菌類（アオカビ）', { anchor: 'middle', bold: true }),
+          tag(80, 210, '体は菌糸でできている', { anchor: 'middle', size: 13 }),
+          tag(80, 230, '多くは胞子でふえる', { anchor: 'middle', size: 13 }),
+          tag(240, 190, '細菌類（乳酸菌）', { anchor: 'middle', bold: true }),
+          tag(240, 210, '1 つの細胞でできている', { anchor: 'middle', size: 13 }),
+          tag(240, 230, '分裂してふえる', { anchor: 'middle', size: 13 }),
         ]),
       },
       {
         id: 'nature-2-c3',
         text: '落ち葉の下の土を水に入れてかき混ぜ、その上ずみ液をデンプン溶液に加えて数日置きます。ヨウ素液を加えると、そのままの土 A では青紫色にならず、焼いた土 B では青紫色になります。土の中の微生物がデンプンを分解したからです。',
-        // 土の上ずみ液の実験の結果
+        // 土の上ずみ液の実験の結果（写真。左 A のビーカー x 27〜145、右 B のビーカー x 173〜290、どちらも y 54〜194）
         figure: scene([
-          { type: 'text', x: 160, y: 22, text: 'デンプン溶液に加えて数日後、ヨウ素液を入れる', anchor: 'middle', size: 12 },
-          { type: 'text', x: 90, y: 54, text: 'A 土の上ずみ液', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 54, text: 'B 焼いた土の上ずみ液', anchor: 'middle', size: 13 },
-          { type: 'beaker', x: 90, y: 160, level: 0.55, liquid: '#D9A441' },
-          { type: 'beaker', x: 230, y: 160, level: 0.55, liquid: 'purple' },
-          { type: 'text', x: 90, y: 186, text: '青紫色にならない', anchor: 'middle', size: 13 },
-          { type: 'text', x: 230, y: 186, text: '青紫色になる', anchor: 'middle', size: 13 },
-          { type: 'text', x: 90, y: 210, text: 'デンプンが分解された', anchor: 'middle', size: 12 },
-          { type: 'text', x: 230, y: 210, text: 'デンプンが残った', anchor: 'middle', size: 12 },
+          photo('nature-2-c3'),
+          tag(160, 18, 'デンプン溶液に加えて数日後、ヨウ素液を入れる', { anchor: 'middle', size: 13 }),
+          tag(86, 44, 'A 土の上ずみ液', { anchor: 'middle', size: 13, bold: true }),
+          tag(231, 44, 'B 焼いた土の上ずみ液', { anchor: 'middle', size: 13, bold: true }),
+          tag(86, 212, '青紫色にならない', { anchor: 'middle', size: 13 }),
+          tag(231, 212, '青紫色になる', { anchor: 'middle', size: 13 }),
+          tag(86, 232, 'デンプンが分解された', { anchor: 'middle', size: 13 }),
+          tag(231, 232, 'デンプンが残った', { anchor: 'middle', size: 13 }),
         ]),
       },
       {
         id: 'nature-2-c4',
+        anim: 'na-carbon-cycle',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '大気中の二酸化炭素の炭素は、植物の光合成で有機物にとりこまれ、食物連鎖で動物へ移ります。生物の呼吸や分解者のはたらきで、再び二酸化炭素になって大気にもどります。酸素も、光合成と呼吸によって**循環**しています。',
         // 炭素の循環
         figure: scene(carbonCycle().concat([
@@ -592,39 +565,28 @@
       {
         id: 'nature-3-c1',
         text: '川にすむ生物の種類は、水のよごれの程度によってちがいます。カワゲラやサワガニがいればきれいな水、アメリカザリガニやサカマキガイばかりならとてもきたない水です。このように環境を知る手がかりになる生物を**指標生物**といいます。',
-        // 水のよごれの程度と、見つかる生物の例
+        // 水のよごれの程度と、見つかる生物の例（写真。4 段 × 2 種。段の中心 y = 33・91・147・207、生物の中心 x = 180・272）
         figure: scene([
-          ...[40, 82, 124, 166, 208].map(y => ({ type: 'line', points: [[8, y], [312, y]], color: 'gray', width: 1 })),
-          { type: 'line', points: [[124, 8], [124, 208]], color: 'gray', width: 1 },
-          { type: 'text', x: 14, y: 30, text: '水のよごれ', size: 13, bold: true },
-          { type: 'text', x: 130, y: 30, text: '見つかる生物の例', size: 13, bold: true },
+          photo('nature-3-c1'),
+          ...['きれいな水', 'ややきれいな水', 'きたない水', 'とてもきたない水'].map((t, i) => tag(6, [38, 96, 152, 212][i], t, { bold: true })),
           ...[
-            ['きれいな水', 'カワゲラ・サワガニ'],
-            ['ややきれいな水', 'カワニナ・ゲンジボタル'],
-            ['きたない水', 'タニシ・ミズカマキリ'],
-            ['とてもきたない水', 'アメリカザリガニ・サカマキガイ'],
-          ].flatMap(([a, b], i) => [
-            { type: 'text', x: 14, y: 66 + i * 42, text: a, size: 13 },
-            { type: 'text', x: 130, y: 66 + i * 42, text: b, size: 12 },
-          ]),
-          { type: 'text', x: 160, y: 230, text: '水のよごれを知る手がかり ＝ 指標生物', anchor: 'middle', size: 13 },
+            [67, 'カワゲラ', 'サワガニ'],
+            [122, 'カワニナ', 'ゲンジボタル'],
+            [181, 'タニシ', 'ミズカマキリ'],
+            [237, 'アメリカザリガニ', 'サカマキガイ'],
+          ].flatMap(([y, a, b]) => [tag(a.length > 6 ? 176 : 180, y, a, { anchor: 'middle', size: 13 }), tag(274, y, b, { anchor: 'middle', size: 13 })]),
         ]),
       },
       {
         id: 'nature-3-c2',
         text: '人間の活動によって、もともといなかった地域に持ちこまれて定着した生物を**外来種**といいます。オオクチバスやアライグマなどは、もとからその地域にすむ**在来種**を食べたり、すみかをうばったりして、生態系のつり合いをくずすことがあります。',
-        // 池の外来種と在来種
+        // 外来種（写真。左 オオクチバス x 4〜149、右 アライグマ x 167〜319、どちらも y 154 より上）
         figure: scene([
-          { type: 'ellipse', x: 160, y: 130, rx: 150, ry: 80, fill: 'water', stroke: 'line' },
-          ...fish(220, 110, 1, 'green'),
-          ...fish(92, 140, 0.4, 'yellow'),
-          ...fish(112, 168, 0.4, 'yellow'),
-          ...fish(66, 172, 0.4, 'yellow'),
-          { type: 'arrow', x1: 176, y1: 118, x2: 124, y2: 140, color: 'orange', label: '食べる' },
-          { type: 'text', x: 160, y: 36, text: 'オオクチバス（外来種）', anchor: 'middle', size: 13 },
-          leader(210, 40, 214, 90),
-          { type: 'text', x: 160, y: 232, text: '在来種（もとからいる魚）', anchor: 'middle', size: 13 },
-          leader(110, 220, 96, 180),
+          photo('nature-3-c2'),
+          tag(76, 170, 'オオクチバス（外来種）', { anchor: 'middle', size: 13 }),
+          tag(243, 170, 'アライグマ（外来種）', { anchor: 'middle', size: 13 }),
+          tag(160, 206, '在来種を食べる・すみかをうばう', { anchor: 'middle', bold: true }),
+          tag(160, 228, '生態系のつり合いをくずすことがある', { anchor: 'middle', size: 13 }),
         ]),
       },
       {
@@ -798,31 +760,15 @@
       {
         id: 'nature-4-c2',
         text: '**化石燃料**（石油・石炭・天然ガス）は大昔の生物の死がいからでき、量に限りがあります。太陽光・風力・地熱・バイオマスなど、くり返し使えるエネルギーを**再生可能エネルギー**といいます。資源を大切に使い、環境を守り続けられる社会を**持続可能な社会**といいます。',
-        // 再生可能エネルギーと化石燃料
+        // 再生可能エネルギーと化石燃料（写真。2 段 2 列: 上 y 7〜90、下 y 120〜206、左 x 7〜154、右 x 166〜313）
         figure: scene([
-          { type: 'text', x: 160, y: 20, text: '再生可能エネルギー（くり返し使える）', anchor: 'middle', size: 13, bold: true },
-          ...[8, 84, 160, 236].map(x => ({ type: 'rect', x, y: 30, width: 72, height: 98, rx: 6, fill: 'white', stroke: 'line' })),
-          { type: 'circle', x: 28, y: 50, r: 9, fill: 'yellow', stroke: 'orange' },
-          { type: 'polygon', points: [[20, 96], [36, 70], [70, 70], [54, 96]], fill: 'blue' },
-          { type: 'line', points: [[120, 98], [120, 62]], width: 3 },
-          { type: 'line', points: [[120, 60], [120, 38]], color: 'gray', width: 4 },
-          { type: 'line', points: [[120, 60], [101, 71]], color: 'gray', width: 4 },
-          { type: 'line', points: [[120, 60], [139, 71]], color: 'gray', width: 4 },
-          { type: 'rect', x: 166, y: 78, width: 60, height: 20, fill: 'brown', stroke: 'none' },
-          { type: 'line', points: [[186, 74], [180, 60], [188, 46]], color: 'gray', width: 3 },
-          { type: 'line', points: [[204, 74], [198, 60], [206, 46]], color: 'gray', width: 3 },
-          { type: 'rect', x: 248, y: 80, width: 48, height: 14, rx: 6, fill: 'brown' },
-          { type: 'rect', x: 254, y: 66, width: 36, height: 14, rx: 6, fill: 'brown' },
-          { type: 'ellipse', x: 272, y: 50, rx: 14, ry: 8, fill: 'lightgreen' },
-          { type: 'text', x: 44, y: 120, text: '太陽光', anchor: 'middle', size: 13 },
-          { type: 'text', x: 120, y: 120, text: '風力', anchor: 'middle', size: 13 },
-          { type: 'text', x: 196, y: 120, text: '地熱', anchor: 'middle', size: 13 },
-          { type: 'text', x: 272, y: 120, text: 'バイオマス', anchor: 'middle', size: 13 },
-          { type: 'line', points: [[8, 140], [312, 140]], color: 'gray', width: 1 },
-          { type: 'text', x: 160, y: 162, text: '化石燃料（量に限りがある）', anchor: 'middle', size: 13, bold: true },
-          { type: 'text', x: 160, y: 184, text: '石油・石炭・天然ガス', anchor: 'middle', size: 13 },
-          { type: 'text', x: 160, y: 206, text: '大昔の生物の死がいが変化したもの', anchor: 'middle', size: 12 },
-          { type: 'text', x: 160, y: 228, text: '燃やすと二酸化炭素が出る', anchor: 'middle', size: 12 },
+          photo('nature-4-c2'),
+          tag(14, 26, '太陽光'),
+          tag(174, 26, '風力'),
+          tag(14, 139, '地熱'),
+          tag(174, 139, 'バイオマス'),
+          tag(160, 111, '再生可能エネルギー（くり返し使える）', { anchor: 'middle', bold: true }),
+          tag(160, 226, '化石燃料（石油・石炭・天然ガス）は量に限りがある', { anchor: 'middle', size: 13 }),
         ]),
       },
       {

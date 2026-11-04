@@ -147,3 +147,6 @@ Ruling: Codex が利用上限（2026-11-04 21:05 まで）のため、レビュ�
 Ruling: ふりがなは辞書の最長一致（js/ruby.js + content/readings.js）で全漢字に付ける方式。形態素解析ライブラリは使えないため。教材を足したら `node tools/ruby-missing.js --split --single` で辞書を足す — コスト: 文脈依存の誤読（日の読みなど）が少し残る。
 Ruling: 画像は ChatGPT で生成し、内蔵ブラウザで画像だけを表示して画面撮影（708×531 PNG）で取り込む。ダウンロード・クリップボード・postMessage・iframe は CSP とブラウザの制限で不可。写真に差しかえる図の計画は docs/image-plan.md（113 枚、A 48 から）。図の `image` 部品（figures.js）を追加（Claude round1 Medium 1/Low 2 → fix）。
 Ruling: 各単元の動く図（SVG アニメーション）はユーザーの指示で追加する。計画 docs/anim-plan.md を先に作り、anim.register で分野別ファイルに分ける案。VERSION 2026-11-04-15
+動く図 A（41 本）: 登録口（anim.register・helpers、opus、指示書 .ai-tasks/20261104-220000）→ 物理 11・地学 12・化学 12・生物 6 を 4 エージェント並行（指示は docs/anim-plan.md の章を直接参照）。Claude round1 ×2（物理・地学: Medium 1/Low 6 → 5 件 fix、2 件見送り / 化学・生物: Medium 4/Low 5 → 全件 fix）→ Claude round2 = 指摘なし → complete（KINDS 64、tests 477）。アプリ上で 7 分野の動きを確認（タブが前面のときだけ rAF が動く）。
+写真 A（生物 5 単元 48 枚）: ChatGPT で生成（Sonnet の courier、1 枚 約 1.5 分）→ 3 エージェントが content に組みこみ（image 部品＋bg つき文字＋引き出し線。指示書 .ai-tasks/20261104-224000）→ Claude round1 Medium 2/Low 5: M2（合計 12.7 MB の PNG を install 時に全部キャッシュ）は 640×480 JPEG 品質 82 に変換して対応（48 枚 1.6 MB）、M1（バッタのあしの位置）は B の後に作り直し、L1 対応、L2・L3 は先生の判断、L4 は次の修正で、L5 見送り。VERSION 2026-11-04-16
+Ruling: 画像は JPEG 640×480 で入れる（PNG 708×531 は 1 枚 200〜490 KB で重い）。113 枚でも約 4 MB の見込み — コスト: 細部がやや甘くなる。

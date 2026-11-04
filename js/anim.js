@@ -4,6 +4,8 @@
 // create(kind) はブラウザ専用。requestAnimationFrame で図を描き直し、要素が画面から外れたら自分で止まる。
 // 画面側（ui-screens.js の lessonCardBody）が create して、動きを減らす設定でなければ start() を呼ぶ。
 // 座標は x 右向き・y 下向き、場面 320×240。静止図（content/light.js の figure）と同じ item は同じ座標・文字を使う。
+// 光の 23 種はこのファイルの BUILD に書く。ほかの単元の動く図は分野ごとのファイル（js/anim-physics.js など）が
+// register(kind, frameFn, opts) で足す（書き方は docs/anim-guide.md）。
 (function (root) {
   'use strict';
 
@@ -36,6 +38,116 @@
   function rad2deg(x) { return x * 180 / Math.PI; }
   // 0→1→0 のゆっくりした往復
   function u(t) { return 0.5 - 0.5 * Math.cos(2 * Math.PI * t); }
+
+  // ---- 分野ごとのファイル（anim-physics.js など）でも使う道具（docs/anim-plan.md 3-2） ----
+
+  // 小数部分（負の数も 0 以上 1 未満にする）
+  function frac(x) { return x - Math.floor(x); }
+  // 動き始めと止まりをなめらかにする（0〜1 → 0〜1。範囲の外は 0〜1 に収めてから計算する）
+  function ease(k) { const q = clamp01(k); return q * q * (3 - 2 * q); }
+  // 振動 sin(2π(n·t + phase))。n を整数にすると t = 1 で t = 0 とつながる
+  function osc(t, n, phase) { return Math.sin(2 * Math.PI * (n * t + (Number(phase) || 0))); }
+  // 0→1→0 の三角波（気体の粒子が壁ではね返る動き）
+  function tri(s) { return 1 - Math.abs(2 * frac(s) - 1); }
+  // v を lo 以上 hi 未満に折り返す（はしまで行ったら反対のはしから出てくる）
+  function wrap(v, lo, hi) {
+    if (!(hi > lo)) return lo;   // 幅が 0 以下なら lo（0 除算で NaN を返さない）
+    return lo + frac((v - lo) / (hi - lo)) * (hi - lo);
+  }
+
+  // 折れ線 points = [[x, y], ...] の長さ
+  function pathLen(points) {
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      total += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+    }
+    return total;
+  }
+
+  // 折れ線の上で、全長に対する割合 k（0〜1）の点と、その辺の向き（長さ 1 のベクトル tx, ty）。
+  // 長さ 0 の辺は飛ばす。折れ線の長さが 0 のときは最初の点（向き 1, 0）
+  function along(points, k) {
+    const q = clamp01(Number(k) || 0);
+    const total = pathLen(points);
+    if (!(total > 0)) return { x: points[0][0], y: points[0][1], tx: 1, ty: 0 };
+    let remain = q * total;
+    let last = null;
+    for (let i = 1; i < points.length; i++) {
+      const [x1, y1] = points[i - 1], [x2, y2] = points[i];
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      if (!(len > 0)) continue;
+      last = { x1, y1, x2, y2, len };
+      if (remain <= len) {
+        const s = remain / len;
+        return { x: lerp(x1, x2, s), y: lerp(y1, y2, s), tx: (x2 - x1) / len, ty: (y2 - y1) / len };
+      }
+      remain -= len;
+    }
+    // 計算の誤差で最後の辺を過ぎたとき: 終点
+    return { x: last.x2, y: last.y2, tx: (last.x2 - last.x1) / last.len, ty: (last.y2 - last.y1) / last.len };
+  }
+
+  // 折れ線を全長の割合 k（0〜1）まで切った点の配列（2 点以上）。k = 0 や長さ 0 の折れ線は []
+  function partial(points, k) {
+    const q = clamp01(Number(k) || 0);
+    const total = pathLen(points);
+    if (!(q > 0) || !(total > 0)) return [];
+    if (q >= 1) return points.map(p => [p[0], p[1]]);
+    let remain = q * total;
+    const out = [[points[0][0], points[0][1]]];
+    for (let i = 1; i < points.length; i++) {
+      const [x1, y1] = points[i - 1], [x2, y2] = points[i];
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      if (!(len > 0)) continue;
+      if (remain < len) {
+        out.push([lerp(x1, x2, remain / len), lerp(y1, y2, remain / len)]);
+        break;
+      }
+      out.push([x2, y2]);
+      remain -= len;
+      if (remain <= 1e-9) break;   // 計算の誤差で長さ 0 の点を足さない
+    }
+    return out;
+  }
+
+  // 光以外の「伸びる線」: partial の点を 1 本の line（矢印つき）にした配列。k = 0 なら []
+  // style: { color, width, dashed }（どれも任意。figures.js の line と同じ意味）
+  function growLine(points, k, style) {
+    const ps = partial(points, k);
+    if (ps.length < 2) return [];
+    const it = { type: 'line', points: ps, arrow: true };
+    const st = style || {};
+    if (st.color !== undefined) it.color = st.color;
+    if (st.width !== undefined) it.width = st.width;
+    if (st.dashed) it.dashed = true;
+    return [it];
+  }
+
+  // 中心 (cx, cy)・半径 r の円の上で、角 d 度の点 [x, y]（右が 0°、画面で反時計回りが正。content/space.js と同じ）
+  function onCircle(cx, cy, r, d) {
+    return [cx + r * Math.cos(deg(d)), cy - r * Math.sin(deg(d))];
+  }
+
+  // 2 つの色 '#rrggbb' を k（0〜1）で混ぜた '#RRGGBB'。形のまちがった色は例外
+  const HEX6_RE = /^#[0-9a-fA-F]{6}$/;
+  function mix(c1, c2, k) {
+    if (!HEX6_RE.test(c1) || !HEX6_RE.test(c2)) throw new Error('mix の色は #rrggbb: ' + c1 + ', ' + c2);
+    const q = clamp01(Number(k) || 0);
+    let out = '#';
+    for (let i = 1; i < 7; i += 2) {
+      const v = Math.round(lerp(parseInt(c1.slice(i, i + 2), 16), parseInt(c2.slice(i, i + 2), 16), q));
+      out += (v < 16 ? '0' : '') + v.toString(16).toUpperCase();
+    }
+    return out;
+  }
+
+  // 色のトークン名 → 色コード（docs/figures-guide.md の表・js/figures.js の COLOR と同じ）。mix にトークンの色を渡すとき
+  const TOKEN_HEX = Object.freeze({
+    ink: '#1B2430', blue: '#1A5CFF', gray: '#8A94A6', line: '#5A6B85', green: '#2E9E5B', orange: '#F08C2E',
+    red: '#D9534F', yellow: '#FFD34D', pink: '#F2A6C2', purple: '#8E6BD6', brown: '#A0623A', sky: '#CFE4FF',
+    water: '#CFE4FF', glass: '#E6E8EC', white: '#FFFFFF', lightgreen: '#C9EBD3', sand: '#E8D8B0', rock: '#B8B2A7',
+    lensFill: '#E8F0FF', bulb: '#FFD34D', bulbEdge: '#C98A00', shadow: '#4A4A4A',
+  });
 
   // 折れ線 points = [[x, y], ...] を、全長に対する割合 p（0〜1）まで描いた ray の配列。
   // 各辺を 1 本の ray にし、いちばん先の（途中まで描いている）辺だけ矢印。長さ 0 の辺は飛ばす。
@@ -494,10 +606,41 @@
     'virtual-image': virtualImage,
   };
 
-  // kind の動く図の、1 周の中の位置 t の場面。知らない kind は例外
+  // ---- 登録口（分野ごとのファイルから動く図を足す。docs/anim-plan.md 3-1） ----
+
+  // 登録した kind → { fn, restT, period }
+  const REGISTERED = new Map();
+  const KIND_RE = /^[a-z]+(-[a-z0-9]+)*$/;
+
+  // kind の動く図を足す。frameFn(t) は item の配列を返す純粋関数（光の BUILD の関数と同じ形）
+  // opts.restT: 止まっているときに見せる位置（0 以上 1 未満、既定 0）。opts.period: 1 周の時間 ms（正の数、既定 PERIOD_MS）
+  // 形のまちがった名前・すでにある名前（光の 23 種をふくむ）・関数でない frameFn・範囲外の restT・正でない period は例外
+  function register(kind, frameFn, opts) {
+    if (typeof kind !== 'string' || !KIND_RE.test(kind)) throw new Error('動く図の名前の形がちがう: ' + kind);
+    if (Object.prototype.hasOwnProperty.call(BUILD, kind) || REGISTERED.has(kind)) throw new Error('すでにある動く図: ' + kind);
+    if (typeof frameFn !== 'function') throw new Error('動く図の frameFn が関数でない: ' + kind);
+    const o = opts === undefined || opts === null ? {} : opts;
+    if (typeof o !== 'object') throw new Error('動く図の opts がオブジェクトでない: ' + kind);
+    const rest = o.restT === undefined ? 0 : o.restT;
+    if (typeof rest !== 'number' || !(rest >= 0 && rest < 1)) throw new Error('動く図の restT は 0 以上 1 未満: ' + kind);
+    const period = o.period === undefined ? PERIOD_MS : o.period;
+    if (typeof period !== 'number' || !Number.isFinite(period) || !(period > 0)) throw new Error('動く図の period は正の数: ' + kind);
+    REGISTERED.set(kind, { fn: frameFn, restT: rest, period });
+    KINDS.push(kind);   // 光の 23 種の後ろに足す（画面側は KINDS.includes で見ている）
+  }
+
+  // 1 周の時間 ms（登録の opts.period、なければ PERIOD_MS）
+  function periodOf(kind) {
+    return REGISTERED.has(kind) ? REGISTERED.get(kind).period : PERIOD_MS;
+  }
+
+  // kind の動く図の、1 周の中の位置 t の場面。光（BUILD）→ 登録したもの の順で探す。知らない kind は例外
   function frame(kind, t) {
-    if (!Object.prototype.hasOwnProperty.call(BUILD, kind)) throw new Error('知らない動く図: ' + kind);
-    return { width: WIDTH, height: HEIGHT, items: BUILD[kind](Number(t) || 0) };
+    let fn;
+    if (Object.prototype.hasOwnProperty.call(BUILD, kind)) fn = BUILD[kind];
+    else if (REGISTERED.has(kind)) fn = REGISTERED.get(kind).fn;
+    else throw new Error('知らない動く図: ' + kind);
+    return { width: WIDTH, height: HEIGHT, items: fn(Number(t) || 0) };
   }
 
   // 動きを減らす設定（matchMedia がない環境では false）
@@ -523,6 +666,7 @@
     element.append(box, toggle);
 
     let t = restT(kind);   // いまの位置（止めたときはそこから続ける）。最初は止まった状態で意味の分かる絵
+    const period = periodOf(kind);   // 1 周の時間 ms
     let t0 = 0;         // 位置 0 に当たる時刻
     let rafId = null;
 
@@ -531,7 +675,7 @@
 
     function tick(now) {
       if (!element.isConnected) { rafId = null; stop(); return; }   // 画面から外れたら止まる
-      t = ((now - t0) % PERIOD_MS) / PERIOD_MS;
+      t = ((now - t0) % period) / period;
       draw();
       rafId = root.requestAnimationFrame(tick);
     }
@@ -540,7 +684,7 @@
       if (rafId !== null) return;
       toggle.textContent = 'とめる';
       rafId = root.requestAnimationFrame((now) => {
-        t0 = now - t * PERIOD_MS;   // 止めたときの t から続ける
+        t0 = now - t * period;   // 止めたときの t から続ける
         tick(now);
       });
     }
@@ -559,16 +703,24 @@
     return { element, start, stop, isPlaying };
   }
 
-  // helpers はテスト用に公開する（画面側は使わない）
-  const helpers = { clamp01, stage, lerp, grow, deg, rad2deg, u, N };
+  // helpers はテストと分野ごとのファイル（anim-physics.js など）が使う（画面側は使わない）
+  const helpers = {
+    clamp01, stage, lerp, grow, deg, rad2deg, u, N,
+    clamp, ease, osc, tri, wrap, pathLen, along, partial, growLine, onCircle, mix, TOKEN_HEX,
+  };
   // 止まっているときに見せる位置。光線が伸びていく kind は t = 0 だと光線がないので、描き終わり（0.99）を見せる
   // （「動きを減らす」設定で自動再生しないときも、光線と像が見えるようにする）
   const REST_AT_END = ['rays-spread', 'shadow-forms', 'light-to-eye', 'bounce-to-eye', 'reflect-travel',
     'image-behind-mirror', 'vertical-vs-oblique', 'coin-lift', 'stick-lift', 'lens-parallel-rays',
     'lens-special-rays', 'real-image-forms', 'virtual-image'];
-  function restT(kind) { return REST_AT_END.indexOf(kind) === -1 ? 0 : 0.99; }
+  // 光の REST_AT_END → 登録の opts.restT → 0
+  function restT(kind) {
+    if (REST_AT_END.indexOf(kind) !== -1) return 0.99;
+    if (REGISTERED.has(kind)) return REGISTERED.get(kind).restT;
+    return 0;
+  }
 
-  const api = { KINDS, PERIOD_MS, frame, create, prefersReducedMotion, restT, helpers };
+  const api = { KINDS, PERIOD_MS, frame, create, prefersReducedMotion, restT, register, periodOf, helpers };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.RikaQuest = Object.assign(root.RikaQuest || {}, { anim: api });

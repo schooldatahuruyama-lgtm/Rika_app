@@ -37,6 +37,15 @@
     return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'gray', width: 1, dashed: true };
   }
 
+  // ---- 写真ふうの画像の上に重ねる部品（docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+
+  // 画像（場面いっぱい）。src は assets/images/heredity/<カード id>.jpg
+  function photo(id) { return { type: 'image', src: 'assets/images/heredity/' + id + '.jpg' }; }
+  // 写真の上の引き出し線（濃い実線）
+  function pin(x1, y1, x2, y2) { return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 }; }
+  // 白い下地つきの文字。o で size・anchor・bold・color を上書きする（size の既定 14）
+  function tag(x, y, text, o) { return Object.assign({ type: 'text', x, y, text, size: 14, bg: true }, o); }
+
   // 染色体 1 本（紫の太い線）
   function chrom(x1, y1, x2, y2, width) {
     return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'purple', width: width || 4 };
@@ -246,20 +255,28 @@
       {
         id: 'life-1-c1',
         text: 'からだをつくる細胞が分かれて 2 つになることを**体細胞分裂**といいます。分裂が始まると、核の中に**染色体**というひものようなものが現れます。染色体は中央に並んだあと両端に分かれ、最後にしきりができて 2 つの細胞になります。',
-        // 体細胞分裂の進み方（根の先端の細胞の模式図）
+        // 酢酸オルセイン液で染めたタマネギの根の先端の細胞（顕微鏡写真）。①〜⑤は分裂の進む順
         figure: scene([
-          { type: 'text', x: 160, y: 30, text: '根の先端の細胞（模式図）', size: 13, anchor: 'middle' },
-          ...divCell(36, 76, 0), ...divCell(98, 76, 1), ...divCell(160, 76, 2), ...divCell(222, 76, 3), ...divCell(284, 76, 4),
-          ...[['分裂前', ''], ['染色体が', '現れる'], ['中央に', '並ぶ'], ['両端に', '分かれる'], ['しきりで', '2 つに']].flatMap(([a, b], i) => [
-            { type: 'text', x: 36 + i * 62, y: 124, text: a, size: 12, anchor: 'middle' },
-            { type: 'text', x: 36 + i * 62, y: 140, text: b, size: 12, anchor: 'middle' },
-          ]).filter(t => t.text !== ''),
-          { type: 'line', points: [[20, 164], [300, 164]], color: 'gray', width: 2, arrow: true },
-          { type: 'text', x: 160, y: 190, text: '分裂の進む向き', size: 13, anchor: 'middle' },
+          photo('life-1-c1'),
+          pin(212, 18, 150, 36),
+          tag(216, 22, '①分裂前', { size: 13 }),
+          pin(212, 54, 187, 66),
+          tag(216, 58, '④両端に', { size: 13 }),
+          tag(229, 75, '分かれる', { size: 13 }),
+          pin(212, 104, 147, 108),
+          tag(216, 108, '③中央に並ぶ', { size: 13 }),
+          pin(212, 136, 187, 142),
+          tag(216, 140, '⑤2つに', { size: 13 }),
+          tag(229, 157, '分かれる', { size: 13 }),
+          pin(212, 192, 173, 182),
+          tag(216, 196, '②染色体が', { size: 13 }),
+          tag(229, 213, '現れる', { size: 13 }),
+          tag(316, 236, '①〜⑤ 分裂の順', { size: 13, anchor: 'end' }),
         ]),
       },
       {
         id: 'life-1-c2',
+        anim: 'he-chromosome-copy',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '染色体には、生物の形や性質を決める**遺伝子**がふくまれています。分裂の前に、それぞれの染色体は複製されて 2 本ずつになり、それが分かれて 2 つの細胞に入ります。そのため、分裂してできた細胞の染色体の数は、もとの細胞と同じです。',
         // 染色体の複製と、分かれたあとの数
         figure: scene([
@@ -285,17 +302,18 @@
       {
         id: 'life-1-c3',
         text: '根では、先端に近い部分で細胞分裂がさかんに行われています。この部分を**成長点**といいます。分裂してふえた細胞が、それぞれ大きくなることで、根はのびていきます。成長点の細胞は小さく、根もとに近い細胞ほど大きくなっています。',
-        // 根の先端をたてに切った模式図
-        figure: scene(rootItems(80).concat([
-          leader(102, 50, 150, 50),
-          { type: 'text', x: 154, y: 55, text: '大きくなった細胞', size: 13 },
-          leader(102, 140, 150, 140),
-          { type: 'text', x: 154, y: 145, text: '細胞が大きくなる', size: 13 },
-          leader(102, 190, 150, 190),
-          { type: 'text', x: 154, y: 195, text: '成長点（分裂がさかん）', size: 13 },
-          leader(98, 222, 150, 224),
-          { type: 'text', x: 154, y: 229, text: '根の先を守る部分', size: 13 },
-        ])),
+        // タマネギの根の先端をたてに切った顕微鏡写真（右はしが根の先）
+        figure: scene([
+          photo('life-1-c3'),
+          pin(294, 46, 294, 100),
+          tag(316, 40, '根の先を守る部分', { size: 13, anchor: 'end' }),
+          pin(60, 46, 60, 94),
+          tag(60, 40, '大きくなった細胞', { size: 13, anchor: 'middle' }),
+          pin(236, 200, 236, 142),
+          tag(236, 214, '成長点（分裂がさかん）', { size: 13, anchor: 'middle' }),
+          { type: 'arrow', x1: 150, y1: 190, x2: 14, y2: 190, width: 2 },
+          tag(14, 214, '根もとへ', { size: 13 }),
+        ]),
       },
       {
         id: 'life-1-c4',
@@ -421,24 +439,21 @@
       {
         id: 'life-2-c1',
         text: '生物が自分と同じ種類の子をつくることを**生殖**といいます。親のからだの一部が分かれて子になるふえ方を**無性生殖**といい、分裂、出芽、いもやさし木でふえる栄養生殖などがあります。子は親と同じ遺伝子を受けつぐので、形質も親と同じになります。',
-        // 無性生殖の例（分裂・出芽・栄養生殖）
+        // 無性生殖の例（分裂するゾウリムシ・出芽するヒドラ・芽の出たジャガイモの写真）
         figure: scene([
-          { type: 'ellipse', x: 34, y: 46, rx: 20, ry: 10, fill: 'white', stroke: 'line' },
-          { type: 'arrow', x1: 60, y1: 46, x2: 80, y2: 46, width: 2 },
-          { type: 'ellipse', x: 100, y: 36, rx: 14, ry: 7, fill: 'white', stroke: 'line' },
-          { type: 'ellipse', x: 100, y: 58, rx: 14, ry: 7, fill: 'white', stroke: 'line' },
-          { type: 'text', x: 128, y: 51, text: '分裂（ゾウリムシなど）', size: 13 },
-          { type: 'circle', x: 60, y: 122, r: 16, fill: 'white', stroke: 'line' },
-          { type: 'circle', x: 80, y: 106, r: 8, fill: 'white', stroke: 'line' },
-          { type: 'text', x: 128, y: 127, text: '出芽（酵母・ヒドラなど）', size: 13 },
-          { type: 'line', points: [[56, 184], [48, 164]], color: 'green', width: 3 },
-          { type: 'line', points: [[68, 184], [78, 166]], color: 'green', width: 3 },
-          { type: 'ellipse', x: 62, y: 198, rx: 30, ry: 16, fill: 'sand', stroke: 'brown' },
-          { type: 'text', x: 128, y: 203, text: '栄養生殖（いも・さし木）', size: 13 },
+          photo('life-2-c1'),
+          tag(54, 172, '分裂', { size: 15, anchor: 'middle', bold: true }),
+          tag(54, 192, '（ゾウリムシ）', { size: 13, anchor: 'middle' }),
+          tag(160, 172, '出芽', { size: 15, anchor: 'middle', bold: true }),
+          tag(160, 192, '（ヒドラ）', { size: 13, anchor: 'middle' }),
+          tag(267, 172, '栄養生殖', { size: 15, anchor: 'middle', bold: true }),
+          tag(267, 192, '（いも）', { size: 13, anchor: 'middle' }),
+          tag(160, 228, '親のからだの一部が子になる', { size: 13, anchor: 'middle' }),
         ]),
       },
       {
         id: 'life-2-c2',
+        anim: 'he-meiosis-fertilize',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '雄と雌がかかわるふえ方を**有性生殖**といいます。動物では精子と卵、植物では精細胞と卵細胞という**生殖細胞**がつくられます。生殖細胞は**減数分裂**でできるので、染色体の数がもとの半分です。精子と卵の核が合体する**受精**で、数はもとにもどります。',
         // 減数分裂と受精での染色体の数（4 本 → 2 本 → 受精で 4 本）
         figure: scene([
@@ -462,54 +477,37 @@
       {
         id: 'life-2-c3',
         text: '**受精卵**は細胞分裂をくり返して細胞の数をふやします。細胞分裂を始めてから、自分で食物をとり始めるまでの子を**胚**といいます。カエルでは、胚がおたまじゃくしになり、やがて親のからだになります。受精卵から親と同じようなからだができるまでの過程を**発生**といいます。',
-        // カエルの発生（受精卵 → 2 細胞 → 4 細胞 → 多くの細胞 → おたまじゃくし）
+        // カエルの発生（受精卵 → 2 細胞 → 4 細胞 → 多くの細胞 → おたまじゃくし）の写真
         figure: scene([
-          { type: 'circle', x: 26, y: 90, r: 16, fill: 'white', stroke: 'line' },
-          { type: 'circle', x: 80, y: 90, r: 18, fill: 'white', stroke: 'line' },
-          { type: 'line', points: [[80, 72], [80, 108]], color: 'line', width: 2 },
-          { type: 'circle', x: 134, y: 90, r: 18, fill: 'white', stroke: 'line' },
-          { type: 'line', points: [[134, 72], [134, 108]], color: 'line', width: 2 },
-          { type: 'line', points: [[116, 90], [152, 90]], color: 'line', width: 2 },
-          { type: 'circle', x: 190, y: 90, r: 18, fill: 'white', stroke: 'line' },
-          ...[[190, 90], [180, 82], [200, 82], [180, 98], [200, 98], [190, 76], [190, 104]]
-            .map(([x, y]) => ({ type: 'circle', x, y, r: 4, fill: 'white', stroke: 'line' })),
-          { type: 'polygon', points: [[270, 90], [306, 80], [306, 100]], fill: 'gray', stroke: 'line' },
-          { type: 'ellipse', x: 258, y: 90, rx: 16, ry: 11, fill: 'gray', stroke: 'line' },
-          { type: 'text', x: 26, y: 136, text: '受精卵', size: 12, anchor: 'middle' },
-          { type: 'text', x: 80, y: 136, text: '2 細胞', size: 12, anchor: 'middle' },
-          { type: 'text', x: 134, y: 136, text: '4 細胞', size: 12, anchor: 'middle' },
-          { type: 'text', x: 190, y: 136, text: '多くの細胞', size: 12, anchor: 'middle' },
-          { type: 'text', x: 270, y: 136, text: 'おたまじゃくし', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[60, 156], [60, 164], [220, 164], [220, 156]], color: 'gray', width: 2 },
-          { type: 'text', x: 140, y: 188, text: '胚（自分で食物をとる前）', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[20, 208], [300, 208]], color: 'gray', width: 2, arrow: true },
-          { type: 'text', x: 160, y: 232, text: '発生の進む向き', size: 12, anchor: 'middle' },
+          photo('life-2-c3'),
+          tag(52, 112, '受精卵', { size: 13, anchor: 'middle' }),
+          tag(158, 112, '2 細胞', { size: 13, anchor: 'middle' }),
+          tag(267, 112, '4 細胞', { size: 13, anchor: 'middle' }),
+          { type: 'arrow', x1: 95, y1: 52, x2: 116, y2: 52, width: 2 },
+          { type: 'arrow', x1: 201, y1: 52, x2: 224, y2: 52, width: 2 },
+          { type: 'line', points: [[226, 122], [110, 122], [94, 131]], color: 'ink', width: 2, arrow: true },
+          { type: 'arrow', x1: 133, y1: 174, x2: 182, y2: 174, width: 2 },
+          tag(84, 232, '多くの細胞', { size: 13, anchor: 'middle' }),
+          tag(231, 232, 'おたまじゃくし', { size: 13, anchor: 'middle' }),
+          tag(154, 206, '2細胞〜は胚', { size: 13, anchor: 'middle' }),
         ]),
       },
       {
         id: 'life-2-c4',
         text: '被子植物では、受粉すると花粉から**花粉管**がのびて、胚珠に向かいます。花粉管の中を運ばれた精細胞の核と、胚珠の中の卵細胞の核が合体して受精し、受精卵ができます。受精卵は胚になり、胚珠全体は種子になります。',
-        // めしべの中で花粉管がのびるようす
+        // 砂糖水の寒天の上で花粉管をのばしたホウセンカの花粉（顕微鏡写真）
         figure: scene([
-          { type: 'ellipse', x: 160, y: 170, rx: 64, ry: 52, fill: 'lightgreen', stroke: 'green' },
-          { type: 'polygon', points: [[152, 38], [168, 38], [170, 122], [150, 122]], fill: 'lightgreen', stroke: 'green' },
-          { type: 'ellipse', x: 160, y: 36, rx: 18, ry: 6, fill: 'lightgreen', stroke: 'green' },
-          { type: 'ellipse', x: 160, y: 182, rx: 28, ry: 22, fill: 'white', stroke: 'line' },
-          { type: 'circle', x: 160, y: 190, r: 7, fill: 'purple', stroke: 'line' },
-          { type: 'line', points: [[160, 30], [160, 122], [156, 150], [160, 166]], color: 'orange', width: 3 },
-          { type: 'circle', x: 157, y: 146, r: 3, fill: 'blue', stroke: 'none' },
-          { type: 'circle', x: 159, y: 156, r: 3, fill: 'blue', stroke: 'none' },
-          { type: 'circle', x: 160, y: 24, r: 9, fill: 'yellow', stroke: 'brown' },
-          { type: 'text', x: 176, y: 22, text: '花粉', size: 13 },
-          leader(166, 84, 196, 84),
-          { type: 'text', x: 200, y: 89, text: '花粉管', size: 13 },
-          leader(154, 150, 106, 130),
-          { type: 'text', x: 50, y: 134, text: '精細胞', size: 13 },
-          leader(152, 194, 100, 214),
-          { type: 'text', x: 44, y: 226, text: '卵細胞', size: 13 },
-          leader(188, 184, 240, 184),
-          { type: 'text', x: 244, y: 189, text: '胚珠', size: 13 },
-          { type: 'text', x: 232, y: 128, text: '子房', size: 13 },
+          photo('life-2-c4'),
+          pin(212, 52, 152, 68),
+          tag(216, 57, '花粉管'),
+          pin(212, 92, 192, 91),
+          tag(216, 97, '花粉'),
+          tag(262, 140, 'この管の中を', { size: 13, anchor: 'middle' }),
+          tag(262, 158, '精細胞が', { size: 13, anchor: 'middle' }),
+          tag(262, 176, '運ばれ、', { size: 13, anchor: 'middle' }),
+          tag(262, 194, '胚珠の', { size: 13, anchor: 'middle' }),
+          tag(262, 212, '卵細胞と', { size: 13, anchor: 'middle' }),
+          tag(262, 230, '受精する', { size: 13, anchor: 'middle' }),
         ]),
       },
     ],
@@ -621,14 +619,13 @@
       {
         id: 'life-3-c1',
         text: '生物の形や性質を**形質**といい、親の形質が子に伝わることを**遺伝**といいます。形質のもとになるのが染色体にある**遺伝子**です。エンドウの種子の丸としわのように、どちらか一方しか現れない形質を**対立形質**、代々同じ形質が現れるものを**純系**といいます。',
-        // エンドウの丸い種子としわのある種子
+        // エンドウの丸い種子としわのある種子（写真）
         figure: scene([
-          roundPea(90, 92, 38),
-          wrinkled(230, 92, 40),
-          { type: 'text', x: 90, y: 158, text: '丸い種子', size: 14, anchor: 'middle' },
-          { type: 'text', x: 230, y: 158, text: 'しわのある種子', size: 14, anchor: 'middle' },
-          { type: 'text', x: 160, y: 200, text: '丸 と しわ は 対立形質', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 224, text: '（1 つの種子には、どちらか一方が現れる）', size: 12, anchor: 'middle' },
+          photo('life-3-c1'),
+          tag(79, 166, '丸い種子', { size: 15, anchor: 'middle', bold: true }),
+          tag(240, 166, 'しわのある種子', { size: 15, anchor: 'middle', bold: true }),
+          tag(160, 202, '丸 と しわ は 対立形質', { size: 15, anchor: 'middle', bold: true }),
+          tag(160, 228, '（1 つの種子には、どちらか一方が現れる）', { size: 13, anchor: 'middle' }),
         ]),
       },
       {
@@ -651,6 +648,7 @@
       },
       {
         id: 'life-3-c3',
+        anim: 'he-segregation',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '子（Aa）が生殖細胞をつくるとき、減数分裂で対になっている遺伝子が分かれて、別々の生殖細胞に入ります。これを**分離の法則**といいます。生殖細胞には、A か a のどちらか一方だけが入ります。',
         // 分離の法則（Aa の細胞 → A の生殖細胞と a の生殖細胞）
         figure: scene([
@@ -840,19 +838,21 @@
       {
         id: 'life-4-c3',
         text: 'シソチョウ（始祖鳥）の化石には、羽毛やつばさなど鳥類の特徴と、口の歯、つばさの先のつめ、骨のある長い尾などハチュウ類の特徴の両方が見られます。このことから、鳥類はハチュウ類から進化したと考えられています。',
-        // シソチョウの特徴
+        // シソチョウ（始祖鳥）の化石の写真。青は鳥類の特徴、茶はハチュウ類の特徴
         figure: scene([
-          { type: 'text', x: 160, y: 24, text: 'シソチョウ（化石で見つかった動物）', size: 14, anchor: 'middle', bold: true },
-          { type: 'rect', x: 14, y: 42, width: 140, height: 136, rx: 8, fill: 'sky', stroke: 'line' },
-          { type: 'rect', x: 166, y: 42, width: 140, height: 136, rx: 8, fill: 'sand', stroke: 'line' },
-          { type: 'text', x: 84, y: 70, text: '鳥類の特徴', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 84, y: 104, text: '羽毛がある', size: 13, anchor: 'middle' },
-          { type: 'text', x: 84, y: 130, text: 'つばさがある', size: 13, anchor: 'middle' },
-          { type: 'text', x: 236, y: 70, text: 'ハチュウ類の特徴', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 236, y: 104, text: '口に歯がある', size: 13, anchor: 'middle' },
-          { type: 'text', x: 236, y: 130, text: 'つばさの先につめ', size: 13, anchor: 'middle' },
-          { type: 'text', x: 236, y: 156, text: '骨のある長い尾', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 214, text: '2 つのなかまの特徴をあわせもつ', size: 13, anchor: 'middle' },
+          photo('life-4-c3'),
+          pin(30, 125, 62, 106),
+          tag(10, 140, '羽毛', { size: 13, color: 'blue', bold: true }),
+          pin(276, 116, 250, 111),
+          tag(278, 121, 'つばさ', { size: 13, color: 'blue', bold: true }),
+          pin(148, 23, 127, 41),
+          tag(150, 18, '口の歯', { size: 13, color: 'brown', bold: true }),
+          pin(240, 23, 217, 39),
+          tag(212, 18, 'つばさの先のつめ', { size: 13, color: 'brown', bold: true }),
+          pin(222, 196, 194, 196),
+          tag(226, 201, '骨のある長い尾', { size: 13, color: 'brown', bold: true }),
+          tag(6, 218, '青: 鳥類の特徴', { size: 13, color: 'blue' }),
+          tag(6, 236, '茶: ハチュウ類の特徴', { size: 13, color: 'brown' }),
         ]),
       },
       {

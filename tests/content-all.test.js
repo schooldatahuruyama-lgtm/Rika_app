@@ -142,6 +142,90 @@ files.forEach(file => {
   });
 });
 
+// ---- 解説カードの動く図（anim）。docs/anim-plan.md 3-5 の 3 ----
+// anim.js と、分野ごとのファイル（あるものだけ）を読む。分野ごとのファイルは読むと anim.register で kind を足す
+const anim = require('../js/anim.js');
+const ANIM_FIELD_FILES = ['anim-physics.js', 'anim-chem.js', 'anim-bio.js', 'anim-earth.js'];
+ANIM_FIELD_FILES.forEach(f => {
+  const p = path.join(ROOT, 'js', f);
+  if (fs.existsSync(p)) require(p);
+});
+// 単元 → kind の接頭辞（docs/anim-plan.md 3-5 の表）。光（light）は登録口より前に作ったので接頭辞なし
+const ANIM_PREFIX = {
+  sound: 'so-', force: 'fo-', electricity: 'el-', motion: 'mo-',
+  substance: 'su-', 'state-change': 'st-', solution: 'sl-', 'chemical-change': 'ch-', ion: 'io-',
+  plants: 'pl-', animals: 'an-', body: 'bo-', heredity: 'he-', nature: 'na-',
+  volcano: 'vo-', strata: 'sr-', weather: 'we-', space: 'sp-',
+};
+// 静止図との整合を見ない単元: 光は静止図と動く図の文字がちがう所がある（この決まりより前に作った。tests/anim.test.js で見ている）
+const ANIM_LEGACY_UNITS = ['light'];
+// kind ごとの「文字の例外」: 静止図の text・label のうち、動く図では位置や文字が変わるもの（計画の各 kind の欄）。
+// 形: { 'kind': ['静止図の文字', ...] }
+const ANIM_TEXT_EXCEPTIONS = {};
+
+// 全単元の anim を持つカード [{ unitId, card }]
+const animCards = files.flatMap(file => {
+  const unit = require(path.join(CONTENT_DIR, file)).unit;
+  return (unit.areas || []).flatMap(a => (a.stages || []).flatMap(s => (s.lessons || [])))
+    .filter(c => c.anim !== undefined)
+    .map(card => ({ unitId: unit.id, card }));
+});
+
+test('anim: カードの kind は文字列で KINDS にあり、全単元で重ならない（1 kind ＝ 1 カード）', () => {
+  const seen = new Map();   // kind → カード id
+  animCards.forEach(({ card }) => {
+    assert.equal(typeof card.anim, 'string', card.id + ' の anim が文字列でない');
+    assert.ok(anim.KINDS.includes(card.anim), card.id + ' の anim ' + card.anim + ' は KINDS にない');
+    assert.ok(!seen.has(card.anim), card.anim + ' が ' + seen.get(card.anim) + ' と ' + card.id + ' で重なる');
+    seen.set(card.anim, card.id);
+  });
+});
+
+test('anim: kind の接頭辞が単元に合う（光を除く）', () => {
+  animCards.forEach(({ unitId, card }) => {
+    if (ANIM_LEGACY_UNITS.includes(unitId)) return;
+    const prefix = ANIM_PREFIX[unitId];
+    assert.ok(prefix, unitId + ' の接頭辞が ANIM_PREFIX にない（' + card.id + '）');
+    assert.ok(card.anim.startsWith(prefix), card.id + ' の anim ' + card.anim + ' は ' + prefix + ' で始まらない');
+  });
+});
+
+test('anim: カードは静止図（figure）を持ち、静止図に image の部品がない', () => {
+  animCards.forEach(({ card }) => {
+    assert.ok(card.figure && Array.isArray(card.figure.items), card.id + ' に静止図がない');
+    assert.ok(!card.figure.items.some(it => it && it.type === 'image'), card.id + ' の静止図に image がある（写真のカードには anim を付けない）');
+  });
+});
+
+test('anim: 静止図の text・label が、例外を除き frame(kind, restT(kind)) に同じ text・x・y で入っている（光を除く）', () => {
+  Object.keys(ANIM_TEXT_EXCEPTIONS).forEach(kind => assert.ok(anim.KINDS.includes(kind), 'ANIM_TEXT_EXCEPTIONS の ' + kind + ' は KINDS にない'));
+  animCards.forEach(({ unitId, card }) => {
+    if (ANIM_LEGACY_UNITS.includes(unitId)) return;
+    const kind = card.anim;
+    const except = ANIM_TEXT_EXCEPTIONS[kind] || [];
+    const items = anim.frame(kind, anim.restT(kind)).items;
+    card.figure.items.filter(it => it && (it.type === 'text' || it.type === 'label')).forEach(st => {
+      if (except.includes(st.text)) return;
+      const found = items.some(it => it && (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y);
+      assert.ok(found, card.id + '（' + kind + '）の静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') が止まった絵にない');
+    });
+  });
+});
+
+test('anim: 登録した kind（光の 23 種以外）はどれかのカードが 1 枚ちょうど使い、分野ごとのファイルは index.html と sw.js に入っている', () => {
+  const LIGHT_COUNT = 23;
+  const used = new Map();
+  animCards.forEach(({ card }) => used.set(card.anim, (used.get(card.anim) || 0) + 1));
+  anim.KINDS.slice(LIGHT_COUNT).forEach(kind => {
+    assert.equal(used.get(kind) || 0, 1, '動く図 ' + kind + ' を使うカードが ' + (used.get(kind) || 0) + ' 枚（1 枚でなければならない）');
+  });
+  ANIM_FIELD_FILES.forEach(f => {
+    if (!fs.existsSync(path.join(ROOT, 'js', f))) return;
+    assert.ok(indexHtml.includes('src="js/' + f + '"'), 'index.html に js/' + f + ' がない');
+    assert.ok(swJs.includes("'js/" + f + "'"), 'sw.js の PRECACHE に js/' + f + ' がない');
+  });
+});
+
 // 単元をまたいだ id の重複（概念 id は理解度の記録のキー、ステージ id は進捗のキーなので、全単元で一意でなければならない）
 test('全単元を通して、ステージ・概念・カード・問題・領域の id が重複しない', () => {
   const seen = new Map();   // 'kind:id' → 単元 id
