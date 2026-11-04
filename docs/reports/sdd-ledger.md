@@ -116,3 +116,9 @@ Ruling: 用語は解説文の `**語句**` 記法で示し、文そのものは�
 Ruling: 用語問題を間違えたら用語の類題を、ふつうの問題なら ふつうの類題を先に出す（Codex round 1 の指摘 1。並び順だけでは用語の類題に届かなかった）— コスト: 類題の選び方が概念だけでなく問題の種類にも依存する。
 用語の強調: implemented (opus, commit e05c6c5, 119/119). Codex round1 = 要修正 (High 1: refract-2-t2 が出題されない / Medium 1: 虚像の説明). fix by controller (session.js insertRetry, lens-2-t1, sw VERSION -5, README) 121/121 — round 2 pending
 用語の強調: Codex round2 = 指摘なし → complete (commits e05c6c5 + 修正コミット)
+
+## 追加作業 2026-11-04: 解説の動く図の試作（指示書 .ai-tasks/20261104-130000）
+Ruling: 動く図は GIF や動画生成 AI ではなく、アプリ内で SVG を数式で描き直す方式（js/anim.js の frame(kind, t) は純粋関数）。まず 2 枚（straight-1-c3 影の大きさ、reflect-1-c3 反射の法則）だけ試作してユーザーが見てから残りを決める — コスト: 写真のような映像にはならない。
+Ruling: 実装者が足した後片付け（renderLesson が cleanup を返す、dialog.onclose で body を空にする）は妥当として受け入れ — 隠れた画面で rAF が動き続けるのを防ぐため。
+動く図: implemented (opus, commit 42a22fa, 128/128). controller の確認: 影の図が動く・ラベルが切り替わる、反射の角度が 2 つ同じ値で動く、とめる/動かすが効く、画面を離れると anim-box が消える、コンソールエラーなし。Codex round 1 pending
+動く図: Codex round1 = 指摘なし → complete (commit 42a22fa)。残り 22 枚はユーザーが試作を見てから判断
