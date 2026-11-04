@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
 
-  // 色（デザイン資料 8 節）。赤は使わない
+  // 色（デザイン資料 8 節）。赤は不正解の強調には使わない（red は理科の色としてだけ使う）
   const COLOR = {
     blue: '#1A5CFF',
     ink: '#1B2430',
@@ -19,7 +19,38 @@
     bulb: '#FFD34D',
     bulbEdge: '#C98A00',
     shadow: '#4A4A4A',
+    // 汎用の部品で使う理科の色（red は血液・リトマス紙などの色としてだけ使う。不正解の強調には使わない）
+    red: '#D9534F',
+    yellow: '#FFD34D',
+    pink: '#F2A6C2',
+    purple: '#8E6BD6',
+    brown: '#A0623A',
+    sky: '#CFE4FF',
+    white: '#FFFFFF',
+    lightgreen: '#C9EBD3',
+    sand: '#E8D8B0',
+    rock: '#B8B2A7',
   };
+
+  // 色の指定（トークン名か #rrggbb / #rgb、'none'）を色コードにする。それ以外は fallback（トークン名か色コード）
+  // 属性に書くのは、この関数を通した値だけ（知らない文字列は属性に出さない）
+  const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+  function paint(value, fallback) {
+    if (value === 'none') return 'none';
+    if (typeof value === 'string') {
+      if (Object.prototype.hasOwnProperty.call(COLOR, value)) return COLOR[value];
+      if (HEX_RE.test(value)) return value;
+    }
+    if (fallback === undefined || fallback === null) return null;
+    return paint(fallback, null);
+  }
+
+  // 矢じりの色（ARROW_DEFS の scene-arrow-<token>）。この一覧にない色・#hex は ink の矢じり
+  const ARROW_TOKENS = ['ink', 'blue', 'green', 'gray', 'orange', 'red'];
+  function arrowMarker(color) {
+    const token = (typeof color === 'string' && ARROW_TOKENS.indexOf(color) !== -1) ? color : 'ink';
+    return 'url(#scene-arrow-' + token + ')';
+  }
 
   // 物質の名前と塗りの色（空気は塗らない）
   const MEDIUM = {
@@ -90,6 +121,123 @@
       'stroke-dasharray': r.dashed ? '10 8' : null,
       'marker-end': r.arrow ? 'url(#scene-arrow)' : null,
     });
+  }
+
+  // ---- 汎用の部品の小道具 ----
+
+  const n0 = (v, d) => { const x = Number(v); return Number.isFinite(x) ? x : (d === undefined ? 0 : d); };
+  // 正の数でなければ既定値
+  const pos = (v, d) => { const x = Number(v); return Number.isFinite(x) && x > 0 ? x : d; };
+  // 0〜1 にそろえる（数でなければ既定値）
+  const clamp01 = (v, d) => { const x = Number(v); return Number.isFinite(x) ? Math.min(1, Math.max(0, x)) : d; };
+
+  // [[x,y],...] から数の点だけを取り出す → [{ x, y }]
+  function pointsOf(list) {
+    if (!Array.isArray(list)) return [];
+    return list.filter((p) => Array.isArray(p) && Number.isFinite(Number(p[0])) && Number.isFinite(Number(p[1])))
+      .map((p) => ({ x: Number(p[0]), y: Number(p[1]) }));
+  }
+  function pointsAttr(ps) { return ps.map((p) => num(p.x) + ',' + num(p.y)).join(' '); }
+  function average(ps) {
+    if (!ps.length) return { x: 0, y: 0 };
+    return { x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length };
+  }
+
+  // 形の部品の文字: 中央（labelPos が 'above' なら上端の 8px 上、'below' なら下端の 20px 下）
+  function shapeLabel(it, cx, cy, top, bottom) {
+    if (it.labelPos === 'above') return text(cx, top - 8, it.label, { 'text-anchor': 'middle' });
+    if (it.labelPos === 'below') return text(cx, bottom + 20, it.label, { 'text-anchor': 'middle' });
+    return text(cx, cy, it.label, { 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+  }
+
+  // 形の部品の塗りと線（fill 既定 white、stroke 既定 ink、太さ 2）
+  function shapePaint(it) {
+    return { fill: paint(it.fill, 'white'), stroke: paint(it.stroke, 'ink'), 'stroke-width': 2 };
+  }
+
+  // 文字の大きさ・寄せ方・色（text と label で共通）。指定のないものは書かない（text() の既定のまま）
+  const ANCHORS = ['start', 'middle', 'end'];
+  function textStyle(it) {
+    const out = {};
+    if (it.size !== undefined && it.size !== null && Number.isFinite(Number(it.size))) out['font-size'] = Math.max(12, Number(it.size));
+    if (it.color !== undefined && it.color !== null) out.fill = paint(it.color, 'ink');
+    if (ANCHORS.indexOf(it.anchor) !== -1) out['text-anchor'] = it.anchor;
+    return out;
+  }
+
+  // 容器（ビーカー・試験管）の中の液体: 左右 left〜right、底 bottom、液面 top。底の角は半径 r で丸める
+  function liquidShape(left, right, bottom, top, r, color) {
+    const h = bottom - top;
+    if (!(h > 0)) return '';
+    const rr = Math.min(r, h, (right - left) / 2);
+    const d = 'M' + num(left) + ',' + num(top) +
+      ' L' + num(left) + ',' + num(bottom - rr) +
+      ' Q' + num(left) + ',' + num(bottom) + ' ' + num(left + rr) + ',' + num(bottom) +
+      ' L' + num(right - rr) + ',' + num(bottom) +
+      ' Q' + num(right) + ',' + num(bottom) + ' ' + num(right) + ',' + num(bottom - rr) +
+      ' L' + num(right) + ',' + num(top) + ' Z';
+    // 液面は少し波打った線
+    const w = right - left;
+    const wave = 'M' + num(left) + ',' + num(top) +
+      ' Q' + num(left + w / 4) + ',' + num(top - 3) + ' ' + num(left + w / 2) + ',' + num(top) +
+      ' T' + num(right) + ',' + num(top);
+    return tag('path', { d, fill: color, class: 'liquid' }) +
+      tag('path', { d: wave, fill: 'none', stroke: COLOR.line, 'stroke-width': 1.5, class: 'liquid-surface' });
+  }
+
+  const TUBE_WIDTH = 24;
+  const TUBE_HEIGHT = 90;      // 試験管の高さの既定
+  const BEAKER_WIDTH = 70;
+  const BEAKER_HEIGHT = 80;
+  const FLAME_HEIGHT = 36;
+
+  // 回路図の記号（x, y を中心に幅 40）。導線をつなぐ端は (x ± 20, y)
+  const SYMBOL = {
+    // 電池: 長い線（＋）と短く太い線（−）
+    battery(x, y) {
+      const ink = { stroke: COLOR.ink, 'stroke-width': 2 };
+      return line(x - 20, y, x - 4, y, ink) + line(x + 4, y, x + 20, y, ink) +
+        line(x - 4, y - 14, x - 4, y + 14, { stroke: COLOR.ink, 'stroke-width': 2 }) +
+        line(x + 4, y - 7, x + 4, y + 7, { stroke: COLOR.ink, 'stroke-width': 5 });
+    },
+    // 豆電球: 丸と ×
+    bulb(x, y) {
+      const ink = { stroke: COLOR.ink, 'stroke-width': 2 };
+      const d = 12 / Math.SQRT2;
+      return line(x - 20, y, x - 12, y, ink) + line(x + 12, y, x + 20, y, ink) +
+        tag('circle', { cx: x, cy: y, r: 12, fill: COLOR.white, stroke: COLOR.ink, 'stroke-width': 2 }) +
+        line(x - d, y - d, x + d, y + d, ink) + line(x - d, y + d, x + d, y - d, ink);
+    },
+    // 抵抗: 長方形 36×14
+    resistor(x, y) {
+      const ink = { stroke: COLOR.ink, 'stroke-width': 2 };
+      return line(x - 20, y, x - 18, y, ink) + line(x + 18, y, x + 20, y, ink) +
+        tag('rect', { x: x - 18, y: y - 7, width: 36, height: 14, fill: COLOR.white, stroke: COLOR.ink, 'stroke-width': 2 });
+    },
+    // スイッチ: 開いた斜め線
+    switch(x, y) {
+      const ink = { stroke: COLOR.ink, 'stroke-width': 2, 'stroke-linecap': 'round' };
+      return line(x - 20, y, x - 10, y, ink) + line(x + 10, y, x + 20, y, ink) +
+        tag('circle', { cx: x - 10, cy: y, r: 2.5, fill: COLOR.ink }) +
+        tag('circle', { cx: x + 10, cy: y, r: 2.5, fill: COLOR.ink }) +
+        line(x - 10, y, x + 10, y - 12, ink);
+    },
+    ammeter(x, y) { return meter(x, y, 'A'); },
+    voltmeter(x, y) { return meter(x, y, 'V'); },
+  };
+  // 電流計・電圧計: 丸の中に文字
+  function meter(x, y, letter) {
+    const ink = { stroke: COLOR.ink, 'stroke-width': 2 };
+    return line(x - 20, y, x - 14, y, ink) + line(x + 14, y, x + 20, y, ink) +
+      tag('circle', { cx: x, cy: y, r: 14, fill: COLOR.white, stroke: COLOR.ink, 'stroke-width': 2 }) +
+      text(x, y, letter, { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-weight': 'bold' });
+  }
+
+  // 回転（度、時計回り）。0 や数でないときは g で包まない
+  function rotated(body, deg, x, y) {
+    const a = Number(deg);
+    if (!Number.isFinite(a) || a === 0) return body;
+    return '<g' + attrs({ transform: 'rotate(' + num(a) + ' ' + num(x) + ' ' + num(y) + ')' }) + '>' + body + '</g>';
   }
 
   // item の種類ごとの描き方。ctx = { width, height, selected }
@@ -192,7 +340,8 @@
       }) + text(it.x, it.y, it.label, { 'text-anchor': 'middle', 'dominant-baseline': 'central' });
     },
 
-    label(it) { return text(it.x, it.y, it.text); },
+    // 文字。size・anchor・color は任意（指定がなければ 16px・左寄せ・ink）
+    label(it) { return text(it.x, it.y, it.text, textStyle(it)); },
 
     // 目: 白い楕円と黒目
     eye(it) {
@@ -224,6 +373,132 @@
     shadow(it) {
       return line(it.x, it.y1, it.x, it.y2, { stroke: COLOR.shadow, 'stroke-width': 12, opacity: 0.55, 'stroke-linecap': 'butt' });
     },
+
+    // ---- 汎用の部品（座標と色だけで描く。全単元で使う） ----
+
+    // 四角: (x, y) が左上
+    rect(it) {
+      const x = n0(it.x), y = n0(it.y), w = Math.max(0, n0(it.width)), h = Math.max(0, n0(it.height));
+      const rx = Number(it.rx);
+      return tag('rect', Object.assign({ x, y, width: w, height: h, rx: Number.isFinite(rx) && rx > 0 ? rx : null }, shapePaint(it))) +
+        shapeLabel(it, x + w / 2, y + h / 2, y, y + h);
+    },
+
+    // 丸: (x, y) が中心
+    circle(it) {
+      const x = n0(it.x), y = n0(it.y), r = Math.max(0, n0(it.r));
+      return tag('circle', Object.assign({ cx: x, cy: y, r }, shapePaint(it))) + shapeLabel(it, x, y, y - r, y + r);
+    },
+
+    // 楕円: (x, y) が中心
+    ellipse(it) {
+      const x = n0(it.x), y = n0(it.y), rx = Math.max(0, n0(it.rx)), ry = Math.max(0, n0(it.ry));
+      return tag('ellipse', Object.assign({ cx: x, cy: y, rx, ry }, shapePaint(it))) + shapeLabel(it, x, y, y - ry, y + ry);
+    },
+
+    // 閉じた多角形。文字は重心（点の平均）
+    polygon(it) {
+      const ps = pointsOf(it.points);
+      if (ps.length < 2) return '';
+      const c = average(ps);
+      return tag('polygon', Object.assign({ points: pointsAttr(ps) }, shapePaint(it))) +
+        text(c.x, c.y, it.label, { 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+    },
+
+    // 折れ線（点 2 つなら直線）。arrow で終点に同じ色の矢じり、dashed で点線
+    line(it) {
+      const ps = pointsOf(it.points);
+      if (ps.length < 2) return '';
+      const a = {
+        fill: 'none',
+        stroke: paint(it.color, 'ink'),
+        'stroke-width': pos(it.width, 3),
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'stroke-dasharray': it.dashed ? '8 6' : null,
+        'marker-end': it.arrow ? arrowMarker(it.color) : null,
+      };
+      if (ps.length === 2) {
+        delete a.fill;
+        return line(ps[0].x, ps[0].y, ps[1].x, ps[1].y, a);
+      }
+      return tag('polyline', Object.assign({ points: pointsAttr(ps) }, a));
+    },
+
+    // 文字だけ（label の拡張版）。size は下限 12、anchor は start / middle / end、bold で太字
+    text(it) {
+      const st = Object.assign({ 'font-size': LABEL_SIZE, 'text-anchor': 'start' }, textStyle(it));
+      if (it.bold) st['font-weight'] = 'bold';
+      return text(it.x, it.y, it.text, st);
+    },
+
+    // ビーカー: (x, y) が底の中央。上が開いた U 字の容器と、level（0〜1）の高さまでの液体
+    beaker(it) {
+      const x = n0(it.x), y = n0(it.y);
+      const w = pos(it.width, BEAKER_WIDTH), h = pos(it.height, BEAKER_HEIGHT);
+      const level = clamp01(it.level, 0.6);
+      const left = x - w / 2, right = x + w / 2, top = y - h, r = 6;
+      let out = level > 0 ? liquidShape(left, right, y, y - h * level, r, paint(it.liquid, 'water')) : '';
+      const d = 'M' + num(left - 5) + ',' + num(top) + ' L' + num(left) + ',' + num(top + 5) +
+        ' L' + num(left) + ',' + num(y - r) +
+        ' Q' + num(left) + ',' + num(y) + ' ' + num(left + r) + ',' + num(y) +
+        ' L' + num(right - r) + ',' + num(y) +
+        ' Q' + num(right) + ',' + num(y) + ' ' + num(right) + ',' + num(y - r) +
+        ' L' + num(right) + ',' + num(top);
+      out += tag('path', { d, fill: 'none', stroke: COLOR.ink, 'stroke-width': 2, 'stroke-linejoin': 'round', class: 'beaker-body' });
+      return out + text(x, y + 20, it.label, { 'text-anchor': 'middle' });
+    },
+
+    // 試験管: (x, y) が底の中央。幅 24、底が丸い。tilt（度、時計回り）で底の中央を中心に傾ける
+    tube(it) {
+      const x = n0(it.x), y = n0(it.y);
+      const h = pos(it.height, TUBE_HEIGHT), half = TUBE_WIDTH / 2;
+      const level = clamp01(it.level, 0.6);
+      const left = x - half, right = x + half, top = y - h;
+      let body = level > 0 ? liquidShape(left, right, y, y - h * level, half, paint(it.liquid, 'water')) : '';
+      const d = 'M' + num(left) + ',' + num(top) + ' L' + num(left) + ',' + num(y - half) +
+        ' A' + num(half) + ' ' + num(half) + ' 0 0 0 ' + num(right) + ',' + num(y - half) +
+        ' L' + num(right) + ',' + num(top);
+      body += tag('path', { d, fill: 'none', stroke: COLOR.ink, 'stroke-width': 2, class: 'tube-body' });
+      // 文字は傾けない（文字の層へ移しても場所が変わらないよう、回転の外に置く）
+      return rotated(body, it.tilt, x, y) + text(x, y + 20, it.label, { 'text-anchor': 'middle' });
+    },
+
+    // 炎: (x, y) が炎の底の中央、高さ 36。外炎（orange）と内炎（yellow）の涙型
+    flame(it) {
+      const x = n0(it.x), y = n0(it.y);
+      const drop = (hgt, hw) => {
+        const tip = y - hgt, mid = y - hgt * 0.28;
+        return 'M' + num(x) + ',' + num(tip) +
+          ' C' + num(x + hw * 0.3) + ',' + num(y - hgt * 0.72) + ' ' + num(x + hw) + ',' + num(y - hgt * 0.5) + ' ' + num(x + hw) + ',' + num(mid) +
+          ' A' + num(hw) + ' ' + num(hgt * 0.28) + ' 0 0 1 ' + num(x - hw) + ',' + num(mid) +
+          ' C' + num(x - hw) + ',' + num(y - hgt * 0.5) + ' ' + num(x - hw * 0.3) + ',' + num(y - hgt * 0.72) + ' ' + num(x) + ',' + num(tip) + ' Z';
+      };
+      return tag('path', { d: drop(FLAME_HEIGHT, 13), fill: COLOR.orange, class: 'flame-outer' }) +
+        tag('path', { d: drop(FLAME_HEIGHT * 0.55, 6), fill: COLOR.yellow, class: 'flame-inner' }) +
+        text(x, y + 20, it.label, { 'text-anchor': 'middle' });
+    },
+
+    // 回路図の記号: kind = battery | bulb | resistor | switch | ammeter | voltmeter（知らない kind は丸だけ）
+    // rotate（度）で回す。導線は line で描く（記号の端は中心から ±20）
+    symbol(it) {
+      const x = n0(it.x), y = n0(it.y);
+      const draw = (typeof it.kind === 'string' && Object.prototype.hasOwnProperty.call(SYMBOL, it.kind)) ? SYMBOL[it.kind] : null;
+      const body = draw ? draw(x, y)
+        : tag('circle', { cx: x, cy: y, r: 14, fill: COLOR.white, stroke: COLOR.ink, 'stroke-width': 2 });
+      return rotated(body, it.rotate, x, y) + text(x, y + 24, it.label, { 'text-anchor': 'middle' });
+    },
+
+    // 矢印（力や運動）: (x1, y1) → (x2, y2)。文字は中点の 10px 上
+    arrow(it) {
+      const x1 = n0(it.x1), y1 = n0(it.y1), x2 = n0(it.x2), y2 = n0(it.y2);
+      return line(x1, y1, x2, y2, {
+        stroke: paint(it.color, 'ink'),
+        'stroke-width': pos(it.width, 3),
+        'stroke-linecap': 'round',
+        'marker-end': arrowMarker(it.color),
+      }) + text((x1 + x2) / 2, (y1 + y2) / 2 - 10, it.label, { 'text-anchor': 'middle' });
+    },
   };
 
   // item の中心（ドラッグの当たり判定を置く場所）
@@ -238,7 +513,20 @@
       case 'lens': return { x: n(it.cx), y: n(it.cy) };
       case 'boundary':
       case 'axis': return { x: ctx.width / 2, y: n(it.y) };
-      default: return { x: n(it.x), y: n(it.y) };   // point / region / eye / lamp / label / normal
+      case 'rect': return { x: n(it.x) + n(it.width) / 2, y: n(it.y) + n(it.height) / 2 };
+      case 'beaker': return { x: n(it.x), y: n(it.y) - pos(it.height, BEAKER_HEIGHT) / 2 };
+      case 'tube': {
+        // 本体は底の中央 (x, y) を中心に tilt 度（時計回り）回っているので、中央の点も同じだけ回す
+        const half = pos(it.height, TUBE_HEIGHT) / 2;
+        const a = (n(it.tilt)) * Math.PI / 180;
+        return { x: n(it.x) + half * Math.sin(a), y: n(it.y) - half * Math.cos(a) };
+      }
+      case 'flame': return { x: n(it.x), y: n(it.y) - FLAME_HEIGHT / 2 };
+      case 'polygon':
+      case 'line': return average(pointsOf(it.points));
+      case 'arrow': return { x: (n(it.x1) + n(it.x2)) / 2, y: (n(it.y1) + n(it.y2)) / 2 };
+      // point / region / eye / lamp / label / normal / circle / ellipse / symbol / text
+      default: return { x: n(it.x), y: n(it.y) };
     }
   }
 
@@ -248,8 +536,13 @@
     return tag('circle', { class: 'hit-area', cx: c.x, cy: c.y, r: HIT_R, fill: 'transparent', 'pointer-events': 'all' });
   }
 
-  const ARROW_DEFS = '<defs><marker id="scene-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">' +
-    '<path d="M0,0 L10,5 L0,10 z" fill="' + COLOR.orange + '"/></marker></defs>';
+  // 矢じり。scene-arrow（橙）は光線用。scene-arrow-<token> は汎用の line / arrow 用（色ごと）
+  function arrowMarkerDef(id, color) {
+    return '<marker id="' + id + '" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">' +
+      '<path d="M0,0 L10,5 L0,10 z" fill="' + color + '"/></marker>';
+  }
+  const ARROW_DEFS = '<defs>' + arrowMarkerDef('scene-arrow', COLOR.orange) +
+    ARROW_TOKENS.map((t) => arrowMarkerDef('scene-arrow-' + t, COLOR[t])).join('') + '</defs>';
 
   // 場面を SVG 文字列にする。items は配列の順に描く（後のものが上に重なる）。知らない type は飛ばす
   // 文字（text）は光線などに隠れないよう、最後に文字の層（scene-labels、タップは下へ通す）にまとめて描く。

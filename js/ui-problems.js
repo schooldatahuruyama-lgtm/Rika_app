@@ -573,9 +573,16 @@
 
   // ---- 光学要素を動かす ----
 
-  // ドラッグの基準点（解答の { x, y }）: 場面の x・y（なければ cx・cy、線分の中点）
+  // ドラッグの基準点（解答の { x, y }）: 場面の x・y（なければ cx・cy、線分の中点、points の平均）
   function anchorOf(it) {
     const num = (v) => (v === undefined || v === null || v === '' ? null : Number(v));
+    // 折れ線・多角形（line / polygon）は points の平均（figures.js の centerOf と同じ）
+    if (Array.isArray(it.points) && it.points.length > 0) {
+      const pts = it.points.filter((p) => Array.isArray(p) && p.length >= 2).map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]);
+      if (pts.length > 0) {
+        return { x: pts.reduce((a, p) => a + p[0], 0) / pts.length, y: pts.reduce((a, p) => a + p[1], 0) / pts.length };
+      }
+    }
     const pick = (...vals) => vals.find((v) => v !== null && Number.isFinite(v));
     const x = pick(num(it.x), num(it.cx), num(it.x1) !== null && num(it.x2) !== null ? (num(it.x1) + num(it.x2)) / 2 : null, num(it.x1));
     const y = pick(num(it.y), num(it.cy), num(it.y1) !== null && num(it.y2) !== null ? (num(it.y1) + num(it.y2)) / 2 : null, num(it.y1));

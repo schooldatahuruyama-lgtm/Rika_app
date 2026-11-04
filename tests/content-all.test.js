@@ -1,0 +1,119 @@
+// tests/content-all.test.js
+// content/ の単元ファイルすべてに同じ検査をかける（curriculum.js は単元一覧なので除く）。
+// 単元ファイルを足すと、ここで自動的に検査される。単元ごとの細かい検査は tests/content-<id>.test.js に書く。
+const test = require('node:test'); const assert = require('node:assert/strict');
+const fs = require('node:fs'); const path = require('node:path');
+const cr = require('../js/content-registry.js');
+const { judge } = require('../js/judge.js');
+const config = require('../js/config.js');
+const figures = require('../js/figures.js');
+const mascot = require('../js/mascot.js');
+const richtext = require('../js/richtext.js');
+
+const ROOT = path.join(__dirname, '..');
+const CONTENT_DIR = path.join(ROOT, 'content');
+const FIGURE_TYPES = ['figure-choice', 'ray-draw', 'drag'];
+const BOOK_NAMES = /東京書籍|啓林館|大日本図書|教育出版|学校図書|学図|東書|啓林/;
+
+const files = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.js') && f !== 'curriculum.js').sort();
+const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const swJs = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+
+test('content/ に単元ファイルが 1 つ以上ある', () => assert.ok(files.length >= 1));
+
+files.forEach(file => {
+  const id = file.replace(/\.js$/, '');
+  const unit = require(path.join(CONTENT_DIR, file)).unit;
+  const name = 'content/' + file;
+
+  const stages = (unit && Array.isArray(unit.areas) ? unit.areas : []).flatMap(a => a.stages || []);
+  const concepts = unit && Array.isArray(unit.concepts) ? unit.concepts : [];
+  const stageProblems = () => stages.flatMap(s => [s.warmup, ...(s.problems || []), ...(s.retryPool || [])]);
+  const allProblems = () => stageProblems().concat(concepts.flatMap(c => c.checkPool || []));
+
+  test(name + ': validateUnit は空', () => {
+    assert.ok(unit, name + ' に module.exports.unit がない');
+    assert.deepEqual(cr.validateUnit(unit), []);
+  });
+
+  test(name + ': id はファイル名と同じ、title は文字列、mascot は MASCOTS のキー', () => {
+    assert.equal(unit.id, id);
+    assert.equal(typeof unit.title, 'string');
+    assert.ok(unit.title.trim() !== '', 'title が空');
+    assert.ok(Object.prototype.hasOwnProperty.call(mascot.MASCOTS, unit.mascot), 'mascot = ' + unit.mascot);
+  });
+
+  test(name + ': 各ステージに図・操作型が 1 問以上、各概念の retryPool 2 以上・checkPool 3 以上', () => {
+    assert.ok(stages.length >= 1, 'ステージがない');
+    stages.forEach(s => assert.ok(s.problems.some(p => FIGURE_TYPES.includes(p.type)), s.id + ' に図・操作型がない'));
+    concepts.forEach(c => {
+      const retry = stages.flatMap(s => s.retryPool).filter(p => p.concept === c.id).length;
+      assert.ok(retry >= 2, c.id + ' の retryPool が ' + retry + ' 問');
+      assert.ok(c.checkPool.length >= 3, c.id + ' の checkPool が ' + c.checkPool.length + ' 問');
+    });
+  });
+
+  test(name + ': ray-draw と drag は samples.correct で正解、samples.wrong で不正解（invalid でない）', () => {
+    allProblems().filter(p => p.type === 'ray-draw' || p.type === 'drag').forEach(p => {
+      assert.ok(p.samples && p.samples.correct !== undefined && p.samples.wrong !== undefined, p.id + ' に samples がない');
+      const ok = judge(p, p.samples.correct, config);
+      const ng = judge(p, p.samples.wrong, config);
+      assert.equal(ok.correct, true, p.id + ' の samples.correct が正解にならない');
+      assert.equal(ng.correct, false, p.id + ' の samples.wrong が不正解にならない');
+      assert.ok(!ng.invalid, p.id + ' の samples.wrong が判定できない解答になっている');
+    });
+  });
+
+  test(name + ': figure-choice の答えは図の region、drag の対象は図にあり target は図の中', () => {
+    allProblems().forEach(p => {
+      if (p.type === 'figure-choice') {
+        const region = p.figure && p.figure.items.find(it => it.type === 'region' && it.id === p.answer);
+        assert.ok(region, p.id + ' の答えの region がない');
+      }
+      if (p.type === 'drag') {
+        const item = p.figure && p.figure.items.find(it => it.id === p.draggable.itemId);
+        assert.ok(item, p.id + ' の図に ' + p.draggable.itemId + ' がない');
+        const w = Number(p.figure.width) || 320, h = Number(p.figure.height) || 240;
+        assert.ok(p.target && p.target.x >= 0 && p.target.x <= w && p.target.y >= 0 && p.target.y <= h,
+          p.id + ' の target が図の外');
+      }
+    });
+  });
+
+  test(name + ': 図の item の type はすべて figures.js が描ける種類', () => {
+    const scenes = stages.flatMap(s => s.lessons.map(c => ({ id: c.id, figure: c.figure })))
+      .concat(allProblems().map(p => ({ id: p.id, figure: p.figure })));
+    scenes.forEach(({ id: sid, figure }) => {
+      if (figure === null || figure === undefined) return;
+      assert.ok(Array.isArray(figure.items), sid + ' の図に items がない');
+      figure.items.forEach(it => assert.ok(figures.ITEM_TYPES.includes(it.type), sid + ' の item の type ' + it.type + ' は描けない'));
+    });
+  });
+
+  test(name + ': 教科書名・出版社名を含まない', () => {
+    assert.doesNotMatch(JSON.stringify(unit), BOOK_NAMES);
+  });
+
+  test(name + ': 全問題に prompt・explanation・hint、レッスンカードは 2〜4 枚で文は 40〜160 字、図がある', () => {
+    allProblems().forEach(p => {
+      ['prompt', 'explanation', 'hint'].forEach(f => assert.ok(typeof p[f] === 'string' && p[f].trim() !== '', p.id + ' の ' + f + ' が空'));
+    });
+    stages.forEach(s => {
+      assert.ok(s.lessons.length >= 2 && s.lessons.length <= 4, s.id + ' のレッスンが ' + s.lessons.length + ' 枚');
+      s.lessons.forEach(c => {
+        // 字数は用語の記法 ** を除いた文で数える
+        assert.equal(typeof c.text, 'string', c.id + ' の文がない');
+        const len = richtext.plain(c.text).length;
+        assert.ok(len >= 40 && len <= 160, c.id + ' の文が ' + len + ' 字');
+        assert.ok(c.figure && Array.isArray(c.figure.items), c.id + ' に図がない');
+      });
+    });
+  });
+
+  test(name + ': index.html の script と sw.js の PRECACHE に入っている', () => {
+    assert.ok(indexHtml.includes('<script src="content/' + file + '"></script>'), 'index.html に content/' + file + ' がない');
+    const m = swJs.match(/const PRECACHE = \[([\s\S]*?)\];/);
+    assert.ok(m, 'sw.js に PRECACHE がない');
+    assert.ok(m[1].includes("'content/" + file + "'"), 'sw.js の PRECACHE に content/' + file + ' がない');
+  });
+});
