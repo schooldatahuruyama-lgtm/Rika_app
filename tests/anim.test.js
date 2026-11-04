@@ -259,3 +259,28 @@ test('focal-length: 屈折光の直線は焦点 (160 + f, 110) を通り、f は
   });
   assert.ok(Math.abs(byType(anim.frame('focal-length', 0.5), 'lens')[0].f - 40) < 1e-9);
 });
+
+// ---- Codex round 1 の指摘 ----
+
+test('grow / frame: 段階の始まりを計算の誤差ぶんだけ過ぎた t でも例外を出さない（光線が 0 本なら空）', () => {
+  assert.doesNotThrow(() => anim.frame('virtual-image', 0.45000000000000007));
+  const starts = [0.3, 0.35, 0.4, 0.45, 0.6, 0.7];
+  anim.KINDS.forEach(kind => starts.forEach(from => {
+    assert.doesNotThrow(() => anim.frame(kind, from + 1e-15), kind + ' t=' + from + '+ε');
+  }));
+  assert.deepEqual(anim.helpers.grow([[0, 0], [100, 0]], 1e-15), []);
+});
+
+test('restT: 光線が伸びていく 13 種は 0.99、ほかは 0。止まった位置の絵にはどの kind も光線が 1 本以上ある', () => {
+  const atEnd = ['rays-spread', 'shadow-forms', 'light-to-eye', 'bounce-to-eye', 'reflect-travel',
+    'image-behind-mirror', 'vertical-vs-oblique', 'coin-lift', 'stick-lift', 'lens-parallel-rays',
+    'lens-special-rays', 'real-image-forms', 'virtual-image'];
+  anim.KINDS.forEach(kind => {
+    assert.equal(anim.restT(kind), atEnd.includes(kind) ? 0.99 : 0, kind);
+    const rays = anim.frame(kind, anim.restT(kind)).items.filter(i => i.type === 'ray');
+    assert.ok(rays.length >= 1, kind + ' の止まった絵に光線がない');
+  });
+  // 描き終わりの絵には像や文字もある（virtual-image の虚像、real-image-forms の実像）
+  assert.ok(anim.frame('virtual-image', anim.restT('virtual-image')).items.some(i => i.type === 'label' && i.text === '虚像'));
+  assert.ok(anim.frame('real-image-forms', anim.restT('real-image-forms')).items.some(i => i.type === 'label' && i.text === '実像'));
+});

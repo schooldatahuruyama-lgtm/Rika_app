@@ -60,6 +60,7 @@
       out.push(r);
       remain -= s.len;
     }
+    if (out.length === 0) return [];   // 進み方がごくわずかで、計算の誤差で 1 辺も足せなかったとき
     out[out.length - 1].arrow = true;
     return out;
   }
@@ -521,7 +522,7 @@
     toggle.className = 'btn btn-quiet anim-toggle';
     element.append(box, toggle);
 
-    let t = 0;          // いまの位置（止めたときはそこから続ける）
+    let t = restT(kind);   // いまの位置（止めたときはそこから続ける）。最初は止まった状態で意味の分かる絵
     let t0 = 0;         // 位置 0 に当たる時刻
     let rafId = null;
 
@@ -560,7 +561,14 @@
 
   // helpers はテスト用に公開する（画面側は使わない）
   const helpers = { clamp01, stage, lerp, grow, deg, rad2deg, u, N };
-  const api = { KINDS, PERIOD_MS, frame, create, prefersReducedMotion, helpers };
+  // 止まっているときに見せる位置。光線が伸びていく kind は t = 0 だと光線がないので、描き終わり（0.99）を見せる
+  // （「動きを減らす」設定で自動再生しないときも、光線と像が見えるようにする）
+  const REST_AT_END = ['rays-spread', 'shadow-forms', 'light-to-eye', 'bounce-to-eye', 'reflect-travel',
+    'image-behind-mirror', 'vertical-vs-oblique', 'coin-lift', 'stick-lift', 'lens-parallel-rays',
+    'lens-special-rays', 'real-image-forms', 'virtual-image'];
+  function restT(kind) { return REST_AT_END.indexOf(kind) === -1 ? 0 : 0.99; }
+
+  const api = { KINDS, PERIOD_MS, frame, create, prefersReducedMotion, restT, helpers };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.RikaQuest = Object.assign(root.RikaQuest || {}, { anim: api });
