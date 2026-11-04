@@ -1,17 +1,26 @@
-// マスコット（小さなオレンジ色の生き物）の SVG と、レベルアップの祝い演出
-// 名前を変えるときは NAME だけを書きかえる
+// マスコット（理科の先生キャラクター「キューブ先生」。ユーザー提供の SVG 画像）と、レベルアップの祝い演出
+// 名前を変えるときは NAME を、絵を変えるときは IMAGE を書きかえる（画像は assets/mascots/README.md）
 (function (root) {
   'use strict';
 
-  const NAME = 'ピカ';
+  const NAME = 'キューブ先生';
+  const IMAGE = 'assets/mascots/mascot_E.svg';   // 光・電流・運動の担当（unit_mascots.json の E）
 
   // 読み込み順に頼らないよう、使うときに取る
   function figures() {
     return typeof require === 'function' ? require('./figures.js') : root.RikaQuest.figures;
   }
 
-  // size×size px のマスコット。頭の上に電球の形の毛（「光」の印）
+  // size×size px のマスコット。以前は SVG を直接描いていたが、いまは画像を <img> で出す（関数名は互換のため svg のまま）
   function svg(size) {
+    const s = Number(size) > 0 ? Math.round(Number(size) * 100) / 100 : 80;
+    const esc = figures().escapeText;
+    return '<img class="mascot" src="' + IMAGE + '" width="' + s + '" height="' + s + '"' +
+      ' alt="' + esc(api.NAME) + '" draggable="false">';
+  }
+
+  // 以前の手描きマスコット「ピカ」（オレンジ色の生き物）。画像が使えないときの予備として残す
+  function legacySvg(size) {
     const s = Number(size) > 0 ? Math.round(Number(size) * 100) / 100 : 80;
     const esc = figures().escapeText;
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="' + s + '" height="' + s + '"' +
@@ -39,7 +48,7 @@
       '<p class="mascot-bubble">' + figures().escapeText(message) + '</p></div>';
   }
 
-  const api = { NAME, svg, celebrateMarkup };
+  const api = { NAME, IMAGE, svg, legacySvg, celebrateMarkup };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.RikaQuest = Object.assign(root.RikaQuest || {}, { mascot: api });

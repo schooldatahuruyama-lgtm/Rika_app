@@ -2,6 +2,7 @@
 const test = require('node:test'); const assert = require('node:assert/strict');
 const figures = require('../js/figures.js');
 const mascot = require('../js/mascot.js');
+const fs = require('node:fs'); const path = require('node:path');
 
 const regionScene = { width: 320, height: 240, items: [{ type: 'region', id: 'r1', x: 100, y: 100, r: 30, label: 'A' }] };
 
@@ -149,11 +150,21 @@ test('sceneSvg: 数値は小数 2 けたまで', () => {
   assert.ok(s.includes('x1="0.33"'));
 });
 
-test('mascot.svg(80) は 80px の大きさ', () => {
+test('mascot.svg(80) は 80px の大きさの画像で、名前が alt に入る', () => {
   const s = mascot.svg(80);
   assert.ok(s.includes('width="80"'));
   assert.ok(s.includes('height="80"'));
+  assert.ok(s.startsWith('<img '));
+  assert.ok(s.includes('src="' + mascot.IMAGE + '"'));
+  assert.ok(s.includes('alt="' + mascot.NAME + '"'));
   assert.equal(typeof mascot.NAME, 'string');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', mascot.IMAGE)), '画像ファイルがある');
+});
+
+test('mascot.legacySvg(80) は以前の手描き SVG', () => {
+  const s = mascot.legacySvg(80);
+  assert.ok(s.startsWith('<svg '));
+  assert.ok(s.includes('width="80"'));
 });
 
 test('mascot.celebrateMarkup はメッセージをエスケープし、マスコットを含む', () => {

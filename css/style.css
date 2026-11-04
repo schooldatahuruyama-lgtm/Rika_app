@@ -356,6 +356,7 @@ p {
   display: block;
   width: 100%;
   height: 100%;
+  padding: 3px;
   object-fit: contain;
 }
 
@@ -364,13 +365,12 @@ p {
   height: 36px;
 }
 
-/* 画像（SVG）に入っている丸い背景と同じ色 */
-.avatar-fox { background: #E5F9F6; }
-.avatar-cat { background: #EEE9FF; }
-.avatar-dog { background: #FFF5DE; }
-.avatar-panda { background: #FFF0ED; }
-.avatar-frog { background: #E9F2FF; }
-.avatar-penguin { background: #EFF9E9; }
+.avatar-fox { background: #FFF0E9; }
+.avatar-cat { background: #FFF7DA; }
+.avatar-dog { background: #E4F5F1; }
+.avatar-panda { background: #F3EBFC; }
+.avatar-frog { background: #EDF6DF; }
+.avatar-penguin { background: #E9F4FF; }
 
 .avatar-grid {
   display: grid;
@@ -385,14 +385,12 @@ p {
   gap: 4px;
   min-height: 96px;
   min-width: 0;
-  padding: 8px 4px;
+  padding: 8px;
   border: 3px solid var(--line);
   border-radius: 16px;
   background: #fff;
   font: inherit;
-  font-size: 14px;   /* 「ぷにカプセル」（6 文字）が 375px 幅の 3 列でも 1 行に収まる大きさ */
-  line-height: 1.2;
-  text-align: center;
+  font-size: 18px;
   color: var(--text);
   cursor: pointer;
 }

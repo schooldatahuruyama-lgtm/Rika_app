@@ -17,15 +17,14 @@
   const REVIEW_MINUTES = 2;      // 復習クエスト（類題 3 問）のおよその時間
   const HISTORY_LIMIT = 30;      // 記録画面の取り組み履歴に出す件数
 
-  // 理科の先生キャラクター 6 種（ユーザー提供の SVG。assets/avatars/README.md）。
-  // 保存済みプロフィールと互換性を保つため id は従来の値（fox など）のまま使う。
+  // オリジナルキャラクター 6 種。保存済みプロフィールと互換性を保つため id は従来の値を使う。
   const AVATARS = [
-    { id: 'fox', image: 'assets/avatars/mascot_A.svg', label: 'まる先生' },
-    { id: 'cat', image: 'assets/avatars/mascot_B.svg', label: 'しずく博士' },
-    { id: 'dog', image: 'assets/avatars/mascot_C.svg', label: 'ぷにカプセル' },
-    { id: 'panda', image: 'assets/avatars/mascot_D.svg', label: 'もくもく先生' },
-    { id: 'frog', image: 'assets/avatars/mascot_E.svg', label: 'キューブ先生' },
-    { id: 'penguin', image: 'assets/avatars/mascot_F.svg', label: 'まめ博士' },
+    { id: 'fox', image: 'assets/avatars/poyon.png', label: 'ポヨン' },
+    { id: 'cat', image: 'assets/avatars/mojari.png', label: 'モジャリ' },
+    { id: 'dog', image: 'assets/avatars/nyokki.png', label: 'ニョッキ' },
+    { id: 'panda', image: 'assets/avatars/purumo.png', label: 'プルモ' },
+    { id: 'frog', image: 'assets/avatars/mukuri.png', label: 'ムクリ' },
+    { id: 'penguin', image: 'assets/avatars/nemune.png', label: 'ネムネ' },
   ];
 
   const DATA_LOSS_NOTICE = '記録はこの端末のブラウザ内だけに保存され、ブラウザのデータ削除や端末の変更で消えることがあります。';
@@ -95,7 +94,7 @@
   function avatarBadge(id, small) {
     const a = avatarOf(id);
     return el('span', { class: 'avatar avatar-' + a.id + (small ? ' avatar-small' : ''), 'aria-hidden': 'true' }, [
-      el('img', { class: 'avatar-image', src: a.image, alt: '', width: 350, height: 350, draggable: 'false' }),
+      el('img', { class: 'avatar-image', src: a.image, alt: '', width: 256, height: 256, draggable: 'false' }),
     ]);
   }
 
