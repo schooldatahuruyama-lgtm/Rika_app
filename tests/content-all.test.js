@@ -117,3 +117,27 @@ files.forEach(file => {
     assert.ok(m[1].includes("'content/" + file + "'"), 'sw.js の PRECACHE に content/' + file + ' がない');
   });
 });
+
+// 単元をまたいだ id の重複（概念 id は理解度の記録のキー、ステージ id は進捗のキーなので、全単元で一意でなければならない）
+test('全単元を通して、ステージ・概念・カード・問題・領域の id が重複しない', () => {
+  const seen = new Map();   // 'kind:id' → 単元 id
+  const dup = [];
+  files.forEach(file => {
+    const unit = require(path.join(CONTENT_DIR, file)).unit;
+    const add = (kind, id) => {
+      const key = kind + ':' + id;
+      if (seen.has(key) && seen.get(key) !== unit.id) dup.push(key + '（' + seen.get(key) + ' と ' + unit.id + '）');
+      seen.set(key, unit.id);
+    };
+    (unit.concepts || []).forEach(c => { add('概念', c.id); (c.checkPool || []).forEach(p => add('問題', p.id)); });
+    (unit.areas || []).forEach(a => {
+      add('領域', a.id);
+      (a.stages || []).forEach(s => {
+        add('ステージ', s.id);
+        (s.lessons || []).forEach(c => add('カード', c.id));
+        [s.warmup, ...(s.problems || []), ...(s.retryPool || [])].forEach(p => { if (p) add('問題', p.id); });
+      });
+    });
+  });
+  assert.deepEqual(dup, []);
+});

@@ -137,3 +137,7 @@ Ruling: 土台を 2 つに分けた。(1) 単元をえらぶ仕組み（content/
 Ruling: 中学 1〜3 年の単元の表は学習指導要領の内容のまとまり（19 単元）を教科書でよくある単元名で並べ、先生は A〜F の対応表どおり。表にない id の単元は「その他」に出す。
 Ruling: ドライブの図版（学図など出版社の図）は転載しない。「どんな場面を描くか」の参考にだけ使い、図は figures.js の部品で描き直す（設計書「失敗の条件」）。
 単元をえらぶ: implemented (opus, 指示書 .ai-tasks/20261104-160000). 汎用の図の部品: implemented (opus, 指示書 .ai-tasks/20261104-161000, 176/176). 2 つをまとめて Codex round1 = 要修正 (High 2: line/polygon の anchorOf が points を読まない / tube の当たり判定に tilt 未適用, Medium 1: setUnit の保存失敗時に選択が残る) → controller fix 177/177. Codex round2 = 指摘なし → complete (VERSION 2026-11-04-12)
+Ruling: 教材は 1 単元 1 ファイル（content/<id>.js）、領域 2 × ステージ 2、概念 4〜6 を目安に Opus のサブエージェントが 3〜4 単元ずつ並行して書く。index.html・sw.js の行は controller が先に足し、書き手は触らない — コスト: 執筆中は offline テストが一時的に失敗する。
+Ruling: 概念 id は単元の接頭辞付き（so-/fo-/su-/sol-/sc-/pl-/an-/vo-/st-…）で全単元一意にする（理解度の記録のキー）。光（light）は公開済みで記録があるので変えない。tests/content-all.test.js が重複を検査する。
+Ruling: Codex が利用上限（2026-11-04 21:05 まで）のため、レビューは実装に関わっていない Claude エージェント（.ai-review/*_claude.md）。Low のみの指摘を直したときの再確認は次の単元群の round 1 に含める — コスト: サイクルの区切りがずれる。
+1 年の教材 9 単元: sound/force/substance = Codex round1 要修正(High 3: 有機物の定義、drag の許容 2 件 / Medium 1) → fix → Claude round2 指摘なし。solution/state-change/plants = Claude round1 (High 1: sol-4-p3 drag / Medium 1: 概念 id 接頭辞 / Low 4) → fix → Claude round2 Low 1 → fix (40 ℃) → 次の round1 で解消確認。animals/volcano/strata = Claude round1 Low 6 → 5 件 fix、1 件（region が接する）見送り → complete (9 単元 36 ステージ、tests 259)
