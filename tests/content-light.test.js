@@ -117,6 +117,16 @@ test('図の item の type はすべて figures.js が描ける種類', () => {
   });
 });
 
+test('動く図（anim）を持つカードは anim が anim.KINDS にあり、静止図（figure）も持つ。straight-1-c3 と reflect-1-c3 の 2 枚', () => {
+  const { KINDS } = require('../js/anim.js');
+  const cards = stages.flatMap(s => s.lessons).filter(c => c.anim !== undefined);
+  assert.deepEqual(cards.map(c => c.id).sort(), ['reflect-1-c3', 'straight-1-c3']);
+  cards.forEach(c => {
+    assert.ok(KINDS.includes(c.anim), c.id + ' の anim ' + c.anim + ' は動く図の種類にない');
+    assert.ok(c.figure && Array.isArray(c.figure.items), c.id + ' に静止図がない');
+  });
+});
+
 // ---- 解説の用語（**語句**）と用語問題 ----
 
 // ステージごとに用語にしてよい語（実装指示書 20261104-120000 の表）

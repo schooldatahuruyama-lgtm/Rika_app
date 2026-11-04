@@ -18,6 +18,7 @@
     lensFill: '#E8F0FF',
     bulb: '#FFD34D',
     bulbEdge: '#C98A00',
+    shadow: '#4A4A4A',
   };
 
   // 物質の名前と塗りの色（空気は塗らない）
@@ -217,6 +218,11 @@
       return line(it.x, it.y1, it.x, it.y2, { stroke: COLOR.line, 'stroke-width': 8, 'stroke-linecap': 'round' }) +
         text(it.x, top - 10, 'スクリーン', { 'text-anchor': 'middle' });
     },
+
+    // 影: スクリーン上（x の位置）の y1〜y2 にできる影。濃い灰色の半透明の太い線
+    shadow(it) {
+      return line(it.x, it.y1, it.x, it.y2, { stroke: COLOR.shadow, 'stroke-width': 12, opacity: 0.55, 'stroke-linecap': 'butt' });
+    },
   };
 
   // item の中心（ドラッグの当たり判定を置く場所）
@@ -224,7 +230,8 @@
     const n = (v) => Number(v) || 0;
     switch (it.type) {
       case 'object': return { x: n(it.x), y: n(it.y) - n(it.height) / 2 };
-      case 'screen': return { x: n(it.x), y: (n(it.y1) + n(it.y2)) / 2 };
+      case 'screen':
+      case 'shadow': return { x: n(it.x), y: (n(it.y1) + n(it.y2)) / 2 };
       case 'mirror':
       case 'ray': return { x: (n(it.x1) + n(it.x2)) / 2, y: (n(it.y1) + n(it.y2)) / 2 };
       case 'lens': return { x: n(it.cx), y: n(it.cy) };

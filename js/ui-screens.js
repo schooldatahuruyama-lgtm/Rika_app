@@ -680,10 +680,23 @@
     return p;
   }
 
+  // 解説カードの図: anim（動く図の種類）があり anim.js が使えれば動く図、なければ静止図（figure）
+  // 動く図は要素が画面から外れると自分で止まる（anim.js）
+  function lessonFigure(card) {
+    const anim = RQ.anim;
+    if (typeof card.anim === 'string' && anim && anim.KINDS.includes(card.anim)) {
+      const a = anim.create(card.anim);
+      if (!anim.prefersReducedMotion()) a.start();
+      return a.element;
+    }
+    return card.figure ? svgBox(RQ.figures.sceneSvg(card.figure), 'figure-box') : null;
+  }
+
   // 解説カードの中身（図、文、カードに出てきた大切な言葉の一覧）
   function lessonCardBody(card) {
     const children = [];
-    if (card.figure) children.push(svgBox(RQ.figures.sceneSvg(card.figure), 'figure-box'));
+    const figure = lessonFigure(card);
+    if (figure) children.push(figure);
     children.push(richParagraph('lesson-text', card.text));
     const terms = RQ.richtext.terms(card.text);
     if (terms.length > 0) {
@@ -716,6 +729,8 @@
       ].concat(lessonCardBody(c)), 'lesson-card'));
     });
     body.scrollTop = 0;
+    // 閉じたら中身を外す（動く図のループを止める。「閉じる」ボタン・Esc のどちらで閉じても close が来る）
+    dialog.onclose = () => body.replaceChildren();
     if (typeof dialog.showModal === 'function') dialog.showModal();
     else dialog.setAttribute('open', '');
     document.getElementById('lesson-dialog-close').focus();
@@ -726,6 +741,8 @@
     if (!dialog) return;
     if (typeof dialog.close === 'function' && dialog.open) dialog.close();
     else dialog.removeAttribute('open');
+    const body = document.getElementById('lesson-dialog-body');
+    if (body) body.replaceChildren();
   }
 
   // ---- 解説カード ----
@@ -748,6 +765,8 @@
     ].concat(lessonCardBody(view.card)), 'lesson-card'));
     section.append(nextBtn);
     nextBtn.focus({ preventScroll: true });
+    // 別の画面へ移るとき、隠れた画面に動く図が残って動き続けないよう、中身を外す
+    return () => section.replaceChildren();
   }
 
   // ---- 問題とフィードバック ----

@@ -1497,3 +1497,17 @@ svg.scene .scene-label {
 .lesson-dialog-body > * + * {
   margin-top: 16px;
 }
+
+/* 解説の動く図（js/anim.js）。図の箱は .figure-box と同じ見た目、その下にとめる／動かすボタン */
+.anim-box {
+  margin: 8px 0;
+}
+
+.anim-box .figure-box {
+  margin-bottom: 0;
+}
+
+.anim-toggle {
+  min-height: 44px;
+  margin-top: 8px;
+}

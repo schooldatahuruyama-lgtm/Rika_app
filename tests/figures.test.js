@@ -69,7 +69,7 @@ test('sceneSvg: extraRays は線として描かれる', () => {
   assert.ok(s.includes('<line x1="1" y1="2" x2="300" y2="200"'));
 });
 
-test('sceneSvg: 13 種類すべての item を描ける', () => {
+test('sceneSvg: 14 種類すべての item を描ける', () => {
   const items = [
     { type: 'mirror', id: 'm', x1: 40, y1: 200, x2: 280, y2: 200 },
     { type: 'boundary', y: 120, upper: 'air', lower: 'water' },
@@ -84,7 +84,9 @@ test('sceneSvg: 13 種類すべての item を描ける', () => {
     { type: 'eye', x: 290, y: 40 },
     { type: 'lamp', x: 20, y: 60 },
     { type: 'screen', x: 300, y1: 40, y2: 200 },
+    { type: 'shadow', x: 300, y1: 60, y2: 180 },
   ];
+  assert.equal(items.length, figures.ITEM_TYPES.length);
   const s = figures.sceneSvg({ width: 320, height: 240, items });
   for (const it of items) assert.ok(s.includes(`data-item-type="${it.type}"`), it.type);
   assert.ok(s.includes('marker-end="url(#scene-arrow)"'));
@@ -92,6 +94,16 @@ test('sceneSvg: 13 種類すべての item を描ける', () => {
   assert.ok(s.includes('r="22"'), 'region の半径は 22 以上');
   assert.ok(s.includes('スクリーン'));
   assert.ok(s.includes('水'));
+});
+
+test('shadow: ITEM_TYPES にあり、x の位置に y1〜y2 の線として描く', () => {
+  assert.ok(figures.ITEM_TYPES.includes('shadow'));
+  const s = figures.sceneSvg({ width: 320, height: 240, items: [{ type: 'shadow', x: 280, y1: 32, y2: 212 }] });
+  assert.ok(s.includes('data-item-type="shadow"'));
+  assert.ok(s.includes('<line'));
+  assert.ok(s.includes('x1="280" y1="32" x2="280" y2="212"'));
+  assert.ok(s.includes('stroke-width="12"'));
+  assert.ok(s.includes('opacity="0.55"'));
 });
 
 test('sceneSvg: 文字は線より上の層にまとめて描く（ドラッグ対象の文字はその item の中に残す）', () => {
