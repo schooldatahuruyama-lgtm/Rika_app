@@ -17,14 +17,14 @@
   const REVIEW_MINUTES = 2;      // 復習クエスト（類題 3 問）のおよその時間
   const HISTORY_LIMIT = 30;      // 記録画面の取り組み履歴に出す件数
 
-  // アバター 6 種（id を profile.avatar に保存する。背景色は CSS の .avatar-<id>）
+  // オリジナルキャラクター 6 種。保存済みプロフィールと互換性を保つため id は従来の値を使う。
   const AVATARS = [
-    { id: 'fox', emoji: '🦊', label: 'キツネ' },
-    { id: 'cat', emoji: '🐱', label: 'ネコ' },
-    { id: 'dog', emoji: '🐶', label: 'イヌ' },
-    { id: 'panda', emoji: '🐼', label: 'パンダ' },
-    { id: 'frog', emoji: '🐸', label: 'カエル' },
-    { id: 'penguin', emoji: '🐧', label: 'ペンギン' },
+    { id: 'fox', image: 'assets/avatars/poyon.png', label: 'ポヨン' },
+    { id: 'cat', image: 'assets/avatars/mojari.png', label: 'モジャリ' },
+    { id: 'dog', image: 'assets/avatars/nyokki.png', label: 'ニョッキ' },
+    { id: 'panda', image: 'assets/avatars/purumo.png', label: 'プルモ' },
+    { id: 'frog', image: 'assets/avatars/mukuri.png', label: 'ムクリ' },
+    { id: 'penguin', image: 'assets/avatars/nemune.png', label: 'ネムネ' },
   ];
 
   const DATA_LOSS_NOTICE = '記録はこの端末のブラウザ内だけに保存され、ブラウザのデータ削除や端末の変更で消えることがあります。';
@@ -93,7 +93,9 @@
 
   function avatarBadge(id, small) {
     const a = avatarOf(id);
-    return el('span', { class: 'avatar avatar-' + a.id + (small ? ' avatar-small' : ''), 'aria-hidden': 'true', text: a.emoji });
+    return el('span', { class: 'avatar avatar-' + a.id + (small ? ' avatar-small' : ''), 'aria-hidden': 'true' }, [
+      el('img', { class: 'avatar-image', src: a.image, alt: '', width: 256, height: 256, draggable: 'false' }),
+    ]);
   }
 
   // ★ の並び（0〜3）。読み上げ用に「星 2 つ」
