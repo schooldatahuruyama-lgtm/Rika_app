@@ -452,3 +452,71 @@ test('session は JSON.stringify → parse しても current が同じ', () => {
   assert.equal(count(rest.events, 'stageClear'), 1);
   assert.deepEqual(checkpoints, ['lesson', 'problem', 'feedback', 'offer', 'problem', 'lesson']);
 });
+
+// ---- 用語問題（term: true）の類題の選び方 ----
+test('用語問題の誤答には用語の類題、ふつうの問題の誤答にはふつうの類題が先に出る', () => {
+  // fixture を写して s-a1 に用語問題を足す（main の 2 問目と retryPool の最後）
+  const u2 = JSON.parse(JSON.stringify(unit));
+  const st = u2.areas[0].stages[0];
+  const termMain = {
+    id: 'p-a1-t1', type: 'fill', concept: 'c-a', term: true, prompt: '大切な言葉を入れよう。', figure: null,
+    text: '光の進む道を[b1]という。', blanks: [{ id: 'b1', kind: 'word', options: ['光の道すじ', '影'], answer: '光の道すじ' }],
+    explanation: '光の進む道が**光の道すじ**です。', hint: '図を思い出そう。',
+  };
+  const termRetry = Object.assign({}, termMain, {
+    id: 'p-a1-t2', text: '光がさえぎられてできる暗い部分を[b1]という。',
+    blanks: [{ id: 'b1', kind: 'word', options: ['影', '光源'], answer: '影' }],
+  });
+  st.problems.splice(1, 0, termMain);
+  st.retryPool.push(termRetry);
+  assert.deepEqual(cr.validateUnit(u2), []);
+  const reg2 = cr.createRegistry(); reg2.register(u2);
+  let s = S.startStage(reg2, record.createRecord(), 's-a1', 'problem', NOW, config);
+  // 答えてフィードバックを閉じ、答えた問題の view を返す
+  const step = (ok) => {
+    const v = S.current(s, reg2);
+    const r = S.answer(s, reg2, ok ? rightAnswer(v.problem) : wrongAnswer(v.problem), config);
+    assert.equal(r.correct, ok);
+    s = S.next(r.session, reg2, config).session;
+    return v;
+  };
+  const cur = () => S.current(s, reg2);
+  // ふつうの問題 p-a1-1 を誤答 → ふつうの類題 r1（用語の類題 t2 は後ろにあっても選ばない）
+  assert.equal(step(false).problem.id, 'p-a1-1');
+  assert.equal(cur().problem.id, 'p-a1-r1'); assert.equal(cur().phase, 'retry');
+  step(true);
+  // 用語問題 p-a1-t1 を誤答 → 用語の類題 t2（ふつうの r2 が残っていても）
+  assert.equal(step(false).problem.id, 'p-a1-t1');
+  assert.equal(cur().problem.id, 'p-a1-t2'); assert.equal(cur().phase, 'retry');
+  step(true);
+  // ふつうの問題 p-a1-2 を誤答 → r2
+  assert.equal(step(false).problem.id, 'p-a1-2');
+  assert.equal(cur().problem.id, 'p-a1-r2');
+  step(true);
+  // p-a1-3 を誤答 → 類題はすべて使用済みなので挿入せず次の main へ
+  assert.equal(step(false).problem.id, 'p-a1-3');
+  assert.equal(cur().problem.id, 'p-a1-4'); assert.equal(cur().phase, 'main');
+});
+
+test('同じ種類の類題が尽きたら、残っている別の種類の類題を出す', () => {
+  const u2 = JSON.parse(JSON.stringify(unit));
+  const st = u2.areas[0].stages[0];
+  // 用語の類題だけを足す（ふつうの類題 r1・r2 を先に使い切る）
+  st.retryPool.push({
+    id: 'p-a1-t2', type: 'fill', concept: 'c-a', term: true, prompt: '大切な言葉を入れよう。', figure: null,
+    text: '光の進む道を[b1]という。', blanks: [{ id: 'b1', kind: 'word', options: ['光の道すじ', '影'], answer: '光の道すじ' }],
+    explanation: '光の進む道が**光の道すじ**です。', hint: '図を思い出そう。',
+  });
+  const reg2 = cr.createRegistry(); reg2.register(u2);
+  let s = S.startStage(reg2, record.createRecord(), 's-a1', 'problem', NOW, config);
+  const step = (ok) => {
+    const v = S.current(s, reg2);
+    const r = S.answer(s, reg2, ok ? rightAnswer(v.problem) : wrongAnswer(v.problem), config);
+    s = S.next(r.session, reg2, config).session;
+    return v;
+  };
+  const cur = () => S.current(s, reg2);
+  step(false); assert.equal(cur().problem.id, 'p-a1-r1'); step(true);
+  step(false); assert.equal(cur().problem.id, 'p-a1-r2'); step(true);
+  step(false); assert.equal(cur().problem.id, 'p-a1-t2'); assert.equal(cur().phase, 'retry');
+});

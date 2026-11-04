@@ -109,3 +109,10 @@ Task 15: complete (commit 1afc0ca, reviewed in the final review)
 Final review: dispatched (opus), range 275ab2d..1afc0ca
 Final review: 修正後に可 (Important 2, 直すべき Minor 5) → one fix wave dispatched
 Final fix wave: commit c0d6b48 (5/5 addressed by implementer) — scoped re-review pending
+
+## 追加作業 2026-11-04: 解説の用語の強調と用語問題（指示書 .ai-tasks/20261104-120000）
+Ruling: ステージの問題数の上限を 5 → 6 に（設計書 5.3 の「暫定 4〜5 問」から変更）。用語問題を main の 2 問目に 1 問足すため — コスト: 1 ステージの時間が約 20 秒のびる。
+Ruling: 用語は解説文の `**語句**` 記法で示し、文そのものは変えない。許可された語が文に出ないカード 4 枚（straight-2-c1, straight-2-c3, refract-2-c1, refract-2-c2）は用語なしのままにし、テストで名前を挙げて除外 — コスト: この 4 枚には「大切な言葉」の行が出ない。
+Ruling: 用語問題を間違えたら用語の類題を、ふつうの問題なら ふつうの類題を先に出す（Codex round 1 の指摘 1。並び順だけでは用語の類題に届かなかった）— コスト: 類題の選び方が概念だけでなく問題の種類にも依存する。
+用語の強調: implemented (opus, commit e05c6c5, 119/119). Codex round1 = 要修正 (High 1: refract-2-t2 が出題されない / Medium 1: 虚像の説明). fix by controller (session.js insertRetry, lens-2-t1, sw VERSION -5, README) 121/121 — round 2 pending
+用語の強調: Codex round2 = 指摘なし → complete (commits e05c6c5 + 修正コミット)

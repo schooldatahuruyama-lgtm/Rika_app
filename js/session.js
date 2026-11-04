@@ -208,7 +208,7 @@
     const at = s.index + 1;   // 分岐で足す step はすべて今の問題のすぐ後ろに入れる
     if (s.kind === 'stage' && !correct && phase === 'main') {
       s.missStreak[c] = 1;
-      insertRetry(reg, s, c, at);
+      insertRetry(reg, s, problem, at);
     } else if (s.kind === 'stage' && !correct && phase === 'retry') {
       s.missStreak[c] = (s.missStreak[c] || 0) + 1;
       if (s.missStreak[c] >= config.learnback.missToOffer) {
@@ -220,7 +220,7 @@
           s.queue.splice(at, 0, ...lessonSteps(reg, s.stageId, false));
         }
       } else {
-        insertRetry(reg, s, c, at);
+        insertRetry(reg, s, problem, at);
       }
     } else if (s.kind === 'stage' && phase === 'check' && s.learnback) {
       evaluateCheck(reg, s, correct, at, events, config);
@@ -228,10 +228,12 @@
     return { session: s, correct, invalid: false, feedback, events };
   }
 
-  // そのステージの類題プールから、まだ出していない同じ概念の問題を 1 問。尽きていれば何もしない
-  function insertRetry(reg, s, conceptId, at) {
+  // そのステージの類題プールから、まだ出していない同じ概念の問題を 1 問。尽きていれば何もしない。
+  // 用語問題（term: true）を間違えたら用語の類題を、ふつうの問題ならふつうの類題を先に選ぶ（どちらも尽きたら残りから）
+  function insertRetry(reg, s, failed, at) {
     const stage = reg.stage(s.stageId);
-    const p = list(stage && stage.retryPool).find(x => x.concept === conceptId && s.usedProblemIds.indexOf(x.id) === -1);
+    const pool = list(stage && stage.retryPool).filter(x => x.concept === failed.concept && s.usedProblemIds.indexOf(x.id) === -1);
+    const p = pool.find(x => !!x.term === !!failed.term) || pool[0];
     if (!p) return;
     s.usedProblemIds.push(p.id);
     s.queue.splice(at, 0, problemStep(p.id, 'retry'));
