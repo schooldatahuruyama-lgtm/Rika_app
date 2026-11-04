@@ -1,5 +1,5 @@
 // tests/content-all.test.js
-// content/ の単元ファイルすべてに同じ検査をかける（curriculum.js は単元一覧なので除く）。
+// content/ の単元ファイルすべてに同じ検査をかける（curriculum.js は単元一覧、readings.js はふりがなの辞書なので除く）。
 // 単元ファイルを足すと、ここで自動的に検査される。単元ごとの細かい検査は tests/content-<id>.test.js に書く。
 const test = require('node:test'); const assert = require('node:assert/strict');
 const fs = require('node:fs'); const path = require('node:path');
@@ -15,7 +15,9 @@ const CONTENT_DIR = path.join(ROOT, 'content');
 const FIGURE_TYPES = ['figure-choice', 'ray-draw', 'drag'];
 const BOOK_NAMES = /東京書籍|啓林館|大日本図書|教育出版|学校図書|学図|東書|啓林/;
 
-const files = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.js') && f !== 'curriculum.js').sort();
+// 単元でないファイル: curriculum.js（単元一覧）、readings.js（ふりがなの辞書）
+const NOT_UNITS = ['curriculum.js', 'readings.js'];
+const files = fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.js') && !NOT_UNITS.includes(f)).sort();
 const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const swJs = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
 
