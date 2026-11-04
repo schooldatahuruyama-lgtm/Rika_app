@@ -3,13 +3,19 @@
 //   app.state  = { store, record（getter: 今の生徒の記録）, reg, config, screen, params, session, offline, protectedStorage, contentErrors }
 //   app.go(name, params)      … 画面を切り替える。RikaQuest.ui.screens[name](section, ctx, params) を呼ぶ
 //   app.save(options)         … storage.save(localStorage, store, config, options)。false なら header に「保存できません」
-//   app.message(text, kind)   … header の下にお知らせ（kind: 'info' | 'ok' | 'warn'）。次の go で消える
+//   app.message(text, kind, options) … header の下にお知らせ（kind: 'info' | 'ok' | 'warn'）。次の go で消える。
+//                               options.noRuby が true なら、その文にふりがなを付けない（ニックネームを含む文など）
 //   app.setRecord(record)     … 今の生徒の記録を置きかえて保存（record.js の関数は新しい record を返すため）
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
 //   画面に渡す ctx には、ほかに curriculum（RikaQuest.curriculum。なければ null）、unitId（getter: いま選んでいる単元の id。
 //                               units.currentId で決める。教材が 1 つもなければ null）、setUnit(id)（今の生徒の単元を変えて保存。
-//                               教材のない id・プロフィールなしは false）がある
+//                               教材のない id・プロフィールなしは false）、prefs（getter: 今の生徒の見た目の設定
+//                               { theme: 'blue'|'teal'|'green'|'purple'|'pink', ruby: 'off'|'on' }。プロフィールがなければ既定）、
+//                               setPrefs({ theme?, ruby? })（今の生徒の設定を変えてすぐ反映し、保存の結果を返す。
+//                               プロフィールなし・正しくない値は false。保存できなければ元に戻す）がある
+//   見た目の設定（アクセントカラー・ふりがな）は生徒ごと（profile.theme・profile.ruby）。applyPrefs() が
+//   <html data-theme>・<meta name="theme-color">・RikaQuest.ruby.setEnabled に反映する（go と start で呼ぶ）
 //   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported-file'|'unsupported-insecure', version, at }（app.state.offline と同じ値）
 //                               書きかえると document に 'rika-quest:offline' を送る（設定画面が表示を更新する）
 //   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
@@ -31,6 +37,16 @@
 
   // プロフィールがなくても開ける画面
   const NO_PROFILE_SCREENS = ['profile', 'settings'];
+
+  // アクセントカラー（profile.theme）。値は css/style.css の :root[data-theme] と同じ --blue（theme-color に使う）
+  const THEME_COLORS = { blue: '#1A5CFF', teal: '#0E9AA7', green: '#178A4C', purple: '#7A4FD6', pink: '#E0508A' };
+  const DEFAULT_THEME = 'blue';
+  // ふりがな（profile.ruby）
+  const RUBY_VALUES = ['off', 'on'];
+  const DEFAULT_RUBY = 'off';
+
+  function isTheme(x) { return typeof x === 'string' && Object.prototype.hasOwnProperty.call(THEME_COLORS, x); }
+  function isRubyValue(x) { return typeof x === 'string' && RUBY_VALUES.indexOf(x) !== -1; }
 
   const state = {
     store: null,
@@ -99,6 +115,10 @@
       if (typeof p.nickname !== 'string') p.nickname = p.nickname === undefined || p.nickname === null ? '' : String(p.nickname);
       // 選んだ単元: 文字列でなければ消す（知らない単元 id は残す。表示のときに units.currentId が既定へ戻す）
       if (p.unitId !== undefined && typeof p.unitId !== 'string') delete p.unitId;
+      // 見た目の設定: 知らない値は消す（既定の色・ふりがななしに戻る）
+      // 文字列かを先に見る（配列や toString のないオブジェクトを、キーの検査で文字列に変えないように）
+      if (p.theme !== undefined && !isTheme(p.theme)) delete p.theme;
+      if (p.ruby !== undefined && !isRubyValue(p.ruby)) delete p.ruby;
       store.records[p.id] = normalizeRecord(store.records[p.id]);
     });
     if (!store.profiles.some((p) => p.id === store.currentProfileId)) {
@@ -154,9 +174,12 @@
 
   // ---- お知らせ ----
 
-  function message(text, kind) {
+  function message(text, kind, options) {
     const box = byId('message');
     if (!box) return;
+    // 文を入れる前に付ける（ruby.js の MutationObserver は、属性のある箱の中を飛ばす）
+    if (options && options.noRuby) box.setAttribute('data-no-ruby', '');
+    else box.removeAttribute('data-no-ruby');
     if (!text) {
       box.hidden = true;
       box.textContent = '';
@@ -182,7 +205,11 @@
     if (!p) return;
     const ui = RQ.ui && RQ.ui.helpers;
     if (ui) box.append(ui.avatarBadge(p.avatar, true), ' ');
-    box.append(document.createTextNode(p.nickname));
+    // ニックネームにはふりがなを付けない（名前の読みは辞書では決められない）
+    const name = document.createElement('span');
+    name.setAttribute('data-no-ruby', '');
+    name.textContent = p.nickname;
+    box.append(name);
   }
 
   // ---- 学習の進行（session.js を動かし、出来事を記録に入れて保存する） ----
@@ -352,6 +379,53 @@
     return false;
   }
 
+  // ---- 見た目の設定（アクセントカラー・ふりがな） ----
+
+  // 今の生徒の設定（プロフィールがなければ既定）
+  function currentPrefs() {
+    const profile = currentProfile();
+    return {
+      theme: profile && profile.theme ? profile.theme : DEFAULT_THEME,
+      ruby: profile && profile.ruby ? profile.ruby : DEFAULT_RUBY,
+    };
+  }
+
+  // 今の生徒の設定を画面に反映する（色は <html data-theme> と theme-color、ふりがなは ruby.js）
+  function applyPrefs() {
+    const prefs = currentPrefs();
+    const html = document.documentElement;
+    if (prefs.theme === DEFAULT_THEME) delete html.dataset.theme;
+    else html.dataset.theme = prefs.theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLORS[prefs.theme]);
+    // ruby.js が読み込めなかったときは、ふりがなだけ飛ばす
+    if (RQ.ruby && typeof RQ.ruby.setEnabled === 'function') {
+      try {
+        RQ.ruby.setEnabled(prefs.ruby === 'on');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
+  // 今の生徒の設定を変えて反映・保存する。プロフィールがない・値が正しくないときは false。保存できなければ元に戻す
+  function setPrefs(patch) {
+    const profile = currentProfile();
+    if (!profile || !isObject(patch)) return false;
+    if (patch.theme !== undefined && !isTheme(patch.theme)) return false;
+    if (patch.ruby !== undefined && !isRubyValue(patch.ruby)) return false;
+    const before = { theme: profile.theme, ruby: profile.ruby };
+    if (patch.theme !== undefined) profile.theme = patch.theme;
+    if (patch.ruby !== undefined) profile.ruby = patch.ruby;
+    applyPrefs();
+    if (save()) return true;
+    ['theme', 'ruby'].forEach((k) => {
+      if (before[k] === undefined) delete profile[k]; else profile[k] = before[k];
+    });
+    applyPrefs();
+    return false;
+  }
+
   // ---- 画面の切り替え ----
 
   function makeCtx() {
@@ -363,6 +437,8 @@
       curriculum: RQ.curriculum || null,
       get unitId() { return RQ.units.currentId(state.reg, RQ.curriculum || null, currentProfile()); },
       setUnit,
+      get prefs() { return currentPrefs(); },
+      setPrefs,
       go,
       save,
       now: () => new Date(),
@@ -370,7 +446,7 @@
       setRecord,
       replaceStore,
       clearAll,
-      confirm: (text, okLabel) => RQ.ui.helpers.confirm(text, okLabel),
+      confirm: (text, okLabel, options) => RQ.ui.helpers.confirm(text, okLabel, options),
       state,
       app,
     };
@@ -393,6 +469,8 @@
       screen = 'home';
       p = {};
     }
+    // 生徒ごとの見た目の設定（プロフィールの切りかえ・削除・読み込みで変わるため、画面を描く前に毎回）
+    applyPrefs();
     const screens = (RQ.ui && RQ.ui.screens) || {};
     const renderer = screens[screen];
     const section = byId('screen-' + screen);
@@ -626,6 +704,7 @@
     }
 
     checkContent();
+    applyPrefs();
 
     if (root.location.protocol === 'file:') showNotice('file-notice', NOTICE_FILE);
     setupOffline();

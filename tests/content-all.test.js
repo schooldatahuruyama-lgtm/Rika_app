@@ -13,6 +13,8 @@ const richtext = require('../js/richtext.js');
 const ROOT = path.join(__dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content');
 const FIGURE_TYPES = ['figure-choice', 'ray-draw', 'drag'];
+// 図の image の src に使ってよい形（js/figures.js と同じ決まり）
+const IMAGE_SRC_RE = /^assets\/[A-Za-z0-9_./-]+\.(png|jpe?g|webp|svg)$/;
 const BOOK_NAMES = /東京書籍|啓林館|大日本図書|教育出版|学校図書|学図|東書|啓林/;
 
 // 単元でないファイル: curriculum.js（単元一覧）、readings.js（ふりがなの辞書）
@@ -89,6 +91,26 @@ files.forEach(file => {
       if (figure === null || figure === undefined) return;
       assert.ok(Array.isArray(figure.items), sid + ' の図に items がない');
       figure.items.forEach(it => assert.ok(figures.ITEM_TYPES.includes(it.type), sid + ' の item の type ' + it.type + ' は描けない'));
+    });
+  });
+
+  test(name + ': 図の image の src は assets/ の画像で、ファイルが実在し、sw.js の PRECACHE に入っている', () => {
+    const m = swJs.match(/const PRECACHE = \[([\s\S]*?)\];/);
+    assert.ok(m, 'sw.js に PRECACHE がない');
+    const scenes = stages.flatMap(s => s.lessons.map(c => ({ id: c.id, figure: c.figure })))
+      .concat(allProblems().map(p => ({ id: p.id, figure: p.figure })));
+    scenes.forEach(({ id: sid, figure }) => {
+      if (!figure || !Array.isArray(figure.items)) return;
+      figure.items.filter(it => it && it.type === 'image').forEach(it => {
+        const src = it.src;
+        assert.ok(typeof src === 'string' && IMAGE_SRC_RE.test(src) && !src.includes('..') && !src.includes('//'),
+          sid + ' の image の src ' + src + ' は assets/ の画像でない');
+        // Windows は大文字・小文字を区別しないので、フォルダの一覧に同じつづりで入っているかで実在を確かめる（公開先は区別する）
+        const dir = path.join(ROOT, path.posix.dirname(src));
+        const listed = fs.existsSync(dir) && fs.readdirSync(dir).includes(path.posix.basename(src));
+        assert.ok(listed, sid + ' の画像 ' + src + ' がない（大文字・小文字もそろえる）');
+        assert.ok(m[1].includes("'" + src + "'"), 'sw.js の PRECACHE に ' + src + ' がない');
+      });
     });
   });
 

@@ -97,6 +97,7 @@ const MIN_ITEMS = {
   flame: { type: 'flame', x: 150, y: 230 },
   symbol: { type: 'symbol', x: 160, y: 120, kind: 'battery' },
   arrow: { type: 'arrow', x1: 10, y1: 100, x2: 80, y2: 100 },
+  image: { type: 'image', src: 'assets/images/x/y.png' },
 };
 
 test('sceneSvg: ITEM_TYPES のすべての item を描ける', () => {
@@ -362,4 +363,62 @@ test('tube: tilt を付けると当たり判定の中心も底を中心に同じ
   assert.ok(m, 'hit-area がない');
   assert.equal(Number(m[1]), 145);
   assert.equal(Number(m[2]), 150);
+});
+
+// ---- 画像の部品と文字の白い下地 ----
+
+test('image: ITEM_TYPES にあり、既定は場面いっぱい（320×240）で縦横比を保つ。x・y・width・height・opacity の指定が効く', () => {
+  assert.ok(figures.ITEM_TYPES.includes('image'));
+  const d = bodyOf(one({ type: 'image', src: 'assets/images/x/y.png' }), 'image');
+  assert.equal(d, '<image href="assets/images/x/y.png" x="0" y="0" width="320" height="240" preserveAspectRatio="xMidYMid meet"/>');
+  assert.ok(!d.includes('xlink:href'));
+  const s = bodyOf(one({ type: 'image', src: 'assets/images/a-b_c.jpg', x: 20, y: 10, width: 200, height: 150, opacity: 0.5 }), 'image');
+  assert.equal(s, '<image href="assets/images/a-b_c.jpg" x="20" y="10" width="200" height="150" preserveAspectRatio="xMidYMid meet" opacity="0.5"/>');
+  assert.ok(bodyOf(one({ type: 'image', src: 'assets/p.webp', opacity: 3 }), 'image').includes('opacity="1"'));
+  ['assets/p.jpeg', 'assets/p.svg', 'assets/p.webp'].forEach(src => assert.ok(one({ type: 'image', src }).includes('<image href="' + src + '"'), src));
+  // 場面の大きさがちがえば既定もそれに合わせる
+  const big = figures.sceneSvg({ width: 400, height: 300, items: [{ type: 'image', src: 'assets/p.png' }] });
+  assert.ok(big.includes('width="400" height="300" preserveAspectRatio'), big);
+});
+
+test('image: 不正な src（外部・.. ・// ・javascript: ・画像でない・文字列でない）は何も描かない', () => {
+  ['http://example.com/x.png', 'https://example.com/x.png', '../x.png', 'assets/../x.png', 'assets//x.png',
+    'javascript:alert(1)', 'assets/a.txt', 'assets/a.png"onload="x', 'images/x.png', '/assets/x.png', 'data:image/png;base64,AAAA', '', null, 3]
+    .forEach(src => {
+      const s = one({ type: 'image', src });
+      assert.ok(!s.includes('<image'), String(src));
+      assert.ok(!s.includes('onload') && !s.includes('javascript'), String(src));
+    });
+  assert.ok(!one({ type: 'image' }).includes('<image'));
+});
+
+test('image: ドラッグ対象にしても落ちず、当たり判定は矩形の中心', () => {
+  const s = one({ type: 'image', id: 'img', src: 'assets/p.png', x: 20, y: 10, width: 200, height: 100 }, { draggableId: 'img' });
+  assert.match(s, /<circle class="hit-area" cx="120" cy="60"/);
+  assert.match(one({ type: 'image', id: 'img', src: 'assets/p.png' }, { draggableId: 'img' }), /<circle class="hit-area" cx="160" cy="120"/);
+});
+
+test('text・label の bg: true で白い角丸の下地が文字の直前に描かれ、文字といっしょに文字の層へ入る', () => {
+  const s = figures.sceneSvg({ width: 320, height: 240, items: [
+    { type: 'image', src: 'assets/p.png' },
+    { type: 'text', x: 100, y: 50, text: '肺ほう', size: 20, bg: true },
+  ] });
+  const layer = s.match(/<g class="scene-labels" pointer-events="none">([\s\S]*?)<\/g>/);
+  assert.ok(layer, '文字の層がある');
+  // 3 文字 × 20 = 60、左右 4px。上端はベースラインから 20 × 0.85 上、さらに 2px
+  assert.ok(layer[1].startsWith('<rect class="text-bg" x="96" y="31" width="68" height="24" rx="4" fill="white" fill-opacity="0.85"/><text x="100" y="50"'), layer[1]);
+  assert.equal(bodyOf(s, 'text'), '', '下地も文字も item の中に残らない');
+  assert.ok(s.indexOf('<image') < s.indexOf('class="text-bg"'), '下地は画像より上');
+  // anchor に合わせて下地の位置をずらす
+  assert.ok(one({ type: 'text', x: 100, y: 50, text: 'ab', anchor: 'middle', bg: true }).includes('<rect class="text-bg" x="80" '));
+  assert.ok(one({ type: 'text', x: 100, y: 50, text: 'ab', anchor: 'end', bg: true }).includes('<rect class="text-bg" x="64" '));
+  const l = one({ type: 'label', x: 10, y: 30, text: '心臓', bg: true });
+  assert.ok(l.includes('<rect class="text-bg" x="6" y="14.4" width="40" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="10" y="30"'), l);
+  // bg なし・空の文字には下地を付けない
+  assert.ok(!one({ type: 'text', x: 0, y: 0, text: 'a' }).includes('text-bg'));
+  assert.ok(!one({ type: 'label', x: 0, y: 0, text: '', bg: true }).includes('text-bg'));
+  // ドラッグ対象なら下地も文字もその item の中に残る
+  const dr = one({ type: 'text', id: 't', x: 0, y: 20, text: 'a', bg: true }, { draggableId: 't' });
+  assert.match(dr, /data-item-id="t"[^>]*><circle class="hit-area"[^>]*\/><rect class="text-bg"[^>]*\/><text /);
+  assert.ok(!dr.includes('scene-labels'));
 });

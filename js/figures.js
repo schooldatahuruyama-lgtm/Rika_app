@@ -165,6 +165,31 @@
     return out;
   }
 
+  // 文字（text と label で共通）。bg: true なら文字の後ろに白い角丸の下地を描く（写真の上でも読めるように）
+  // 下地の幅は文字数 × 文字の大きさ（全角）で概算し、左右 4px・上下 2px の余白。y は文字のベースライン
+  // 下地の rect は text の直前に出す（sceneSvg が文字といっしょに文字の層へ移す）
+  function styledText(x, y, s, st, bg) {
+    const t = text(x, y, s, st);
+    if (!bg || !t) return t;
+    const size = Number(st['font-size']) || LABEL_SIZE;
+    const w = Array.from(String(s)).length * size;
+    const anchor = st['text-anchor'] || 'start';
+    const left = n0(x) - (anchor === 'middle' ? w / 2 : anchor === 'end' ? w : 0);
+    const top = n0(y) - size * 0.85;
+    return tag('rect', {
+      class: 'text-bg', x: left - 4, y: top - 2, width: w + 8, height: size + 4,
+      rx: 4, fill: 'white', 'fill-opacity': 0.85,
+    }) + t;
+  }
+
+  // 画像の src: プロジェクトの assets/ の中の画像だけ（.. や // を含むもの、ほかの場所・形式は描かない）
+  const IMAGE_SRC_RE = /^assets\/[A-Za-z0-9_./-]+\.(png|jpe?g|webp|svg)$/;
+  function imageSrc(src) {
+    if (typeof src !== 'string' || !IMAGE_SRC_RE.test(src)) return null;
+    if (src.indexOf('..') !== -1 || src.indexOf('//') !== -1) return null;
+    return src;
+  }
+
   // 容器（ビーカー・試験管）の中の液体: 左右 left〜right、底 bottom、液面 top。底の角は半径 r で丸める
   function liquidShape(left, right, bottom, top, r, color) {
     const h = bottom - top;
@@ -340,8 +365,8 @@
       }) + text(it.x, it.y, it.label, { 'text-anchor': 'middle', 'dominant-baseline': 'central' });
     },
 
-    // 文字。size・anchor・color は任意（指定がなければ 16px・左寄せ・ink）
-    label(it) { return text(it.x, it.y, it.text, textStyle(it)); },
+    // 文字。size・anchor・color・bg は任意（指定がなければ 16px・左寄せ・ink・下地なし）
+    label(it) { return styledText(it.x, it.y, it.text, textStyle(it), it.bg); },
 
     // 目: 白い楕円と黒目
     eye(it) {
@@ -425,11 +450,28 @@
       return tag('polyline', Object.assign({ points: pointsAttr(ps) }, a));
     },
 
-    // 文字だけ（label の拡張版）。size は下限 12、anchor は start / middle / end、bold で太字
+    // 文字だけ（label の拡張版）。size は下限 12、anchor は start / middle / end、bold で太字、bg で白い下地
     text(it) {
       const st = Object.assign({ 'font-size': LABEL_SIZE, 'text-anchor': 'start' }, textStyle(it));
       if (it.bold) st['font-weight'] = 'bold';
-      return text(it.x, it.y, it.text, st);
+      return styledText(it.x, it.y, it.text, st, it.bg);
+    },
+
+    // 画像（写真ふうの図）: (x, y) が左上、既定は場面いっぱい。縦横比は保ったまま枠に収める
+    // src は assets/ の中の画像だけ（それ以外は何も描かない）。opacity は 0〜1（任意）
+    image(it, ctx) {
+      const src = imageSrc(it.src);
+      if (!src) return '';
+      const hasOpacity = it.opacity !== undefined && it.opacity !== null && it.opacity !== '';
+      return tag('image', {
+        href: src,
+        x: n0(it.x),
+        y: n0(it.y),
+        width: pos(it.width, ctx.width),
+        height: pos(it.height, ctx.height),
+        preserveAspectRatio: 'xMidYMid meet',
+        opacity: hasOpacity ? clamp01(it.opacity, null) : null,
+      });
     },
 
     // ビーカー: (x, y) が底の中央。上が開いた U 字の容器と、level（0〜1）の高さまでの液体
@@ -525,6 +567,8 @@
       case 'polygon':
       case 'line': return average(pointsOf(it.points));
       case 'arrow': return { x: (n(it.x1) + n(it.x2)) / 2, y: (n(it.y1) + n(it.y2)) / 2 };
+      // 画像は矩形の中心（ドラッグ対象にすることは想定しないが、落とさない）
+      case 'image': return { x: n(it.x) + pos(it.width, ctx.width) / 2, y: n(it.y) + pos(it.height, ctx.height) / 2 };
       // point / region / eye / lamp / label / normal / circle / ellipse / symbol / text
       default: return { x: n(it.x), y: n(it.y) };
     }
@@ -563,7 +607,8 @@
       const cls = 'item item-' + it.type + (selected ? ' is-selected' : '') + (draggable ? ' is-draggable' : '');
       let drawn = DRAW[it.type](it, { width, height, selected });
       if (!draggable) {
-        drawn = drawn.replace(/<text[\s\S]*?<\/text>/g, (m) => { labels += m; return ''; });
+        // 文字の白い下地（rect.text-bg）は直後の文字といっしょに移す
+        drawn = drawn.replace(/(?:<rect class="text-bg"[^>]*\/>)?<text[\s\S]*?<\/text>/g, (m) => { labels += m; return ''; });
       }
       body += '<g' + attrs({
         'data-item-id': hasId ? String(it.id) : null,

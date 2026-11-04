@@ -1,12 +1,15 @@
 // 各画面の描画（プロフィール、ホーム、単元をえらぶ、学習マップ、ステージ入口、設定、解説・問題・学び直し・結果、記録）
 // ブラウザ専用。RikaQuest.ui = { screens, helpers } を作る。
 // 画面の描画関数はすべて screens[name](section, ctx, params) の形。app.go が section を空にしてから呼ぶ。
-//   ctx = { store, record, reg, config, curriculum, unitId, setUnit, go, save, now, message, setRecord, replaceStore,
-//           confirm, clearAll, state, app }
+//   ctx = { store, record, reg, config, curriculum, unitId, setUnit, prefs, setPrefs, go, save, now, message, setRecord,
+//           replaceStore, confirm, clearAll, state, app }
+//   （message(text, kind, options) と confirm(text, okLabel, options) は options.noRuby で、その文にふりがなを付けない）
 //   （store・record・unitId は getter で、いつも最新の値を返す。unitId はいま選んでいる単元の id か null。
-//     curriculum は content/curriculum.js の単元一覧か null。setUnit(id) は単元を変えて保存し、できなければ false）
+//     curriculum は content/curriculum.js の単元一覧か null。setUnit(id) は単元を変えて保存し、できなければ false。
+//     prefs は今の生徒の見た目の設定 { theme, ruby }（getter）。setPrefs({ theme?, ruby? }) は変えてすぐ反映・保存し、できなければ false）
 // 描画関数が関数を返すと、次に別の画面へ移るときに app がそれを呼ぶ（後片付け用）。
 // 利用者の文字はすべて textContent で入れる。innerHTML は figures・mascot が返す SVG 文字列だけに使う。
+// ニックネームを出す要素には data-no-ruby を付ける（名前の読みは辞書では決められないので、ふりがなを付けない。js/ruby.js）。
 // 問題の操作部品は ui-problems.js（RikaQuest.ui.problems。このファイルより先に読み込む）。
 (function (root) {
   'use strict';
@@ -158,12 +161,16 @@
   }
 
   // 確認ダイアログ。OK なら true で解決する（dialog が使えないブラウザは window.confirm）
-  function confirmDialog(text, okLabel) {
+  // options.noRuby が true なら、確認の文にふりがなを付けない（ニックネームを含む文）
+  function confirmDialog(text, okLabel, options) {
     const dialog = document.getElementById('confirm-dialog');
     if (!dialog || typeof dialog.showModal !== 'function') {
       return Promise.resolve(root.confirm(text));
     }
-    document.getElementById('confirm-text').textContent = text;
+    const textBox = document.getElementById('confirm-text');
+    if (options && options.noRuby) textBox.setAttribute('data-no-ruby', '');
+    else textBox.removeAttribute('data-no-ruby');
+    textBox.textContent = text;
     document.getElementById('confirm-ok').textContent = okLabel || 'はい';
     dialog.returnValue = '';
     return new Promise((resolve) => {
@@ -188,7 +195,7 @@
         const isCurrent = p.id === store.currentProfileId;
         list.append(el('li', { class: 'profile-item' }, [
           avatarBadge(p.avatar),
-          el('span', { class: 'profile-name', text: p.nickname }),
+          el('span', { class: 'profile-name', 'data-no-ruby': true, text: p.nickname }),
           isCurrent ? el('span', { class: 'tag', text: '使用中' }) : null,
           button(isCurrent ? 'このまま始める' : '切り替え', () => {
             store.currentProfileId = p.id;
@@ -266,7 +273,7 @@
     section.append(el('div', { class: 'hero' }, [
       svgBox(RQ.mascot.svg(96, teacher), 'mascot-box'),
       el('div', { class: 'hero-text' }, [
-        el('h1', { text: 'こんにちは、' + profile.nickname + 'さん！' }),
+        el('h1', null, ['こんにちは、', el('span', { 'data-no-ruby': true, text: profile.nickname }), 'さん！']),
         el('p', { text: teacher.name + '「今日も' + (unit ? unit.title : '理科の世界') + 'を探検しよう」' }),
       ]),
     ]));
@@ -365,7 +372,7 @@
         'aria-label': WEEKDAYS[i] + '曜日' + (isToday ? '（今日）' : '') + (done ? ' 学習した' : ' まだ'),
       }, [
         el('span', { class: 'week-dot', 'aria-hidden': 'true', text: done ? '✓' : '' }),
-        el('span', { 'aria-hidden': 'true', text: WEEKDAYS[i] }),
+        el('span', { 'aria-hidden': 'true', 'data-no-ruby': true, text: WEEKDAYS[i] }),   // 曜日の漢字にふりがなを付けない
       ]));
     });
     let note = '今日から始めよう！';
@@ -553,10 +560,63 @@
 
   // ---- 設定 ----
 
+  // アクセントカラーの選択肢（id は app.js の THEME_COLORS・css の :root[data-theme] と同じ）
+  const THEMES = [
+    { id: 'blue', label: 'あお' },
+    { id: 'teal', label: 'みずいろ' },
+    { id: 'green', label: 'みどり' },
+    { id: 'purple', label: 'むらさき' },
+    { id: 'pink', label: 'ピンク' },
+  ];
+  const RUBY_CHOICES = [
+    { id: 'off', label: 'なし' },
+    { id: 'on', label: 'つける' },
+  ];
+
+  // 「見た目と読みやすさ」: アクセントカラーとふりがな。押すとすぐ反映して保存する（生徒ごとの設定）
+  function prefsCard(ctx) {
+    const hasProfile = !!currentProfile(ctx.store);
+    const prefs = ctx.prefs || { theme: 'blue', ruby: 'off' };
+    // 押したボタンだけ aria-pressed を true にする（画面は描き直さない）
+    const press = (buttons, chosen) => buttons.forEach((b) => b.setAttribute('aria-pressed', b === chosen ? 'true' : 'false'));
+    const change = (patch, buttons, chosen, okText) => {
+      if (ctx.setPrefs(patch)) {
+        press(buttons, chosen);
+        ctx.message(okText, 'ok');
+      } else {
+        ctx.message('保存できなかったため、元の設定に戻しました。' + (ctx.state.protectedStorage
+          ? '読み込めない記録が残っているため、「読み込めない記録を上書きして新しく始める」で対処してください。' : ''), 'warn');
+      }
+    };
+
+    const swatches = THEMES.map((t) => el('button', {
+      type: 'button', class: 'color-swatch swatch-' + t.id, 'aria-label': t.label,
+      'aria-pressed': prefs.theme === t.id ? 'true' : 'false', title: t.label, disabled: !hasProfile,
+    }));
+    swatches.forEach((b, i) => b.addEventListener('click', () => change({ theme: THEMES[i].id }, swatches, b, '色を「' + THEMES[i].label + '」にしました。')));
+
+    const rubyButtons = RUBY_CHOICES.map((c) => el('button', {
+      type: 'button', class: 'btn ruby-choice', 'aria-pressed': prefs.ruby === c.id ? 'true' : 'false', disabled: !hasProfile,
+    }, c.label));
+    rubyButtons.forEach((b, i) => b.addEventListener('click', () => change({ ruby: RUBY_CHOICES[i].id }, rubyButtons, b,
+      RUBY_CHOICES[i].id === 'on' ? 'ふりがなをつけました。' : 'ふりがなを消しました。')));
+
+    return card([
+      cardTitle('見た目と読みやすさ'),
+      hasProfile ? null : el('p', { class: 'muted', text: 'プロフィールを選ぶと色を変えられます。' }),
+      el('h3', { class: 'prefs-label', text: 'アクセントカラー' }),
+      el('div', { class: 'swatch-row', role: 'group', 'aria-label': 'アクセントカラー' }, swatches),
+      el('h3', { class: 'prefs-label', text: 'ふりがな' }),
+      el('p', { class: 'muted', text: '漢字に読みがなをつけます。' }),
+      el('div', { class: 'btn-row', role: 'group', 'aria-label': 'ふりがな' }, rubyButtons),
+    ], 'prefs-card');
+  }
+
   // 保存の結果をお知らせにする。失敗したら成功の文は出さない
-  function reportSave(ctx, ok, successText) {
+  // options は ctx.message にそのまま渡す（{ noRuby: true } でふりがなを付けない）
+  function reportSave(ctx, ok, successText, options) {
     if (ok) {
-      if (successText) ctx.message(successText, 'ok');
+      if (successText) ctx.message(successText, 'ok', options);
       return;
     }
     ctx.message('保存できませんでした。' + (ctx.state.protectedStorage
@@ -595,20 +655,20 @@
       const isCurrent = p.id === store.currentProfileId;
       list.append(el('li', { class: 'profile-item' }, [
         avatarBadge(p.avatar),
-        el('span', { class: 'profile-name', text: p.nickname }),
+        el('span', { class: 'profile-name', 'data-no-ruby': true, text: p.nickname }),
         isCurrent ? el('span', { class: 'tag', text: '使用中' }) : button('切り替え', () => {
           store.currentProfileId = p.id;
           const saved = ctx.save();
           ctx.go('settings');
-          reportSave(ctx, saved, p.nickname + ' に切り替えました。');
+          reportSave(ctx, saved, p.nickname + ' に切り替えました。', { noRuby: true });
         }),
         button('削除', async () => {
-          const ok = await ctx.confirm('「' + p.nickname + '」の記録をすべて削除します。元に戻せません。よろしいですか？', '削除する');
+          const ok = await ctx.confirm('「' + p.nickname + '」の記録をすべて削除します。元に戻せません。よろしいですか？', '削除する', { noRuby: true });
           if (!ok) return;
           RQ.record.deleteProfile(ctx.store, p.id);
           const saved = ctx.save();
           ctx.go(ctx.store.profiles.length > 0 ? 'settings' : 'profile');
-          reportSave(ctx, saved, '「' + p.nickname + '」を削除しました。');
+          reportSave(ctx, saved, '「' + p.nickname + '」を削除しました。', { noRuby: true });
         }, 'btn-danger'),
       ]));
     });
@@ -617,6 +677,8 @@
       store.profiles.length > 0 ? list : el('p', { class: 'muted', text: 'まだプロフィールがありません。' }),
       button('新しいプロフィールを作る', () => ctx.go('profile'), 'btn-block', { style: 'margin-top:12px' }),
     ]));
+
+    section.append(prefsCard(ctx));
 
     // バックアップ（書き出し・読み込み）
     const fileInput = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
@@ -1252,7 +1314,7 @@
       const date = RQ.xp.localDate(at);
       if (date !== currentDate) {
         currentDate = date;
-        children.push(el('h3', { class: 'history-date', text: dateHeading(date, today) }));
+        children.push(el('h3', { class: 'history-date', 'data-no-ruby': true, text: dateHeading(date, today) }));   // 日付の漢字（月・日・曜日）にふりがなを付けない
         list = el('ol', { class: 'history-list' });
         children.push(list);
       }

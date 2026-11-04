@@ -16,8 +16,51 @@
   --line: #C9D5F0;
   --star: #F5B400;
   --star-off: #C5CEE0;
+  --chip: #E8EFFF;   /* 大切な言葉の一覧の背景（テーマごとに変わる） */
   --radius: 16px;
   --shadow: 0 2px 10px rgba(26, 60, 140, 0.12);
+}
+
+/* アクセントカラー（設定の「見た目と読みやすさ」。生徒ごと。js/app.js が <html data-theme> を付ける。blue は属性なし）
+   --ok・--warn・--star は変えない（正解・おしい・星の意味を保つ） */
+:root[data-theme="teal"] {
+  --chip: #D6F1F4;
+  --blue: #0E9AA7;
+  --blue-dark: #0A7682;
+  --blue-soft: #D6F1F4;
+  --bg: #EAF7F8;
+  --line: #BFE3E7;
+  --shadow: 0 2px 10px rgba(10, 118, 130, 0.12);
+}
+
+:root[data-theme="green"] {
+  --chip: #D8F0E1;
+  --blue: #178A4C;
+  --blue-dark: #10673A;
+  --blue-soft: #D8F0E1;
+  --bg: #ECF7F0;
+  --line: #BFE0CB;
+  --shadow: 0 2px 10px rgba(16, 103, 58, 0.12);
+}
+
+:root[data-theme="purple"] {
+  --chip: #E6DDFA;
+  --blue: #7A4FD6;
+  --blue-dark: #5C36AE;
+  --blue-soft: #E6DDFA;
+  --bg: #F3EFFC;
+  --line: #D4C8F0;
+  --shadow: 0 2px 10px rgba(92, 54, 174, 0.12);
+}
+
+:root[data-theme="pink"] {
+  --chip: #FBDCE8;
+  --blue: #E0508A;
+  --blue-dark: #B83A6E;
+  --blue-soft: #FBDCE8;
+  --bg: #FDF0F5;
+  --line: #F0C4D6;
+  --shadow: 0 2px 10px rgba(184, 58, 110, 0.12);
 }
 
 *,
@@ -1123,7 +1166,7 @@ svg.scene .scene-label {
 
 /* 解説文・解答後の説明文の中の大切な言葉（**語句**）。赤は使わない */
 .term {
-  color: #1A5CFF;
+  color: var(--blue);
   font-weight: 700;
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -1145,8 +1188,8 @@ svg.scene .scene-label {
 }
 
 .term-chip {
-  background: #E8EFFF;
-  color: #1A5CFF;
+  background: var(--chip);
+  color: var(--blue);
   font-weight: 700;
   border-radius: 999px;
   padding: 4px 12px;
@@ -1615,4 +1658,100 @@ svg.scene .scene-label {
 .anim-toggle {
   min-height: 44px;
   margin-top: 8px;
+}
+
+/* ---- 見た目と読みやすさ（設定） ---- */
+
+.prefs-label {
+  font-size: 18px;
+  margin: 16px 0 8px;
+}
+
+.prefs-card .card-title + .prefs-label,
+.prefs-card .card-title + .muted + .prefs-label {
+  margin-top: 0;
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 色の丸いボタン。背景はその色そのもの（今のテーマの変数ではなく固定の値） */
+.color-swatch {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.swatch-blue { background: #1A5CFF; }
+.swatch-teal { background: #0E9AA7; }
+.swatch-green { background: #178A4C; }
+.swatch-purple { background: #7A4FD6; }
+.swatch-pink { background: #E0508A; }
+
+/* 選んでいる色: 白い内側の輪と、外側の濃い輪 */
+.color-swatch[aria-pressed="true"] {
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.color-swatch:focus-visible {
+  outline: 4px solid var(--warn);
+  outline-offset: 2px;
+}
+
+.color-swatch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ruby-choice[aria-pressed="true"] {
+  background: var(--blue);
+  color: #fff;
+}
+
+.ruby-choice[aria-pressed="true"]:disabled {
+  background: #F4F6FA;
+  color: var(--muted);
+}
+
+/* ふりがな（js/ruby.js が入れる ruby.rq-ruby）。読みは小さく、本文より薄い色 */
+ruby.rq-ruby {
+  ruby-position: over;
+}
+
+/* 1 つのテキストノードを置きかえてできた ruby と文字の並び（js/ruby.js）。span 1 つに包むことで、flex のボタンの中でも 1 つの項目になる（display: inline は span の既定と同じ） */
+.rq-ruby-run {
+  display: inline;
+}
+
+ruby.rq-ruby rt {
+  font-size: 0.5em;
+  font-weight: normal;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-decoration: none;
+}
+
+/* 色の付いた背景の部品（ボタン・帯・ホームと結果の .hero・レベルアップの .levelup-overlay・マップの番号など）では、
+   読みも文字と同じ色にする（灰色の --muted だと青や暗い背景の上でほとんど読めない） */
+.btn-primary ruby.rq-ruby rt,
+.app-header ruby.rq-ruby rt,
+.hero ruby.rq-ruby rt,
+.offer-hero ruby.rq-ruby rt,
+.levelup-overlay ruby.rq-ruby rt,
+.map-area-num ruby.rq-ruby rt,
+.node-circle ruby.rq-ruby rt,
+.save-status ruby.rq-ruby rt,
+.week-dot ruby.rq-ruby rt,
+.ruby-choice[aria-pressed="true"] ruby.rq-ruby rt,
+.word-btn[aria-pressed="true"] ruby.rq-ruby rt {
+  color: inherit;
 }

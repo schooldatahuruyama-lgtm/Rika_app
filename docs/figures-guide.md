@@ -60,8 +60,27 @@
 | `ellipse` | `x, y, rx, ry, fill?, stroke?, label?, labelPos?` | 楕円。`(x, y)` は中心。色と `label` は `rect` と同じ |
 | `polygon` | `points: [[x,y],...], fill?, stroke?, label?` | 閉じた多角形（点は 2 つ以上）。`label` は重心（点の平均）に中央寄せ |
 | `line` | `points: [[x,y],...], color?, width?, dashed?, arrow?` | 折れ線（点 2 つなら直線）。`color` 既定 `ink`、`width` 既定 3、端は丸い。`dashed: true` で点線（8 6）、`arrow: true` で終点に同じ色の矢じり。導線・グラフの線・補助線に使う |
-| `text` | `x, y, text, size?, anchor?, color?, bold?` | 文字だけ。`size` 既定 16（12 より小さくはならない）、`anchor` は `'start'`（既定）/`'middle'`/`'end'`、`bold: true` で太字。`y` は文字の下のライン（ベースライン） |
+| `text` | `x, y, text, size?, anchor?, color?, bold?, bg?` | 文字だけ。`size` 既定 16（12 より小さくはならない）、`anchor` は `'start'`（既定）/`'middle'`/`'end'`、`bold: true` で太字。`y` は文字の下のライン（ベースライン）。`bg: true` で文字の後ろに白い角丸の下地（下の「写真の上に文字を置くときの決まり」） |
 | `arrow` | `x1, y1, x2, y2, color?, width?, label?` | 矢印（`(x1, y1)` → `(x2, y2)`）。力や運動の向きに使う。`color` 既定 `ink`、`width` 既定 3。`label` は中点の 10px 上 |
+| `image` | `src, x?, y?, width?, height?, opacity?` | 画像（写真ふうの図）。`src` はプロジェクトからの相対パスで、**`assets/` の中の `.png`・`.jpg`・`.jpeg`・`.webp`・`.svg` だけ**（拡張子は小文字。`.PNG` は不可。英数字と `_ . / -` だけの名前。`..`・`//`・`http:` などを含むものは何も描かない）。`(x, y)` は左上で既定 `(0, 0)`、`width`・`height` の既定は場面の大きさ（320×240 いっぱい）。縦横比は保ったまま枠に収める。`opacity` は 0〜1 |
+
+## 写真の上に文字を置くときの決まり
+
+生物などの図は、写真ふうの画像（`image`）の上に説明の文字や引き出し線を重ねて描く。
+
+- `image` を `items` の**最初**に置く（後の部品が上に重なる）。文字は自動で文字の層（いちばん上）に入る。
+- 写真の上の文字には `bg: true` を付ける（`text`・`label`）。白い角丸の下地（白 85%、角の半径 4）が文字の後ろに付き、写真の色に関係なく読める。下地の幅は「文字数 × 文字の大きさ」の概算で、左右 4px・上下 2px の余白が付く。`anchor` に合わせて下地もずれる。
+- 引き出し線は `line`（点 2 つ以上）か `arrow` で描く。文字の下地と同じく写真の上でも見えるよう、色は `ink` か `blue` など濃い色にする。
+- 使う画像は `assets/images/<単元>/` に置き、`sw.js` の `PRECACHE` にも入れる（`tests/content-all.test.js` が、ファイルがあることと `PRECACHE` に入っていることを確かめる）。
+
+```js
+// 写真ふうの画像に名前と引き出し線を重ねる
+scene([
+  { type: 'image', src: 'assets/images/human/lung.png' },
+  { type: 'line', points: [[200, 90], [250, 60]], width: 2 },
+  { type: 'text', x: 254, y: 58, text: '肺ほう', size: 14, bg: true },
+])
+```
 
 ## 理科の記号の部品
 
@@ -101,7 +120,7 @@
 | `normal` | `x, y, angle?` | 法線（長さ 120 の点線）。`angle` は度で 0 が真上、時計回りが正 |
 | `point` | `x, y, label?` | 点（青い丸）。文字は右上 |
 | `region` | `id, x, y, r?, label?` | 選ぶ場所（figure-choice の答え）。半径は 22 以上になる。`label`（ア・イ…）を必ず付ける |
-| `label` | `x, y, text, size?, anchor?, color?` | 文字。指定がなければ 16px・左寄せ・`ink`（`size`・`anchor`・`color` は `text` と同じ決まり） |
+| `label` | `x, y, text, size?, anchor?, color?, bg?` | 文字。指定がなければ 16px・左寄せ・`ink`（`size`・`anchor`・`color`・`bg` は `text` と同じ決まり） |
 | `eye` | `x, y` | 目 |
 | `lamp` | `x, y` | 電球（光源） |
 | `screen` | `x, y1, y2` | スクリーン（太い縦線と「スクリーン」の文字） |
@@ -114,6 +133,7 @@
 | type | 中心 |
 |---|---|
 | `rect` | 四角の中心 |
+| `image` | 画像の枠の中心（ドラッグ対象にすることは想定していない） |
 | `circle`・`ellipse`・`symbol`・`text`・`point`・`region`・`label`・`eye`・`lamp`・`normal` | `(x, y)` |
 | `beaker`・`tube` | 底の中央から `height / 2` 上 |
 | `flame` | 底の中央から 18 上 |

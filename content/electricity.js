@@ -350,7 +350,7 @@
         figure: scene([
           ...viGraph(),
           { type: 'text', x: 232, y: 70, text: 'a', size: 16, bold: true },
-          { type: 'text', x: 258, y: 160, text: 'b', size: 16, bold: true },
+          { type: 'text', x: 258, y: 142, text: 'b', size: 16, bold: true },
         ]),
       },
       {
@@ -478,7 +478,7 @@
         figure: scene([
           ...viGraph(),
           { type: 'text', x: 232, y: 70, text: 'a', size: 16, bold: true },
-          { type: 'text', x: 258, y: 160, text: 'b', size: 16, bold: true },
+          { type: 'text', x: 258, y: 142, text: 'b', size: 16, bold: true },
         ]),
         text: '電熱線 a の抵抗は[b1]である。',
         blanks: [number('b1', 10, 0, 'Ω')],
