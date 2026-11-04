@@ -153,3 +153,4 @@ Ruling: 画像は JPEG 640×480 で入れる（PNG 708×531 は 1 枚 200〜490 
 動く図 B（24 本）: 物理 10・生物 3・化学 7・地学 4（2 エージェント並行）→ Claude round1 Medium 1/Low 8 → 全件 fix → round2 指摘なし（Low 1 記録）→ complete。KINDS 88（光 23＋65）。
 写真 B（地学・化学 48 枚、未使用 3: ion-2-c1 導線の色が逆、sol-4-c4 ろうとの足が壁についていない、volcano-2-c4-2 枚数上限）+ C（14 枚、未使用 2: refract-2-c2 折れ方が弱い、lens-2-c3 動く図あり）: 4＋3 エージェントで組みこみ → Claude round1 Medium 1（12px の文字）/Low 4 → fix → round2 解消、C round1 Low 3 → fix → complete。写真つきカード 97 枚＋問題 5 問、画像 108 枚 3.3 MB。VERSION 2026-11-05-17
 Ruling: 写真の文字は 13px 以上、白い下地つき、右はしは anchor end。写真の上では `photo`・`pointer`・`tag` の部品名に統一（A の body・heredity は `pin` のまま。後で統一）。
+写真の作り直し（ユーザー指示 2026-11-05）: 確認事項に挙がった 16 枚を docs/image-redo.md の合格基準つき指示文で再生成（16 枚合格、言い直し 1 回のみ）→ 15 枚を入れ直し（weather-2-c2 は乾湿計になり解説文と合わないので前のまま、refract-2-c2 は動く図があるので不使用）。ion-2-c1・sol-4-c4 は新たに写真に。Claude round1 Low 2（記録のみ）→ complete。画像 110 枚、VERSION 2026-11-05-18

@@ -104,11 +104,6 @@
     ];
   }
 
-  // 気体の泡（電極の横に縦に 3 つ）
-  function bubbles(x) {
-    return [130, 150, 170].map((y, i) => ({ type: 'circle', x: x + (i % 2 === 0 ? 0 : 4), y, r: 4, fill: 'white', stroke: 'line' }));
-  }
-
   // ダニエル電池。ビーカーをセロハン（x 160 の点線）で分け、左は硫酸亜鉛水溶液に亜鉛板（中心 x 86）、
   // 右は硫酸銅水溶液に銅板（中心 x 234）。上の導線（y 50）の中央にモーター
   function daniellItems() {
@@ -383,15 +378,19 @@
       {
         id: 'ion-2-c1',
         text: '電解質の水溶液に電流を流して物質を分けることを**電気分解**といいます。塩化銅水溶液では、陰極に赤色の**銅**が付き、陽極から刺激臭のある**塩素**が出ます。塩酸では、陰極から水素、陽極から塩素が出ます。陽イオンは陰極へ、陰イオンは陽極へ引かれます。',
-        // 塩化銅水溶液の電気分解（左の電極が陽極、右の電極が陰極）
-        figure: scene(electrolysisItems('sky').concat(bubbles(124), [
-          { type: 'rect', x: 202, y: 140, width: 16, height: 60, fill: 'brown', stroke: 'none' },
-          { type: 'text', x: 38, y: 120, text: '陽極', size: 13, anchor: 'middle' },
-          { type: 'text', x: 38, y: 140, text: '塩素が出る', size: 12, anchor: 'middle' },
-          { type: 'text', x: 282, y: 120, text: '陰極', size: 13, anchor: 'middle' },
-          { type: 'text', x: 282, y: 140, text: '銅が付く', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 236, text: '塩化銅水溶液（青色）', size: 12, anchor: 'middle' },
-        ])),
+        // 塩化銅水溶液の電気分解（写真: ビーカー (67〜245, 45〜235)、液面 y 82。左の炭素棒 (106〜126) は黒い導線につながり、
+        // 下半分 (115〜200) に赤茶色の銅が付く。右の炭素棒 (196〜212) は赤い導線につながり、まわりに泡 (187〜225, 95〜200)。
+        // 導線の色（黒＝−、赤＝＋）に合わせて、左を陰極、右を陽極とした。ビーカーの左右 (0〜65・248〜320) は白い余白）
+        figure: scene([
+          photo('ion-2-c1'),
+          pointer(66, 96, 108, 70), tag(4, 100, '陰極（−）', { size: 13, bold: true, anchor: 'start' }),
+          tag(4, 120, '黒い導線', { size: 13, anchor: 'start' }),
+          pointer(60, 150, 106, 150), tag(33, 155, '銅が付く', { size: 13 }),
+          pointer(254, 96, 213, 70), tag(316, 100, '陽極（＋）', { size: 13, bold: true, anchor: 'end' }),
+          tag(316, 120, '赤い導線', { size: 13, anchor: 'end' }),
+          pointer(250, 150, 222, 150), tag(316, 155, '塩素が出る', { size: 13, anchor: 'end' }),
+          tag(160, 224, '塩化銅水溶液（青色）', { size: 13 }),
+        ]),
       },
       {
         id: 'ion-2-c2',
