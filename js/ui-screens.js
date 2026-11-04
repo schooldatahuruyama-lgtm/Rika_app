@@ -1,8 +1,10 @@
-// 各画面の描画（プロフィール、ホーム、学習マップ、ステージ入口、設定、解説・問題・学び直し・結果、記録）
+// 各画面の描画（プロフィール、ホーム、単元をえらぶ、学習マップ、ステージ入口、設定、解説・問題・学び直し・結果、記録）
 // ブラウザ専用。RikaQuest.ui = { screens, helpers } を作る。
 // 画面の描画関数はすべて screens[name](section, ctx, params) の形。app.go が section を空にしてから呼ぶ。
-//   ctx = { store, record, reg, config, go, save, now, message, setRecord, replaceStore, confirm, clearAll, state, app }
-//   （store・record は getter で、いつも最新の値を返す）
+//   ctx = { store, record, reg, config, curriculum, unitId, setUnit, go, save, now, message, setRecord, replaceStore,
+//           confirm, clearAll, state, app }
+//   （store・record・unitId は getter で、いつも最新の値を返す。unitId はいま選んでいる単元の id か null。
+//     curriculum は content/curriculum.js の単元一覧か null。setUnit(id) は単元を変えて保存し、できなければ false）
 // 描画関数が関数を返すと、次に別の画面へ移るときに app がそれを呼ぶ（後片付け用）。
 // 利用者の文字はすべて textContent で入れる。innerHTML は figures・mascot が返す SVG 文字列だけに使う。
 // 問題の操作部品は ui-problems.js（RikaQuest.ui.problems。このファイルより先に読み込む）。
@@ -10,7 +12,6 @@
   'use strict';
 
   const RQ = root.RikaQuest;
-  const UNIT_ID = 'light';
   const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日'];
   const STATUS_LABEL = { none: '未着手', inprogress: '途中', cleared: 'クリア' };
   // 画面の表示だけに使う目安（判定・計算には使わない）
@@ -121,6 +122,18 @@
 
   function areaOfStage(unit, stageId) {
     return areasInOrder(unit).find((a) => (a.stages || []).some((s) => s && s.id === stageId)) || null;
+  }
+
+  // 単元一覧の表（content/curriculum.js）の項目。表がない・載っていなければ null
+  function curriculumItem(ctx, unitId) {
+    const cur = ctx.curriculum;
+    return cur && typeof cur.unit === 'function' ? cur.unit(unitId) : null;
+  }
+
+  // 学年の見出し（'1年' など。表がなければ 0 だけ「その他」）
+  function gradeLabel(ctx, grade) {
+    const labels = (ctx.curriculum && ctx.curriculum.GRADE_LABELS) || { 0: 'その他' };
+    return labels[grade] || labels[0] || 'その他';
   }
 
   // 今週（月〜日）のローカル日付 'YYYY-MM-DD' を 7 つ
@@ -246,8 +259,9 @@
     const now = ctx.now();
     const today = RQ.xp.localDate(now);
 
-    // あいさつとマスコット（この単元の担当の先生）
-    const unit = ctx.reg.unit(UNIT_ID);
+    // あいさつとマスコット（いま選んでいる単元の担当の先生。単元がなければ まる先生）
+    const unitId = ctx.unitId;
+    const unit = unitId ? ctx.reg.unit(unitId) : null;
     const teacher = RQ.mascot.forUnit(unit);
     section.append(el('div', { class: 'hero' }, [
       svgBox(RQ.mascot.svg(96, teacher), 'mascot-box'),
@@ -255,6 +269,15 @@
         el('h1', { text: 'こんにちは、' + profile.nickname + 'さん！' }),
         el('p', { text: teacher.name + '「今日も' + (unit ? unit.title : '理科の世界') + 'を探検しよう」' }),
       ]),
+    ]));
+
+    // いまの単元（単元一覧の表に項目があれば「1年・物理」のように学年と分野も出す）
+    const item = unitId ? curriculumItem(ctx, unitId) : null;
+    section.append(card([
+      cardTitle('いまの単元'),
+      el('p', { class: 'unit-current', text: unit ? unit.title : '単元がえらばれていません' }),
+      item ? el('p', { class: 'muted', text: gradeLabel(ctx, item.grade) + '・' + item.field }) : null,
+      button('単元をえらぶ', () => ctx.go('units'), 'btn-block'),
     ]));
 
     section.append(questCard(ctx, rec, now));
@@ -275,11 +298,13 @@
   }
 
   function questCard(ctx, rec, now) {
-    const quest = RQ.recommend.todayQuest(ctx.reg, rec, UNIT_ID, now, ctx.config);
+    const unitId = ctx.unitId;
+    const quest = RQ.recommend.todayQuest(ctx.reg, rec, unitId, now, ctx.config);
     const children = [cardTitle('今日のクエスト')];
     if (!quest) {
       children.push(el('p', { class: 'quest-title', text: '全部クリア！' }));
-      children.push(el('p', { class: 'muted', text: '学習マップから、好きなステージにもう一度挑戦できます。' }));
+      children.push(el('p', { class: 'muted', text: '学習マップから好きなステージにもう一度挑戦するか、ほかの単元をえらぼう。' }));
+      children.push(button('単元をえらぶ', () => ctx.go('units'), 'btn-block'));
       return card(children);
     }
     if (quest.kind === 'review') {
@@ -290,7 +315,7 @@
       return card(children);
     }
     const stage = ctx.reg.stage(quest.stageId);
-    const area = areaOfStage(ctx.reg.unit(UNIT_ID), quest.stageId);
+    const area = areaOfStage(ctx.reg.unit(unitId), quest.stageId);
     if (area) children.push(el('p', { class: 'muted', text: area.title }));
     children.push(el('p', { class: 'quest-title', text: quest.title }));
     if (stage) children.push(el('p', { class: 'muted', text: '約 ' + stage.minutes + ' 分' }));
@@ -354,14 +379,79 @@
     ]);
   }
 
+  // ---- 単元をえらぶ ----
+  // 学年ごと（1 → 2 → 3 → その他）のカードに単元を並べる。教材のない単元は「準備中」で押せない。
+
+  const GRADE_ORDER = [1, 2, 3, 0];
+
+  function renderUnits(section, ctx) {
+    section.append(topBar('単元をえらぶ', 'ホーム', () => ctx.go('home')));
+    const items = RQ.units.list(ctx.reg, ctx.curriculum);
+    const current = ctx.unitId;
+    const rec = ctx.record;
+
+    GRADE_ORDER.forEach((grade) => {
+      const inGrade = items.filter((x) => x.grade === grade);
+      if (inGrade.length === 0) return;
+      const list = el('ul', { class: 'unit-list' });
+      inGrade.forEach((item) => list.append(el('li', {}, unitButton(ctx, rec, item, item.id === current))));
+      section.append(card([cardTitle(gradeLabel(ctx, grade)), list]));
+    });
+
+    section.append(button('ホームへ', () => ctx.go('home'), 'btn-block'));
+  }
+
+  // 単元 1 つのボタン（先生の絵、単元名、分野とクリア数か「準備中」、いまの単元の印）
+  function unitButton(ctx, rec, item, isCurrent) {
+    const title = item.title;
+    const parts = [];
+    if (item.field) parts.push(item.field);
+    if (item.ready) {
+      const stages = ctx.reg.stagesInOrder(item.id);
+      const cleared = stages.filter((s) => RQ.record.stageState(rec, s.id).status === 'cleared').length;
+      parts.push('クリア ' + cleared + ' / ' + stages.length + ' ステージ');
+    } else {
+      parts.push('準備中');
+    }
+    const meta = parts.join('　');
+    // 先生の絵（mascot.svg が返す <img> の文字列）。button の中なので div ではなく span に入れる
+    const picture = el('span', { class: 'unit-teacher', 'aria-hidden': 'true' });
+    picture.innerHTML = RQ.mascot.svg(44, item.teacher);
+    return el('button', {
+      type: 'button',
+      class: 'unit-card' + (item.ready ? '' : ' is-soon'),
+      disabled: !item.ready,
+      'aria-current': isCurrent ? 'true' : null,
+      'aria-label': title + '（' + meta + (isCurrent ? '、いまの単元' : '') + '）',
+      onclick: item.ready ? () => {
+        if (!ctx.setUnit(item.id)) {
+          ctx.message('単元を変えられませんでした。', 'warn');
+          return;
+        }
+        ctx.go('home');
+        ctx.message('単元を「' + title + '」にしました。', 'ok');
+      } : null,
+    }, [
+      picture,
+      el('span', { class: 'unit-body' }, [
+        el('span', { class: 'unit-title', text: title }),
+        el('span', { class: 'unit-meta muted', text: meta }),
+      ]),
+      isCurrent ? el('span', { class: 'tag tag-ok unit-now', text: 'いまの単元' }) : null,
+    ]);
+  }
+
   // ---- 学習マップ ----
 
   function renderMap(section, ctx) {
-    const unit = ctx.reg.unit(UNIT_ID);
+    const unit = ctx.reg.unit(ctx.unitId);
     const rec = ctx.record;
     section.append(topBar('学習マップ', 'ホーム', () => ctx.go('home')));
     if (!unit) {
-      section.append(card(el('p', { text: '教材が読み込まれていません。' })));
+      section.append(card([
+        el('p', { text: '単元がえらばれていません。' }),
+        button('単元をえらぶ', () => ctx.go('units'), 'btn-primary btn-block'),
+      ]));
       return;
     }
     section.append(el('p', { class: 'muted', text: unit.title + '　どの領域から始めてもよいよ。領域の中は順番に開きます。' }));
@@ -425,7 +515,7 @@
       return;
     }
     const st = RQ.record.stageState(rec, stage.id);
-    const area = areaOfStage(ctx.reg.unit(UNIT_ID), stage.id);
+    const area = areaOfStage(ctx.reg.unitOfStage(stage.id), stage.id);
     const concepts = (stage.concepts || []).map((id) => ctx.reg.concept(id)).filter(Boolean);
 
     section.append(card([
@@ -1023,29 +1113,39 @@
   }
 
   // ---- 記録 ----
-  // 進捗（領域ごとのクリア数）、理解度の目安（経験値とは別のカード）、経験値とレベル、連続学習、取り組み履歴。
-  // 履歴は長くなるので一番下に置く。
+  // 進捗（単元ごと・領域ごとのクリア数）、理解度の目安（単元ごと。経験値とは別のカード）、経験値とレベル、
+  // 連続学習、取り組み履歴。教材のある単元はすべて出す。履歴は長くなるので一番下に置く。
 
   function renderRecord(section, ctx) {
     const rec = ctx.record;
-    const unit = ctx.reg.unit(UNIT_ID);
+    const readyItems = RQ.units.list(ctx.reg, ctx.curriculum).filter((x) => x.ready);
     const now = ctx.now();
     const today = RQ.xp.localDate(now);
     section.append(topBar('記録', 'ホーム', () => ctx.go('home')));
-    if (!unit) {
-      section.append(card(el('p', { text: '教材が読み込まれていません。' })));
-    } else {
-      section.append(progressCard(ctx, rec, unit));
-      section.append(masteryCard(ctx, rec, unit));
-    }
+    section.append(progressCard(ctx, rec, readyItems));
+    readyItems.forEach((item) => section.append(masteryCard(ctx, rec, item.unit, item.title)));
     section.append(levelCard(ctx, rec, '経験値とレベル'));
     section.append(streakCard(rec, now, today));
     section.append(historyCard(ctx, rec, now));
     section.append(button('ホームへ', () => ctx.go('home'), 'btn-block'));
   }
 
-  // 進捗: 領域ごとに「クリア n / N ステージ」と小さなバー。ステージのない領域は「準備中」
-  function progressCard(ctx, rec, unit) {
+  // 進捗: 単元ごとに見出しを置き、領域ごとに「クリア n / N ステージ」と小さなバー。ステージのない領域は「準備中」
+  function progressCard(ctx, rec, readyItems) {
+    const children = [cardTitle('進捗')];
+    if (readyItems.length === 0) {
+      children.push(el('p', { text: '教材が読み込まれていません。' }));
+      return card(children);
+    }
+    readyItems.forEach((item) => {
+      children.push(el('h3', { class: 'progress-unit', text: item.title }));
+      children.push(progressList(rec, item.unit));
+    });
+    return card(children);
+  }
+
+  // 1 つの単元の領域の行
+  function progressList(rec, unit) {
     const list = el('ul', { class: 'progress-list' });
     areasInOrder(unit).forEach((area) => {
       const stages = (area.stages || []).filter(Boolean);
@@ -1071,11 +1171,11 @@
         bar,
       ]));
     });
-    return card([cardTitle('進捗'), list]);
+    return list;
   }
 
-  // 理解度の目安: 概念ごとに 3 段階（config.mastery.labels の順）。一度も取り組んでいなければ灰色で「未学習」
-  function masteryCard(ctx, rec, unit) {
+  // 理解度の目安（単元 1 つ分）: 概念ごとに 3 段階（config.mastery.labels の順）。一度も取り組んでいなければ灰色で「未学習」
+  function masteryCard(ctx, rec, unit, title) {
     const steps = ctx.config.mastery.labels.map((l) => l[1]);
     const list = el('ul', { class: 'mastery-list' });
     (unit.concepts || []).filter(Boolean).forEach((concept) => {
@@ -1099,7 +1199,7 @@
       ]));
     });
     return card([
-      cardTitle('理解度の目安'),
+      cardTitle('理解度の目安（' + title + '）'),
       el('p', { class: 'muted', text: 'これは理解のめやす。経験値とは別です' }),
       list,
     ], 'mastery-card');
@@ -1176,6 +1276,7 @@
   const screens = {
     profile: renderProfile,
     home: renderHome,
+    units: renderUnits,
     map: renderMap,
     stage: renderStage,
     settings: renderSettings,
@@ -1190,13 +1291,13 @@
     el, append, svgBox, button, card, cardTitle, topBar, avatarOf, avatarBadge, starsView, statusTag,
     currentProfile, areasInOrder, areaOfStage, weekDates, downloadText, confirm: confirmDialog,
     openLessonDialog, closeLessonDialog, sessionXpEntries, xpBreakdown,
-    AVATARS, STATUS_LABEL, UNIT_ID, XP_LABEL,
+    AVATARS, STATUS_LABEL, XP_LABEL,
   };
 
   const api = {
     screens, helpers,
     // 実装計画の名前でも呼べるようにする
-    renderProfile, renderHome, renderMap, renderSettings,
+    renderProfile, renderHome, renderUnits, renderMap, renderSettings,
     renderStageEntry: (section, ctx, stageId) => renderStage(section, ctx, { stageId }),
     renderLesson, renderProblem, renderOffer, renderResult, renderRecord,
   };

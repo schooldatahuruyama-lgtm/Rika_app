@@ -130,3 +130,10 @@ Ruling: 生徒のアバターは Codex が生成した 6 体（ポヨンなど�
 Ruling: マスコットの名前は「ピカ」から「キューブ先生」に（ユーザー決定）。手描きのピカは mascot.legacySvg として残す — コスト: 吹き出しの名前が変わる。
 Ruling: 単元ごとに先生を変える仕組みは、教材の単元に `mascot: 'E'` を書く方式（js/mascot.js の MASCOTS / forUnit、content-registry の unitOfStage / unitOfConcept）。書いていない単元は A まる先生（同梱 unit_mascots.json の fallback と同じ）— コスト: 単元を足すとき mascot を書き忘れると まる先生になる（テストはない。validateUnit では縛らない）。
 単元ごとのマスコット: implemented (controller, 146/146, 指示書 .ai-tasks/20261104-150000). Codex round1 = 要修正 (Medium 1: 継承プロパティ名で先生扱い / Low 1: legacySvg の名前) → controller fix (isKey, LEGACY_NAME) 146/146. Codex round2 = 指摘なし → complete (VERSION 2026-11-04-11)
+
+## 追加作業 2026-11-04: 全単元への展開（要件 追加予定機能 1）
+Ruling: 「次のタスク」は要件定義書の追加予定機能 1「全単元への展開」と判断。ユーザーの追加指示（2026-11-04）: 一通りの単元を作る。Google ドライブの図版と「ミニプリント」の問題を参考にする — コスト: ユーザーの意図と違えば単元選択の画面が無駄になるが、単元を増やすにはどのみち必要。
+Ruling: 土台を 2 つに分けた。(1) 単元をえらぶ仕組み（content/curriculum.js の表＝先生が編集してよい、js/units.js、profile.unitId、画面 units）。(2) 汎用の図の部品（rect/circle/ellipse/polygon/line/text/arrow、beaker/tube/flame/symbol）と全単元共通テスト tests/content-all.test.js — コスト: 光以外の単元は動く図（anim）なし・静止図のみ。
+Ruling: 中学 1〜3 年の単元の表は学習指導要領の内容のまとまり（19 単元）を教科書でよくある単元名で並べ、先生は A〜F の対応表どおり。表にない id の単元は「その他」に出す。
+Ruling: ドライブの図版（学図など出版社の図）は転載しない。「どんな場面を描くか」の参考にだけ使い、図は figures.js の部品で描き直す（設計書「失敗の条件」）。
+単元をえらぶ: implemented (opus, 指示書 .ai-tasks/20261104-160000). 汎用の図の部品: implemented (opus, 指示書 .ai-tasks/20261104-161000, 176/176). 2 つをまとめて Codex round1 = 要修正 (High 2: line/polygon の anchorOf が points を読まない / tube の当たり判定に tilt 未適用, Medium 1: setUnit の保存失敗時に選択が残る) → controller fix 177/177. Codex round2 = 指摘なし → complete (VERSION 2026-11-04-12)

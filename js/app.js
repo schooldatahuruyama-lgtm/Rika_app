@@ -7,6 +7,9 @@
 //   app.setRecord(record)     … 今の生徒の記録を置きかえて保存（record.js の関数は新しい record を返すため）
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
+//   画面に渡す ctx には、ほかに curriculum（RikaQuest.curriculum。なければ null）、unitId（getter: いま選んでいる単元の id。
+//                               units.currentId で決める。教材が 1 つもなければ null）、setUnit(id)（今の生徒の単元を変えて保存。
+//                               教材のない id・プロフィールなしは false）がある
 //   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported-file'|'unsupported-insecure', version, at }（app.state.offline と同じ値）
 //                               書きかえると document に 'rika-quest:offline' を送る（設定画面が表示を更新する）
 //   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
@@ -94,6 +97,8 @@
     store.profiles = (Array.isArray(store.profiles) ? store.profiles : []).filter((p) => isObject(p) && typeof p.id === 'string');
     store.profiles.forEach((p) => {
       if (typeof p.nickname !== 'string') p.nickname = p.nickname === undefined || p.nickname === null ? '' : String(p.nickname);
+      // 選んだ単元: 文字列でなければ消す（知らない単元 id は残す。表示のときに units.currentId が既定へ戻す）
+      if (p.unitId !== undefined && typeof p.unitId !== 'string') delete p.unitId;
       store.records[p.id] = normalizeRecord(store.records[p.id]);
     });
     if (!store.profiles.some((p) => p.id === store.currentProfileId)) {
@@ -332,6 +337,21 @@
     if (s && s.kind === 'stage') message('途中まで保存しました。ステージの「続きから」で再開できます。', 'ok');
   }
 
+  // ---- 単元 ----
+
+  // 今の生徒の単元を変えて保存する。教材のない id・プロフィールがないときは false
+  function setUnit(id) {
+    if (!state.reg.unit(id)) return false;
+    const profile = currentProfile();
+    if (!profile) return false;
+    const before = profile.unitId;
+    profile.unitId = id;
+    if (save()) return true;
+    // 保存できなければ選択も元に戻す（画面の「変えられませんでした」と食い違わないように）
+    if (before === undefined) delete profile.unitId; else profile.unitId = before;
+    return false;
+  }
+
   // ---- 画面の切り替え ----
 
   function makeCtx() {
@@ -340,6 +360,9 @@
       get record() { return currentRecord(); },
       reg: state.reg,
       config: state.config,
+      curriculum: RQ.curriculum || null,
+      get unitId() { return RQ.units.currentId(state.reg, RQ.curriculum || null, currentProfile()); },
+      setUnit,
       go,
       save,
       now: () => new Date(),
