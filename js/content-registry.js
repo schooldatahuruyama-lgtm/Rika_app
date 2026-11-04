@@ -58,6 +58,15 @@
       return hit ? hit.stage : null;
     }
 
+    // そのステージ・概念が入っている単元（マスコットの先生などを単元ごとに変えるために使う）。なければ null
+    function unitOfStage(stageId) {
+      return unitList.find(u => list(u.areas).some(a => a && list(a.stages).some(s => s && s.id === stageId))) || null;
+    }
+
+    function unitOfConcept(conceptId) {
+      return unitList.find(u => list(u.concepts).some(c => c && c.id === conceptId)) || null;
+    }
+
     function concept(conceptId) {
       for (const u of unitList) {
         const c = list(u.concepts).find(x => x && x.id === conceptId);
@@ -99,7 +108,7 @@
       return stages[stages.indexOf(hit.stage) + 1] || null;
     }
 
-    return { register, units, unit, stage, concept, problem, stagesInOrder, nextStage };
+    return { register, units, unit, unitOfStage, unitOfConcept, stage, concept, problem, stagesInOrder, nextStage };
   }
 
   // ---- 検証 ----

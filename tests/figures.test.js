@@ -150,25 +150,40 @@ test('sceneSvg: 数値は小数 2 けたまで', () => {
   assert.ok(s.includes('x1="0.33"'));
 });
 
-test('mascot.svg(80) は 80px の大きさの画像で、名前が alt に入る', () => {
-  const s = mascot.svg(80);
-  assert.ok(s.includes('width="80"'));
-  assert.ok(s.includes('height="80"'));
-  assert.ok(s.startsWith('<img '));
-  assert.ok(s.includes('src="' + mascot.IMAGE + '"'));
-  assert.ok(s.includes('alt="' + mascot.NAME + '"'));
-  assert.equal(typeof mascot.NAME, 'string');
-  assert.ok(fs.existsSync(path.join(__dirname, '..', mascot.IMAGE)), '画像ファイルがある');
+test('mascot.forUnit: 単元の mascot で先生が決まり、未指定・不明なら FALLBACK（まる先生）', () => {
+  const e = mascot.forUnit({ mascot: 'E' });
+  assert.equal(e.name, 'キューブ先生');
+  assert.equal(e.image, 'assets/mascots/mascot_E.svg');
+  assert.equal(mascot.FALLBACK, 'A');
+  [{}, null, undefined, { mascot: 'Z' }, { mascot: 3 }, { mascot: 'toString' }, { mascot: 'constructor' }, { mascot: '__proto__' }]
+    .forEach(u => assert.equal(mascot.forUnit(u).name, 'まる先生', JSON.stringify(u)));
+  assert.deepEqual(Object.keys(mascot.MASCOTS), ['A', 'B', 'C', 'D', 'E', 'F']);
+  Object.values(mascot.MASCOTS).forEach(m => assert.ok(fs.existsSync(path.join(__dirname, '..', m.image)), m.image + ' がある'));
 });
 
-test('mascot.legacySvg(80) は以前の手描き SVG', () => {
+test('mascot.svg(80, 先生) は 80px の画像で、その先生の絵と名前（alt）になる。省略時は FALLBACK', () => {
+  const s = mascot.svg(80, mascot.forUnit({ mascot: 'B' }));
+  assert.ok(s.startsWith('<img '));
+  assert.ok(s.includes('width="80"'));
+  assert.ok(s.includes('height="80"'));
+  assert.ok(s.includes('src="assets/mascots/mascot_B.svg"'));
+  assert.ok(s.includes('alt="しずく博士"'));
+  assert.ok(mascot.svg(80).includes('alt="まる先生"'));
+  assert.ok(mascot.svg(80, { id: 'nope' }).includes('alt="まる先生"'));
+  assert.ok(mascot.svg(80, { id: 'toString' }).includes('alt="まる先生"'));
+});
+
+test('mascot.legacySvg(80) は以前の手描き SVG で、読み上げ名は「ピカ」', () => {
   const s = mascot.legacySvg(80);
   assert.ok(s.startsWith('<svg '));
   assert.ok(s.includes('width="80"'));
+  assert.equal(mascot.LEGACY_NAME, 'ピカ');
+  assert.ok(s.includes('aria-label="ピカ"'));
 });
 
-test('mascot.celebrateMarkup はメッセージをエスケープし、マスコットを含む', () => {
-  const s = mascot.celebrateMarkup('レベル <2>');
+test('mascot.celebrateMarkup はメッセージをエスケープし、指定した先生のマスコットを含む', () => {
+  const s = mascot.celebrateMarkup('レベル <2>', mascot.forUnit({ mascot: 'E' }));
+  assert.ok(s.includes('src="assets/mascots/mascot_E.svg"'));
   assert.ok(s.includes('レベル &lt;2&gt;'));
   assert.ok(s.includes('class="mascot-celebrate"'));
   assert.ok(s.includes('class="mascot-bubble"'));

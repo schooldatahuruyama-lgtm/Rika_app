@@ -9,6 +9,10 @@ function copy() { return JSON.parse(JSON.stringify(unit)); }
 function messages(u) { return cr.validateUnit(u).join('\n'); }
 
 test('register と検索', () => { const reg = cr.createRegistry(); reg.register(unit); assert.equal(reg.stage('s-a1').title, unit.areas[0].stages[0].title); assert.equal(reg.concept('c-b').basic, 'c-a'); assert.equal(reg.problem('p-a1-1').type, 'choice'); });
+test('unitOfStage / unitOfConcept はそのステージ・概念の単元。知らない id は null', () => {
+  assert.equal(reg.unitOfStage('s-a1').id, 'u'); assert.equal(reg.unitOfStage('s-b1').id, 'u'); assert.equal(reg.unitOfStage('nope'), null); assert.equal(reg.unitOfStage(undefined), null);
+  assert.equal(reg.unitOfConcept('c-a').id, 'u'); assert.equal(reg.unitOfConcept('nope'), null);
+});
 test('stagesInOrder は領域の order 順', () => assert.deepEqual(reg.stagesInOrder('u').map(s => s.id), ['s-a1', 's-a2', 's-b1']));
 test('nextStage は領域内の次、末尾は null', () => { assert.equal(reg.nextStage('s-a1').id, 's-a2'); assert.equal(reg.nextStage('s-a2'), null); });
 test('validateUnit: 正常な教材は空', () => assert.deepEqual(cr.validateUnit(unit), []));

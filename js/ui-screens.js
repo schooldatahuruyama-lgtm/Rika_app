@@ -246,12 +246,14 @@
     const now = ctx.now();
     const today = RQ.xp.localDate(now);
 
-    // あいさつとマスコット
+    // あいさつとマスコット（この単元の担当の先生）
+    const unit = ctx.reg.unit(UNIT_ID);
+    const teacher = RQ.mascot.forUnit(unit);
     section.append(el('div', { class: 'hero' }, [
-      svgBox(RQ.mascot.svg(96), 'mascot-box'),
+      svgBox(RQ.mascot.svg(96, teacher), 'mascot-box'),
       el('div', { class: 'hero-text' }, [
         el('h1', { text: 'こんにちは、' + profile.nickname + 'さん！' }),
-        el('p', { text: RQ.mascot.NAME + '「今日も光の世界を探検しよう」' }),
+        el('p', { text: teacher.name + '「今日も' + (unit ? unit.title : '理科の世界') + 'を探検しよう」' }),
       ]),
     ]));
 
@@ -665,6 +667,12 @@
     ]);
   }
 
+  // そのセッションの単元の担当の先生（復習は概念から、ステージはステージから単元を引く）
+  function sessionMascot(ctx, session) {
+    const unit = session && session.kind === 'review' ? ctx.reg.unitOfConcept(session.conceptId) : ctx.reg.unitOfStage(session && session.stageId);
+    return RQ.mascot.forUnit(unit);
+  }
+
   function sessionTitle(ctx, session) {
     if (session.kind === 'review') {
       const c = ctx.reg.concept(session.conceptId);
@@ -856,7 +864,7 @@
     const basic = view.basic || {};
     section.append(learnBar(ctx, sessionTitle(ctx, session)));
     section.append(el('div', { class: 'hero offer-hero' }, [
-      svgBox(RQ.mascot.svg(88), 'mascot-box'),
+      svgBox(RQ.mascot.svg(88, sessionMascot(ctx, session)), 'mascot-box'),
       el('div', { class: 'hero-text' }, [
         el('h1', { text: basic.title + 'に戻って確かめよう' }),
         el('p', { text: '「' + concept.title + '」で 2 回続けておしかったね。' }),
@@ -914,11 +922,12 @@
       : isStage ? 'ステージクリア！' : '復習おつかれさま！';
     const say = stopped ? 'よくがんばったね。続きはまた明日！'
       : sum.firstTryCount === sum.mainCount && sum.mainCount > 0 ? '全部 1 回目で正解！すごい！' : 'よくがんばったね！';
+    const teacher = sessionMascot(ctx, session);
     section.append(el('div', { class: 'hero' }, [
-      svgBox(RQ.mascot.svg(96), 'mascot-box'),
+      svgBox(RQ.mascot.svg(96, teacher), 'mascot-box'),
       el('div', { class: 'hero-text' }, [
         el('h1', { text: heading }),
-        el('p', { text: RQ.mascot.NAME + '「' + say + '」' }),
+        el('p', { text: teacher.name + '「' + say + '」' }),
       ]),
     ]));
 
@@ -993,7 +1002,7 @@
     if (levelAfter > levelBefore && !result.celebrated) {
       result.celebrated = true;
       overlay = el('div', { class: 'levelup-overlay', role: 'dialog', 'aria-label': 'レベルアップ', tabindex: '-1' });
-      overlay.innerHTML = RQ.mascot.celebrateMarkup('レベル ' + levelAfter + ' になった！');
+      overlay.innerHTML = RQ.mascot.celebrateMarkup('レベル ' + levelAfter + ' になった！', teacher);
       overlay.append(el('p', { class: 'levelup-skip', text: 'タップでとじる' }));
       const close = () => {
         if (timer) clearTimeout(timer);

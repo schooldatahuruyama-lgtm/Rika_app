@@ -1,22 +1,43 @@
-// マスコット（理科の先生キャラクター「キューブ先生」。ユーザー提供の SVG 画像）と、レベルアップの祝い演出
-// 名前を変えるときは NAME を、絵を変えるときは IMAGE を書きかえる（画像は assets/mascots/README.md）
+// マスコット（理科の先生キャラクター 6 体。ユーザー提供の SVG 画像。assets/mascots/README.md）と、レベルアップの祝い演出
+// 単元ごとに担当の先生が決まる: 教材の単元に mascot: 'E' のように書く（forUnit）。書いていなければ FALLBACK
 (function (root) {
   'use strict';
 
-  const NAME = 'キューブ先生';
-  const IMAGE = 'assets/mascots/mascot_E.svg';   // 光・電流・運動の担当（unit_mascots.json の E）
+  const MASCOTS = {
+    A: { id: 'A', name: 'まる先生', image: 'assets/mascots/mascot_A.svg', subjects: '汎用・ホーム・ヘルプ' },
+    B: { id: 'B', name: 'しずく博士', image: 'assets/mascots/mascot_B.svg', subjects: '水溶液・状態変化' },
+    C: { id: 'C', name: 'ぷにカプセル', image: 'assets/mascots/mascot_C.svg', subjects: '物質・化学変化・イオン' },
+    D: { id: 'D', name: 'もくもく先生', image: 'assets/mascots/mascot_D.svg', subjects: '天気・地学・地球と宇宙' },
+    E: { id: 'E', name: 'キューブ先生', image: 'assets/mascots/mascot_E.svg', subjects: '光・電流・運動・エネルギー' },
+    F: { id: 'F', name: 'まめ博士', image: 'assets/mascots/mascot_F.svg', subjects: '生物・細胞・生命' },
+  };
+  const FALLBACK = 'A';   // 単元に担当が書いていないときの先生（同梱の unit_mascots.json の fallback と同じ）
+  const LEGACY_NAME = 'ピカ';   // 以前の手描きマスコットの名前（legacySvg 用）
+
+  // A〜F の定義済みのキーか（'toString' のような継承プロパティ名を先生と見なさない）
+  function isKey(key) {
+    return typeof key === 'string' && Object.prototype.hasOwnProperty.call(MASCOTS, key);
+  }
+
+  // 単元（教材の unit）の担当の先生。unit.mascot が A〜F でなければ FALLBACK
+  function forUnit(unit) {
+    const key = unit ? unit.mascot : '';
+    return isKey(key) ? MASCOTS[key] : MASCOTS[FALLBACK];
+  }
 
   // 読み込み順に頼らないよう、使うときに取る
   function figures() {
     return typeof require === 'function' ? require('./figures.js') : root.RikaQuest.figures;
   }
 
-  // size×size px のマスコット。以前は SVG を直接描いていたが、いまは画像を <img> で出す（関数名は互換のため svg のまま）
-  function svg(size) {
+  // size×size px のマスコット（mascot は forUnit の戻り値。省略時は FALLBACK の先生）。
+  // 以前は SVG を直接描いていたが、いまは画像を <img> で出す（関数名は互換のため svg のまま）
+  function svg(size, mascot) {
+    const m = mascot && isKey(mascot.id) ? MASCOTS[mascot.id] : MASCOTS[FALLBACK];
     const s = Number(size) > 0 ? Math.round(Number(size) * 100) / 100 : 80;
     const esc = figures().escapeText;
-    return '<img class="mascot" src="' + IMAGE + '" width="' + s + '" height="' + s + '"' +
-      ' alt="' + esc(api.NAME) + '" draggable="false">';
+    return '<img class="mascot" src="' + m.image + '" width="' + s + '" height="' + s + '"' +
+      ' alt="' + esc(m.name) + '" draggable="false">';
   }
 
   // 以前の手描きマスコット「ピカ」（オレンジ色の生き物）。画像が使えないときの予備として残す
@@ -24,7 +45,7 @@
     const s = Number(size) > 0 ? Math.round(Number(size) * 100) / 100 : 80;
     const esc = figures().escapeText;
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="' + s + '" height="' + s + '"' +
-      ' class="mascot" role="img" aria-label="' + esc(api.NAME) + '">' +
+      ' class="mascot" role="img" aria-label="' + esc(LEGACY_NAME) + '">' +
       // 頭の上の毛（電球の形）
       '<path d="M50,26 Q50,20 50,18" stroke="#C96A12" stroke-width="3" fill="none" stroke-linecap="round"/>' +
       '<rect x="45" y="20" width="10" height="6" rx="2" fill="#C98A00"/>' +
@@ -42,13 +63,13 @@
       '</svg>';
   }
 
-  // レベルアップなどで出す、吹き出し付きのマスコット
-  function celebrateMarkup(message) {
-    return '<div class="mascot-celebrate">' + svg(120) +
+  // レベルアップなどで出す、吹き出し付きのマスコット（mascot は svg と同じ）
+  function celebrateMarkup(message, mascot) {
+    return '<div class="mascot-celebrate">' + svg(120, mascot) +
       '<p class="mascot-bubble">' + figures().escapeText(message) + '</p></div>';
   }
 
-  const api = { NAME, IMAGE, svg, legacySvg, celebrateMarkup };
+  const api = { MASCOTS, FALLBACK, LEGACY_NAME, forUnit, svg, legacySvg, celebrateMarkup };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.RikaQuest = Object.assign(root.RikaQuest || {}, { mascot: api });

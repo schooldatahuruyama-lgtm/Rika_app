@@ -24,6 +24,11 @@ function checkProblems() {
 function allProblems() { return stageProblems().concat(checkProblems()); }
 
 test('validateUnit(light) は空', () => assert.deepEqual(cr.validateUnit(light.unit), []));
+test('単元の担当の先生（mascot）が MASCOTS にある', () => {
+  const mascot = require('../js/mascot.js');
+  assert.ok(Object.keys(mascot.MASCOTS).includes(light.unit.mascot), 'light.unit.mascot = ' + light.unit.mascot);
+  assert.equal(mascot.forUnit(light.unit).name, 'キューブ先生');
+});
 
 test('ステージ数は STAGE_COUNT、概念はそのステージが使うものがすべて定義済み、各ステージに図か操作型が 1 問以上、各概念 retryPool 2 以上 checkPool 3 以上', () => {
   assert.equal(stages.length, STAGE_COUNT);

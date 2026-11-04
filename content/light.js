@@ -1923,6 +1923,7 @@
   const unit = {
     id: 'light',
     title: '光の世界',
+    mascot: 'E',   // 担当の先生（キューブ先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
       { id: 'straight', title: '光の直進', order: 1, stages: [straight1, straight2] },

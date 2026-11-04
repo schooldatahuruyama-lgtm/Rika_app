@@ -114,7 +114,7 @@ Final fix wave: commit c0d6b48 (5/5 addressed by implementer) — scoped re-revi
 Ruling: ステージの問題数の上限を 5 → 6 に（設計書 5.3 の「暫定 4〜5 問」から変更）。用語問題を main の 2 問目に 1 問足すため — コスト: 1 ステージの時間が約 20 秒のびる。
 Ruling: 用語は解説文の `**語句**` 記法で示し、文そのものは変えない。許可された語が文に出ないカード 4 枚（straight-2-c1, straight-2-c3, refract-2-c1, refract-2-c2）は用語なしのままにし、テストで名前を挙げて除外 — コスト: この 4 枚には「大切な言葉」の行が出ない。
 Ruling: 用語問題を間違えたら用語の類題を、ふつうの問題なら ふつうの類題を先に出す（Codex round 1 の指摘 1。並び順だけでは用語の類題に届かなかった）— コスト: 類題の選び方が概念だけでなく問題の種類にも依存する。
-用語の強調: implemented (opus, commit e05c6c5, 119/119). Codex round1 = 要修正 (High 1: refract-2-t2 が出題されない / Medium 1: 虚像の説明). fix by controller (session.js insertRetry, lens-2-t1, sw VERSION -5, README) 121/121 — round 2 pending
+用語の強調: implemented (opus, commit e05c6c5, 119/119). Codex round1 = 要修正 (High 1: refract-2-t2 が出題されない / Medium 1: 虚像の説明). fix by controller (session.js insertRetry, lens-2-t1, sw VERSION -5, README) 121/121. Codex round2 = 指摘なし → complete (VERSION 2026-11-04-11)
 用語の強調: Codex round2 = 指摘なし → complete (commits e05c6c5 + 修正コミット)
 
 ## 追加作業 2026-11-04: 解説の動く図の試作（指示書 .ai-tasks/20261104-130000）
@@ -122,5 +122,11 @@ Ruling: 動く図は GIF や動画生成 AI ではなく、アプリ内で SVG �
 Ruling: 実装者が足した後片付け（renderLesson が cleanup を返す、dialog.onclose で body を空にする）は妥当として受け入れ — 隠れた画面で rAF が動き続けるのを防ぐため。
 動く図: implemented (opus, commit 42a22fa, 128/128). controller の確認: 影の図が動く・ラベルが切り替わる、反射の角度が 2 つ同じ値で動く、とめる/動かすが効く、画面を離れると anim-box が消える、コンソールエラーなし。Codex round 1 pending
 動く図: Codex round1 = 指摘なし → complete (commit 42a22fa)。残り 22 枚はユーザーが試作を見てから判断
-動く図（残り 21 種）: implemented (opus, commit a08665a, 140/140; 指示書の focal-length の式の誤りを実装者が訂正、label 4 か所移動). Codex round1 = 要修正 (High 2: grow の丸め誤差で例外 / 動きを減らす設定で光線が出ない) → controller fix (anim.js restT, grow 空配列) 142/142 — round 2 pending
+動く図（残り 21 種）: implemented (opus, commit a08665a, 140/140; 指示書の focal-length の式の誤りを実装者が訂正、label 4 か所移動). Codex round1 = 要修正 (High 2: grow の丸め誤差で例外 / 動きを減らす設定で光線が出ない) → controller fix (anim.js restT, grow 空配列) 142/142. Codex round2 = 指摘なし → complete (VERSION 2026-11-04-11)
 動く図（残り 21 種）: Codex round2 = 指摘なし → complete (commits a08665a + 修正コミット, VERSION 2026-11-04-7)。straight-2-c3 だけ静止図のまま
+
+## 追加作業 2026-11-04: アバターとマスコット
+Ruling: 生徒のアバターは Codex が生成した 6 体（ポヨンなど。commit a5f8bbf）のまま。ユーザーが Google ドライブに用意した先生キャラクター 6 体（A〜F）はマスコットに使う。一度アバターに入れてしまった（commit da96686）のをユーザーの指摘で戻した（commit 9e5f891）— コスト: なし（id は変えていない）。
+Ruling: マスコットの名前は「ピカ」から「キューブ先生」に（ユーザー決定）。手描きのピカは mascot.legacySvg として残す — コスト: 吹き出しの名前が変わる。
+Ruling: 単元ごとに先生を変える仕組みは、教材の単元に `mascot: 'E'` を書く方式（js/mascot.js の MASCOTS / forUnit、content-registry の unitOfStage / unitOfConcept）。書いていない単元は A まる先生（同梱 unit_mascots.json の fallback と同じ）— コスト: 単元を足すとき mascot を書き忘れると まる先生になる（テストはない。validateUnit では縛らない）。
+単元ごとのマスコット: implemented (controller, 146/146, 指示書 .ai-tasks/20261104-150000). Codex round1 = 要修正 (Medium 1: 継承プロパティ名で先生扱い / Low 1: legacySvg の名前) → controller fix (isKey, LEGACY_NAME) 146/146. Codex round2 = 指摘なし → complete (VERSION 2026-11-04-11)
