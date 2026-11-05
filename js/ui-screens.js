@@ -701,6 +701,13 @@
       fileInput,
     ]));
 
+    // 先生用の確認画面（js/ui-teacher.js。プロフィールがなくても開ける）
+    section.append(card([
+      cardTitle('先生用'),
+      el('p', { text: '生徒の進捗・理解度・苦手を一覧します（先生が使う画面です）。' }),
+      button('先生用の確認画面を開く', () => ctx.go('teacher'), 'btn-block'),
+    ]));
+
     section.append(card([cardTitle('記録の保存について'), el('p', { class: 'caution', text: DATA_LOSS_NOTICE })]));
 
     // オフライン教材の状態。ctx.state.offline（app.js が書く）を使い、なければ localStorage の印を読む。
@@ -1353,6 +1360,7 @@
     el, append, svgBox, button, card, cardTitle, topBar, avatarOf, avatarBadge, starsView, statusTag,
     currentProfile, areasInOrder, areaOfStage, weekDates, downloadText, confirm: confirmDialog,
     openLessonDialog, closeLessonDialog, sessionXpEntries, xpBreakdown,
+    progressList, masteryCard,   // 先生用の確認画面（ui-teacher.js）でも使う
     AVATARS, STATUS_LABEL, XP_LABEL,
   };
 

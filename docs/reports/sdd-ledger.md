@@ -154,3 +154,8 @@ Ruling: 画像は JPEG 640×480 で入れる（PNG 708×531 は 1 枚 200〜490 
 写真 B（地学・化学 48 枚、未使用 3: ion-2-c1 導線の色が逆、sol-4-c4 ろうとの足が壁についていない、volcano-2-c4-2 枚数上限）+ C（14 枚、未使用 2: refract-2-c2 折れ方が弱い、lens-2-c3 動く図あり）: 4＋3 エージェントで組みこみ → Claude round1 Medium 1（12px の文字）/Low 4 → fix → round2 解消、C round1 Low 3 → fix → complete。写真つきカード 97 枚＋問題 5 問、画像 108 枚 3.3 MB。VERSION 2026-11-05-17
 Ruling: 写真の文字は 13px 以上、白い下地つき、右はしは anchor end。写真の上では `photo`・`pointer`・`tag` の部品名に統一（A の body・heredity は `pin` のまま。後で統一）。
 写真の作り直し（ユーザー指示 2026-11-05）: 確認事項に挙がった 16 枚を docs/image-redo.md の合格基準つき指示文で再生成（16 枚合格、言い直し 1 回のみ）→ 15 枚を入れ直し（weather-2-c2 は乾湿計になり解説文と合わないので前のまま、refract-2-c2 は動く図があるので不使用）。ion-2-c1・sol-4-c4 は新たに写真に。Claude round1 Low 2（記録のみ）→ complete。画像 110 枚、VERSION 2026-11-05-18
+
+## 追加作業 2026-11-05: 先生用の確認画面（要件 追加予定機能 4）と公開
+Ruling: サーバーがないので、先生画面は「この端末の記録」＋「ほかの端末で書き出した記録ファイルの読みこみ（端末の記録には混ぜない）」で生徒の進捗・理解度・苦手を一覧する。ログイン・PIN なし（読むだけの画面。必要になれば PIN を足す）— コスト: 同じ端末の生徒が他の生徒の進捗を見られる。
+先生画面: implemented (opus, 指示書 .ai-tasks/20261105-090000, js/teacher.js + js/ui-teacher.js). Codex round1 High 3（__proto__ の汚染、名前の型、日時の型）→ fix → round2 High 1（phase の型）→ controller fix → 新サイクル round1 High 1（correct の型）→ controller fix → round2 指摘なし → complete（tests 522）。VERSION 2026-11-05-19
+Ruling: 生徒用の公開先は GitHub Pages（ユーザー決定、リポジトリ schooldatahuruyama-lgtm/Rika_app）。アプリのファイルだけの pages ブランチ（tools/pages-branch.ps1）を push する。push は PC での GitHub 認証待ち。
