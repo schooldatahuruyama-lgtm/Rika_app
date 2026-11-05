@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>理科クエスト（試作1）</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- ホーム画面に追加するための情報。manifest.webmanifest へのリンクは http(s) で開いたときだけ js/app.js が足す
+       （file:// ではブラウザが manifest を読めずにエラーを出すため）。sw.js の登録も js/app.js がする -->
+  <meta name="theme-color" content="#1A5CFF">
+</head>
+<body>
+  <!-- 上の帯: アプリ名・いま選んでいる生徒・保存の状態・教材エラーの件数 -->
+  <header class="app-header">
+    <div class="header-inner">
+      <span class="app-name">理科クエスト</span>
+      <span id="content-error" class="header-badge" hidden></span>
+      <span id="header-profile" class="header-profile"></span>
+      <span id="save-status" class="save-status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <!-- header の下のお知らせ（読み込みエラー・file:// の注意・一時的なお知らせ） -->
+  <div class="notices">
+    <p id="load-notice" class="notice notice-warn" hidden></p>
+    <p id="file-notice" class="notice notice-file" hidden></p>
+    <div id="message" class="notice" role="status" hidden></div>
+  </div>
+
+  <!-- 画面は 1 つずつ表示する（app.go が切り替える）。中身は js/ui-screens.js が作る -->
+  <main id="main" class="page">
+    <section id="screen-profile" class="screen" hidden></section>
+    <section id="screen-home" class="screen" hidden></section>
+    <!-- 単元をえらぶ（中学 1〜3 年の単元一覧） -->
+    <section id="screen-units" class="screen" hidden></section>
+    <section id="screen-map" class="screen" hidden></section>
+    <section id="screen-stage" class="screen" hidden></section>
+    <!-- Task 12: 解説・問題・学び直しの提案・結果 -->
+    <section id="screen-lesson" class="screen" hidden></section>
+    <section id="screen-problem" class="screen" hidden></section>
+    <section id="screen-offer" class="screen" hidden></section>
+    <section id="screen-result" class="screen" hidden></section>
+    <!-- Task 13: 記録 -->
+    <section id="screen-record" class="screen" hidden></section>
+    <section id="screen-settings" class="screen" hidden></section>
+  </main>
+
+  <!-- 確認ダイアログ（削除・上書き・読み込みの前に使う） -->
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <form method="dialog">
+      <p id="confirm-text" class="confirm-text"></p>
+      <div class="dialog-buttons">
+        <button type="submit" value="cancel" class="btn" id="confirm-cancel">やめる</button>
+        <button type="submit" value="ok" class="btn btn-primary" id="confirm-ok">はい</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 「解説を見る」で開く解説カード（進行は変えない） -->
+  <dialog id="lesson-dialog" class="lesson-dialog" aria-labelledby="lesson-dialog-title">
+    <form method="dialog" class="lesson-dialog-head">
+      <h2 id="lesson-dialog-title" class="lesson-dialog-title"></h2>
+      <button type="submit" value="close" class="btn" id="lesson-dialog-close">閉じる</button>
+    </form>
+    <div id="lesson-dialog-body" class="lesson-dialog-body"></div>
+  </dialog>
+
+  <script src="js/config.js"></script>
+  <script src="js/geometry.js"></script>
+  <script src="js/content-registry.js"></script>
+  <script src="js/judge.js"></script>
+  <script src="js/mastery.js"></script>
+  <script src="js/xp.js"></script>
+  <script src="js/record.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/recommend.js"></script>
+  <script src="js/units.js"></script>
+  <script src="js/figures.js"></script>
+  <script src="js/anim.js"></script>
+  <script src="js/anim-physics.js"></script>
+  <script src="js/anim-chem.js"></script>
+  <script src="js/anim-bio.js"></script>
+  <script src="js/anim-earth.js"></script>
+  <script src="js/mascot.js"></script>
+  <script src="js/richtext.js"></script>
+  <script src="js/ruby.js"></script>
+  <script src="content/readings.js"></script>
+  <script src="content/curriculum.js"></script>
+  <script src="content/light.js"></script>
+  <script src="content/sound.js"></script>
+  <script src="content/force.js"></script>
+  <script src="content/substance.js"></script>
+  <script src="content/solution.js"></script>
+  <script src="content/state-change.js"></script>
+  <script src="content/plants.js"></script>
+  <script src="content/animals.js"></script>
+  <script src="content/volcano.js"></script>
+  <script src="content/strata.js"></script>
+  <script src="content/chemical-change.js"></script>
+  <script src="content/body.js"></script>
+  <script src="content/electricity.js"></script>
+  <script src="content/weather.js"></script>
+  <script src="content/motion.js"></script>
+  <script src="content/ion.js"></script>
+  <script src="content/heredity.js"></script>
+  <script src="content/space.js"></script>
+  <script src="content/nature.js"></script>
+  <script src="js/ui-problems.js"></script>
+  <script src="js/ui-screens.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

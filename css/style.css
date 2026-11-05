@@ -1,0 +1,1757 @@
+/* 理科クエスト（試作1）の見た目
+   鮮やかな青を背景とアクセントに、白い角丸カード。正解=緑、おしい=オレンジ（赤は使わない）。
+   文字は本文 18px 以上、ボタン高さ 56px 以上、タッチ対象 44px 以上。ダークモードは作らない。 */
+
+:root {
+  --blue: #1A5CFF;
+  --bg: #EEF3FF;
+  --card: #fff;
+  --ok: #2E9E5B;
+  --warn: #F08C2E;
+  --text: #1B2430;
+
+  --blue-dark: #0F44CC;
+  --blue-soft: #DCE6FF;
+  --muted: #5B6676;
+  --line: #C9D5F0;
+  --star: #F5B400;
+  --star-off: #C5CEE0;
+  --chip: #E8EFFF;   /* 大切な言葉の一覧の背景（テーマごとに変わる） */
+  --radius: 16px;
+  --shadow: 0 2px 10px rgba(26, 60, 140, 0.12);
+}
+
+/* アクセントカラー（設定の「見た目と読みやすさ」。生徒ごと。js/app.js が <html data-theme> を付ける。blue は属性なし）
+   --ok・--warn・--star は変えない（正解・おしい・星の意味を保つ） */
+:root[data-theme="teal"] {
+  --chip: #D6F1F4;
+  --blue: #0E9AA7;
+  --blue-dark: #0A7682;
+  --blue-soft: #D6F1F4;
+  --bg: #EAF7F8;
+  --line: #BFE3E7;
+  --shadow: 0 2px 10px rgba(10, 118, 130, 0.12);
+}
+
+:root[data-theme="green"] {
+  --chip: #D8F0E1;
+  --blue: #178A4C;
+  --blue-dark: #10673A;
+  --blue-soft: #D8F0E1;
+  --bg: #ECF7F0;
+  --line: #BFE0CB;
+  --shadow: 0 2px 10px rgba(16, 103, 58, 0.12);
+}
+
+:root[data-theme="purple"] {
+  --chip: #E6DDFA;
+  --blue: #7A4FD6;
+  --blue-dark: #5C36AE;
+  --blue-soft: #E6DDFA;
+  --bg: #F3EFFC;
+  --line: #D4C8F0;
+  --shadow: 0 2px 10px rgba(92, 54, 174, 0.12);
+}
+
+:root[data-theme="pink"] {
+  --chip: #FBDCE8;
+  --blue: #E0508A;
+  --blue-dark: #B83A6E;
+  --blue-soft: #FBDCE8;
+  --bg: #FDF0F5;
+  --line: #F0C4D6;
+  --shadow: 0 2px 10px rgba(184, 58, 110, 0.12);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "BIZ UDPGothic", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1, h2, h3 {
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+
+h1 { font-size: 26px; }
+h2 { font-size: 22px; }
+h3 { font-size: 20px; }
+
+p {
+  margin: 0 0 8px;
+}
+
+/* ---- 上の帯 ---- */
+
+.app-header {
+  background: var(--blue);
+  color: #fff;
+}
+
+.header-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  min-height: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.app-name {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.header-profile {
+  margin-left: auto;
+  font-weight: bold;
+}
+
+.save-status {
+  font-size: 18px;
+}
+
+.save-status.is-error {
+  background: var(--warn);
+  color: var(--text);
+  padding: 0 10px;
+  border-radius: 999px;
+}
+
+.header-badge {
+  background: #fff;
+  color: var(--blue-dark);
+  font-weight: bold;
+  padding: 0 10px;
+  border-radius: 999px;
+}
+
+/* ---- header の下のお知らせ ---- */
+
+.notices {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.notice {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--card);
+  border-left: 6px solid var(--blue);
+  box-shadow: var(--shadow);
+}
+
+.notice-warn,
+.notice.kind-warn {
+  border-left-color: var(--warn);
+  background: #FFF4E8;
+}
+
+.notice.kind-ok {
+  border-left-color: var(--ok);
+  background: #EAF7EF;
+}
+
+/* file:// の注意は目立たせない */
+.notice-file {
+  background: transparent;
+  box-shadow: none;
+  border-left: none;
+  padding: 4px 0 0;
+  color: var(--muted);
+}
+
+/* ---- ページ ---- */
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+}
+
+.screen > * + * {
+  margin-top: 16px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 12px;
+  color: var(--blue-dark);
+}
+
+.card.is-disabled {
+  background: #F4F6FA;
+  color: var(--muted);
+  box-shadow: none;
+  border: 2px dashed var(--line);
+}
+
+.card.is-disabled .card-title {
+  color: var(--muted);
+}
+
+.card-warn {
+  border: 3px solid var(--warn);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.screen-title {
+  font-size: 26px;
+  margin: 0;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stack > * + * {
+  margin-top: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---- ボタン ---- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  min-width: 56px;
+  padding: 10px 20px;
+  border: 2px solid var(--blue);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--blue-dark);
+  font: inherit;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover {
+  background: var(--blue-soft);
+}
+
+.btn:focus-visible,
+.map-node:focus-visible,
+.avatar-choice:focus-visible,
+.text-input:focus-visible {
+  outline: 4px solid var(--warn);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--blue-dark);
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+/* ステージ入口の 2 つの大きなボタン */
+.btn-big {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 88px;
+  font-size: 22px;
+}
+
+.btn-big .btn-sub {
+  font-size: 18px;
+  font-weight: normal;
+}
+
+/* 消す操作（赤は使わず、濃い色の枠で区別する） */
+.btn-danger {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.btn-danger:hover {
+  background: #E9ECF2;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  border-color: var(--line);
+  background: #F4F6FA;
+  color: var(--muted);
+  cursor: default;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-row > .btn {
+  flex: 1 1 200px;
+}
+
+/* ---- 入力 ---- */
+
+.field-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 14px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 20px;
+  color: var(--text);
+  background: #fff;
+}
+
+.text-input:focus {
+  border-color: var(--blue);
+}
+
+.caution {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #FFF4E8;
+  border-left: 6px solid var(--warn);
+}
+
+/* ---- アバター ---- */
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  line-height: 1;
+  background: var(--blue-soft);
+}
+
+.avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 3px;
+  object-fit: contain;
+}
+
+.avatar-small {
+  width: 36px;
+  height: 36px;
+}
+
+.avatar-fox { background: #FFF0E9; }
+.avatar-cat { background: #FFF7DA; }
+.avatar-dog { background: #E4F5F1; }
+.avatar-panda { background: #F3EBFC; }
+.avatar-frog { background: #EDF6DF; }
+.avatar-penguin { background: #E9F4FF; }
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.avatar-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 96px;
+  min-width: 0;
+  padding: 8px;
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  font: inherit;
+  font-size: 18px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.avatar-choice .avatar {
+  width: min(72px, 100%);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.avatar-choice[aria-pressed="true"] {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  font-weight: bold;
+}
+
+.profile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.profile-item:first-child {
+  border-top: none;
+}
+
+.profile-name {
+  flex: 1 1 120px;
+  font-weight: bold;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+  font-weight: bold;
+}
+
+.tag-ok { background: #DDF2E5; color: #1D6E3E; }
+.tag-warn { background: #FFE6CC; color: #8A4A0B; }
+
+/* ---- ホーム ---- */
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+
+.hero .mascot {
+  flex: none;
+}
+
+.hero-text h1 {
+  font-size: 24px;
+  margin: 0 0 4px;
+}
+
+.hero-text p {
+  margin: 0;
+}
+
+.quest-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0 0 4px;
+}
+
+.level-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.level-num {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--blue-dark);
+}
+
+/* 経験値のバー */
+.xp-bar {
+  height: 18px;
+  margin: 8px 0;
+  border-radius: 9px;
+  background: var(--blue-soft);
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  border-radius: 9px;
+  background: var(--blue);
+  min-width: 0;
+  transition: width 0.4s ease;
+}
+
+/* 連続学習: 今週の曜日 7 つ */
+.streak-count {
+  font-size: 28px;
+  font-weight: bold;
+  color: #B85E0C;
+}
+
+.week-dots {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+  list-style: none;
+  padding: 0;
+}
+
+.week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 18px;
+}
+
+.week-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.week-day.is-done .week-dot {
+  background: var(--warn);
+  border-color: var(--warn);
+}
+
+.week-day.is-today .week-dot {
+  border-color: var(--blue);
+}
+
+.week-day.is-today {
+  font-weight: bold;
+  color: var(--blue-dark);
+}
+
+/* ---- 学習マップ（縦の道） ---- */
+
+.map-area {
+  padding-bottom: 12px;
+}
+
+.map-area-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.map-area-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.map-path {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 道: ノードの中心を通る縦の太い線 */
+.map-path::before {
+  content: "";
+  position: absolute;
+  left: 34px;
+  top: 36px;
+  bottom: 36px;
+  width: 8px;
+  margin-left: -4px;
+  border-radius: 4px;
+  background: var(--blue-soft);
+}
+
+.map-step {
+  position: relative;
+  padding: 6px 0;
+}
+
+.map-node {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 72px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-node:disabled {
+  cursor: default;
+}
+
+.node-circle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 4px solid var(--blue);
+  background: #fff;
+  color: var(--blue-dark);
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: var(--shadow);
+}
+
+.map-step.is-inprogress .node-circle {
+  border-color: var(--warn);
+  background: #FFF4E8;
+  color: #8A4A0B;
+}
+
+.map-step.is-cleared .node-circle {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: #fff;
+}
+
+.map-step.is-locked .node-circle,
+.map-step.is-soon .node-circle {
+  border-color: var(--line);
+  background: #F4F6FA;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.node-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.map-node:not(:disabled):hover .node-label {
+  background: var(--blue-soft);
+}
+
+.node-title {
+  display: block;
+  font-weight: bold;
+}
+
+.node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.map-step.is-locked .node-title,
+.map-step.is-soon .node-title {
+  color: var(--muted);
+}
+
+.stars {
+  letter-spacing: 2px;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.star-on { color: var(--star); }
+.star-off { color: var(--star-off); }
+
+/* ---- 単元をえらぶ ---- */
+
+.unit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.unit-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.unit-card:not(:disabled):hover {
+  background: var(--blue-soft);
+}
+
+.unit-card:focus-visible {
+  outline: 4px solid var(--warn);
+  outline-offset: 2px;
+}
+
+.unit-card:disabled {
+  cursor: default;
+  opacity: .6;
+}
+
+.unit-card[aria-current="true"] {
+  border-color: var(--blue);
+}
+
+.unit-teacher {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+
+.unit-teacher img {
+  display: block;
+  width: 44px;
+  height: 44px;
+}
+
+.unit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.unit-title {
+  font-weight: bold;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.unit-meta {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.unit-now {
+  flex: none;
+}
+
+.unit-current {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 4px;
+}
+
+/* ---- ステージ入口 ---- */
+
+.stage-title {
+  font-size: 26px;
+  margin: 4px 0;
+}
+
+.concept-list {
+  margin: 4px 0 0;
+  padding-left: 1.4em;
+}
+
+/* ---- 図・マスコット ---- */
+
+svg.scene {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 図の文字のふち取り（光線や線が文字の上を通っても読めるように） */
+svg.scene .scene-label {
+  paint-order: stroke;
+  stroke: #FAFCFF;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.mascot-box {
+  display: flex;
+  justify-content: center;
+}
+
+.mascot-celebrate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.mascot-bubble {
+  background: #fff;
+  border-radius: 16px;
+  padding: 10px 16px;
+  box-shadow: var(--shadow);
+  font-weight: bold;
+}
+
+/* ---- 確認ダイアログ ---- */
+
+.confirm-dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-width: 100%;
+  border: none;
+  border-radius: var(--radius);
+  padding: 24px 20px 20px;
+  box-shadow: 0 8px 32px rgba(15, 40, 100, 0.3);
+  color: var(--text);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(15, 30, 70, 0.45);
+}
+
+.confirm-text {
+  font-size: 20px;
+  margin-bottom: 20px;
+  white-space: pre-line;
+}
+
+.dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dialog-buttons .btn {
+  flex: 1 1 140px;
+}
+
+/* ---- 記録 ---- */
+
+/* 単元ごとの見出し（進捗のカードの中） */
+.progress-unit {
+  font-size: 15px;
+  margin: 12px 0 4px;
+}
+
+.progress-unit:first-child,
+.card-title + .progress-unit {
+  margin-top: 0;
+}
+
+/* 進捗: 領域ごとのクリア数と小さなバー */
+.progress-list,
+.mastery-list,
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.progress-row + .progress-row {
+  margin-top: 14px;
+}
+
+.progress-row.is-soon {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--muted);
+}
+
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+
+.progress-name {
+  font-weight: bold;
+}
+
+.progress-row.is-complete .progress-count {
+  color: #1D6E3E;
+  font-weight: bold;
+}
+
+.progress-bar {
+  height: 12px;
+  margin-top: 6px;
+  border-radius: 6px;
+  background: #E3EAF7;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--ok);
+}
+
+/* 理解度の目安（経験値とは別のカード。青い左の線で区別する） */
+.mastery-card {
+  border-left: 6px solid var(--blue-soft);
+}
+
+.mastery-card > .muted {
+  margin-top: -4px;
+}
+
+.mastery-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 10px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.mastery-name {
+  font-weight: bold;
+}
+
+.mastery-note {
+  margin-left: 8px;
+  font-weight: normal;
+  color: var(--muted);
+}
+
+/* 3 段階の札。今の段階だけ色がつく（まだ=青系、もう少し=オレンジ系、できた=緑系） */
+.mastery-chip {
+  display: inline-flex;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mastery-step {
+  padding: 2px 10px;
+  color: var(--muted);
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.mastery-step + .mastery-step {
+  border-left: 2px solid var(--line);
+}
+
+.mastery-chip.level-0 .mastery-step.is-current { background: var(--blue-soft); color: var(--blue-dark); font-weight: bold; }
+.mastery-chip.level-1 .mastery-step.is-current { background: #FFE6CC; color: #8A4A0B; font-weight: bold; }
+.mastery-chip.level-2 .mastery-step.is-current { background: #DDF2E5; color: #1D6E3E; font-weight: bold; }
+
+/* 一度も取り組んでいない概念は灰色 */
+.mastery-chip.is-unlearned {
+  border-style: dashed;
+  background: #F4F6FA;
+}
+
+.mastery-chip.is-unlearned .mastery-step.is-current {
+  background: #E6E9EE;
+  color: var(--muted);
+  font-weight: bold;
+}
+
+.mastery-row.is-unlearned .mastery-name {
+  color: var(--muted);
+}
+
+/* 取り組み履歴: 日付の見出しと、時刻・題名・結果の行 */
+.history-date {
+  font-size: 18px;
+  margin: 16px 0 4px;
+  color: var(--blue-dark);
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.history-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.history-phase {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #EEF1F6;
+  color: var(--muted);
+}
+
+.history-row .tag {
+  white-space: nowrap;
+}
+
+/* 広い画面（タブレット横・PC）では少しゆったり */
+@media (min-width: 768px) {
+  .page {
+    padding-top: 24px;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .week-dot {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ================================================================
+   学習画面（解説・問題・学び直し・結果）と問題の操作部品
+   正解=緑（--ok）、おしい=オレンジ（--warn）。赤は使わない。
+   ================================================================ */
+
+/* 画面の上: 何の学習か ＋「やめる」 */
+.learn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.learn-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--blue-dark);
+}
+
+/* 目立たせない操作（やめる・解説を見る） */
+.btn-quiet {
+  padding: 6px 16px;
+  border-color: var(--line);
+  color: var(--blue-dark);
+  flex: 0 0 auto;
+}
+
+.problem-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.phase-tag {
+  font-size: 18px;
+  padding: 6px 14px;
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+}
+
+.phase-tag.phase-retry,
+.phase-tag.phase-check {
+  background: #FFE6CC;
+  color: #8A4A0B;
+}
+
+.card-count {
+  font-weight: bold;
+  color: var(--muted);
+}
+
+.lesson-text {
+  font-size: 20px;
+  line-height: 1.75;
+  margin-top: 12px;
+}
+
+/* 解説文・解答後の説明文の中の大切な言葉（**語句**）。赤は使わない */
+.term {
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* 解説カードの下の「大切な言葉」の一覧 */
+.term-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.term-list-label {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.term-chip {
+  background: var(--chip);
+  color: var(--blue);
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 18px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.prompt {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* 図の箱 */
+.figure-box {
+  background: #FAFCFF;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.figure-box.is-tappable .item-region,
+.figure-box.is-drawable svg {
+  cursor: pointer;
+}
+
+.figure-box.is-drawable,
+.figure-box.is-draggable-figure {
+  border-color: var(--blue);
+}
+
+/* スマホ幅: 図をカードの余白まで広げ、図が縮みすぎないようにする
+   （図は幅 320 の viewBox。375px で縮尺が 1 以上になり、選ぶ場所の丸が 44px 以上になる） */
+@media (max-width: 479px) {
+  .card .figure-box {
+    margin-left: -14px;
+    margin-right: -14px;
+  }
+}
+
+.figure-box.is-ok { border-color: var(--ok); }
+.figure-box.is-warn { border-color: var(--warn); }
+
+.figure-box svg.scene {
+  touch-action: manipulation;
+}
+
+/* 指で操作する図はページのスクロールを止める */
+.figure-box.is-drawable svg.scene,
+.figure-box.is-draggable-figure svg.scene {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 図の中の操作対象（キーボードで選んだときの枠） */
+.figure-box g[role="button"]:focus,
+.figure-box g[role="slider"]:focus {
+  outline: none;
+}
+
+.figure-box g[role="button"]:focus-visible .region-hit,
+.figure-box g[role="slider"]:focus-visible .hit-area {
+  stroke: var(--warn);
+  stroke-width: 4;
+}
+
+.figure-box .item-region.is-selected .region-hit {
+  stroke-width: 4;
+}
+
+/* 光線を引く: 引いた線・法線の案内・始点の印 */
+.ray-overlay .drawn-ray {
+  stroke: var(--blue);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.ray-overlay .normal-guide {
+  stroke: #8A94A6;
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.ray-overlay .ray-handle {
+  fill: rgba(26, 92, 255, 0.18);
+  stroke: var(--blue);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.figure-box.is-ok .drawn-ray { stroke: var(--ok); }
+.figure-box.is-warn .drawn-ray { stroke: var(--warn); }
+
+.is-draggable .hit-area {
+  fill: rgba(26, 92, 255, 0.10);
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.is-dragging {
+  cursor: grabbing;
+}
+
+/* ドラッグ中の数値・操作の案内 */
+.live-value {
+  min-height: 1.6em;
+  margin: 4px 0 8px;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--blue-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.widget-note {
+  margin: 0;
+  font-weight: bold;
+}
+
+.widget-note:empty {
+  display: none;
+}
+
+.widget-note.is-warn {
+  margin: 4px 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #FFF1E2;
+  color: #8A4A0B;
+}
+
+.problem-widget .btn-row {
+  margin-top: 12px;
+}
+
+/* 選択式 */
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.choice-btn {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 64px;
+  font-size: 20px;
+}
+
+.choice-btn.is-chosen {
+  background: var(--blue-soft);
+}
+
+.choice-btn.is-ok:disabled {
+  border-color: var(--ok);
+  background: #DDF2E5;
+  color: #1D6E3E;
+}
+
+.choice-btn.is-warn:disabled {
+  border-color: var(--warn);
+  background: #FFE6CC;
+  color: #8A4A0B;
+}
+
+/* 穴埋め */
+.fill-card {
+  background: #FAFCFF;
+  box-shadow: none;
+  border: 2px solid var(--line);
+  padding: 16px;
+}
+
+.fill-text {
+  font-size: 20px;
+  line-height: 2.4;
+  margin: 0;
+}
+
+.blank {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 4px;
+  vertical-align: middle;
+}
+
+.blank-mark {
+  font-size: 18px;
+  color: var(--blue-dark);
+}
+
+.blank-word {
+  min-width: 88px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-bottom: 3px solid var(--blue);
+  background: var(--blue-soft);
+  border-radius: 8px 8px 0 0;
+  line-height: 1.4;
+  font-weight: bold;
+}
+
+.blank-input {
+  width: 6em;
+  min-height: 56px;
+  padding: 4px 10px;
+  border: 2px solid var(--blue);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 20px;
+  text-align: center;
+}
+
+.blank-input:focus-visible {
+  outline: 4px solid var(--warn);
+  outline-offset: 2px;
+}
+
+.blank-unit {
+  font-weight: bold;
+}
+
+.word-group {
+  margin-top: 12px;
+}
+
+.word-label {
+  margin: 0 0 6px;
+  font-weight: bold;
+  color: var(--muted);
+}
+
+.word-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.word-btn {
+  flex: 1 1 120px;
+}
+
+.word-btn[aria-pressed="true"] {
+  background: var(--blue);
+  color: #fff;
+}
+
+.word-btn[aria-pressed="true"]:disabled {
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+  border-color: var(--blue);
+}
+
+.problem-widget > .btn-block {
+  margin-top: 12px;
+}
+
+/* フィードバック（正解=緑、おしい=オレンジ） */
+.feedback {
+  border-left: 10px solid var(--ok);
+}
+
+.feedback.is-ok {
+  background: #F2FBF5;
+}
+
+.feedback.is-warn {
+  border-left-color: var(--warn);
+  background: #FFF8F0;
+}
+
+.feedback-head {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0 0 4px;
+}
+
+.feedback.is-ok .feedback-head { color: #1D6E3E; }
+.feedback.is-warn .feedback-head { color: #A35400; }
+
+.feedback-sub {
+  font-weight: bold;
+  color: #8A4A0B;
+}
+
+.feedback-text {
+  line-height: 1.75;
+}
+
+.feedback-hint {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  border: 2px dashed var(--warn);
+}
+
+.feedback .btn {
+  margin-top: 12px;
+}
+
+/* 学び直しの提案 */
+.offer-hero h1 {
+  font-size: 24px;
+}
+
+/* 結果 */
+.result-big {
+  font-size: 22px;
+}
+
+.result-big strong {
+  font-size: 30px;
+  color: var(--blue-dark);
+}
+
+.xp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 18px;
+}
+
+.xp-table th,
+.xp-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-weight: normal;
+}
+
+/* 回数と経験値の列は中身の幅だけにして、項目名の列を広く取る（スマホ幅で項目名が折れないように） */
+.xp-table .xp-count {
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+  padding-left: 12px;
+}
+
+.xp-table .xp-amount {
+  text-align: right;
+  font-weight: bold;
+  white-space: nowrap;
+  width: 1%;
+  padding-left: 16px;
+}
+
+.xp-table tfoot th,
+.xp-table tfoot td {
+  border-bottom: none;
+  font-weight: bold;
+  font-size: 20px;
+  color: var(--blue-dark);
+}
+
+.level-change {
+  margin-top: 12px;
+}
+
+/* レベルアップの祝い（全面に重ねる。タップで消える） */
+.levelup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(15, 40, 120, 0.55);
+  cursor: pointer;
+  animation: levelup-in 0.25s ease-out;
+}
+
+.levelup-overlay .mascot-bubble {
+  font-size: 24px;
+}
+
+.levelup-overlay .mascot {
+  animation: levelup-hop 0.6s ease-in-out infinite alternate;
+}
+
+.levelup-skip {
+  color: #fff;
+  font-size: 18px;
+}
+
+@keyframes levelup-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes levelup-hop {
+  from { transform: translateY(0); }
+  to { transform: translateY(-12px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .levelup-overlay,
+  .levelup-overlay .mascot {
+    animation: none;
+  }
+}
+
+/* 解説のモーダル */
+.lesson-dialog {
+  width: min(680px, calc(100vw - 24px));
+  max-width: 100%;
+  max-height: calc(100vh - 32px);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 8px 32px rgba(15, 40, 100, 0.3);
+}
+
+.lesson-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.lesson-dialog::backdrop {
+  background: rgba(15, 30, 70, 0.45);
+}
+
+.lesson-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.lesson-dialog-title {
+  margin: 0;
+  font-size: 20px;
+  color: var(--blue-dark);
+}
+
+.lesson-dialog-body {
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.lesson-dialog-body > * + * {
+  margin-top: 16px;
+}
+
+/* 解説の動く図（js/anim.js）。図の箱は .figure-box と同じ見た目、その下にとめる／動かすボタン */
+.anim-box {
+  margin: 8px 0;
+}
+
+.anim-box .figure-box {
+  margin-bottom: 0;
+}
+
+.anim-toggle {
+  min-height: 44px;
+  margin-top: 8px;
+}
+
+/* ---- 見た目と読みやすさ（設定） ---- */
+
+.prefs-label {
+  font-size: 18px;
+  margin: 16px 0 8px;
+}
+
+.prefs-card .card-title + .prefs-label,
+.prefs-card .card-title + .muted + .prefs-label {
+  margin-top: 0;
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 色の丸いボタン。背景はその色そのもの（今のテーマの変数ではなく固定の値） */
+.color-swatch {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.swatch-blue { background: #1A5CFF; }
+.swatch-teal { background: #0E9AA7; }
+.swatch-green { background: #178A4C; }
+.swatch-purple { background: #7A4FD6; }
+.swatch-pink { background: #E0508A; }
+
+/* 選んでいる色: 白い内側の輪と、外側の濃い輪 */
+.color-swatch[aria-pressed="true"] {
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.color-swatch:focus-visible {
+  outline: 4px solid var(--warn);
+  outline-offset: 2px;
+}
+
+.color-swatch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ruby-choice[aria-pressed="true"] {
+  background: var(--blue);
+  color: #fff;
+}
+
+.ruby-choice[aria-pressed="true"]:disabled {
+  background: #F4F6FA;
+  color: var(--muted);
+}
+
+/* ふりがな（js/ruby.js が入れる ruby.rq-ruby）。読みは小さく、本文より薄い色 */
+ruby.rq-ruby {
+  ruby-position: over;
+}
+
+/* 1 つのテキストノードを置きかえてできた ruby と文字の並び（js/ruby.js）。span 1 つに包むことで、flex のボタンの中でも 1 つの項目になる（display: inline は span の既定と同じ） */
+.rq-ruby-run {
+  display: inline;
+}
+
+ruby.rq-ruby rt {
+  font-size: 0.5em;
+  font-weight: normal;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-decoration: none;
+}
+
+/* 色の付いた背景の部品（ボタン・帯・ホームと結果の .hero・レベルアップの .levelup-overlay・マップの番号など）では、
+   読みも文字と同じ色にする（灰色の --muted だと青や暗い背景の上でほとんど読めない） */
+.btn-primary ruby.rq-ruby rt,
+.app-header ruby.rq-ruby rt,
+.hero ruby.rq-ruby rt,
+.offer-hero ruby.rq-ruby rt,
+.levelup-overlay ruby.rq-ruby rt,
+.map-area-num ruby.rq-ruby rt,
+.node-circle ruby.rq-ruby rt,
+.save-status ruby.rq-ruby rt,
+.week-dot ruby.rq-ruby rt,
+.ruby-choice[aria-pressed="true"] ruby.rq-ruby rt,
+.word-btn[aria-pressed="true"] ruby.rq-ruby rt {
+  color: inherit;
+}
