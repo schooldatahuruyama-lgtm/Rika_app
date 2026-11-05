@@ -1191,6 +1191,33 @@ svg.scene .scene-label {
   font-size: 14px;
 }
 
+/* パスコードの入り口と「パスコードを変える」 */
+.gate-form {
+  display: grid;
+  gap: 12px;
+  max-width: 360px;
+  margin-top: 12px;
+}
+
+.gate-field .field-label {
+  display: block;
+}
+
+.gate-input {
+  width: 100%;
+  letter-spacing: 0.3em;
+}
+
+.gate-error {
+  margin: 0;
+  color: #A03A00;
+  font-weight: bold;
+}
+
+.gate-error:empty {
+  display: none;
+}
+
 /* 生徒の詳細（行を選ぶまでは空。カードの間は画面と同じ間隔） */
 .teacher-detail-box:empty {
   display: none;

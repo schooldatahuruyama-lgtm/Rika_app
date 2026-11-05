@@ -159,3 +159,5 @@ Ruling: 写真の文字は 13px 以上、白い下地つき、右はしは ancho
 Ruling: サーバーがないので、先生画面は「この端末の記録」＋「ほかの端末で書き出した記録ファイルの読みこみ（端末の記録には混ぜない）」で生徒の進捗・理解度・苦手を一覧する。ログイン・PIN なし（読むだけの画面。必要になれば PIN を足す）— コスト: 同じ端末の生徒が他の生徒の進捗を見られる。
 先生画面: implemented (opus, 指示書 .ai-tasks/20261105-090000, js/teacher.js + js/ui-teacher.js). Codex round1 High 3（__proto__ の汚染、名前の型、日時の型）→ fix → round2 High 1（phase の型）→ controller fix → 新サイクル round1 High 1（correct の型）→ controller fix → round2 指摘なし → complete（tests 522）。VERSION 2026-11-05-19
 Ruling: 生徒用の公開先は GitHub Pages（ユーザー決定、リポジトリ schooldatahuruyama-lgtm/Rika_app）。アプリのファイルだけの pages ブランチ（tools/pages-branch.ps1）を push する。push は PC での GitHub 認証待ち。
+先生画面のパスコード（ユーザー指示「生徒は先生画面を見れないように」）: implemented (opus, js/teacher-gate.js). Codex round1 High 1/Medium 2 → fix → round2 High 1/Medium 1 → fix → 3 サイクル目 round1 High 1/Medium 1 → fix → Claude round2（Codex 上限）= Low 1 記録のみ → complete（tests 535）。VERSION 2026-11-05-20
+Ruling: パスコードは端末ごと（localStorage にハッシュ）、4〜8 桁、5 回失敗で 60 秒ロック。サーバーがないため「のぞき見を防ぐ鍵」であり、開発者ツールを使える相手には防げない — コスト: 忘れたら「すべて削除」でしか戻せない。

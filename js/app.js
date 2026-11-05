@@ -166,6 +166,7 @@
   function clearAll() {
     try {
       state.storageObj.removeItem(state.config.storageKey);
+      state.storageObj.removeItem('rika-quest:teacher');   // 先生画面のパスコードも消す（忘れたときに戻す唯一の方法）
     } catch (e) {
       console.error(e);
     }
@@ -453,6 +454,7 @@
   }
 
   function go(name, params) {
+    if (name !== 'teacher') state.teacherUnlocked = false;   // 先生画面を離れたら、次はパスコードの入り口から
     let screen = name;
     let p = params || {};
     // プロフィールがないと開けない画面は、プロフィール画面へ
