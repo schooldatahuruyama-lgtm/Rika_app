@@ -6,7 +6,7 @@
 //   入り口はいつも「パスコードを入力」だけ（生徒が決める画面はない）。端末の上書き（rika-quest:teacher）があればそれ、
 //   なければ js/config.js の初期パスコード（teacher.passcode）と照合する。合えば teacherUnlocked = true にして描き直す。
 //   変えるのは開いた先生画面の「パスコードを変える」だけ（端末の上書きとして保存）。
-//   ほかの画面へ移ると app.go が teacherUnlocked を false に戻す。保存先は ctx.state.storageObj（ふつうは localStorage）。
+//   ほかの画面へ移ると app.go が teacherUnlocked を false に戻す（教材を作る画面 author との行き来では戻さない）。保存先は ctx.state.storageObj（ふつうは localStorage）。
 (function (root) {
   'use strict';
 
@@ -457,6 +457,11 @@
         studentsCard(ctx, summary, rows, select),
         detailBox,
         classCard(summary),
+        card([
+          cardTitle('教材を作る（AI）'),
+          el('p', { text: '単元名やプリントから教材の下書きを作り、確かめてから公開します。' }),
+          button('教材を作る', () => ctx.go('author'), 'btn-primary btn-block'),
+        ]),
         card([
           cardTitle('書き出す'),
           el('p', { text: '生徒の一覧を CSV ファイル（表計算ソフトで開けます）に書き出します。' }),

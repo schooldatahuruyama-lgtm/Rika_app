@@ -1410,6 +1410,322 @@ svg.scene .scene-label {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- 教材を作る（AI。js/ui-author.js。先生画面のパスコードの先） ---- */
+
+/* 入力欄の縦の並び */
+.author-form {
+  display: grid;
+  gap: 14px;
+}
+
+.author-field {
+  display: block;
+  min-width: 0;
+}
+
+.author-field > .text-input,
+.author-field > .btn {
+  margin-top: 2px;
+}
+
+.author-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+.author-hint-warn {
+  margin: -6px 0 0;
+  color: #8A4A0B;
+  font-weight: bold;
+}
+
+.author-hint-warn:empty {
+  display: none;
+}
+
+/* textarea は幅いっぱい、最小 3 行 */
+.author-textarea {
+  display: block;
+  min-height: calc(3 * 1.5em + 20px);
+  font-size: 18px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.author-prompt {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 14px;
+}
+
+.author-select {
+  cursor: pointer;
+}
+
+.author-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.author-check input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 2px 0 0;
+}
+
+.author-gap {
+  margin-top: 12px;
+}
+
+.author-key {
+  font-family: ui-monospace, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* 下書きの一覧 */
+.author-draft-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.author-draft-list li,
+.author-file-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.author-draft-main {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.author-draft-title {
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.author-draft-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.author-draft-heading {
+  overflow-wrap: anywhere;
+}
+
+/* プリントの一覧 */
+.author-file-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.author-file-name {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.author-summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0 0 14px;
+}
+
+.author-summary dt {
+  font-weight: bold;
+  color: var(--muted);
+}
+
+.author-summary dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* ステージの行 */
+.author-stage-row {
+  padding: 14px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.author-stage-row > * + * {
+  margin-top: 10px;
+}
+
+.author-stage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.author-panel:empty {
+  display: none;
+}
+
+.author-panel > * + * {
+  margin-top: 8px;
+}
+
+.author-sub {
+  font-size: 17px;
+  margin: 18px 0 8px;
+  color: var(--blue-dark);
+}
+
+.author-details > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: bold;
+  color: var(--blue-dark);
+  cursor: pointer;
+}
+
+.author-plan-stage {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+/* 問題 1 つの編集欄（枠線の薄い箱。見出しに形式と id） */
+.author-problem-list {
+  display: grid;
+  gap: 12px;
+}
+
+.author-problem {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #FAFCFF;
+}
+
+.author-problem-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 17px;
+  color: var(--blue-dark);
+}
+
+.author-problem-id {
+  overflow-wrap: anywhere;
+}
+
+.author-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.author-option-row .text-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.author-option-id {
+  flex: none;
+  min-width: 1.6em;
+  font-weight: bold;
+  text-align: center;
+}
+
+.author-blank > .text-input {
+  margin-top: 6px;
+}
+
+.author-answer {
+  margin-top: 6px;
+}
+
+/* 生成中の表示 */
+.author-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--blue-soft);
+  font-weight: bold;
+}
+
+.author-progress-text {
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 照合の結果・生成の結果（赤みの薄い背景 / 緑の薄い背景） */
+.author-errors {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #FDECEC;
+  color: #6E1F1F;
+  overflow-wrap: anywhere;
+}
+
+.author-errors.is-warn {
+  background: #FFF4E8;
+  color: #6B3A08;
+}
+
+.author-errors-head {
+  margin: 0;
+  font-weight: bold;
+}
+
+.author-errors ul {
+  margin: 6px 0 0;
+  padding-left: 1.2em;
+}
+
+.author-errors li + li {
+  margin-top: 4px;
+}
+
+.author-ok {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #DDF2E5;
+  color: #1D6E3E;
+  font-weight: bold;
+}
+
+.author-info {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--blue-soft);
+}
+
 /* 広い画面（タブレット横・PC）では少しゆったり */
 @media (min-width: 768px) {
   .page {
