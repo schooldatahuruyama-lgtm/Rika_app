@@ -1088,6 +1088,131 @@ svg.scene .scene-label {
   white-space: nowrap;
 }
 
+/* ---- バッジ（js/badges.js。ホーム・結果・記録画面） ----
+   色はバッジごとに決まっている（アクセントカラーの --blue はテーマで変わるので使わない）。取っていないものは灰色 */
+:root {
+  --badge-blue: #1A5CFF;
+  --badge-green: #178A4C;
+  --badge-orange: #D9730D;
+  --badge-purple: #7A4FD6;
+  --badge-pink: #E0508A;
+  --badge-locked: #9AA4B5;
+}
+
+.badge-medal {
+  display: inline-flex;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  color: var(--badge-blue);
+}
+
+.badge-medal svg {
+  display: block;
+  width: 44px;
+  height: 44px;
+}
+
+.badge-medal-outer { fill: currentColor; }
+.badge-medal-inner { fill: none; stroke: #fff; stroke-width: 2; opacity: 0.7; }
+.badge-medal-glyph { fill: #fff; font-weight: bold; font-family: inherit; }
+
+.badge-medal.badge-blue { color: var(--badge-blue); }
+.badge-medal.badge-green { color: var(--badge-green); }
+.badge-medal.badge-orange { color: var(--badge-orange); }
+.badge-medal.badge-purple { color: var(--badge-purple); }
+.badge-medal.badge-pink { color: var(--badge-pink); }
+
+.badge-medal.is-locked {
+  color: var(--badge-locked);
+  opacity: 0.6;
+}
+
+.badge-count {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0 0 8px;
+}
+
+.badge-recent,
+.badge-grid,
+.badge-new-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.badge-recent,
+.badge-new-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 一覧は 2 列（375px でも 2 列のまま。文字は折り返す） */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.badge-grid .badge-item {
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #F4F7FD;
+}
+
+.badge-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.badge-title {
+  font-weight: bold;
+  line-height: 1.35;
+}
+
+.badge-grid .badge-title {
+  font-size: 16px;
+}
+
+.badge-sub {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* 取った日は折り返さない */
+.badge-date {
+  white-space: nowrap;
+}
+
+.badge-grid .badge-item.is-locked .badge-title {
+  color: var(--muted);
+}
+
+/* 結果画面の「新しいバッジ！」: 軽い強調 */
+.card.badge-new {
+  border: 3px solid var(--star);
+  background: #FFFBEA;
+}
+
+.badge-new .badge-sub {
+  font-size: 16px;
+}
+
 /* ---- 先生用の確認画面 ---- */
 
 /* 表はカードの中で横にスクロールできる（スマホ幅でもページ全体は横に広がらない） */
@@ -1099,7 +1224,7 @@ svg.scene .scene-label {
 
 .teacher-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 680px;   /* 列（バッジ）を足したので広げた。狭い画面ではこの表だけ横にスクロールする */
   border-collapse: collapse;
   font-size: 15px;
 }

@@ -488,7 +488,7 @@
       return card(children);
     }
     children.push(el('p', { class: 'muted', text: '行を押すと、その生徒の詳細が下に出ます。' }));
-    const head = el('tr', null, ['ニックネーム', '単元', 'Lv', '連続', '最終学習', 'クリア', '理解度', '苦手'].map((t) => el('th', { scope: 'col', text: t })));
+    const head = el('tr', null, ['ニックネーム', '単元', 'Lv', '連続', '最終学習', 'クリア', 'バッジ', '理解度', '苦手'].map((t) => el('th', { scope: 'col', text: t })));
     const body = el('tbody');
     summary.students.forEach((s) => {
       const btn = el('button', { type: 'button', class: 'teacher-name', 'aria-expanded': 'false' }, [
@@ -503,6 +503,7 @@
         el('td', { class: 'num', text: s.streak + ' 日' }),
         el('td', { text: lastLabel(s) }),
         el('td', { class: 'num', text: s.stages.cleared + ' / ' + s.stages.total }),
+        el('td', { class: 'num', text: String(s.badges || 0) }),
         el('td', null, masteryCounts(ctx, s)),
         el('td', { class: 'teacher-weak', text: weak || '—' }),
       ]);

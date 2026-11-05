@@ -20,7 +20,7 @@
   }
 
   function createRecord() {
-    return { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [] };
+    return { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [], badges: {} };
   }
 
   // id は p-<時刻>-<乱数>。万一すでにある id と重なったら作り直す
@@ -59,6 +59,7 @@
       lessonsRead: Object.assign({}, rec.lessonsRead),
       history: rec.history.slice(),
       xpLog: rec.xpLog.slice(),
+      badges: Object.assign({}, rec.badges),
     });
   }
 
