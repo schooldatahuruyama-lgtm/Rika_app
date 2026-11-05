@@ -705,7 +705,7 @@
     section.append(card([
       cardTitle('先生用'),
       el('p', { text: '生徒の進捗・理解度・苦手を一覧します（先生が使う画面です）。' }),
-      button('先生用の確認画面を開く', () => ctx.go('teacher'), 'btn-block'),
+      button('先生用の確認画面を開く（パスコード）', () => ctx.go('teacher'), 'btn-block'),
     ]));
 
     section.append(card([cardTitle('記録の保存について'), el('p', { class: 'caution', text: DATA_LOSS_NOTICE })]));
