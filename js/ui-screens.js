@@ -131,9 +131,8 @@
     return node;
   }
 
-  // バッジのメダル（44px の丸）。取っていれば def.color の色、取っていなければ灰色。glyph にはふりがなを付けない
-  function badgeMedal(def, earnedState) {
-    const got = !!earnedState;
+  // 文字入りの簡易メダル（SVG の丸）。画像が読めないときの代わり。色は親の .badge-medal が決める
+  function badgeMedalSvg(def) {
     const glyph = String(def.glyph || '');
     const size = glyph.length <= 1 ? 22 : glyph.length === 2 ? 17 : glyph.length === 3 ? 14 : 12;
     const svg = svgEl('svg', { viewBox: '0 0 48 48', width: 44, height: 44, 'aria-hidden': 'true', focusable: 'false' });
@@ -142,12 +141,25 @@
     const text = svgEl('text', { class: 'badge-medal-glyph', x: 24, y: 24, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': size });
     text.textContent = glyph;
     svg.append(text);
+    return svg;
+  }
+
+  // バッジの絵（assets/images/badges/<id>.png、size px の正方形。省略時 44）。取っていなければ灰色（CSS）。
+  // 画像が読めなければ SVG メダルに置きかえる。名前は親の aria-label が持つので画像の alt は空。ふりがなは付けない
+  function badgeMedal(def, earnedState, size) {
+    const got = !!earnedState;
+    const px = Number(size) > 0 ? Number(size) : 44;
+    const img = el('img', {
+      class: 'badge-img', src: 'assets/images/badges/' + def.id + '.png', alt: '', width: px, height: px, draggable: 'false',
+      onerror: () => { if (img.parentNode) img.replaceWith(badgeMedalSvg(def)); },
+    });
     return el('span', {
       class: 'badge-medal badge-' + def.color + (got ? '' : ' is-locked'),
       role: 'img',
       'aria-label': def.title + '（' + (got ? '取った' : 'まだ') + '）',
       'data-no-ruby': true,
-    }, svg);
+      style: '--badge-size:' + px + 'px',
+    }, img);
   }
 
   // 取った日（YYYY/M/D）。日時が読めなければ null
@@ -1198,7 +1210,7 @@
       section.append(card([
         cardTitle('新しいバッジ！'),
         el('ul', { class: 'badge-new-list' }, newBadges.map((d) => el('li', { class: 'badge-item' }, [
-          badgeMedal(d, true),
+          badgeMedal(d, true, 64),
           el('div', { class: 'badge-text' }, [
             el('span', { class: 'badge-title', text: d.title }),
             el('span', { class: 'badge-sub', text: d.description }),
