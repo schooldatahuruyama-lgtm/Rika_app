@@ -163,3 +163,4 @@ Ruling: 生徒用の公開先は GitHub Pages（ユーザー決定、リポジ�
 Ruling: パスコードは端末ごと（localStorage にハッシュ）、4〜8 桁、5 回失敗で 60 秒ロック。サーバーがないため「のぞき見を防ぐ鍵」であり、開発者ツールを使える相手には防げない — コスト: 忘れたら「すべて削除」でしか戻せない。
 初期パスコード（ユーザー指示「最初から設定して生徒が切り替えられないように」）: config に salt/hash（tools/teacher-passcode.js で生成）を組みこみ、設定フォームを廃止。端末の上書きは先生画面の中からだけ。「すべて削除」で初期に戻る。Claude round1 Low 4（記録のみ）→ complete（tests 540）。VERSION 2026-11-05-21。初期パスコードの値はチャットで先生に伝え、README・報告には書かない。
 公開（GitHub Pages）: ユーザーが PC で GitHub 認証 → pages（12f154d、HEAD 60965c2 のアプリ 181 ファイル）push 完了 → ユーザーが Settings → Pages を Branch pages/(root) に設定 → https://schooldatahuruyama-lgtm.github.io/Rika_app/ が 200。内蔵ブラウザ（768 幅）で確認: SW 登録済み・キャッシュ 173 = PRECACHE 173、プロフィール作成 → 単元選択 → 解説の写真カード（assets/images/plants/plants-1-c1.jpg）が表示、console エラーなし。README に公開 URL と更新手順を追記。
+先生の確認シート（ユーザー指示「作って」）: Opus が .ai-tasks/20261105-190000 の指示書で docs/reports/teacher-check.md を作成（19 単元、388 項目: 自信のない点 195・写真 113・動く図 73・全体 7）。controller が形と植物・天気・宇宙の節を確認。レビューはコード変更なしのため省略（文書のみ）。
