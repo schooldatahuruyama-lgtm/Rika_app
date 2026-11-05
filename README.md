@@ -9,6 +9,7 @@
 
 ## 開き方
 
+- **タブレットやスマホで開く（公開版）:** https://schooldatahuruyama-lgtm.github.io/Rika_app/ を Chrome・Edge・Safari で開く。https なのでオフライン対応も効き、一度開けば通信がなくても使えます。ホーム画面に追加すると、アプリのように開けます。
 - **かんたんに開く:** `index.html` をダブルクリックして Chrome または Edge で開く。ネット接続もサーバーも不要です。ただしこの開き方（`file://`）ではオフライン対応は効きません（アプリ自体はそのまま使えます）。
 - **オフライン対応つきで開く:** このフォルダで次を実行し、Chrome または Edge で http://127.0.0.1:8765/ を開く。
   ```
@@ -75,6 +76,17 @@
 - 教材やプログラムを更新したら `sw.js` の `VERSION` を上げる（例: `2026-11-04-11` → `2026-11-04-12`）。
 - 次にオンラインで開いたときに新しい版に入れ替わり（古い保存は消える）、もう一度開き直すと新しい版で動きます。記録（localStorage）は残ります。
 - `VERSION` を上げ忘れると、ブラウザは古い版を使い続けます。
+
+### 公開版（GitHub Pages）を更新するとき
+
+- 公開版はリポジトリ https://github.com/schooldatahuruyama-lgtm/Rika_app の `pages` ブランチ（アプリに必要なファイルだけ。資料や `.ai-*` は入れない）から配信されます。
+- 更新の手順: master にコミットしたあと、このフォルダで次を実行する。
+  ```
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/pages-branch.ps1
+  git push origin pages
+  ```
+  `tools/pages-branch.ps1` が HEAD のアプリのファイルから `pages` ブランチを作り直し、push すると 1〜2 分で公開版が入れ替わります（`sw.js` の `VERSION` を上げるのを忘れずに）。
+- 公開の設定（初回だけ）: GitHub の Settings → Pages → Source「Deploy from a branch」、Branch `pages` / `(root)`。設定済みです。
 
 ## 教材の内容について
 
