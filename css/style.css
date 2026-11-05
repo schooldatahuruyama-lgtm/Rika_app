@@ -1099,18 +1099,29 @@ svg.scene .scene-label {
   --badge-locked: #9AA4B5;
 }
 
+/* 大きさは js が style の --badge-size で渡す（ホーム・記録 44px、結果画面 64px）。丸い下地は付けない（画像が盾の形） */
 .badge-medal {
   display: inline-flex;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
+  flex: 0 0 var(--badge-size, 44px);
+  width: var(--badge-size, 44px);
+  height: var(--badge-size, 44px);
   color: var(--badge-blue);
 }
 
+/* バッジの絵（assets/images/badges/<id>.png）。白背景の画像なので multiply で白をカードの下地になじませる */
+.badge-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+/* 画像が読めないときの文字入りメダル */
 .badge-medal svg {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  height: 100%;
 }
 
 .badge-medal-outer { fill: currentColor; }
@@ -1125,6 +1136,14 @@ svg.scene .scene-label {
 
 .badge-medal.is-locked {
   color: var(--badge-locked);
+}
+
+.badge-medal.is-locked .badge-img {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.badge-medal.is-locked svg {
   opacity: 0.6;
 }
 

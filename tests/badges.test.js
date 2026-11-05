@@ -175,3 +175,16 @@ test('record: createRecord に badges、applyEvents は badges を写して元�
   assert.deepEqual(r1.badges, r0.badges);
   assert.notEqual(r1.badges, r0.badges);
 });
+
+test('画像: DEFS の各 id の assets/images/badges/<id>.png があり、sw.js の PRECACHE に入っている', () => {
+  const fs = require('node:fs'); const path = require('node:path');
+  const ROOT = path.join(__dirname, '..');
+  const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+  const m = sw.match(/const PRECACHE = \[([\s\S]*?)\];/);
+  assert.ok(m, 'sw.js に PRECACHE がない');
+  badges.DEFS.forEach((d) => {
+    const f = 'assets/images/badges/' + d.id + '.png';
+    assert.ok(fs.existsSync(path.join(ROOT, f)), f + ' がない');
+    assert.ok(m[1].includes("'" + f + "'"), f + ' が PRECACHE にない');
+  });
+});

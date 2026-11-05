@@ -4,7 +4,7 @@
 // http(s):// で開いたときだけ js/app.js が登録する（file:// では動かない）。
 'use strict';
 
-const VERSION = '2026-11-05-22';
+const VERSION = '2026-11-06-23';
 const CACHE_PREFIX = 'rika-quest-';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 
@@ -138,6 +138,27 @@ const PRECACHE = [
   'assets/images/weather/weather-3-c4.jpg',
   'assets/images/weather/weather-4-c1.jpg',
   'assets/images/weather/weather-4-c4.jpg',
+  // バッジの絵（js/badges.js の DEFS の順）
+  'assets/images/badges/first-clear.png',
+  'assets/images/badges/clear-5.png',
+  'assets/images/badges/clear-20.png',
+  'assets/images/badges/unit-master.png',
+  'assets/images/badges/unit-master-3.png',
+  'assets/images/badges/perfect.png',
+  'assets/images/badges/stars-10.png',
+  'assets/images/badges/stars-30.png',
+  'assets/images/badges/streak-3.png',
+  'assets/images/badges/streak-7.png',
+  'assets/images/badges/streak-30.png',
+  'assets/images/badges/retry.png',
+  'assets/images/badges/learnback-3.png',
+  'assets/images/badges/review-3.png',
+  'assets/images/badges/reader-5.png',
+  'assets/images/badges/answers-100.png',
+  'assets/images/badges/mastered-5.png',
+  'assets/images/badges/mastered-20.png',
+  'assets/images/badges/level-5.png',
+  'assets/images/badges/level-10.png',
   'js/config.js',
   'js/geometry.js',
   'js/content-registry.js',

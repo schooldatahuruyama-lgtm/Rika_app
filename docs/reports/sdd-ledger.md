@@ -167,3 +167,5 @@ Ruling: パスコードは端末ごと（localStorage にハッシュ）、4〜8
 バッジ（要件 追加予定機能 2。ユーザー指示「バッジに進む＋注意書き」）: implemented (opus, 指示書 .ai-tasks/20261105-193000, js/badges.js 20 個 + record/app/ui-screens/teacher/ui-teacher/css/README/設計書 4.5.1). プロフィール画面に「同じブラウザ・同じ URL で」の注意書き。Codex round1 Medium 1（entry の形崩れが未読扱い）→ controller fix → round2 指摘なし → complete（tests 553）。VERSION 2026-11-05-22
 Ruling: バッジは記録から判定できる 20 個、経験値は付けない、取った日時と seen を rec.badges に保存、ランキングは作らない（要件 3 はサーバー要） — コスト: すでに学習した生徒には次の解答でまとめて付く。
 バッジの絵（ユーザー指示「ChatGPT で素案を作らせて私が選ぶ」）: 5 スタイル（フラット/光沢盾/ステッカー/ピクセル/金属ピン）をスクラッチパッド badge_drafts/ に保存し送付。ユーザーの選択待ち。選択後に 20 個を個別生成して assets/images/badges/ に入れ、badgeMedal を画像に替える。
+バッジの絵（ユーザー決定: スタイル B 光沢の盾）: Sonnet courier が ChatGPT で 20 枚生成（全部 1 回で合格）→ 中央正方形 160px PNG（scratchpad/badge_crop.ps1）→ assets/images/badges/。Opus が badgeMedal を画像に差しかえ（onerror で SVG に戻す、未取得は grayscale、結果画面 64px）。Codex round1 指摘なし → complete（tests 554）。VERSION 2026-11-06-23
+Ruling: 画像は白背景のまま mix-blend-mode: multiply でカードになじませる（透過 PNG を作る手段がないため） — コスト: 暗い背景には置けない（今のアプリに暗い背景はない）。
