@@ -19,6 +19,9 @@
     // 判定の許容（角度は度、長さは SVG の px）
     tolerance: { reflectDeg: 5, lensPx: 12, parallelDeg: 5, dragPx: 16, snapPx: 24 },
     storageKey: 'rika-quest:v1',
+    // 先生画面の初期パスコード（値は書かず、salt と hash だけ。tools/teacher-passcode.js で作る。配付時に先生に伝える）。
+    // 端末で「パスコードを変える」と、その端末の上書き（rika-quest:teacher）が優先される
+    teacher: { passcode: { algo: 'fnv', salt: '66e4d15ea9429bc657a546e680b833c0', hash: '0de5ce45d9ce3ad32aaf383980637d2b' } },
   };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
