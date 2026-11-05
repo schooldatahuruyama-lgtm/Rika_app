@@ -17,6 +17,11 @@
 //                               プロフィールなし・正しくない値は false。保存できなければ元に戻す）がある
 //   見た目の設定（アクセントカラー・ふりがな）は生徒ごと（profile.theme・profile.ruby）。applyPrefs() が
 //   <html data-theme>・<meta name="theme-color">・RikaQuest.ruby.setEnabled に反映する（go と start で呼ぶ）
+//   ctx.author                … AI 教材作成（js/ui-author.js）の下書き・ためす・API キー:
+//                               drafts() / saveDrafts(list)（localStorage の rika-quest:drafts。js/author.js）、
+//                               setPreview(id, on) → { ok, errors }（下書きを教材として登録する／外す。教材の決まりに合わなければ入れない）、
+//                               apiKey() / setApiKey(key|null)（localStorage の rika-quest:author-key。学習記録には入れない）、
+//                               builtinIds()（起動時に登録されていた公開版の教材の id）
 //   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported-file'|'unsupported-insecure', version, at }（app.state.offline と同じ値）
 //                               書きかえると document に 'rika-quest:offline' を送る（設定画面が表示を更新する）
 //   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
@@ -37,7 +42,11 @@
   const OFFLINE_KEY = 'rika-quest:offline';
 
   // プロフィールがなくても開ける画面
-  const NO_PROFILE_SCREENS = ['profile', 'settings', 'teacher'];
+  const NO_PROFILE_SCREENS = ['profile', 'settings', 'teacher', 'author'];
+  // 先生画面の解錠を保つ画面（このあいだの行き来ではパスコードを聞き直さない）
+  const TEACHER_SCREENS = ['teacher', 'author'];
+  // AI 教材作成の API キー（この端末だけ。学習記録 rika-quest:v1 とは別のキー）
+  const AUTHOR_KEY = 'rika-quest:author-key';
 
   // アクセントカラー（profile.theme）。値は css/style.css の :root[data-theme] と同じ --blue（theme-color に使う）
   const THEME_COLORS = { blue: '#1A5CFF', teal: '#0E9AA7', green: '#178A4C', purple: '#7A4FD6', pink: '#E0508A' };
@@ -65,6 +74,7 @@
   Object.defineProperty(state, 'record', { enumerable: true, get: currentRecord });
 
   let cleanup = null;   // 今の画面の描画関数が返した後片付け
+  let builtinUnitIds = new Set();   // 起動時に登録されていた公開版の教材（「この端末でためす」で置きかえない・外さない）
 
   function byId(id) { return document.getElementById(id); }
 
@@ -169,6 +179,7 @@
     try {
       state.storageObj.removeItem(state.config.storageKey);
       state.storageObj.removeItem('rika-quest:teacher');   // 先生画面のパスコードも消す（忘れたときに戻す唯一の方法）
+      state.storageObj.removeItem(AUTHOR_KEY);   // AI 教材作成の API キーも消す（共用端末のため）。下書き rika-quest:drafts は消さない
     } catch (e) {
       console.error(e);
     }
@@ -451,6 +462,114 @@
     return false;
   }
 
+  // ---- AI 教材作成（下書き・この端末でためす・API キー） ----
+
+  function authorLib() {
+    return RQ.author && typeof RQ.author.loadDrafts === 'function' ? RQ.author : null;
+  }
+
+  function loadDrafts() {
+    const lib = authorLib();
+    return lib ? lib.loadDrafts(state.storageObj) : [];
+  }
+
+  function saveDrafts(list) {
+    const lib = authorLib();
+    return lib ? lib.saveDrafts(state.storageObj, list) : false;
+  }
+
+  // ためす教材が、公開版の教材やほかの単元の id とぶつからないか
+  function previewConflicts(unit) {
+    const errors = [];
+    if (builtinUnitIds.has(unit.id)) errors.push('単元の id ' + unit.id + ' は公開中の教材と同じです（別の id の下書きにしてください）');
+    const ids = [];
+    (Array.isArray(unit.areas) ? unit.areas : []).forEach((a) => (a && Array.isArray(a.stages) ? a.stages : []).forEach((s) => {
+      if (s) ids.push(['ステージ', s.id, state.reg.unitOfStage(s.id)]);
+    }));
+    (Array.isArray(unit.concepts) ? unit.concepts : []).forEach((c) => { if (c) ids.push(['概念', c.id, state.reg.unitOfConcept(c.id)]); });
+    ids.forEach(([kind, id, owner]) => {
+      if (owner && owner.id !== unit.id) errors.push(kind + 'の id ' + id + ' がほかの単元（' + owner.id + '）と重なっています');
+    });
+    return errors;
+  }
+
+  // 下書きを組む。ためせるなら errors が空
+  function previewUnit(draft) {
+    const r = authorLib().assembleUnit(draft);
+    if (!r.unit) return { unit: null, errors: r.errors };
+    return { unit: r.unit, errors: r.errors.concat(previewConflicts(r.unit)) };
+  }
+
+  // 「この端末でためす」を入れる・やめる（登録・登録の取り消しをして下書きの preview を保存し、教材の検査をし直す）
+  function setPreview(id, on) {
+    if (!authorLib()) return { ok: false, errors: ['教材作成のプログラムが読み込まれていません'] };
+    const drafts = loadDrafts();
+    const d = drafts.find((x) => x.id === id);
+    if (!d) return { ok: false, errors: ['下書きが見つかりません'] };
+    const before = state.reg.unit(id);
+    if (on) {
+      const r = previewUnit(d);
+      if (r.errors.length > 0) return { ok: false, errors: r.errors };
+      state.reg.register(r.unit);
+    } else if (!builtinUnitIds.has(id)) {
+      state.reg.unregister(id);
+    }
+    d.preview = !!on;
+    if (!saveDrafts(drafts)) {
+      // 保存できなければ登録も元に戻す（読み込み直したときと食い違わないように）
+      if (before) state.reg.register(before); else if (!builtinUnitIds.has(id)) state.reg.unregister(id);
+      return { ok: false, errors: ['下書きを保存できませんでした'] };
+    }
+    checkContent();
+    return { ok: true, errors: [] };
+  }
+
+  // 起動時: ためし中の下書きを登録する（組めない・ぶつかるものは、ためすを外して保存する）
+  function loadPreviews() {
+    if (!authorLib()) return;
+    try {
+      const drafts = loadDrafts();
+      let changed = false;
+      drafts.forEach((d) => {
+        if (!d.preview) return;
+        const r = previewUnit(d);
+        if (r.errors.length === 0) state.reg.register(r.unit);
+        else { d.preview = false; changed = true; }
+      });
+      if (changed) saveDrafts(drafts);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function apiKey() {
+    try {
+      return state.storageObj.getItem(AUTHOR_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // key が空・null なら消す。保存できなければ false
+  function setApiKey(key) {
+    try {
+      if (typeof key === 'string' && key.trim() !== '') state.storageObj.setItem(AUTHOR_KEY, key.trim());
+      else state.storageObj.removeItem(AUTHOR_KEY);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  const authorCtx = {
+    drafts: loadDrafts,
+    saveDrafts,
+    setPreview,
+    apiKey,
+    setApiKey,
+    builtinIds: () => Array.from(builtinUnitIds),
+  };
+
   // ---- 画面の切り替え ----
 
   function makeCtx() {
@@ -473,13 +592,20 @@
       replaceStore,
       clearAll,
       confirm: (text, okLabel, options) => RQ.ui.helpers.confirm(text, okLabel, options),
+      author: authorCtx,
       state,
       app,
     };
   }
 
   function go(name, params) {
-    if (name !== 'teacher') state.teacherUnlocked = false;   // 先生画面を離れたら、次はパスコードの入り口から
+    // 先生画面（と教材を作る画面）を離れたら、次はパスコードの入り口から
+    if (TEACHER_SCREENS.indexOf(name) === -1) state.teacherUnlocked = false;
+    // 教材を作る画面はパスコードの先。解錠していなければ先生画面の入り口へ
+    if (name === 'author' && !state.teacherUnlocked) {
+      go('teacher');
+      return;
+    }
     let screen = name;
     let p = params || {};
     // プロフィールがないと開けない画面は、プロフィール画面へ
@@ -708,10 +834,11 @@
       });
     });
     const count = state.contentErrors.length;
-    if (count > 0) {
-      const badge = byId('content-error');
-      badge.textContent = '教材エラー: ' + count + '件';
-      badge.hidden = false;
+    // 「この端末でためす」で教材が変わったときにも呼ぶので、0 件なら消す
+    const badge = byId('content-error');
+    if (badge) {
+      badge.textContent = count > 0 ? '教材エラー: ' + count + '件' : '';
+      badge.hidden = count === 0;
     }
     return count;
   }
@@ -730,6 +857,9 @@
       }
     }
 
+    // 公開版の教材を覚えてから、ためし中の下書きを登録する（そのあとで教材を検査する）
+    builtinUnitIds = new Set(state.reg.units().map((u) => u.id));
+    loadPreviews();
     checkContent();
     applyPrefs();
 

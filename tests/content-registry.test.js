@@ -13,6 +13,12 @@ test('unitOfStage / unitOfConcept はそのステージ・概念の単元。知�
   assert.equal(reg.unitOfStage('s-a1').id, 'u'); assert.equal(reg.unitOfStage('s-b1').id, 'u'); assert.equal(reg.unitOfStage('nope'), null); assert.equal(reg.unitOfStage(undefined), null);
   assert.equal(reg.unitOfConcept('c-a').id, 'u'); assert.equal(reg.unitOfConcept('nope'), null);
 });
+test('unregister は登録を外す。無ければ false', () => {
+  const r = cr.createRegistry(); r.register(unit);
+  assert.equal(r.unregister('u'), true);
+  assert.equal(r.unit('u'), null); assert.equal(r.stage('s-a1'), null); assert.deepEqual(r.units(), []);
+  assert.equal(r.unregister('u'), false); assert.equal(r.unregister('nope'), false);
+});
 test('stagesInOrder は領域の order 順', () => assert.deepEqual(reg.stagesInOrder('u').map(s => s.id), ['s-a1', 's-a2', 's-b1']));
 test('nextStage は領域内の次、末尾は null', () => { assert.equal(reg.nextStage('s-a1').id, 's-a2'); assert.equal(reg.nextStage('s-a2'), null); });
 test('validateUnit: 正常な教材は空', () => assert.deepEqual(cr.validateUnit(unit), []));

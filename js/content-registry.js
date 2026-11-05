@@ -49,6 +49,14 @@
       if (i >= 0) unitList[i] = unit; else unitList.push(unit);
     }
 
+    // 登録を外す（AI 教材作成の「この端末でためす」をやめるときに使う）。なければ false
+    function unregister(id) {
+      const i = unitList.findIndex(u => u.id === id);
+      if (i < 0) return false;
+      unitList.splice(i, 1);
+      return true;
+    }
+
     function units() { return unitList.slice(); }
 
     function unit(id) { return unitList.find(u => u.id === id) || null; }
@@ -108,7 +116,7 @@
       return stages[stages.indexOf(hit.stage) + 1] || null;
     }
 
-    return { register, units, unit, unitOfStage, unitOfConcept, stage, concept, problem, stagesInOrder, nextStage };
+    return { register, unregister, units, unit, unitOfStage, unitOfConcept, stage, concept, problem, stagesInOrder, nextStage };
   }
 
   // ---- 検証 ----

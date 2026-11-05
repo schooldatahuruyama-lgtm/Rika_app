@@ -169,3 +169,8 @@ Ruling: バッジは記録から判定できる 20 個、経験値は付けな�
 バッジの絵（ユーザー指示「ChatGPT で素案を作らせて私が選ぶ」）: 5 スタイル（フラット/光沢盾/ステッカー/ピクセル/金属ピン）をスクラッチパッド badge_drafts/ に保存し送付。ユーザーの選択待ち。選択後に 20 個を個別生成して assets/images/badges/ に入れ、badgeMedal を画像に替える。
 バッジの絵（ユーザー決定: スタイル B 光沢の盾）: Sonnet courier が ChatGPT で 20 枚生成（全部 1 回で合格）→ 中央正方形 160px PNG（scratchpad/badge_crop.ps1）→ assets/images/badges/。Opus が badgeMedal を画像に差しかえ（onerror で SVG に戻す、未取得は grayscale、結果画面 64px）。Codex round1 指摘なし → complete（tests 554）。VERSION 2026-11-06-23
 Ruling: 画像は白背景のまま mix-blend-mode: multiply でカードになじませる（透過 PNG を作る手段がないため） — コスト: 暗い背景には置けない（今のアプリに暗い背景はない）。
+
+## 追加作業 2026-11-06: AI 教材作成（要件 追加予定機能 5・6）
+Ruling: サーバーなしで先生の端末だけで動く形。生成は Claude API を fetch で直接呼ぶ（先生の API キーは localStorage のみ）か、指示文をコピーしてチャットに貼る道の 2 つ。計画 1 回＋ステージごと 1 回に分けて出力を小さくする。問題は choice/fill/figure-choice（枠選び）だけ。公開は先生が「確認済み」にして content/<id>.js を書き出し、Claude Code がリポジトリに入れる（自動公開なし）。設計書 13 章。 — コスト: 書き出した教材はカードに図がないので、公開時に図を足すか tests/content-all の「カードに図」検査を AI 教材だけ緩める判断が要る。
+Ruling: SDK は使わず fetch（アプリに依存ライブラリを入れない方針。設計書 9）。構造化出力 output_config.format {type: json_schema, schema} と fallbacks: "default"。モデル既定 claude-opus-5-5。実 API での生成は未確認（先生のキーが要る）。
+implemented (opus ×2: A ロジック js/author.js + js/author-api.js、B 画面 js/ui-author.js + app/teacher/index/sw/css/README). Codex サイクル 1: round1 High 3/Medium 2 → fix（opus）→ round2 High 1/Medium 1 → サイクル 2: fix（opus）→ round1 指摘なし → complete（tests 588）。VERSION 2026-11-06-24。controller のブラウザ確認: 先生画面 → 教材を作る → 貼り付けで計画と 2 ステージ → 照合 OK → ためす → 単元一覧「その他」に出て生徒画面で解ける（枠選びの図の重なりを修正）。
