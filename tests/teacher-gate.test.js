@@ -211,3 +211,84 @@ test('storeVanished: 学習記録のキーがない（null）のにメモリに�
   s.removeItem('rika-quest:v1');
   assert.equal(gate.storeVanished(s.getItem('rika-quest:v1'), 1), true);
 });
+
+// ---- 初期パスコード（js/config.js の teacher.passcode） ----
+// 本物の初期パスコードの値はテストに書かない。テスト用のコードで tools/teacher-passcode.js と同じ形の config を作る
+const tool = require('../tools/teacher-passcode.js');
+const testConfig = async (code, salt) => ({ teacher: { passcode: await tool.passcodeEntry(code, salt) } });
+
+test('tools/teacher-passcode.js: 出力した salt と hash が verify で通る（コマンドの出力も）', async () => {
+  const entry = await tool.passcodeEntry('2468', 'abc');
+  assert.equal(entry.algo, 'fnv'); assert.equal(entry.salt, 'abc'); assert.match(entry.hash, /^[0-9a-f]{32}$/);
+  const def = gate.defaultData({ teacher: { passcode: entry } });
+  assert.equal(await gate.verify(def, '2468'), true);
+  assert.equal(await gate.verify(def, '2469'), false);
+  // 同じ salt なら同じ hash（純粋関数。crypto.subtle を使わない）
+  assert.equal((await tool.passcodeEntry('2468', 'abc')).hash, entry.hash);
+  assert.equal(gate.fnvHash('abc:2468'), entry.hash);
+  // コマンドとして実行した出力を読む（salt は毎回新しく作る）
+  const { execFileSync } = require('node:child_process');
+  const out = execFileSync(process.execPath, [require('node:path').join(__dirname, '..', 'tools', 'teacher-passcode.js'), '97531'], { encoding: 'utf8' });
+  const m = out.match(/teacher: \{ passcode: \{ algo: '(fnv)', salt: '([0-9a-f]{32})', hash: '([0-9a-f]{32})' \} \},/);
+  assert.ok(m, out);
+  assert.equal(await gate.verify(gate.defaultData({ teacher: { passcode: { algo: m[1], salt: m[2], hash: m[3] } } }), '97531'), true);
+  await assert.rejects(tool.passcodeEntry('12'));
+});
+
+test('defaultData: config の初期パスコード（形が違えば null）。js/config.js には組みこまれている', () => {
+  const c = require('../js/config.js');
+  const def = gate.defaultData(c);
+  assert.ok(def, 'config.teacher.passcode がない');
+  assert.equal(def.algo, 'fnv'); assert.match(def.salt, /^[0-9a-f]{32}$/); assert.match(def.hash, /^[0-9a-f]{32}$/);
+  assert.equal(def.source, 'default'); assert.equal(def.failed, 0); assert.equal(def.lockUntil, 0);
+  assert.equal(gate.defaultData({}), null);
+  assert.equal(gate.defaultData(null), null);
+  assert.equal(gate.defaultData({ teacher: { passcode: { algo: 'md5', salt: 's', hash: 'h' } } }), null);
+});
+
+test('初期パスコード: 上書きがなければ初期パスコードで開ける（端末には何も書かない）', async () => {
+  const def = gate.defaultData(await testConfig('2468', 'salt-a'));
+  const s = fakeStorage();
+  const r = await gate.attempt(s, '2468', t0, null, def);
+  assert.equal(r.status, 'ok'); assert.equal(r.data.saved, true);
+  assert.deepEqual(s.keys(), []);
+  // まちがえると、初期パスコードのまま失敗回数だけを端末に残す（source: 'default'）。5 回でロック
+  for (let i = 1; i <= 4; i++) assert.equal((await gate.attempt(s, '1111', t0, null, def)).triesLeft, 5 - i);
+  assert.deepEqual(gate.load(s), Object.assign({}, def, { failed: 4 }));
+  assert.equal((await gate.attempt(s, '1111', t0, null, def)).status, 'locked');
+  assert.equal((await gate.attempt(s, '2468', t0 + 1000, null, def)).status, 'locked');
+  const ok = await gate.attempt(s, '2468', t0 + 60000, null, def);
+  assert.equal(ok.status, 'ok'); assert.equal(gate.load(s).failed, 0); assert.equal(gate.load(s).lockUntil, 0);
+});
+
+test('初期パスコード: 上書きがあればそれが優先、上書きを消すと初期に戻る', async () => {
+  const def = gate.defaultData(await testConfig('2468', 'salt-a'));
+  const s = fakeStorage();
+  gate.save(s, await gate.create('1357'));   // 先生画面で変えた（端末の上書き）
+  assert.equal((await gate.attempt(s, '2468', t0, null, def)).status, 'wrong');   // 初期パスコードでは開かない
+  assert.equal((await gate.attempt(s, '1357', t0, null, def)).status, 'ok');
+  // 「すべて削除」で上書きが消える → 初期パスコードに戻る
+  s.removeItem(gate.KEY);
+  assert.equal((await gate.attempt(s, '1357', t0, null, def)).status, 'wrong');
+  assert.equal((await gate.attempt(s, '2468', t0, null, def)).status, 'ok');
+  // 初期パスコードも上書きもなければ unset
+  assert.equal((await gate.attempt(fakeStorage(), '2468', t0, null, null)).status, 'unset');
+});
+
+test('effective: 初期パスコードの記録（source: default）は、いまの config の初期パスコードに失敗回数・ロックを重ねる', async () => {
+  const oldDef = gate.defaultData(await testConfig('2468', 'old'));
+  const newDef = gate.defaultData(await testConfig('8642', 'new'));
+  const rec = Object.assign({}, oldDef, { failed: 3, lockUntil: 0 });
+  const e = gate.effective(rec, newDef);
+  assert.equal(e.salt, 'new'); assert.equal(e.failed, 3); assert.equal(e.source, 'default');
+  const over = await gate.create('1357');
+  assert.equal(gate.effective(gate.load((() => { const s = fakeStorage(); gate.save(s, over); return s; })()), newDef).hash, over.hash);
+  assert.equal(gate.effective(null, newDef), newDef);
+  assert.equal(gate.effective(null, null), null);
+  // 保存して読んでも source は残る
+  const s = fakeStorage(); gate.save(s, rec);
+  assert.equal(gate.load(s).source, 'default');
+  // 版が上がって初期パスコードが変わったあとも、古い記録で照合しない
+  assert.equal((await gate.attempt(s, '2468', t0, null, newDef)).status, 'wrong');
+  assert.equal((await gate.attempt(s, '8642', t0, null, newDef)).status, 'ok');
+});

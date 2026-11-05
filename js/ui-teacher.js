@@ -3,7 +3,9 @@
 // teacher.summarizeAll でまとめ、生徒の一覧・生徒の詳細・クラスのまとめを出す。CSV で書き出せる。
 // 利用者の文字はすべて textContent で入れる。先生の画面なので、ふりがなは付けない（section に data-no-ruby）。
 // 入り口はパスコード（js/teacher-gate.js）。ctx.state.teacherUnlocked が真でなければ、中身の代わりに入り口を出す。
-//   未設定なら決めるフォーム、設定済みなら入力フォーム。合えば teacherUnlocked = true にして描き直す。
+//   入り口はいつも「パスコードを入力」だけ（生徒が決める画面はない）。端末の上書き（rika-quest:teacher）があればそれ、
+//   なければ js/config.js の初期パスコード（teacher.passcode）と照合する。合えば teacherUnlocked = true にして描き直す。
+//   変えるのは開いた先生画面の「パスコードを変える」だけ（端末の上書きとして保存）。
 //   ほかの画面へ移ると app.go が teacherUnlocked を false に戻す。保存先は ctx.state.storageObj（ふつうは localStorage）。
 (function (root) {
   'use strict';
@@ -66,11 +68,22 @@
   // 保存できなかった失敗回数・ロック（teacherGate.attempt の held）。画面の世代とは別にこのモジュールで持ち、
   // 照合のあいだに画面を離れても、次に入り口を描くとき・次の送信に引き継ぐ（ページを読み込み直すまで）
   let pendingLock = null;
-  // このページでパスコードの保存データを一度でも見たか。見たあとで消えていたら（ほかのタブで「すべて削除」など）、
+  // このページで端末の上書き（保存データ）を一度でも見たか。見たあとで消えていたら（ほかのタブで「すべて削除」など）、
   // このタブのメモリに残る古い記録・読みこんだ記録を新しいパスコードで見られないよう、ページを読み込み直す
   let seenPasscode = false;
 
   const BLOCKED_TEXT = '保存できないため先生画面を開けません（ブラウザの保存領域を確かめてください）。';
+  const UNSET_TEXT = 'パスコードが組みこまれていません（js/config.js の teacher.passcode）。';
+
+  // 初期パスコード（config）
+  function defaultOf(ctx) {
+    return G.defaultData(ctx.config);
+  }
+
+  // いま照合に使うデータ（端末の上書きか初期パスコード）
+  function effectiveOf(ctx, stored) {
+    return G.effective(stored, defaultOf(ctx));
+  }
 
   // いま進んでいる照合（Promise）。画面をまたいで 1 つだけにし、終わるまで次の照合を始めない
   // （画面を往復して照合が重なると、先に終わった失敗回数を後の照合が取りこぼすため）
@@ -78,11 +91,11 @@
 
   // 照合する（teacherGate.attempt）。結果は画面がいまのものでなくても必ず受けとる（保存できなかったロックを持つ）。
   // ほかの照合が進んでいれば null
-  async function runAttempt(storage, code, now) {
+  async function runAttempt(storage, code, now, fallback) {
     if (verifying) return null;
-    verifying = G.attempt(storage, code, now, pendingLock).then((r) => {
+    verifying = G.attempt(storage, code, now, pendingLock, fallback).then((r) => {
       pendingLock = r.held;
-      if (r.data) seenPasscode = true;
+      if (G.load(storage)) seenPasscode = true;
       return r;
     });
     try {
@@ -144,55 +157,27 @@
   function attemptText(r, prefix) {
     if (r.status === 'blocked') return BLOCKED_TEXT;
     if (r.status === 'locked') return 'しばらく待ってから（残り ' + r.seconds + ' 秒）';
-    if (r.status === 'cantVerify') return 'この開き方ではパスコードを確かめられません。パスコードを決めたときと同じ開き方（https か、このパソコンの http://127.0.0.1）で開いてください。';
+    if (r.status === 'cantVerify') return 'この開き方ではパスコードを確かめられません。パスコードを変えたときと同じ開き方（https か、このパソコンの http://127.0.0.1）で開いてください。';
+    if (r.status === 'unset') return UNSET_TEXT;
     if (r.status === 'invalid') return (prefix ? prefix.replace(/が$/, 'を') : 'パスコードを') + ' 4〜8 桁の数字で入力してください。';
     if (r.status === 'changed') return 'パスコードがほかの画面で変わりました。もう一度入力してください。';
     return (prefix || '') + 'ちがいます（あと ' + r.triesLeft + ' 回）';
   }
 
-  // 入り口（パスコード未設定なら決める、設定済みなら入力する）。isCurrent() が偽になったら何もしない
+  // 入り口（いつも「パスコードを入力」だけ）。isCurrent() が偽になったら何もしない
   function renderGate(section, ctx, onUnlock, isCurrent) {
     const storage = gateStorage(ctx);
     const stored = G.load(storage);
     if (reloadIfGone(ctx, section, stored)) return;
-    const data = G.stricter(stored, pendingLock);
+    const data = G.stricter(effectiveOf(ctx, stored), pendingLock);
     const error = errorLine();
     const show = (text) => { error.textContent = text; };
-    let busy = false;
     const children = [H.topBar('先生用の確認画面', '設定', () => ctx.go('settings'))];
 
     if (!data) {
-      pendingLock = null;
-      const a = codeField('teacher-code-new', 'パスコード');
-      const b = codeField('teacher-code-again', 'もう一度');
-      const form = el('form', { class: 'gate-form', novalidate: true }, [a.field, b.field, error, submitButton('決める', 'btn-block')]);
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (busy || !isCurrent()) return;
-        // ほかのタブで先に決められていたら、入力の画面にする（上書きしない）
-        if (G.load(storage)) { renderGate(section, ctx, onUnlock, isCurrent); return; }
-        const bad = checkNewCodes(a.input.value, b.input.value);
-        if (bad) { show(bad); return; }
-        busy = true;
-        let next = null;
-        try { next = await G.create(a.input.value); } catch (err) { console.error(err); }
-        busy = false;
-        if (!isCurrent()) return;
-        if (G.load(storage)) { renderGate(section, ctx, onUnlock, isCurrent); return; }
-        if (!next || !G.save(storage, next)) { show('パスコードを保存できませんでした。ブラウザの設定を確かめてください。'); return; }
-        seenPasscode = true;
-        ctx.state.teacherUnlocked = true;
-        onUnlock();
-        ctx.message('パスコードを決めました。忘れないようにしてください（忘れると、設定の「すべて削除」で記録ごと消す以外に戻せません）。', 'ok');
-      });
-      children.push(card([
-        cardTitle('先生のパスコードを決める'),
-        el('p', { text: '最初に先生のパスコードを決めてください（4〜8 桁の数字、2 回入力）' }),
-        el('p', { class: 'caution', text: 'この画面は先生が使います。パスコードはこの端末だけに保存されます。忘れると、設定の「すべて削除」で記録ごと消す以外に戻す方法がありません。' }),
-        form,
-      ]));
+      // 初期パスコードが config にない（組みこみの誤り）。生徒が決める画面は出さない
+      children.push(card([cardTitle('パスコード'), el('p', { class: 'caution', text: UNSET_TEXT })]));
       section.replaceChildren(...children);
-      a.input.focus();
       return;
     }
 
@@ -205,11 +190,9 @@
       if (verifying || !isCurrent()) return;
       setDisabled(controls, true);
       // 送信のたびに保存データを読み直す（ほかのタブの失敗・ロック・削除も反映する）
-      const r = await runAttempt(storage, code.input.value, ctx.now());
+      const r = await runAttempt(storage, code.input.value, ctx.now(), defaultOf(ctx));
       setDisabled(controls, false);
       if (!r) return;
-      // 保存データが消えていた（ほかのタブで「すべて削除」など）: 決めるフォームには戻さず、読み込み直す
-      if (r.status === 'unset') { reloadIfGone(ctx, section, null); return; }
       if (!isCurrent()) return;
       if (r.status === 'ok') {
         ctx.state.teacherUnlocked = true;
@@ -221,7 +204,7 @@
       code.input.focus();
       show(attemptText(r, ''));
     });
-    if (G.sameCode(stored, pendingLock)) show(BLOCKED_TEXT);
+    if (G.sameCode(data, pendingLock) && G.sameCode(effectiveOf(ctx, stored), pendingLock)) show(BLOCKED_TEXT);
     else if (!G.canTry(data, ctx.now())) show(lockText(data, ctx.now()));
     children.push(card([
       cardTitle('パスコード'),
@@ -230,7 +213,7 @@
     ]));
     section.replaceChildren(...children);
     // 前の画面の照合が終わって保存できなかったと分かったら、その文を出す
-    waitVerifying(controls, () => { if (G.sameCode(G.load(storage), pendingLock)) show(BLOCKED_TEXT); });
+    waitVerifying(controls, () => { if (G.sameCode(effectiveOf(ctx, G.load(storage)), pendingLock)) show(BLOCKED_TEXT); });
     code.input.focus();
   }
 
@@ -262,11 +245,9 @@
         busy = true;
         setDisabled(controls, true);
         // 今のコードを確かめる（入り口と同じ失敗回数・ロック）
-        const r = await runAttempt(storage, cur.input.value, ctx.now());
+        const r = await runAttempt(storage, cur.input.value, ctx.now(), defaultOf(ctx));
         setDisabled(controls, false);
         if (!r) { busy = false; return; }
-        // 保存データが消えていた（ほかのタブで「すべて削除」など）: 読み込み直す
-        if (r.status === 'unset') { reloadIfGone(ctx, box, null); return; }
         if (!isCurrent()) { busy = false; return; }
         if (r.status !== 'ok') {
           busy = false;
@@ -279,11 +260,12 @@
         try { next = await G.create(a.input.value); } catch (err) { console.error(err); }
         busy = false;
         if (!isCurrent()) return;
-        // 照合のあとにほかのタブで変わった・消えたら上書きしない（消えていたら読み込み直す）
+        // 照合のあとにほかのタブで変わった・消えたら上書きしない（上書きが消えていたら読み込み直す）
         const now = G.load(storage);
         if (reloadIfGone(ctx, box, now)) return;
-        if (!G.sameCode(now, r.data)) { show('パスコードがほかの画面で変わりました。もう一度入力してください。'); return; }
+        if (!G.sameCode(effectiveOf(ctx, now), r.data)) { show('パスコードがほかの画面で変わりました。もう一度入力してください。'); return; }
         if (!next || !G.save(storage, next)) { show('パスコードを保存できませんでした。'); return; }
+        seenPasscode = true;
         pendingLock = null;
         closed();
         ctx.message('パスコードを変えました。', 'ok');
@@ -295,7 +277,7 @@
     closed();
     return card([
       cardTitle('パスコード'),
-      el('p', { class: 'muted', text: '先生用の確認画面を開くときのパスコードです。使い終わったら「先生画面を閉じる」を押してください。' }),
+      el('p', { class: 'muted', text: '先生用の確認画面を開くときのパスコードです。変えるとこの端末だけに保存され、設定の「すべて削除」で初期のパスコードに戻ります。使い終わったら「先生画面を閉じる」を押してください。' }),
       box,
     ]);
   }

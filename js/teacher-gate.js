@@ -1,11 +1,19 @@
 // 先生用の確認画面の入り口（パスコード）。純粋関数（Node でテストできる）と、storage への保存
 // 生徒が先生画面を見ないようにするための目安の鍵（サーバーがないので、端末のブラウザ内だけで確かめる）。
 //
-// 保存データ（キー rika-quest:teacher）: { algo: 'sha256' | 'fnv', salt, hash, failed, lockUntil }
+// 初期パスコード: js/config.js の teacher.passcode（{ algo: 'fnv', salt, hash }。tools/teacher-passcode.js で作る）。
+//   端末に保存データがなければ、これと照合する。生徒が決める画面はない。
+// 保存データ（キー rika-quest:teacher）= 端末の上書き: { algo: 'sha256' | 'fnv', salt, hash, failed, lockUntil, source? }
+//   先生画面の「パスコードを変える」で作る。あればこちらを優先する。「すべて削除」で消えると初期パスコードに戻る。
+//   source: 'default' は、初期パスコードのまま失敗回数・ロックだけを残したもの（照合には config の初期パスコードを使う）。
 //   algo は hash を作った方式。照合のときも同じ方式で作る。
 //   sha256 … crypto.subtle（https・localhost など安全な開き方でだけ使える）の SHA-256
 //   fnv    … crypto.subtle が使えない開き方（http の LAN の IP など）での代わり（FNV-1a を 4 回、32 文字）
 // isValidCode(code)        → 4〜8 桁の数字の文字列なら true
+// defaultData(config)      → 初期パスコードの照合データ（source: 'default'）か null（config にない・形が違う）
+// effective(stored, fallback) → いま照合に使うデータ。上書き stored があればそれ（source: 'default' なら初期パスコードに
+//                            stored の失敗回数・ロックを重ねたもの）、なければ初期パスコード fallback。どちらもなければ null
+// fnvHash(text)            → crypto を使わない 32 文字のハッシュ（Node とブラウザで同じ結果）
 // hashCode(code, salt, algo) → Promise<{ algo, hash }>。algo を省くと、使える方式（sha256 を優先）
 // create(code, now)        → Promise<保存データ>（新しい salt で作る。失敗回数 0）
 // load(storage)            → 保存データか null（未設定・壊れている・読めない）。例外を出さない
@@ -23,9 +31,10 @@
 //                            生徒がいる（ほかのタブで「すべて削除」された）。画面はページを読み込み直す
 // stricter(stored, held)   → 保存データ stored と、保存できずにメモリに持っている held のきびしいほう
 //                            （同じパスコードなら失敗回数・ロックの大きいほう。違えば・held がなければ stored。stored がなければ null）
-// attempt(storage, code, now, held) → Promise<結果>。入り口の 1 回の送信（毎回 storage を読み直す）
+// attempt(storage, code, now, held, fallback) → Promise<結果>。入り口の 1 回の送信（毎回 storage を読み直す）
+//   fallback は初期パスコード（defaultData(config)）。上書きがなければこれと照合する
 //   結果 = { status, data, held, triesLeft, seconds }
-//   status: 'unset'（保存データがない。古いデータは使わない）| 'blocked'（失敗回数・ロックを保存できない。照合しない）|
+//   status: 'unset'（上書きも初期パスコードもない）| 'blocked'（失敗回数・ロックを保存できない。照合しない）|
 //           'locked'（ロック中。seconds が残り秒）| 'cantVerify' | 'invalid'（4〜8 桁の数字でない。失敗に数えない）|
 //           'changed'（照合のあいだにほかのタブでパスコードが変わった・消えた。上書きしない）|
 //           'wrong'（ちがう。triesLeft が残り回数。5 回目ならロックして 'locked'）| 'ok'（合った。data.saved が偽なら成功の保存に失敗）
@@ -112,7 +121,23 @@
     if (ALGOS.indexOf(data.algo) === -1 || typeof data.salt !== 'string' || typeof data.hash !== 'string' || data.hash === '') return null;
     const failed = Number.isInteger(data.failed) && data.failed >= 0 ? data.failed : 0;
     const lockUntil = typeof data.lockUntil === 'number' && Number.isFinite(data.lockUntil) && data.lockUntil > 0 ? data.lockUntil : 0;
-    return { algo: data.algo, salt: data.salt, hash: data.hash, failed, lockUntil };
+    const out = { algo: data.algo, salt: data.salt, hash: data.hash, failed, lockUntil };
+    if (data.source === 'default') out.source = 'default';
+    return out;
+  }
+
+  function defaultData(config) {
+    const p = isObject(config) && isObject(config.teacher) ? config.teacher.passcode : null;
+    const d = normalize(p);
+    return d ? Object.assign(d, { failed: 0, lockUntil: 0, source: 'default' }) : null;
+  }
+
+  function effective(stored, fallback) {
+    if (stored && stored.source === 'default' && fallback) {
+      // 初期パスコードの記録は、いまの config の初期パスコードで照合する（版が上がって初期パスコードが変わっても）
+      return Object.assign({}, fallback, { failed: stored.failed, lockUntil: stored.lockUntil, source: 'default' });
+    }
+    return stored || fallback || null;
   }
 
   function load(storage) {
@@ -191,12 +216,12 @@
     return Object.assign({}, stored, { failed: Math.max(stored.failed || 0, held.failed || 0), lockUntil: Math.max(stored.lockUntil || 0, held.lockUntil || 0) });
   }
 
-  async function attempt(storage, code, now, held) {
-    const stored = load(storage);
-    if (!stored) return { status: 'unset', data: null, held: null };
-    let d = stricter(stored, held);
+  async function attempt(storage, code, now, held, fallback) {
+    const base = effective(load(storage), fallback);
+    if (!base) return { status: 'unset', data: null, held: null };
+    let d = stricter(base, held);
     // 前に保存できなかった失敗回数・ロックを、まず保存し直す。できなければ照合しない
-    if (held && sameCode(stored, held)) {
+    if (held && sameCode(base, held)) {
       if (!save(storage, d)) return { status: 'blocked', data: d, held: d };
     }
     if (!canTry(d, now)) return { status: 'locked', data: d, held: null, seconds: lockSecondsLeft(d, now) };
@@ -204,13 +229,16 @@
     if (!isValidCode(code)) return { status: 'invalid', data: d, held: null };
     const ok = await verify(d, code);
     // 照合のあいだに、ほかのタブで消された・変えられたら上書きしない。失敗回数が増えていればそちらも数える
-    const after = load(storage);
+    const afterStored = load(storage);
+    const after = effective(afterStored, fallback);
     if (!after) return { status: 'unset', data: null, held: null };
     if (!sameCode(after, d)) return { status: 'changed', data: after, held: null };
     d = stricter(after, d);
     if (ok) {
       const next = recordSuccess(d);
-      return { status: 'ok', data: Object.assign({}, next, { saved: save(storage, next) }), held: null };
+      // 初期パスコードで、端末に何も残っていなければ、書かなくてよい（失敗回数を 0 に戻すものがない）
+      const saved = afterStored === null && next.source === 'default' ? true : save(storage, next);
+      return { status: 'ok', data: Object.assign({}, next, { saved }), held: null };
     }
     const next = recordFailure(d, now);
     if (!save(storage, next)) return { status: 'blocked', data: next, held: next };
@@ -220,7 +248,7 @@
 
   const api = {
     KEY, MAX_FAILURES, LOCK_MS,
-    isValidCode, hashCode, create, load, save, canTry, recordFailure, recordSuccess, triesLeft, lockSecondsLeft, canVerify, verify,
+    isValidCode, hashCode, fnvHash, defaultData, effective, create, load, save, canTry, recordFailure, recordSuccess, triesLeft, lockSecondsLeft, canVerify, verify,
     sameCode, isGone, storeVanished, stricter, attempt,
   };
 

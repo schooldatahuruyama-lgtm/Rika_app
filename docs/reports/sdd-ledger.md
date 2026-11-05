@@ -161,3 +161,4 @@ Ruling: サーバーがないので、先生画面は「この端末の記録」
 Ruling: 生徒用の公開先は GitHub Pages（ユーザー決定、リポジトリ schooldatahuruyama-lgtm/Rika_app）。アプリのファイルだけの pages ブランチ（tools/pages-branch.ps1）を push する。push は PC での GitHub 認証待ち。
 先生画面のパスコード（ユーザー指示「生徒は先生画面を見れないように」）: implemented (opus, js/teacher-gate.js). Codex round1 High 1/Medium 2 → fix → round2 High 1/Medium 1 → fix → 3 サイクル目 round1 High 1/Medium 1 → fix → Claude round2（Codex 上限）= Low 1 記録のみ → complete（tests 535）。VERSION 2026-11-05-20
 Ruling: パスコードは端末ごと（localStorage にハッシュ）、4〜8 桁、5 回失敗で 60 秒ロック。サーバーがないため「のぞき見を防ぐ鍵」であり、開発者ツールを使える相手には防げない — コスト: 忘れたら「すべて削除」でしか戻せない。
+初期パスコード（ユーザー指示「最初から設定して生徒が切り替えられないように」）: config に salt/hash（tools/teacher-passcode.js で生成）を組みこみ、設定フォームを廃止。端末の上書きは先生画面の中からだけ。「すべて削除」で初期に戻る。Claude round1 Low 4（記録のみ）→ complete（tests 540）。VERSION 2026-11-05-21。初期パスコードの値はチャットで先生に伝え、README・報告には書かない。
