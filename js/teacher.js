@@ -4,7 +4,7 @@
 //
 // summarizeStudent(profile, rec, reg, config, now) → 1 人分のまとめ
 //   { id, nickname, avatar, unitId, unitTitle, level, xp, streak, lastAt, daysSince,
-//     stages: { cleared, total }, mastery: { できた, もう少し, まだ, 未学習 }, weak: [...最大 5] }
+//     stages: { cleared, total }, badges（取ったバッジの数）, mastery: { できた, もう少し, まだ, 未学習 }, weak: [...最大 5] }
 //   streak は記録画面と同じ数え方（最後に学習した日が今日かきのうなら rec.streak.count、それより前なら 0）。
 //   weak は「まだ」「もう少し」の概念を、誤答数の多い順（同じなら理解度の低い順、教材の順）に最大 5 つ。
 //   誤答数・解答数は history の予想（warmup）以外の解答で数える（予想は正誤を問わないため）。
@@ -12,7 +12,7 @@
 //   同じ profile.id が複数の store にあるときは、history の最後の at が新しいほうを使う（同じなら先の store）。
 //   weakConcepts は「まだ」の生徒が 1 人以上いる概念を、人数の多い順（同じなら誤答率の高い順、教材の順）に並べる。
 // latestEntries(stores) → [{ profile, rec }]（上の重なりを除いた生徒と、形を整えた記録。画面の詳細に使う）
-// safeRecord(rec) → 形の崩れた項目を空にした record の写し（history・mastery・stages・streak・xp・level だけ）
+// safeRecord(rec) → 形の崩れた項目を空にした record の写し（history・mastery・stages・streak・xp・level・badges だけ）
 // parseAt(at) → 日時（Date）か null。文字列で、Date として読めるものだけ（集計と画面の詳細で同じものを使う）
 // nicknameOf(profile) → ニックネーム。文字列で空でないときだけそのまま、それ以外は「（名前なし）」
 // toCsv(summary) → 先頭に BOM の付いた CSV 文字列（行の区切りは CRLF）
@@ -22,6 +22,7 @@
   const xp = typeof require === 'function' ? require('./xp.js') : root.RikaQuest.xp;
   const mastery = typeof require === 'function' ? require('./mastery.js') : root.RikaQuest.mastery;
   const record = typeof require === 'function' ? require('./record.js') : root.RikaQuest.record;
+  const badges = typeof require === 'function' ? require('./badges.js') : root.RikaQuest.badges;
 
   const UNLEARNED = '未学習';
   const NO_NAME = '（名前なし）';
@@ -60,6 +61,7 @@
       mastery: isObject(r.mastery) ? r.mastery : {},
       stages: isObject(r.stages) ? r.stages : {},
       history: arr(r.history).filter(isObject),
+      badges: isObject(r.badges) ? r.badges : {},
     };
   }
 
@@ -165,6 +167,7 @@
       lastAt,
       daysSince,
       stages: { cleared, total: stageIds.length },
+      badges: badges.count(r),
       mastery: counts,
       weak,
     };
@@ -228,7 +231,7 @@
     return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
-  const CSV_HEADER = ['ニックネーム', '単元', 'レベル', '経験値', '連続日数', '最終学習日', 'クリア/全ステージ', 'できた', 'もう少し', 'まだ', '未学習', '苦手'];
+  const CSV_HEADER = ['ニックネーム', '単元', 'レベル', '経験値', '連続日数', '最終学習日', 'クリア/全ステージ', 'できた', 'もう少し', 'まだ', '未学習', 'バッジ', '苦手'];
 
   function toCsv(summary) {
     const students = summary && Array.isArray(summary.students) ? summary.students : [];
@@ -248,6 +251,7 @@
         m['もう少し'] || 0,
         m['まだ'] || 0,
         m[UNLEARNED] || 0,
+        isFiniteNumber(s.badges) ? s.badges : 0,
         arr(s.weak).map((w) => w.title).join('・'),
       ]);
     });

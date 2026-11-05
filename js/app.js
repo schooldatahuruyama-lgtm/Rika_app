@@ -8,6 +8,7 @@
 //   app.setRecord(record)     … 今の生徒の記録を置きかえて保存（record.js の関数は新しい record を返すため）
 //   app.replaceStore(store)   … store 全体を置きかえ（JSON の読み込み）、整えて保存
 //   app.record                … 今の生徒の記録（store.records[store.currentProfileId]）
+//   ctx.markBadgesSeen(ids)   … 結果画面で見せたバッジを seen: true にして保存（保存の結果を返す）
 //   画面に渡す ctx には、ほかに curriculum（RikaQuest.curriculum。なければ null）、unitId（getter: いま選んでいる単元の id。
 //                               units.currentId で決める。教材が 1 つもなければ null）、setUnit(id)（今の生徒の単元を変えて保存。
 //                               教材のない id・プロフィールなしは false）、prefs（getter: 今の生徒の見た目の設定
@@ -55,7 +56,7 @@
     screen: null,
     params: null,
     session: null,          // いま進めている学習（session.js の形）
-    lastResult: null,       // 終わった学習の結果 { session, summary, celebrated }（結果画面が使う）
+    lastResult: null,       // 終わった学習の結果 { session, summary, celebrated, newBadges }（結果画面が使う。newBadges はまだ見せていないバッジの id）
     offline: null,          // Task 14: オフライン教材の状態
     protectedStorage: false,
     contentErrors: [],
@@ -94,6 +95,7 @@
     reviewDone: isObject,
     history: Array.isArray,
     xpLog: Array.isArray,
+    badges: isObject,   // 中身の各項目の形は badges.js が守る（崩れていても取り消さない）
   };
 
   // 形の違う項目は createRecord() の同じ項目の値に置きかえる（知らない項目はそのまま残す）
@@ -297,7 +299,14 @@
     if (RQ.session.current(newSession, state.reg).kind === 'ended') {
       rec = closeRecord(rec, newSession, now);
     }
+    rec = awardBadges(rec, now);
     setRecord(rec);
+  }
+
+  // 記録を更新したあとに、新しく条件を満たしたバッジを記録に入れる（経験値は付けない）
+  function awardBadges(rec, now) {
+    const fresh = RQ.badges.newlyEarned(rec, state.reg, state.config);
+    return fresh.length > 0 ? RQ.badges.award(rec, fresh, now) : rec;
   }
 
   // 終わった学習を記録に書く: ステージは finishStage（再開位置を消す）、復習は reviewDone
@@ -309,7 +318,10 @@
     } else {
       next = RQ.record.markReviewDone(rec, s.conceptId, RQ.xp.localDate(now));
     }
-    state.lastResult = { session: s, summary: sum, celebrated: false };
+    // クリアで取れたバッジも結果画面に出せるよう、先に記録へ入れてから「まだ見せていないバッジ」を集める
+    // （学習の途中で取ったものも含む）
+    next = awardBadges(next, now);
+    state.lastResult = { session: s, summary: sum, celebrated: false, newBadges: RQ.badges.unseen(next) };
     state.session = null;
     return next;
   }
@@ -363,6 +375,18 @@
     }
     go('home');
     if (s && s.kind === 'stage') message('途中まで保存しました。ステージの「続きから」で再開できます。', 'ok');
+  }
+
+  // ---- バッジ ----
+
+  // 結果画面で見せたバッジを「見た」にして保存する。変えるものがなければ保存せず true
+  function markBadgesSeen(ids) {
+    const rec = currentRecord();
+    if (!rec) return false;
+    const unseen = RQ.badges.unseen(rec);
+    const targets = (Array.isArray(ids) ? ids : []).filter((id) => unseen.indexOf(id) !== -1);
+    if (targets.length === 0) return true;
+    return setRecord(RQ.badges.markSeen(rec, targets));
   }
 
   // ---- 単元 ----
@@ -445,6 +469,7 @@
       now: () => new Date(),
       message,
       setRecord,
+      markBadgesSeen,
       replaceStore,
       clearAll,
       confirm: (text, okLabel, options) => RQ.ui.helpers.confirm(text, okLabel, options),

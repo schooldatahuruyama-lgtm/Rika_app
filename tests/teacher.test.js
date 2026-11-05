@@ -51,6 +51,19 @@ test('summarizeStudent: history なし → lastAt null・クリア 0・概念は
   assert.deepEqual(s.stages, { cleared: 0, total: 3 });
   assert.deepEqual(s.mastery, { まだ: 0, もう少し: 0, できた: 0, 未学習: 3 });
   assert.deepEqual(s.weak, []);
+  assert.equal(s.badges, 0);
+});
+
+test('summarizeStudent: badges は取ったバッジの数（知らない id は数えない）、CSV の「バッジ」列', () => {
+  const rec = Object.assign(record.createRecord(), { badges: { 'first-clear': { at: day1.toISOString(), seen: true }, retry: { at: 3, seen: 'x' }, 'no-such': { at: day1.toISOString(), seen: false } } });
+  const s = teacher.summarizeStudent(profile('p1', 'ひかり'), rec, reg, config, now);
+  assert.equal(s.badges, 2);
+  assert.equal(teacher.summarizeStudent(profile('p1', 'a'), Object.assign(record.createRecord(), { badges: 'bad' }), reg, config, now).badges, 0);
+  const csv = teacher.toCsv(teacher.summarizeAll([storeOf([[profile('p1', 'ひかり'), rec]])], reg, config, now));
+  const [head, row] = csv.slice(1).split('\r\n');
+  const col = head.split(',').indexOf('バッジ');
+  assert.equal(col, head.split(',').indexOf('未学習') + 1);
+  assert.equal(row.split(',')[col], '2');
 });
 
 test('summarizeStudent: 誤答の多い概念が weak の先頭、クリア数・最終学習・単元', () => {
@@ -124,13 +137,13 @@ test('toCsv: 先頭が BOM、行数 = 生徒数 + 1、カンマ・改行・引�
   assert.equal(csv.charCodeAt(0), 0xFEFF);
   const lines = csv.slice(1).replace(/\r\n$/, '').split('\r\n');
   assert.equal(lines.length, 4 + 1);
-  assert.equal(lines[0], 'ニックネーム,単元,レベル,経験値,連続日数,最終学習日,クリア/全ステージ,できた,もう少し,まだ,未学習,苦手');
+  assert.equal(lines[0], 'ニックネーム,単元,レベル,経験値,連続日数,最終学習日,クリア/全ステージ,できた,もう少し,まだ,未学習,バッジ,苦手');
   assert.ok(csv.includes('"あ,い",'));
   assert.ok(csv.includes('"う\nえ",'));
   assert.ok(csv.includes('"お""か",'));
   assert.ok(csv.includes("'=1+2,"));   // 式として読まれないようにする
   const row = lines.find((l) => l.startsWith('"あ,い"'));
-  assert.equal(row, '"あ,い",,' + sampleRecord(day2).level + ',' + sampleRecord(day2).xp + ',1,2026-11-04,1 / 3,0,1,1,1,光の反射・光の直進');
+  assert.equal(row, '"あ,い",,' + sampleRecord(day2).level + ',' + sampleRecord(day2).xp + ',1,2026-11-04,1 / 3,0,1,1,1,0,光の反射・光の直進');
 });
 
 test('形の崩れた record・store でも例外を出さない', () => {

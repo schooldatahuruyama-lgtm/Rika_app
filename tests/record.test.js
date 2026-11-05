@@ -11,7 +11,7 @@ const hist = (over) => Object.assign({ kind: 'history', sessionId: 's1', attempt
 
 test('createStore / createRecord の初期値', () => {
   assert.deepEqual(record.createStore(), { version: 1, currentProfileId: null, profiles: [], records: {} });
-  assert.deepEqual(record.createRecord(), { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [] });
+  assert.deepEqual(record.createRecord(), { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [], badges: {} });
 });
 
 test('createProfile / deleteProfile: records と currentProfileId を保つ', () => {

@@ -2,7 +2,7 @@
 // ブラウザ専用。RikaQuest.ui = { screens, helpers } を作る。
 // 画面の描画関数はすべて screens[name](section, ctx, params) の形。app.go が section を空にしてから呼ぶ。
 //   ctx = { store, record, reg, config, curriculum, unitId, setUnit, prefs, setPrefs, go, save, now, message, setRecord,
-//           replaceStore, confirm, clearAll, state, app }
+//           markBadgesSeen, replaceStore, confirm, clearAll, state, app }
 //   （message(text, kind, options) と confirm(text, okLabel, options) は options.noRuby で、その文にふりがなを付けない）
 //   （store・record・unitId は getter で、いつも最新の値を返す。unitId はいま選んでいる単元の id か null。
 //     curriculum は content/curriculum.js の単元一覧か null。setUnit(id) は単元を変えて保存し、できなければ false。
@@ -31,6 +31,8 @@
     { id: 'penguin', image: 'assets/avatars/nemune.png', label: 'ネムネ' },
   ];
 
+  // プロフィール画面の注意書き（別のブラウザ・別の URL では別の記録になることも伝える）
+  const PROFILE_STORAGE_NOTICE = '記録はこの端末の、いま使っているブラウザの中にだけ保存されます。いつも同じブラウザ・同じ URL で開いてください（別のブラウザで開くと、別の記録になります）。ブラウザのデータを消すと記録も消えます。';
   const DATA_LOSS_NOTICE = '記録はこの端末のブラウザ内だけに保存され、ブラウザのデータ削除や端末の変更で消えることがあります。';
 
   // ---- DOM を組み立てる道具 ----
@@ -117,6 +119,90 @@
 
   function currentProfile(store) {
     return store.profiles.find((p) => p.id === store.currentProfileId) || null;
+  }
+
+  // ---- バッジ ----
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function svgEl(tag, attrs) {
+    const node = document.createElementNS(SVG_NS, tag);
+    Object.keys(attrs || {}).forEach((k) => node.setAttribute(k, String(attrs[k])));
+    return node;
+  }
+
+  // バッジのメダル（44px の丸）。取っていれば def.color の色、取っていなければ灰色。glyph にはふりがなを付けない
+  function badgeMedal(def, earnedState) {
+    const got = !!earnedState;
+    const glyph = String(def.glyph || '');
+    const size = glyph.length <= 1 ? 22 : glyph.length === 2 ? 17 : glyph.length === 3 ? 14 : 12;
+    const svg = svgEl('svg', { viewBox: '0 0 48 48', width: 44, height: 44, 'aria-hidden': 'true', focusable: 'false' });
+    svg.append(svgEl('circle', { class: 'badge-medal-outer', cx: 24, cy: 24, r: 23 }));
+    svg.append(svgEl('circle', { class: 'badge-medal-inner', cx: 24, cy: 24, r: 18 }));
+    const text = svgEl('text', { class: 'badge-medal-glyph', x: 24, y: 24, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': size });
+    text.textContent = glyph;
+    svg.append(text);
+    return el('span', {
+      class: 'badge-medal badge-' + def.color + (got ? '' : ' is-locked'),
+      role: 'img',
+      'aria-label': def.title + '（' + (got ? '取った' : 'まだ') + '）',
+      'data-no-ruby': true,
+    }, svg);
+  }
+
+  // 取った日（YYYY/M/D）。日時が読めなければ null
+  function badgeDate(at) {
+    const d = typeof at === 'string' ? new Date(at) : null;
+    if (!d || Number.isNaN(d.getTime())) return null;
+    return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+  }
+
+  // 取ったバッジ（at の新しい順。日時の読めないものは後ろ）
+  function earnedBadges(rec) {
+    return RQ.badges.DEFS
+      .map((d, i) => ({ def: d, i, entry: RQ.badges.entry(rec, d.id) }))
+      .filter((x) => x.entry !== null)
+      .map((x) => Object.assign(x, { t: x.entry.at ? Date.parse(x.entry.at) : NaN }))
+      .sort((a, b) => (Number.isNaN(b.t) ? -Infinity : b.t) - (Number.isNaN(a.t) ? -Infinity : a.t) || a.i - b.i);
+  }
+
+  function badgeCountText(rec) {
+    return RQ.badges.count(rec) + ' / ' + RQ.badges.DEFS.length + ' 個';
+  }
+
+  // ホームのバッジのカード: 取った数と、最近取った 3 つ
+  function badgeHomeCard(ctx, rec) {
+    const recent = earnedBadges(rec).slice(0, 3);
+    return card([
+      cardTitle('バッジ'),
+      el('p', { class: 'badge-count', text: badgeCountText(rec) }),
+      recent.length > 0
+        ? el('ul', { class: 'badge-recent' }, recent.map((x) => el('li', { class: 'badge-item' }, [
+          badgeMedal(x.def, true),
+          el('span', { class: 'badge-title', text: x.def.title }),
+        ])))
+        : el('p', { class: 'muted', text: 'ステージをクリアしたり、続けて学習したりすると取れるよ' }),
+      button('バッジを見る', () => ctx.go('record'), 'btn-block'),
+    ]);
+  }
+
+  // 記録画面のバッジの一覧（DEFS の順に全部）
+  function badgeListCard(rec) {
+    const list = el('ul', { class: 'badge-grid' });
+    RQ.badges.DEFS.forEach((d) => {
+      const e = RQ.badges.entry(rec, d.id);
+      const date = e ? badgeDate(e.at) : null;
+      list.append(el('li', { class: 'badge-item' + (e ? '' : ' is-locked') }, [
+        badgeMedal(d, !!e),
+        el('div', { class: 'badge-text' }, [
+          el('span', { class: 'badge-title', text: d.title }),
+          e
+            ? el('span', { class: 'badge-sub badge-date', 'data-no-ruby': true, text: date ? date : '取った' })
+            : el('span', { class: 'badge-sub', text: d.description }),
+        ]),
+      ]));
+    });
+    return card([cardTitle('バッジ'), el('p', { class: 'badge-count', text: badgeCountText(rec) }), list], 'badge-card');
   }
 
   function areasInOrder(unit) {
@@ -249,7 +335,7 @@
         ]),
         el('p', { class: 'caution', text: '実名（本当の名前）は入れないでください。ニックネームにしよう。' }),
         el('div', {}, [el('span', { class: 'field-label', text: 'アバター' }), grid]),
-        el('p', { class: 'caution', text: '記録はこの端末のブラウザ内にだけ保存され、消えることがあります。' }),
+        el('p', { class: 'caution', text: PROFILE_STORAGE_NOTICE }),
         createBtn,
       ]),
     ]));
@@ -290,6 +376,7 @@
     section.append(questCard(ctx, rec, now));
     section.append(levelCard(ctx, rec, 'レベルと経験値'));
     section.append(streakCard(rec, now, today));
+    section.append(badgeHomeCard(ctx, rec));
 
     section.append(el('div', { class: 'stack' }, [
       button('学習マップへ', () => ctx.go('map'), 'btn-primary btn-block'),
@@ -1105,6 +1192,22 @@
     }
     section.append(card(done));
 
+    // 新しいバッジ（学習の途中で取ったものも含めて、まだ見せていないもの）。表示したら「見た」にする
+    const newBadges = (result.newBadges || []).map((id) => RQ.badges.def(id)).filter(Boolean);
+    if (newBadges.length > 0) {
+      section.append(card([
+        cardTitle('新しいバッジ！'),
+        el('ul', { class: 'badge-new-list' }, newBadges.map((d) => el('li', { class: 'badge-item' }, [
+          badgeMedal(d, true),
+          el('div', { class: 'badge-text' }, [
+            el('span', { class: 'badge-title', text: d.title }),
+            el('span', { class: 'badge-sub', text: d.description }),
+          ]),
+        ]))),
+      ], 'badge-new'));
+      if (!ctx.markBadgesSeen(newBadges.map((d) => d.id))) reportSave(ctx, false, null);
+    }
+
     // 復習で伸びたこと
     const improved = (sum.improvedConcepts || []).map((id) => ctx.reg.concept(id)).filter(Boolean);
     section.append(card([
@@ -1183,7 +1286,7 @@
 
   // ---- 記録 ----
   // 進捗（単元ごと・領域ごとのクリア数）、理解度の目安（単元ごと。経験値とは別のカード）、経験値とレベル、
-  // 連続学習、取り組み履歴。教材のある単元はすべて出す。履歴は長くなるので一番下に置く。
+  // 連続学習、バッジ、取り組み履歴。教材のある単元はすべて出す。履歴は長くなるので一番下に置く。
 
   function renderRecord(section, ctx) {
     const rec = ctx.record;
@@ -1195,6 +1298,7 @@
     readyItems.forEach((item) => section.append(masteryCard(ctx, rec, item.unit, item.title)));
     section.append(levelCard(ctx, rec, '経験値とレベル'));
     section.append(streakCard(rec, now, today));
+    section.append(badgeListCard(rec));
     section.append(historyCard(ctx, rec, now));
     section.append(button('ホームへ', () => ctx.go('home'), 'btn-block'));
   }
@@ -1361,6 +1465,7 @@
     currentProfile, areasInOrder, areaOfStage, weekDates, downloadText, confirm: confirmDialog,
     openLessonDialog, closeLessonDialog, sessionXpEntries, xpBreakdown,
     progressList, masteryCard,   // 先生用の確認画面（ui-teacher.js）でも使う
+    badgeMedal,
     AVATARS, STATUS_LABEL, XP_LABEL,
   };
 
