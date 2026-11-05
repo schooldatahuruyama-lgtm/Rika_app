@@ -1088,6 +1088,157 @@ svg.scene .scene-label {
   white-space: nowrap;
 }
 
+/* ---- 先生用の確認画面 ---- */
+
+/* 表はカードの中で横にスクロールできる（スマホ幅でもページ全体は横に広がらない） */
+.teacher-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+}
+
+.teacher-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.teacher-class-table {
+  min-width: 420px;
+}
+
+.teacher-table th,
+.teacher-table td {
+  padding: 8px 6px;
+  border-top: 1px solid #E3EAF7;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.teacher-table thead th {
+  border-top: none;
+  border-bottom: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.teacher-table td.num {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.teacher-row {
+  cursor: pointer;
+}
+
+.teacher-row:hover {
+  background: #F5F8FF;
+}
+
+.teacher-row.is-selected {
+  background: var(--blue-soft);
+}
+
+/* ニックネームのボタン（行を選ぶ。キーボードでも押せる） */
+.teacher-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--blue-dark);
+  font: inherit;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+
+.teacher-name .avatar-small {
+  width: 28px;
+  height: 28px;
+}
+
+/* 理解度の数（できた=緑、もう少し=オレンジ、まだ=青。記録画面の札と同じ色） */
+.teacher-mastery {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.teacher-m {
+  display: inline-block;
+  min-width: 26px;
+  padding: 0 6px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.teacher-m.level-0 { background: var(--blue-soft); color: var(--blue-dark); }
+.teacher-m.level-1 { background: #FFE6CC; color: #8A4A0B; }
+.teacher-m.level-2 { background: #DDF2E5; color: #1D6E3E; }
+
+.teacher-weak {
+  min-width: 120px;
+}
+
+.teacher-legend {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+/* 生徒の詳細（行を選ぶまでは空。カードの間は画面と同じ間隔） */
+.teacher-detail-box:empty {
+  display: none;
+}
+
+.teacher-detail-wrap > * + * {
+  margin-top: 16px;
+}
+
+.teacher-detail-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.teacher-sub {
+  font-size: 17px;
+  margin: 18px 0 6px;
+  color: var(--blue-dark);
+}
+
+/* 苦手な概念の一覧: 概念名・単元・誤答数 */
+.teacher-weak-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.teacher-weak-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding: 8px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.teacher-weak-name {
+  font-weight: bold;
+}
+
+.teacher-weak-count {
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 /* 広い画面（タブレット横・PC）では少しゆったり */
 @media (min-width: 768px) {
   .page {

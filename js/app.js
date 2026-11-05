@@ -36,7 +36,7 @@
   const OFFLINE_KEY = 'rika-quest:offline';
 
   // プロフィールがなくても開ける画面
-  const NO_PROFILE_SCREENS = ['profile', 'settings'];
+  const NO_PROFILE_SCREENS = ['profile', 'settings', 'teacher'];
 
   // アクセントカラー（profile.theme）。値は css/style.css の :root[data-theme] と同じ --blue（theme-color に使う）
   const THEME_COLORS = { blue: '#1A5CFF', teal: '#0E9AA7', green: '#178A4C', purple: '#7A4FD6', pink: '#E0508A' };
