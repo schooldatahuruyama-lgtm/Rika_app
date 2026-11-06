@@ -2350,12 +2350,14 @@ svg.scene .scene-label {
   cursor: default;
 }
 
-.ruby-choice[aria-pressed="true"] {
+.ruby-choice[aria-pressed="true"],
+.sound-choice[aria-pressed="true"] {
   background: var(--blue);
   color: #fff;
 }
 
-.ruby-choice[aria-pressed="true"]:disabled {
+.ruby-choice[aria-pressed="true"]:disabled,
+.sound-choice[aria-pressed="true"]:disabled {
   background: #F4F6FA;
   color: var(--muted);
 }
@@ -2390,6 +2392,7 @@ ruby.rq-ruby rt {
 .save-status ruby.rq-ruby rt,
 .week-dot ruby.rq-ruby rt,
 .ruby-choice[aria-pressed="true"] ruby.rq-ruby rt,
+.sound-choice[aria-pressed="true"] ruby.rq-ruby rt,
 .word-btn[aria-pressed="true"] ruby.rq-ruby rt {
   color: inherit;
 }

@@ -12,11 +12,12 @@
 //   画面に渡す ctx には、ほかに curriculum（RikaQuest.curriculum。なければ null）、unitId（getter: いま選んでいる単元の id。
 //                               units.currentId で決める。教材が 1 つもなければ null）、setUnit(id)（今の生徒の単元を変えて保存。
 //                               教材のない id・プロフィールなしは false）、prefs（getter: 今の生徒の見た目の設定
-//                               { theme: 'blue'|'teal'|'green'|'purple'|'pink', ruby: 'off'|'on' }。プロフィールがなければ既定）、
-//                               setPrefs({ theme?, ruby? })（今の生徒の設定を変えてすぐ反映し、保存の結果を返す。
+//                               { theme: 'blue'|'teal'|'green'|'purple'|'pink', ruby: 'off'|'on', sound: boolean }。プロフィールがなければ既定）、
+//                               setPrefs({ theme?, ruby?, sound? })（今の生徒の設定を変えてすぐ反映し、保存の結果を返す。
 //                               プロフィールなし・正しくない値は false。保存できなければ元に戻す）がある
-//   見た目の設定（アクセントカラー・ふりがな）は生徒ごと（profile.theme・profile.ruby）。applyPrefs() が
-//   <html data-theme>・<meta name="theme-color">・RikaQuest.ruby.setEnabled に反映する（go と start で呼ぶ）
+//   見た目の設定（アクセントカラー・ふりがな・効果音）は生徒ごと（profile.theme・profile.ruby・profile.sound）。applyPrefs() が
+//   <html data-theme>・<meta name="theme-color">・RikaQuest.ruby.setEnabled・RikaQuest.sfx.setEnabled に反映する（go と start で呼ぶ）
+//   効果音（js/sfx.js）: 答えた直後に正解・不正解の音（sessionAnswer）。レベルアップ・新しいバッジの音は結果画面（ui-screens.js）
 //   ctx.author                … AI 教材作成（js/ui-author.js）の下書き・ためす・API キー:
 //                               drafts() / saveDrafts(list)（localStorage の rika-quest:drafts。js/author.js）、
 //                               setPreview(id, on) → { ok, errors }（下書きを教材として登録する／外す。教材の決まりに合わなければ入れない）、
@@ -54,6 +55,8 @@
   // ふりがな（profile.ruby）
   const RUBY_VALUES = ['off', 'on'];
   const DEFAULT_RUBY = 'off';
+  // 効果音（profile.sound。true / false。ないときは鳴らす）
+  const DEFAULT_SOUND = true;
 
   function isTheme(x) { return typeof x === 'string' && Object.prototype.hasOwnProperty.call(THEME_COLORS, x); }
   function isRubyValue(x) { return typeof x === 'string' && RUBY_VALUES.indexOf(x) !== -1; }
@@ -65,7 +68,8 @@
     screen: null,
     params: null,
     session: null,          // いま進めている学習（session.js の形）
-    lastResult: null,       // 終わった学習の結果 { session, summary, celebrated, newBadges }（結果画面が使う。newBadges はまだ見せていないバッジの id）
+    lastResult: null,       // 終わった学習の結果 { session, summary, celebrated, newBadges }（結果画面が使う。newBadges はまだ見せていないバッジの id。
+                            // 結果画面が sfxPlayed を足す: レベルアップ・バッジの効果音を鳴らしたか）
     offline: null,          // Task 14: オフライン教材の状態
     protectedStorage: false,
     contentErrors: [],
@@ -131,6 +135,7 @@
       // 文字列かを先に見る（配列や toString のないオブジェクトを、キーの検査で文字列に変えないように）
       if (p.theme !== undefined && !isTheme(p.theme)) delete p.theme;
       if (p.ruby !== undefined && !isRubyValue(p.ruby)) delete p.ruby;
+      if (p.sound !== undefined && typeof p.sound !== 'boolean') delete p.sound;
       store.records[p.id] = normalizeRecord(store.records[p.id]);
     });
     if (!store.profiles.some((p) => p.id === store.currentProfileId)) {
@@ -351,7 +356,18 @@
     const r = RQ.session.answer(s, state.reg, value, state.config);
     if (r.invalid) return r;
     commitSession(r.session, r.events);
+    playSfx(r.correct ? 'correct' : 'wrong');
     return r;
+  }
+
+  // 効果音を鳴らす（sfx.js が読み込めなかったときや失敗しても、学習は止めない）
+  function playSfx(kind) {
+    if (!RQ.sfx || typeof RQ.sfx.play !== 'function') return;
+    try {
+      RQ.sfx.play(kind);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   function sessionNext() {
@@ -415,7 +431,7 @@
     return false;
   }
 
-  // ---- 見た目の設定（アクセントカラー・ふりがな） ----
+  // ---- 見た目の設定（アクセントカラー・ふりがな・効果音） ----
 
   // 今の生徒の設定（プロフィールがなければ既定）
   function currentPrefs() {
@@ -423,10 +439,11 @@
     return {
       theme: profile && profile.theme ? profile.theme : DEFAULT_THEME,
       ruby: profile && profile.ruby ? profile.ruby : DEFAULT_RUBY,
+      sound: profile && typeof profile.sound === 'boolean' ? profile.sound : DEFAULT_SOUND,
     };
   }
 
-  // 今の生徒の設定を画面に反映する（色は <html data-theme> と theme-color、ふりがなは ruby.js）
+  // 今の生徒の設定を画面に反映する（色は <html data-theme> と theme-color、ふりがなは ruby.js、効果音は sfx.js）
   function applyPrefs() {
     const prefs = currentPrefs();
     const html = document.documentElement;
@@ -442,6 +459,7 @@
         console.error(e);
       }
     }
+    if (RQ.sfx && typeof RQ.sfx.setEnabled === 'function') RQ.sfx.setEnabled(prefs.sound);
   }
 
   // 今の生徒の設定を変えて反映・保存する。プロフィールがない・値が正しくないときは false。保存できなければ元に戻す
@@ -450,12 +468,14 @@
     if (!profile || !isObject(patch)) return false;
     if (patch.theme !== undefined && !isTheme(patch.theme)) return false;
     if (patch.ruby !== undefined && !isRubyValue(patch.ruby)) return false;
-    const before = { theme: profile.theme, ruby: profile.ruby };
+    if (patch.sound !== undefined && typeof patch.sound !== 'boolean') return false;
+    const before = { theme: profile.theme, ruby: profile.ruby, sound: profile.sound };
     if (patch.theme !== undefined) profile.theme = patch.theme;
     if (patch.ruby !== undefined) profile.ruby = patch.ruby;
+    if (patch.sound !== undefined) profile.sound = patch.sound;
     applyPrefs();
     if (save()) return true;
-    ['theme', 'ruby'].forEach((k) => {
+    ['theme', 'ruby', 'sound'].forEach((k) => {
       if (before[k] === undefined) delete profile[k]; else profile[k] = before[k];
     });
     applyPrefs();
