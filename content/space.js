@@ -1054,16 +1054,6 @@
   }
 
   // ---- 太陽系の惑星（太陽に近い順。左はしに太陽の一部） ----
-  // 大きさをおよその比でかいた図（名前つき）
-  const PLANETS = [['水星', 48, 3], ['金星', 64, 5], ['地球', 82, 6], ['火星', 98, 4], ['木星', 140, 22], ['土星', 200, 17], ['天王星', 252, 10], ['海王星', 292, 10]];
-  function planetSizes() {
-    const items = [{ type: 'circle', x: -50, y: 110, r: 80, fill: 'yellow', stroke: 'orange' }];
-    PLANETS.forEach(([, x, r], i) => {
-      items.push({ type: 'circle', x, y: 110, r, fill: i === 2 ? 'sky' : '#D9C9A8', stroke: 'line' });
-      if (i === 5) items.push({ type: 'ellipse', x, y: 110, rx: 30, ry: 7, fill: 'none', stroke: 'line' });
-    });
-    return items;
-  }
   // 大きさをそろえてかいた図（名前なし）。i 番目（0 から）の惑星の中心は (40 + 32 i, 100)
   function planetDots() {
     const items = [{ type: 'circle', x: -50, y: 100, r: 70, fill: 'yellow', stroke: 'orange' }];
@@ -1161,16 +1151,6 @@
     const toSun = Math.atan2(-(95 - y), 160 - x) / D;
     return litBody(x, y, 7, toSun, 'yellow', DARK);
   }
-  // 望遠鏡で見た金星の形（光っている割合 f、左側が光る）
-  function phase(cx, cy, r, f) {
-    const pts = [];
-    for (let a = 90; a <= 270; a += 15) pts.push([r1(cx + r * Math.cos(a * D)), r1(cy - r * Math.sin(a * D))]);
-    for (let a = 270; a >= 90; a -= 15) pts.push([r1(cx + (1 - 2 * f) * r * Math.cos(a * D)), r1(cy - r * Math.sin(a * D))]);
-    return [
-      { type: 'circle', x: cx, y: cy, r, fill: 'none', stroke: 'gray' },
-      { type: 'polygon', points: pts, fill: 'yellow', stroke: 'orange' },
-    ];
-  }
 
   // ---- ステージ space-mp1: プリント 1 太陽系の惑星と太陽 ----
   const spaceMp1 = {
@@ -1179,49 +1159,53 @@
       {
         id: 'space-mp1-c1',
         text: '太陽系の惑星は、太陽に近い順に**水星**・**金星**・**地球**・**火星**・**木星**・**土星**・**天王星**・**海王星**の 8 つです。いちばん大きいのは木星です。太陽から遠い惑星ほど公転周期が長く、海王星は約 165 年かかります。',
-        figure: scene(planetSizes().concat([
-          ...PLANETS.map(([name, x], i) => txt(x, i < 4 ? (i % 2 ? 150 : 70) : (i < 6 ? 70 : 80), name.slice(0, 1), 12, 'middle')),
-          txt(316, 24, '太陽に近い順（大きさはおよその比）', 12, 'end'),
-          txt(160, 200, '木星がいちばん大きい', 13, 'middle'),
-          txt(160, 222, '遠い惑星ほど公転周期が長い', 13, 'middle'),
-        ])),
+        // 写真（space-4-c3 の使い回し）: 左はしに太陽、右へ 水星〜海王星（惑星の中心 x = 44, 68, 94, 120, 163, 225, 270, 300、y = 118）。
+        // 黒い帯は y 65〜172、上と下は白い余白
+        figure: scene([
+          photo('space-4-c3'),
+          tag(160, 20, '太陽に近い順（大きさは実際の比ではない）', { size: 13 }),
+          ...[['水', 44], ['金', 68], ['地', 94], ['火', 120], ['木', 163], ['土', 225], ['天', 270], ['海', 300]]
+            .map(([t, x]) => tag(x, 52, t, { size: 13 })),
+          tag(18, 194, '太陽', { size: 13 }),
+          tag(163, 194, '木星がいちばん大きい', { size: 13, bold: true }),
+          tag(160, 214, '遠い惑星ほど公転周期が長い', { size: 13 }),
+          tag(160, 232, '（海王星は約 165 年）', { size: 13 }),
+        ]),
       },
       {
         id: 'space-mp1-c2',
         text: '月のように惑星のまわりを公転する天体を**衛星**、火星と木星のあいだに多い小さな天体を**小惑星**、細長いだ円の軌道で太陽のまわりを回り、太陽に近づくと尾を引く天体を**すい星**といいます。',
-        // 太陽 (40,120)。地球と月、小惑星の帯、すい星の細長い軌道
+        // 写真: 黒い丸の中に、左 地球 (46, 106) と月 (79, 78)、中 ごつごつした小惑星 (159, 104)、右 すい星の頭 (231, 107) から尾が右上へ (305, 92)。
+        // 黒い丸は y 60〜145、上と下は白い余白。すい星の尾が右へのびているので、太陽は左の方向
         figure: scene([
-          { type: 'ellipse', x: 170, y: 120, rx: 140, ry: 40, fill: 'none', stroke: 'gray' },
-          arcLine(40, 120, 40, -60, 60, { color: 'gray', width: 1 }),
-          ...[-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50].map((a, i) => {
-            const [x, y] = onCircle(40, 120, 70 + (i % 3) * 4, a);
-            return { type: 'circle', x, y, r: 2, fill: 'ink', stroke: 'none' };
-          }),
-          { type: 'circle', x: 40, y: 120, r: 18, fill: 'yellow', stroke: 'orange' },
-          { type: 'circle', x: 80, y: 120, r: 5, fill: 'sky', stroke: 'line' },
-          { type: 'circle', x: 92, y: 112, r: 2.5, fill: 'gray', stroke: 'none' },
-          { type: 'circle', x: 300, y: 120, r: 5, fill: 'white', stroke: 'blue' },
-          { type: 'line', points: [[305, 120], [318, 116]], color: 'blue', width: 2 },
-          { type: 'line', points: [[305, 122], [318, 126]], color: 'blue', width: 2 },
-          txt(98, 100, '地球と衛星（月）', 12),
-          txt(118, 176, '小惑星（火星と木星のあいだ）', 12),
-          txt(312, 96, 'すい星', 12, 'end'),
-          txt(316, 216, 'すい星の尾は太陽と反対向き', 12, 'end'),
+          photo('space-mp1-c2'),
+          tag(4, 22, '← 太陽の方向', { size: 13, anchor: 'start' }),
+          pointer(282, 45, 282, 94), tag(316, 40, '尾は太陽と反対向き', { size: 13, anchor: 'end' }),
+          tag(4, 168, '地球と衛星（月）', { bold: true, anchor: 'start' }),
+          tag(160, 168, '小惑星', { bold: true }),
+          tag(160, 188, '（火星と木星のあいだに多い）', { size: 13 }),
+          tag(268, 168, 'すい星', { bold: true }),
+          tag(316, 210, '（太陽に近づくと尾を引く）', { size: 13, anchor: 'end' }),
         ]),
       },
       {
         id: 'space-mp1-c3',
         text: '太陽の表面は約 6000 ℃ で、黒く見える**黒点**はまわりより温度が低い部分です。表面から吹き出す**プロミネンス**（紅炎）や、外側の高温の大気の**コロナ**が見られます。太陽はおもに**水素**でできていて、直径は地球の約 109 倍です。',
-        figure: scene(sunFigure().concat([
-          { type: 'line', points: [[244, 136], [116, 110]], color: 'ink', width: 1.5 },
-          txt(248, 140, '黒点', 13, null, true),
-          { type: 'line', points: [[244, 40], [204, 54]], color: 'ink', width: 1.5 },
-          txt(248, 44, 'プロミネンス', 12, null, true),
-          { type: 'line', points: [[244, 206], [202, 186]], color: 'ink', width: 1.5 },
-          txt(248, 210, 'コロナ', 13, null, true),
-          txt(248, 166, '表面', 12),
-          txt(248, 184, '約 6000 ℃', 12),
-        ])),
+        // 写真（space-4-c1 の使い回し）: 特別なフィルターで写した太陽（中心 (100, 117)、半径 85）。表面に黒点の集まり、ふちからプロミネンスが吹き出す。
+        // 黒い丸（半径 110）の右と右上は白い余白。コロナは写っていないので文字で補う
+        figure: scene([
+          photo('space-4-c1'),
+          tag(316, 22, 'おもに水素でできている', { size: 13, anchor: 'end' }),
+          tag(316, 40, '直径は地球の約109倍', { size: 13, anchor: 'end' }),
+          pointer(232, 70, 196, 94), tag(272, 66, 'プロミネンス', { size: 13, bold: true }),
+          tag(272, 84, '（紅炎）', { size: 13 }),
+          pointer(250, 124, 148, 92), tag(276, 128, '黒点', { size: 15, bold: true }),
+          tag(276, 146, 'まわりより', { size: 13 }),
+          tag(276, 164, '温度が低い', { size: 13 }),
+          pointer(250, 186, 162, 160), tag(274, 190, '表面', { size: 13, bold: true }),
+          tag(274, 208, '約6000℃', { size: 13 }),
+          tag(160, 230, 'コロナ: 外側の高温の大気（皆既日食で見える）', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1360,21 +1344,21 @@
       {
         id: 'space-mp2-c1',
         text: '恒星が数億〜数千億個も集まった大集団を**銀河**といいます。太陽系をふくむ銀河を**銀河系**（天の川銀河）といい、約 2000 億個の恒星が集まった、直径約 10 万光年のうすい円盤の形をしています。',
+        // 写真: 真横から見た銀河系（生成したイメージ）。うすい円盤が x 10〜310 に横一直線にのび、中心 (160, 116) が丸くふくらんで明るい。
+        // 円盤とまわりの光は y 90〜145、上と下は白い余白。太陽系は中心から右はしへ 3 分の 2 ほどの所 (260, 117)
         figure: scene([
-          txt(8, 24, '銀河系を横から見た図（模式図）', 12),
-          { type: 'ellipse', x: 160, y: 110, rx: 140, ry: 34, fill: '#E4E1F5', stroke: 'line' },
-          { type: 'ellipse', x: 160, y: 110, rx: 34, ry: 18, fill: '#FFF1C9', stroke: 'none' },
-          { type: 'circle', x: 236, y: 112, r: 4, fill: 'blue', stroke: 'none' },
-          { type: 'line', points: [[236, 112], [250, 150]], color: 'ink', width: 1.5 },
-          txt(252, 164, '太陽系', 13, 'middle', true),
-          { type: 'line', points: [[160, 186], [300, 186]], color: 'gray', width: 2, arrow: true },
-          { type: 'line', points: [[160, 186], [20, 186]], color: 'gray', width: 2, arrow: true },
-          txt(160, 208, '直径 約 10 万光年', 13, 'middle'),
-          txt(160, 230, '恒星の数 約 2000 億個', 13, 'middle'),
+          photo('space-mp2-c1'),
+          tag(160, 36, '銀河系（天の川銀河）を横から見たイメージ', { size: 13 }),
+          pointer(262, 80, 260, 114), tag(262, 74, '太陽系', { bold: true }),
+          { type: 'line', points: [[160, 164], [306, 164]], color: 'ink', width: 2, arrow: true },
+          { type: 'line', points: [[160, 164], [14, 164]], color: 'ink', width: 2, arrow: true },
+          tag(160, 186, '直径 約 10 万光年', { size: 13 }),
+          tag(160, 214, '恒星の数 約 2000 億個', { size: 13 }),
         ]),
       },
       {
         id: 'space-mp2-c2',
+        anim: 'sp-earth-spin',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地球は、北極と南極を結ぶ**地軸**を中心に、西から東へ 1 日 1 回**自転**し、太陽のまわりを 1 年で 1 回**公転**しています。地球 1 周は約 4 万 km なので、直径は約 1 万 3000 km です。',
         figure: scene([
           { type: 'circle', x: 150, y: 125, r: 70, fill: 'sky', stroke: 'line' },
@@ -1390,6 +1374,7 @@
       },
       {
         id: 'space-mp2-c3',
+        anim: 'sp-rotation',   // 動く図（js/anim-earth.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '北極側から見た地球では、太陽のほうを向いた地点が**正午**、反対側が**真夜中**です。自転の向きに進むと、正午→夕方→真夜中→明け方の順になります。地球の外側を向くと南で、自転で進む向きが東、その反対が西です。',
         // 明け方の地点（上）での方位: 外側（上）が南、自転で進む左が東、右が西
         figure: scene(earthFromPole().concat([
@@ -1526,20 +1511,25 @@
   };
 
   // ---- ステージ space-mp3: プリント 3 透明半球と黄道 ----
-  const SUMMER_NOON = sunAt(SUMMER, 12);
   const spaceMp3 = {
     id: 'space-mp3', areaId: 'sp-miniprint', title: 'プリント 3: 透明半球と黄道', minutes: 5, concepts: ['sp-hemisphere', 'sp-revolution'],
     lessons: [
       {
         id: 'space-mp3-c1',
         text: '透明半球に太陽の位置を記録するときは、ペン先の影が半球の中心 O に重なるようにして印をつけます。太陽が真南にくることを**南中**、そのときの地平線からの角度を**南中高度**といいます。',
-        figure: scene(hemisphereBase().concat(sunPathItems(SUMMER, 8, 16)).concat([
-          { type: 'circle', x: HX, y: HY, r: 4, fill: 'blue', stroke: 'none' },
-          txt(170, 186, 'O（観測者）', 12),
-          { type: 'circle', x: SUMMER_NOON[0], y: SUMMER_NOON[1], r: 7, fill: 'yellow', stroke: 'orange' },
-          txt(176, 40, '南中（真南にくる）', 12),
-          txt(4, 20, 'ペン先の影を O に合わせる', 12, null, true),
-        ])),
+        // 写真（space-1-c2 の使い回し）: ●の列 (39, 145)〜いちばん高い所 (152, 57)〜(266, 175)、半球のふちの左はし (27, 150)・右はし (295, 150)、
+        // 台の中心 O (160, 165)。方位は space-1-c2 と同じ（手前が南、右が東）
+        figure: scene([
+          photo('space-1-c2'),
+          tag(160, 16, 'ペン先の影を O に合わせて印をつける', { size: 13 }),
+          pointer(122, 44, 147, 55), tag(64, 44, '南中（真南にくる）', { size: 13 }),
+          tag(250, 40, '北（おく）', { size: 13 }),
+          tag(306, 130, '東', { size: 15, bold: true }),
+          tag(14, 130, '西', { size: 15, bold: true }),
+          { type: 'circle', x: 160, y: 165, r: 4, fill: 'blue', stroke: 'none' },
+          pointer(130, 198, 157, 168), tag(110, 210, 'O（観測者）', { size: 13 }),
+          tag(160, 234, '南', { size: 15, bold: true }),
+        ]),
       },
       {
         id: 'space-mp3-c2',
@@ -1563,6 +1553,7 @@
       },
       {
         id: 'space-mp3-c3',
+        anim: 'sp-ecliptic',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地球が公転すると、地球から見た太陽の方向にある星座が変わり、太陽は星座のあいだを 1 年かけて動くように見えます。この見かけの通り道を**黄道**といいます。太陽と同じ方向の星座は昼の空にあるので見えません。',
         figure: scene(orbitBase(true).concat(starDots()).concat([
           { type: 'line', points: [[212, 120], [40, 120]], color: 'blue', width: 2, dashed: true, arrow: true },
@@ -1693,6 +1684,7 @@
     lessons: [
       {
         id: 'space-mp4-c1',
+        anim: 'sp-noon-altitude',   // 動く図（js/anim-earth.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '東京（北緯約 35°）では、太陽の南中高度は**夏至**のころに最も高く約 78°、**冬至**のころに最も低く約 32° です。昼の長さも、夏至のころが最も長く約 14.5 時間、冬至のころが最も短く約 10 時間です。',
         figure: scene(noonBase().concat([
           { type: 'line', points: [[150, 200], NOON.summer], color: 'gray', width: 1.5 },
@@ -1708,6 +1700,7 @@
       },
       {
         id: 'space-mp4-c2',
+        anim: 'sp-seasons',   // 動く図（js/anim-earth.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '北半球では、冬至の南中高度は「90° − 緯度 − 23.4°」、夏至は「90° − 緯度 ＋ 23.4°」で求められます。季節があるのは、地球が**地軸**を傾けたまま**公転**し、南中高度と昼の長さが変わるからです。',
         figure: scene(seasonSide().concat([
           txt(40, 150, '夏至', 13, 'middle', true),
@@ -1833,6 +1826,7 @@
     lessons: [
       {
         id: 'space-mp5-c1',
+        anim: 'sp-four-sky',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '星は、東の空では右上へのぼり、南の空では東から西へ弧をえがき、西の空では右下へしずみます。北の空では**北極星**を中心に反時計回りに回ります。これは地球の**自転**による**日周運動**です。',
         figure: scene([
           ...skyPanel(6, 6, 150, 100, 'east', '東の空'),
@@ -1844,6 +1838,7 @@
       },
       {
         id: 'space-mp5-c2',
+        anim: 'sp-orbit-midnight',   // 動く図（js/anim-earth.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '同じ時刻に見える星座の位置は、1 か月に約 30° ずつ東から西へずれ、1 年でもとにもどります（**年周運動**）。季節によって、夜に南の空に見える星座が変わるのは、地球が**公転**しているからです。',
         figure: scene(orbitBase(false).concat(starDots()).concat([
           txt(4, 236, '公転につれて、真夜中に見える星座が変わる', 12),
@@ -1998,6 +1993,7 @@
     lessons: [
       {
         id: 'space-mp6-c1',
+        anim: 'sp-local-direction',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '真上から見た図では、地球の太陽と反対側が真夜中で、自転の向きに進むと 正午→夕方→真夜中→明け方 の順です。その地点で地球の外側を向いた方向が南の空、自転で進む向きが東、その反対が西です。',
         // 夕方の地点（下）: 外側（下）が南、自転で進む右が東、左が西
         figure: scene([
@@ -2020,6 +2016,7 @@
       },
       {
         id: 'space-mp6-c2',
+        anim: 'sp-night-at-a',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地球が A の位置（日本の冬）にあるとき、真夜中には南の空にオリオン座が見え、東の空にはしし座がのぼり、西の空にはペガスス座がしずんでいきます。太陽と同じ方向のさそり座は見えません。',
         figure: scene(orbitBase(true).concat(starDots()).concat([
           { type: 'arrow', x1: 234, y1: 120, x2: 274, y2: 120, color: 'green' },
@@ -2132,11 +2129,12 @@
     lessons: [
       {
         id: 'space-mp7-c1',
+        anim: 'sp-star-hour',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '星は日周運動で、1 時間に 15° 東から西へ動きます。年周運動では、同じ時刻の位置が 1 か月に 30° 西へずれます。そのため 1 か月後には、同じ位置に見える時刻が 2 時間早くなります。',
         figure: scene(skyArc().concat([
           SKY_NOTE,
           arcLine(160, 210, 166, 90, 75, { color: 'blue', width: 3, arrow: true }),
-          txt(214, 62, '1 時間で 15° 西へ', 12),
+          txt(200, 62, '1 時間で 15° 西へ', 12),
           arcLine(160, 210, 130, 90, 60, { color: 'green', width: 3, arrow: true }),
           txt(160, 120, '1 か月で 30° 西へ', 12, 'middle'),
           txt(160, 140, '（同じ時刻にくらべて）', 12, 'middle'),
@@ -2283,6 +2281,7 @@
     lessons: [
       {
         id: 'space-mp8-c1',
+        anim: 'sp-geo-helio',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '昔は、地球のまわりを太陽や星が回るという**天動説**が信じられていました。コペルニクスは、地球が太陽のまわりを回るという**地動説**を唱え、ガリレオは望遠鏡での観測をもとに地動説を支持しました。',
         figure: scene(geoHelio().concat([
           txt(80, 196, '天動説', 14, 'middle', true),
@@ -2310,15 +2309,16 @@
       {
         id: 'space-mp8-c3',
         text: '宇宙は、約 138 億年前の**ビッグバン**という大爆発から始まったと考えられています。地球に生命がいるのは、空気と水があり、生命に適した温度で、太陽からの距離がちょうどよかったからです。',
+        // 写真: 宇宙から見た地球（生成したイメージ）。地球（中心 (220, 99)、半径 92）は右に大きく、ふちに大気のうすい青い層。左上に小さく明るい太陽 (89, 26)。
+        // 左上は黒い影、左下と下は白い余白
         figure: scene([
-          { type: 'circle', x: 46, y: 120, r: 30, fill: 'yellow', stroke: 'orange' },
-          { type: 'circle', x: 230, y: 120, r: 16, fill: 'sky', stroke: 'line' },
-          { type: 'line', points: [[80, 120], [210, 120]], color: 'gray', width: 2, dashed: true },
-          txt(46, 170, '太陽', 12, 'middle'),
-          txt(230, 160, '地球', 12, 'middle'),
-          txt(145, 108, 'ちょうどよい距離', 12, 'middle'),
-          txt(230, 190, '空気・水・適した温度', 12, 'middle'),
-          txt(8, 30, '宇宙の始まり: 約 138 億年前のビッグバン', 12),
+          photo('space-mp8-c3'),
+          tag(89, 54, '太陽', { bold: true }),
+          { type: 'line', points: [[100, 36], [136, 70]], color: 'orange', width: 2, dashed: true },
+          tag(4, 94, 'ちょうどよい距離', { size: 13, anchor: 'start' }),
+          pointer(80, 146, 134, 130), tag(62, 150, '地球', { bold: true }),
+          tag(316, 208, '空気・水・生命に適した温度', { size: 13, anchor: 'end' }),
+          tag(160, 230, '宇宙の始まり: 約 138 億年前のビッグバン', { size: 13 }),
         ]),
       },
     ],
@@ -2445,6 +2445,7 @@
     lessons: [
       {
         id: 'space-mp9-c1',
+        anim: 'sp-inner-outer',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地球より内側を公転する水星・金星を**内惑星**、外側を公転する火星・木星などを**外惑星**といいます。外惑星の火星は太陽と反対の方向にくることがあり、真夜中にも見えます。火星はほとんど満ち欠けしません。',
         figure: scene([
           { type: 'circle', x: 160, y: 120, r: 40, fill: 'none', stroke: 'gray' },
@@ -2462,17 +2463,18 @@
       {
         id: 'space-mp9-c2',
         text: '金星は満ち欠けし、地球に近いときほど大きく細く欠けて見え、遠いときほど小さく丸に近く見えます。大きさが大きく変わるのは、金星と地球の距離が大きく変わるからです。',
+        // 写真: 望遠鏡で見た金星（生成したイメージ）。左 大きく細い三日月形 (52, 102)、中 半月形 (170, 105)、右 小さく丸に近い形 (272, 106)。
+        // どれも光る側は右。まわりの暗い部分は y 50〜155、上と下は白い余白
         figure: scene([
-          ...phase(60, 100, 36, 0.15),
-          ...phase(170, 100, 22, 0.5),
-          ...phase(266, 100, 12, 0.85),
-          txt(60, 160, '近い', 13, 'middle', true),
-          txt(60, 180, '大きく細い', 12, 'middle'),
-          txt(170, 160, '中くらい', 13, 'middle', true),
-          txt(170, 180, '半月の形', 12, 'middle'),
-          txt(266, 160, '遠い', 13, 'middle', true),
-          txt(266, 180, '小さく丸い', 12, 'middle'),
-          txt(160, 30, '望遠鏡で見た金星', 13, 'middle'),
+          photo('space-mp9-c2'),
+          tag(160, 26, '望遠鏡で見た金星', { bold: true }),
+          tag(52, 176, '近い', { bold: true }),
+          tag(52, 194, '大きく細い', { size: 13 }),
+          tag(170, 176, '中くらい', { bold: true }),
+          tag(170, 194, '半月の形', { size: 13 }),
+          tag(272, 176, '遠い', { bold: true }),
+          tag(272, 194, '小さく丸い', { size: 13 }),
+          tag(160, 226, '地球からの距離で大きさと形が変わる', { size: 13 }),
         ]),
       },
     ],
@@ -2571,6 +2573,7 @@
     lessons: [
       {
         id: 'space-mp10-c1',
+        anim: 'sp-moon-phase',   // 動く図（js/anim-earth.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '月が太陽と同じ方向にあるときが**新月**、そこから公転の向きに 90° 進むと**上弦の月**、太陽と反対側で**満月**、さらに 90° 進むと**下弦の月**です。三日月は、新月と上弦の月のあいだで見えます。',
         figure: scene(moonOrbit().concat([
           txt(80, 102, '新月', 12, 'middle', true),
@@ -2582,6 +2585,7 @@
       },
       {
         id: 'space-mp10-c2',
+        anim: 'sp-eclipse-line',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '新月のころ、太陽・月・地球が一直線に並ぶと**日食**が、満月のころ、太陽・地球・月が一直線に並ぶと**月食**が起こります。太陽が月に完全にかくれる日食を**皆既日食**、一部がかくれる日食を**部分日食**といいます。',
         figure: scene(eclipsePanels().concat([
           txt(316, 44, '日食', 13, 'end', true),

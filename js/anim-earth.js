@@ -6,7 +6,7 @@
 (function (root) {
   'use strict';
   const anim = typeof require === 'function' ? require('./anim.js') : root.RikaQuest.anim;
-  const { stage, lerp, deg, wrap, along, onCircle, mix, ease, osc } = anim.helpers;
+  const { stage, lerp, deg, wrap, along, onCircle, mix, ease, osc, pathLen, u, TOKEN_HEX } = anim.helpers;
 
   // 小数部分（0 以上 1 未満）
   function frac(x) { return x - Math.floor(x); }
@@ -762,6 +762,1224 @@
     ];
   }
 
+  // ================================================================
+  // ミニプリント（1nen）。docs/plans/mp-figures-1nen.md の「動く図（新規）」の地学の 6 本
+  // ================================================================
+
+  // ---- 火山と地震（volcano）----
+
+  // 震源 (160,170) から輪が広がり、地表に届くと震央の丸、さらに観測地点 (270,70) に届くと観測地点の丸が大きくなる
+  // （volcano-mp3-c1）。進め方は vo-quake-spread と同じ: 輪 k（0〜4）の半径 = 10 + wrap(30k + 150t, 0, 150)。
+  // t = 0 で 10・40・70・100・130（40・70 は静止図の輪）。描くのは 12〜156。半径 72 以下は静止図と同じ circle、
+  // それより大きい輪は地表（y 70）より下・地層の下のはし（y 240）より上の弧（左右 2 本の line）
+  const FOCUS = [160, 170];
+  const FOCUS_EPI_R = 100, FOCUS_OBS_R = Math.hypot(270 - 160, 70 - 170);   // 震央・観測地点までの距離（約 148.7）
+  function focusRing(r) {
+    if (r <= 72) return [{ type: 'circle', x: FOCUS[0], y: FOCUS[1], r, fill: 'none' }];
+    const a0 = Math.asin(Math.min(1, 100 / r)) * 180 / Math.PI;   // 地表で切る角
+    const b0 = Math.asin(Math.min(1, 70 / r)) * 180 / Math.PI;    // 下のはしで切る角
+    return [
+      { type: 'line', points: arc(FOCUS[0], FOCUS[1], r, -b0, a0, 24), color: 'gray', width: 2 },
+      { type: 'line', points: arc(FOCUS[0], FOCUS[1], r, 180 - a0, 180 + b0, 24), color: 'gray', width: 2 },
+    ];
+  }
+  function voFocusEpicenter(t) {
+    const rings = [];
+    let epi = false, obs = false;
+    for (let k = 0; k < 5; k++) {
+      const r = 10 + wrap(30 * k + 150 * t, 0, 150);
+      if (r > FOCUS_EPI_R && r <= FOCUS_EPI_R + 6) epi = true;   // ゆれが震央に届いた直後
+      if (r > FOCUS_OBS_R && r <= FOCUS_OBS_R + 6) obs = true;   // ゆれが観測地点に届いた直後
+      if (r < 12 || r > 156) continue;
+      rings.push(...focusRing(r));
+    }
+    return [
+      { type: 'rect', x: 0, y: 70, width: 320, height: 170, fill: 'sand', stroke: 'none' },
+      { type: 'line', points: [[0, 70], [320, 70]], color: 'line', width: 2 },
+      ...rings,
+      { type: 'circle', x: 160, y: 170, r: 6, fill: 'red' },
+      { type: 'circle', x: 160, y: 70, r: epi ? 9 : 6, fill: 'orange' },
+      { type: 'line', points: [[160, 76], [160, 164]], color: 'gray', width: 2, dashed: true },
+      text(172, 190, '震源', 13),
+      text(160, 56, '震央', 13, { anchor: 'middle' }),
+      text(168, 124, '震源の深さ', 12),
+      { type: 'circle', x: 270, y: 70, r: obs ? 9 : 5, fill: 'blue' },
+      text(270, 56, '観測地点', 12, { anchor: 'middle' }),
+      { type: 'line', points: [[166, 66], [264, 66]], color: 'blue', width: 1, dashed: true },
+      text(216, 34, '震央距離', 12, { anchor: 'middle' }),
+    ];
+  }
+
+  // 地震計のペンが記録の線を左から描き、ペン先が通った所から P 波が着く・初期微動・S 波が着く・主要動・
+  // 初期微動継続時間の文字が出る（volcano-mp3-c2）。線は vo-seismogram と同じ seismoPoints。文字の位置は静止図のまま
+  function seismoTrace(pen) {
+    if (pen >= 304) return { pts: SEISMO.map(p => [p[0], p[1]]), penY: 120 };
+    const pts = SEISMO.filter(p => p[0] <= pen).map(p => [p[0], p[1]]);
+    const a = SEISMO[pts.length - 1], b = SEISMO[pts.length];
+    const penY = lerp(a[1], b[1], (pen - a[0]) / (b[0] - a[0]));
+    pts.push([pen, penY]);
+    return { pts, penY };
+  }
+  function voTremorRecord(t) {
+    const pen = 20 + 284 * stage(t, 0, 0.9);
+    const { pts, penY } = seismoTrace(pen);
+    const items = [];
+    if (pen > 20) items.push({ type: 'line', points: pts, color: 'ink', width: 2 });
+    // 初期微動継続時間の両向き矢印（P 波が着いてから伸び、S 波が着いたら両向きにする）
+    if (pen >= 150) {
+      items.push(
+        { type: 'line', points: [[70, 170], [150, 170]], color: 'blue', width: 2, arrow: true },
+        { type: 'line', points: [[150, 170], [70, 170]], color: 'blue', width: 2, arrow: true },
+      );
+    } else if (pen >= 80) {
+      items.push({ type: 'line', points: [[70, 170], [pen, 170]], color: 'blue', width: 2, arrow: true });
+    }
+    if (pen >= 150) items.push(text(110, 192, '初期微動継続時間', 12, { anchor: 'middle' }));
+    if (pen >= 110) items.push(text(110, 96, '初期微動', 13, { anchor: 'middle' }));
+    if (pen >= 200) items.push(text(220, 66, '主要動', 13, { anchor: 'middle' }));
+    if (pen >= 70) items.push(text(70, 220, 'P 波が着く', 12, { anchor: 'middle' }));
+    if (pen >= 150) items.push(text(160, 220, 'S 波が着く', 12, { anchor: 'middle' }));
+    items.push({ type: 'circle', x: pen, y: penY, r: 4, fill: 'blue', stroke: 'none' });   // ペン先
+    return items;
+  }
+
+  // P 波（秒速 8 km）・S 波（秒速 4 km）のグラフで、時間のカーソルが 0 → 50 秒へ動く。80 km の高さで P 波（10 秒）から
+  // S 波（20 秒）まで橙の帯が伸び、「10 秒」が出る（volcano-mp3-c3）。進め方は vo-ps-graph と同じ。
+  // 目盛りは content/volcano.js の volcano-mp3-c3 と同じ（x = 50 + 4.8 × 秒、y = 200 − 0.8 × km）
+  const PS80_P = 8, PS80_S = 4;
+  function voPs80km(t) {
+    const x = 50 + 240 * stage(t, 0, 0.9);
+    const sec = (x - 50) / 4.8;
+    const items = [];
+    [160, 120, 80, 40].forEach(y => items.push({ type: 'line', points: [[50, y], [290, y]], color: 'glass', width: 1 }));
+    [98, 146, 194, 242, 290].forEach(gx => items.push({ type: 'line', points: [[gx, 200], [gx, 40]], color: 'glass', width: 1 }));
+    items.push(
+      { type: 'line', points: [[50, 200], [50, 30]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [304, 200]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 136], [98, 136]], color: 'gray', width: 1, dashed: true },   // 80 km の高さ
+      { type: 'line', points: [[50, 200], [170, 40]], color: 'blue', width: 3 },
+      { type: 'line', points: [[50, 200], [290, 40]], color: 'green', width: 3 },
+    );
+    if (x > 98) items.push({ type: 'line', points: [[98, 136], [Math.min(x, 146), 136]], color: 'orange', width: 4 });
+    if (x >= 146) items.push(text(122, 130, '10 秒', 12, { anchor: 'middle', color: 'orange', bold: true }));
+    items.push(
+      text(128, 60, 'P波', 13, { color: 'blue', bold: true }),
+      text(250, 76, 'S波', 13, { color: 'green', bold: true }),
+      text(56, 22, '震源からの距離〔km〕', 12),
+      text(306, 236, '地震発生からの時間〔秒〕', 12, { anchor: 'end' }),
+      text(50, 216, '0', 12, { anchor: 'middle' }),
+      text(98, 216, '10', 12, { anchor: 'middle' }),
+      text(146, 216, '20', 12, { anchor: 'middle' }),
+      text(194, 216, '30', 12, { anchor: 'middle' }),
+      text(242, 216, '40', 12, { anchor: 'middle' }),
+      text(290, 216, '50', 12, { anchor: 'middle' }),
+      text(44, 124, '100', 12, { anchor: 'end' }),
+      text(44, 44, '200', 12, { anchor: 'end' }),
+      text(44, 140, '80', 12, { anchor: 'end', color: 'gray' }),
+      { type: 'line', points: [[x, 200], [x, 34]], color: 'blue', width: 2, dashed: true },   // カーソル
+    );
+    if (PS80_P * sec <= 200) items.push({ type: 'circle', x, y: 200 - 0.8 * PS80_P * sec, r: 5, fill: 'blue', stroke: 'none' });
+    if (PS80_S * sec <= 200) items.push({ type: 'circle', x, y: 200 - 0.8 * PS80_S * sec, r: 5, fill: 'green', stroke: 'none' });
+    const right = x > 250;
+    items.push(text(right ? x - 6 : x + 6, 194, Math.round(sec) + ' 秒', 12, { anchor: right ? 'end' : 'start', color: 'blue', bold: true }));
+    return items;
+  }
+
+  // はじめは 2 つの地面が同じ高さ。断層に沿って左が上がり（隆起）、右が下がる（沈降）。動いた量だけ青い矢印が伸びる
+  // （volcano-mp4-c2）。止まった絵（0.99）が静止図と同じずれ（左の上 y 120、右の上 y 140）
+  function voFaultUplift(t) {
+    const d = ease(stage(t, 0.1, 0.7));
+    const up = 10 * (1 - d);   // 左の地面の、静止図からの下がり（右は同じだけ上）
+    const shift = (pts, dy) => pts.map(([x, y]) => [x, y + dy]);
+    const items = [
+      { type: 'polygon', points: shift([[20, 120], [150, 120], [170, 200], [20, 200]], up), fill: 'sand' },
+      { type: 'polygon', points: shift([[150, 140], [300, 140], [300, 220], [170, 220]], -up), fill: 'sand' },
+      { type: 'line', points: [[140, 90], [190, 230]], width: 3 },
+    ];
+    if (30 * d >= 14) {
+      items.push(
+        { type: 'arrow', x1: 90, y1: 110 + up, x2: 90, y2: 110 + up - 30 * d, color: 'blue' },
+        { type: 'arrow', x1: 240, y1: 120, x2: 240, y2: 120 + 30 * d, color: 'blue' },
+      );
+    }
+    items.push(
+      text(90, 66, '隆起', 13, { anchor: 'middle' }),
+      text(240, 108, '沈降', 13, { anchor: 'middle' }),
+      text(200, 52, '断層', 13),
+      { type: 'line', points: [[198, 48], [152, 120]], color: 'line', width: 1 },
+    );
+    if (t >= 0.1 && t < 0.7) items.push(text(20, 30, '断層がずれる', 13, { color: 'red', bold: true }));
+    return items;
+  }
+
+  // ---- 地層と大地の変化（strata）----
+
+  // 川から海へ流れこんだれき（大）・砂（中）・泥（小）が、大きい粒ほど早くしずんで河口の近くに、小さい粒ほど沖に積もる
+  // （strata-mp1-c2）。止まった絵（0.99）は静止図と同じ粒の位置。粒の文字は、その粒が積もってから出す
+  const SORT_FROM = [64, 76];   // 河口（川の矢印の先の下）
+  const SORT_GROUPS = [
+    { start: 0.05, dur: 0.3, r: 6, fill: 'rock', stroke: 'ink', label: [100, 100, 'れき'], pts: [[86, 112], [100, 116], [114, 120]] },
+    { start: 0.2, dur: 0.4, r: 3, fill: 'sand', stroke: 'ink', label: [178, 124, '砂'], pts: [[160, 136], [172, 140], [184, 144], [196, 148]] },
+    { start: 0.35, dur: 0.5, r: 2, fill: '#C9A27E', stroke: 'none', label: [270, 160, '泥'], pts: [[250, 170], [260, 174], [270, 177], [280, 181], [290, 184]] },
+  ];
+  function srSortDeposit(t) {
+    const items = [
+      { type: 'rect', x: 60, y: 70, width: 260, height: 170, fill: 'water', stroke: 'none' },
+      { type: 'polygon', points: [[60, 110], [320, 200], [320, 240], [60, 240]], fill: '#D8D2C6', stroke: 'none' },
+      { type: 'polygon', points: [[0, 58], [60, 70], [60, 240], [0, 240]], fill: 'lightgreen', stroke: 'none' },
+      { type: 'line', points: [[0, 58], [60, 70]], color: 'line', width: 2 },
+      { type: 'line', points: [[60, 70], [320, 70]], color: 'blue', width: 2 },
+      { type: 'line', points: [[60, 110], [320, 200]], color: 'line', width: 2 },
+      { type: 'arrow', x1: 6, y1: 48, x2: 76, y2: 60, color: 'blue' },
+      text(8, 36, '川', 14),
+      text(70, 232, '河口の近く', 12),
+      text(314, 232, '沖', 12, { anchor: 'end' }),
+    ];
+    SORT_GROUPS.forEach(g => {
+      if (t < g.start) return;
+      g.pts.forEach(([x, y], i) => {
+        const p = stage(t, g.start + 0.02 * i, g.start + 0.02 * i + g.dur);
+        // 横は流れに乗って先に進み（はじめ速く）、たては同じ速さでしずむ
+        const q = 1 - (1 - p) * (1 - p);
+        const it = { type: 'circle', x: lerp(SORT_FROM[0], x, q), y: lerp(SORT_FROM[1], y, p), r: g.r, fill: g.fill };
+        if (g.stroke === 'none') it.stroke = 'none';
+        items.push(it);
+      });
+      if (t >= g.start + 0.02 * (g.pts.length - 1) + g.dur) items.push(text(g.label[0], g.label[1], g.label[2], 12, { anchor: 'middle' }));
+    });
+    return items;
+  }
+
+  // はじめは 2 つの大陸が 1 つにくっついている。プレートの矢印の向きに少しずつ左右へ離れ、静止図の位置で止まる
+  // （strata-mp2-c4）。止まった絵（0.99）が静止図と同じ
+  const DRIFT = 12;   // はじめの、静止図からの寄せ（左の大陸は右へ、右の大陸は左へ）
+  function srContinentDrift(t) {
+    const d = ease(stage(t, 0.1, 0.8));
+    const off = DRIFT * (1 - d);
+    const move = (pts, dx) => pts.map(([x, y]) => [x + dx, y]);
+    const items = [
+      { type: 'polygon', points: move([[90, 70], [150, 60], [170, 110], [140, 170], [100, 150], [80, 110]], off), fill: 'lightgreen' },
+      { type: 'polygon', points: move([[176, 60], [240, 70], [250, 120], [210, 180], [180, 130]], -off), fill: 'lightgreen' },
+    ];
+    if (40 * d >= 14) {
+      items.push(
+        { type: 'arrow', x1: 110, y1: 200, x2: 110 - 40 * d, y2: 200, color: 'blue' },
+        { type: 'arrow', x1: 210, y1: 200, x2: 210 + 40 * d, y2: 200, color: 'blue' },
+      );
+    }
+    items.push(
+      text(160, 36, '大陸は少しずつ移動している', 14, { anchor: 'middle' }),
+      text(160, 228, 'プレートの動き', 13, { anchor: 'middle' }),
+    );
+    if (t < 0.1) items.push(text(160, 200, '1 つの大陸', 12, { anchor: 'middle', color: 'green', bold: true }));
+    return items;
+  }
+
+  // ================================================================
+  // ミニプリント（2nen）。docs/plans/mp-figures-2nen.md の「動く図（新規）」の天気の 16 本
+  // 静止図は content/weather.js の weather-mp○-c○。静止図と同じ部品は同じ座標・文字・色で描く
+  // ================================================================
+
+  // 粒（空気・水・雪など）
+  function grain(x, y, r, fill, stroke) { return { type: 'circle', x, y, r, fill, stroke: stroke || 'none' }; }
+  // 道すじ pts の上に n 個の粒を流す（k 番目は frac(t·speed + (k + 0.5)/n)。t = 1 と t = 0 がつながる）
+  function flowOn(pts, t, n, speed, make) {
+    const out = [];
+    for (let k = 0; k < n; k++) {
+      const q = along(pts, frac(speed * t + (k + 0.5) / n));
+      out.push(make(q, k));
+    }
+    return out;
+  }
+  // 折れ線を x ≦ xEnd の所まで（グラフの線を左から伸ばす）
+  function clipX(pts, xEnd) {
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      if (p[0] <= xEnd + 1e-9) { out.push([p[0], p[1]]); continue; }
+      const a = pts[i - 1];
+      if (a) out.push([xEnd, lerp(a[1], p[1], (xEnd - a[0]) / (p[0] - a[0]))]);
+      break;
+    }
+    return out;
+  }
+  // 日本列島（content/weather.js の weather-mp9-c2・mp13-c3 の静止図と同じ 4 つの島）
+  function japanMp() {
+    const land = { fill: 'lightgreen', stroke: 'line' };
+    return [
+      Object.assign({ type: 'polygon', points: [[236.8, 68.8], [264, 64], [276.8, 80], [256, 92.8], [241.6, 89.6]] }, land),
+      Object.assign({ type: 'polygon', points: [[240, 102.4], [249.6, 113.6], [240, 134.4], [222.4, 152], [196.8, 164.8], [168, 172.8], [142.4, 180.8], [129.6, 177.6], [134.4, 168], [160, 160], [188.8, 148.8], [211.2, 134.4], [228.8, 116.8]] }, land),
+      Object.assign({ type: 'polygon', points: [[148.8, 185.6], [172.8, 182.4], [168, 193.6], [150.4, 193.6]] }, land),
+      Object.assign({ type: 'polygon', points: [[116.8, 180.8], [132.8, 184], [134.4, 203.2], [120, 209.6], [112, 196.8]] }, land),
+    ];
+  }
+
+  // ---- 露点のグラフ（weather-mp4-c2）----
+  // 横 x = 50 + 7.5 × 気温〔℃〕、たて y = 200 − 4.8 × 水蒸気量〔g/m³〕。空気 A は 30 ℃・15 g/m³ (275,128)
+  const DEW_CURVE = [[50, 177], [68.8, 172.2], [87.5, 167.4], [106.3, 162.1], [125, 154.9], [143.8, 147.7], [162.5, 138.6],
+    [181.3, 128.5], [200, 117], [218.8, 104], [237.5, 89.1], [256.3, 72.8], [275, 54.1], [290, 37.8]];
+  // 露点 (181.3,128) から曲線にそって 5 ℃ (87.5,167.4) まで
+  const DEW_DOWN = [[181.3, 128], [162.5, 138.6], [143.8, 147.7], [125, 154.9], [106.3, 162.1], [87.5, 167.4]];
+  function dewGraphItems() {
+    const items = [];
+    [87.5, 125, 162.5, 200, 237.5, 275].forEach(x => items.push({ type: 'line', points: [[x, 200], [x, 36.8]], color: '#D5DBE5', width: 1 }));
+    [176, 152, 128, 104, 80, 56].forEach(y => items.push({ type: 'line', points: [[50, y], [290, y]], color: '#D5DBE5', width: 1 }));
+    items.push(
+      { type: 'line', points: [[50, 200], [50, 26]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [306, 200]], width: 2, arrow: true },
+      { type: 'line', points: DEW_CURVE, color: 'blue', width: 3 },
+      text(50, 216, '0', 12, { anchor: 'middle' }),
+      text(125, 216, '10', 12, { anchor: 'middle' }),
+      text(200, 216, '20', 12, { anchor: 'middle' }),
+      text(275, 216, '30', 12, { anchor: 'middle' }),
+      text(44, 156, '10', 12, { anchor: 'end' }),
+      text(44, 108, '20', 12, { anchor: 'end' }),
+      text(44, 60, '30', 12, { anchor: 'end' }),
+      text(56, 18, '水蒸気量〔g/m³〕', 12),
+      text(306, 234, '気温〔℃〕', 12, { anchor: 'end' }),
+    );
+    return items;
+  }
+  // 空気 A の点が左へ動き（冷える）、曲線とぶつかる所で「露点」。さらに曲線にそって 5 ℃ まで下がり、
+  // 下がった所で水滴になる量（橙の棒）が伸びる。止まった絵（0.99）が静止図と同じ（A の点は静止図の位置に残す）
+  function weDewPointGraph(t) {
+    const p = stage(t, 0, 0.4), q = stage(t, 0.45, 0.8);
+    const items = dewGraphItems();
+    let x = lerp(275, 181.3, p), y = 128;
+    if (q > 0) { const a = along(DEW_DOWN, q); x = a.x; y = a.y; }
+    if (x < 274.5) items.push({ type: 'line', points: [[275, 128], [x, 128]], color: 'gray', width: 2, dashed: true });
+    if (q > 0) items.push({ type: 'line', points: [[x, 128], [x, y]], color: 'orange', width: 4 });
+    items.push(
+      { type: 'circle', x: 275, y: 128, r: 5, fill: 'ink', stroke: 'none' },
+      text(284, 122, 'A', 14, { bold: true }),
+    );
+    if (t >= 0.8) items.push(text(93.5, 151.2, '水滴になる', 12));
+    if (p >= 1) items.push(text(181.3, 116, '露点', 13, { anchor: 'middle', bold: true }));
+    // 温度は四捨五入で出す。露点（曲線にぶつかって止まっているあいだ）だけは 0.5 ℃ きざみで「17.5 ℃」
+    const temp = (x - 50) / 7.5;
+    const shown = p >= 1 && q === 0 ? Math.round(temp * 2) / 2 : Math.round(temp);
+    items.push(
+      { type: 'circle', x, y, r: 5, fill: 'blue', stroke: 'none' },
+      text(62, 44, '空気の温度 ' + shown + ' ℃', 12, { color: 'blue', bold: true }),
+    );
+    return items;
+  }
+
+  // ---- 雲のでき方（weather-mp7-c1）----
+  // 雲の中の印の t = 0 の位置（静止図の ○ 水蒸気 4・● 水滴 5・× 氷の粒 4 の中心）
+  const RISE_MARKS = [[180, 190], [220, 180], [250, 198], [200, 166], [170, 120], [205, 108], [240, 124], [225, 140], [185, 140],
+    [180, 56], [215, 46], [250, 64], [200, 74]];
+  // 高さで印を変える: y 160 より下は ○ 水蒸気、y 90 より上は × 氷の粒、そのあいだは ● 水滴
+  function riseMark(x, y) {
+    if (y > 160) return [{ type: 'circle', x, y, r: 5, fill: 'white', stroke: 'ink' }];
+    if (y >= 90) return [{ type: 'circle', x, y, r: 5, fill: 'ink', stroke: 'ink' }];
+    return [
+      { type: 'line', points: [[x - 5, y - 5], [x + 5, y + 5]], width: 2 },
+      { type: 'line', points: [[x - 5, y + 5], [x + 5, y - 5]], width: 2 },
+    ];
+  }
+  // 空気のかたまりが矢印にそって上がり、上がるほど大きく（膨張）、色が冷たくなる（we-cloud-form と同じ mix）。
+  // 雲の中の印は下から上へ流れ（1 周で 167 ＝ 流す範囲 y 40〜207 の長さ。t = 0 で静止図の位置）、高さで ○ → ● → × に変わる
+  function weRisingAir(t) {
+    const p = frac(t + 0.5);   // かたまりの進み方（t = 0 で真ん中。上で消えて下から出直すのは t = 0.5）
+    const items = [
+      { type: 'rect', x: 0, y: 0, width: 320, height: 240, fill: 'sky', stroke: 'none' },
+      { type: 'rect', x: 0, y: 214, width: 320, height: 26, fill: 'sand', stroke: 'none' },
+      { type: 'arrow', x1: 70, y1: 206, x2: 70, y2: 40, color: 'orange' },
+      { type: 'circle', x: 70, y: lerp(200, 50, p), r: lerp(6, 10, p), fill: mix('#F2B26B', '#CFE4FF', p), stroke: 'line' },
+      text(80, 120, '上昇する空気', 12),
+      { type: 'ellipse', x: 210, y: 92, rx: 80, ry: 60, fill: 'white', stroke: 'gray' },
+    ];
+    RISE_MARKS.forEach(([x, y0]) => items.push(...riseMark(x, wrap(y0 - 167 * t, 40, 207))));
+    items.push(
+      text(6, 150, '× 氷の粒', 12),
+      text(6, 168, '● 水滴', 12),
+      text(6, 186, '○ 水蒸気', 12),
+      text(8, 20, '上空ほど気圧が低く、温度も低い', 12),
+    );
+    return items;
+  }
+
+  // ---- 水の循環（weather-mp7-c2）----
+  const CYCLE_UP = [[70, 184], [130, 76]], CYCLE_RAIN = [[236, 84], [252, 140]], CYCLE_RIVER = [[200, 196], [136, 214]];
+  // 蒸発の矢印を水蒸気（白い小丸）が上がり、降水の矢印を雨（青い点）が落ち、川の矢印を水が海へもどる。太陽はゆっくり光る
+  function weWaterCycle(t) {
+    const glow = 0.5 - 0.5 * Math.cos(2 * Math.PI * t);
+    return [
+      { type: 'rect', x: 0, y: 0, width: 320, height: 240, fill: 'sky', stroke: 'none' },
+      { type: 'rect', x: 0, y: 190, width: 150, height: 50, fill: '#9CC3F0', stroke: 'none' },
+      { type: 'polygon', points: [[150, 240], [150, 190], [230, 120], [320, 180], [320, 240]], fill: 'lightgreen' },
+      { type: 'circle', x: 34, y: 34, r: 21 + 3 * glow, fill: 'none', stroke: 'yellow' },
+      { type: 'circle', x: 34, y: 34, r: 18, fill: 'yellow', stroke: 'orange' },
+      { type: 'ellipse', x: 200, y: 56, rx: 60, ry: 24, fill: 'white', stroke: 'gray' },
+      { type: 'arrow', x1: 70, y1: 184, x2: 130, y2: 76, color: 'blue' },
+      { type: 'arrow', x1: 236, y1: 84, x2: 252, y2: 140, color: 'blue' },
+      { type: 'arrow', x1: 200, y1: 196, x2: 136, y2: 214, color: 'blue' },
+      ...flowOn(CYCLE_UP, t, 4, 1, q => grain(q.x, q.y, 3.5, 'white', 'line')),
+      ...flowOn(CYCLE_RAIN, t, 3, 1, q => grain(q.x, q.y, 3.5, 'blue', 'white')),
+      ...flowOn(CYCLE_RIVER, t, 3, 1, q => grain(q.x, q.y, 3.5, 'blue', 'white')),
+      text(74, 228, '海', 13, { anchor: 'middle' }),
+      text(200, 61, '雲', 13, { anchor: 'middle' }),
+      text(34, 70, '太陽', 12, { anchor: 'middle' }),
+      text(108, 140, '蒸発', 13, { bold: true }),
+      text(256, 116, '降水', 13, { bold: true }),
+      text(176, 226, '川', 13, { bold: true }),
+    ];
+  }
+
+  // ---- 等圧線と風（weather-mp8-c1）----
+  // 地点 S から、はじめは等圧線に直角（右）へ進み、右（南）へずれて「実際の風」(204,152) の向きになる道すじ。
+  // 2 次のベジェ曲線 S (161,120) → (182,120) → (214.25,144)。終わりの向き (32.25, 24) は実際の風の矢印 (43, 32) と同じ
+  const ISO_PATH = (() => {
+    const pts = [];
+    for (let i = 0; i <= 16; i++) {
+      const s = i / 16;
+      pts.push([(1 - s) * (1 - s) * 161 + 2 * (1 - s) * s * 182 + s * s * 214.25, (1 - s) * (1 - s) * 120 + 2 * (1 - s) * s * 120 + s * s * 144]);
+    }
+    return pts;
+  })();
+  // 空気の粒 3 つが時間をずらして S から出る（t = 0 で 1 つが S の上）
+  function weIsobarWind(t) {
+    const dots = [];
+    for (let k = 0; k < 3; k++) {
+      const q = along(ISO_PATH, frac(t + k / 3));
+      dots.push(grain(q.x, q.y, 4, 'white', 'ink'));
+    }
+    return [
+      text(40, 128, '高', 22, { anchor: 'middle', bold: true }),
+      text(290, 128, '低', 22, { anchor: 'middle', bold: true }),
+      { type: 'line', points: [[100, 30], [96, 120], [100, 210]], color: 'ink', width: 2 },
+      { type: 'line', points: [[165, 30], [161, 120], [165, 210]], color: 'ink', width: 2 },
+      { type: 'line', points: [[230, 30], [226, 120], [230, 210]], color: 'ink', width: 2 },
+      text(100, 24, '1012', 12, { anchor: 'middle' }),
+      text(165, 24, '1008', 12, { anchor: 'middle' }),
+      text(230, 24, '1004', 12, { anchor: 'middle' }),
+      { type: 'circle', x: 161, y: 120, r: 5, fill: 'ink', stroke: 'none' },
+      text(150, 140, 'S', 14, { bold: true, anchor: 'end' }),
+      { type: 'arrow', x1: 161, y1: 120, x2: 214, y2: 120, color: 'blue' },
+      { type: 'arrow', x1: 161, y1: 120, x2: 162, y2: 70, color: 'blue' },
+      { type: 'arrow', x1: 161, y1: 120, x2: 204, y2: 152, color: 'blue' },
+      ...dots,
+      text(316, 236, '上が北', 12, { anchor: 'end' }),
+      text(208, 168, '実際の風', 12),
+      text(40, 150, '気圧が高い', 12, { anchor: 'middle' }),
+      text(290, 150, '気圧が低い', 12, { anchor: 'middle' }),
+    ];
+  }
+
+  // ---- 高気圧と低気圧の断面（weather-mp8-c2）----
+  // A（高気圧）: 上から下がり、地表で左右へふき出す。B（低気圧）: 地表で左右から集まり、上がって雲に入る。
+  // 粒 k は左右の道を交互に使い、frac(t + (k + 0.5)/6) で進む（t = 1 と t = 0 がつながる）。雲は少しふくらんだりしぼんだり
+  const SEC_A = [[[80, 50], [80, 184], [30, 184]], [[80, 50], [80, 184], [130, 184]]];
+  const SEC_B = [[[190, 184], [240, 184], [240, 50]], [[290, 184], [240, 184], [240, 50]]];
+  function wePressureSection(t) {
+    const dots = [];
+    for (let k = 0; k < 6; k++) {
+      const f = frac(t + (k + 0.5) / 6);
+      const a = along(SEC_A[k % 2], f), b = along(SEC_B[k % 2], f);
+      dots.push(grain(a.x, a.y, 3.5, 'white', 'line'), grain(b.x, b.y, 3.5, 'white', 'line'));
+    }
+    const puff = osc(t, 1);
+    return [
+      { type: 'rect', x: 0, y: 196, width: 320, height: 44, fill: 'lightgreen', stroke: 'none' },
+      { type: 'arrow', x1: 80, y1: 50, x2: 80, y2: 170, color: 'blue' },
+      { type: 'arrow', x1: 78, y1: 184, x2: 30, y2: 184, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 82, y1: 184, x2: 130, y2: 184, color: 'blue', width: 2 },
+      ...dots,
+      { type: 'ellipse', x: 240, y: 40, rx: 50 + 4 * puff, ry: 18 + 2 * puff, fill: 'white', stroke: 'gray' },
+      { type: 'arrow', x1: 240, y1: 170, x2: 240, y2: 64, color: 'blue' },
+      { type: 'arrow', x1: 190, y1: 184, x2: 236, y2: 184, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 290, y1: 184, x2: 244, y2: 184, color: 'blue', width: 2 },
+      text(98, 110, 'A', 18, { bold: true }),
+      text(258, 120, 'B', 18, { bold: true }),
+      text(160, 228, '地表', 12, { anchor: 'middle' }),
+      text(80, 36, '高気圧（下降気流）', 12, { anchor: 'middle' }),
+      text(240, 92, '低気圧（上昇気流）', 12, { anchor: 'middle', bg: true }),
+      text(80, 214, 'ふき出す', 12, { anchor: 'middle' }),
+      text(240, 214, 'ふきこむ', 12, { anchor: 'middle' }),
+    ];
+  }
+
+  // ---- 日本付近の海流（weather-mp9-c2）----
+  const CURRENTS = [
+    { pts: [[90, 228], [100, 180], [140, 150], [190, 128], [225, 98]], color: 'red' },     // 対馬海流（暖流）
+    { pts: [[120, 238], [175, 212], [235, 180], [275, 140]], color: 'red' },              // 日本海流（暖流）
+    { pts: [[312, 40], [300, 90], [280, 120], [262, 150]], color: 'blue' },               // 千島海流（寒流）
+    { pts: [[200, 30], [150, 60], [105, 100], [80, 140]], color: 'blue' },                // リマン海流（寒流）
+  ];
+  // 4 本の海流の線の上を、矢印の向きに点が流れる（暖流は赤いふち、寒流は青いふちの白い点）
+  function weOceanCurrent(t) {
+    const items = japanMp();
+    CURRENTS.forEach(c => items.push({ type: 'line', points: c.pts, color: c.color, width: 4, arrow: true }));
+    CURRENTS.forEach(c => items.push(...flowOn(c.pts, t, 4, 1, q => grain(q.x, q.y, 3.5, 'white', c.color))));
+    items.push(
+      text(146, 132, '対馬海流', 12, { anchor: 'middle', bg: true }),
+      text(214, 220, '日本海流（黒潮）', 12, { anchor: 'middle', bg: true }),
+      text(316, 176, '千島海流', 12, { anchor: 'end', bg: true }),
+      text(316, 192, '（親潮）', 12, { anchor: 'end', bg: true }),
+      text(118, 62, 'リマン海流', 12, { anchor: 'middle', bg: true }),
+      text(6, 20, '赤: 暖流　青: 寒流', 12),
+    );
+    return items;
+  }
+
+  // ---- 寒冷前線の断面（weather-mp10-c1）----
+  // 寒冷前線の記号（content/weather.js の frontItems。静止図の 7 つの三角形）
+  function coldFrontMarks() {
+    const items = [{ type: 'line', points: [[60, 210], [260, 210]], color: 'blue', width: 3 }];
+    for (let x = 66; x <= 222; x += 26) items.push({ type: 'polygon', fill: 'blue', stroke: 'none', points: [[x, 210], [x + 14, 210], [x + 7, 200]] });
+    return items;
+  }
+  // 寒気のくさびが右へ 24 進み（t = 0 は静止図より 24 左）、暖気の粒が前線面にそって急に上へおし上げられて
+  // 積乱雲に入る。積乱雲は ry 10 → 34 にたてにのびる。止まった絵（0.99）が静止図と同じ
+  function weColdFrontSection(t) {
+    const d = ease(stage(t, 0, 0.8));
+    const dx = -24 * (1 - d);
+    const warm = [[292, 124], [174 + dx, 124], [164 + dx, 96], [171, 48]];
+    return [
+      { type: 'rect', x: 20, y: 40, width: 280, height: 90, fill: '#FBE3EC', stroke: 'none' },
+      { type: 'polygon', points: [[20, 130], [160 + dx, 130], [151.6 + dx, 108], [129.2 + dx, 82], [20, 68]], fill: 'sky', stroke: 'none' },
+      ...flowOn(warm, t, 5, 1, q => grain(q.x, q.y, 3, 'orange')),
+      { type: 'ellipse', x: 171.2, y: 78, rx: 16, ry: lerp(10, 34, d), fill: 'white', stroke: 'gray' },
+      { type: 'arrow', x1: 42.4, y1: 112, x2: 104, y2: 112, color: 'blue' },
+      { type: 'arrow', x1: 244, y1: 116, x2: 204.8, y2: 78, color: 'orange' },
+      { type: 'line', points: [[20, 130], [300, 130]], color: 'brown', width: 3 },
+      text(53.6, 100, '寒気', 14, { bold: true }),
+      text(249.6, 74, '暖気', 14, { bold: true }),
+      text(26, 56, '寒冷前線', 13, { bold: true }),
+      text(170, 72, '積乱雲', 12, { bold: true }),
+      text(150, 110, '前線面', 12, { anchor: 'end', bg: true }),
+      text(160, 170, '前線（前線面と地表が交わる所）', 12, { anchor: 'middle' }),
+      ...coldFrontMarks(),
+    ];
+  }
+
+  // ---- 温暖前線の断面（weather-mp10-c2）----
+  // 停滞前線・閉そく前線の記号（静止図と同じ。content/weather.js の frontItems）
+  function warmSectionMarks() {
+    const semi = (cx, y, up) => {
+      const pts = [];
+      for (let i = 0; i <= 8; i++) {
+        const a = Math.PI * i / 8;
+        pts.push([Math.round((cx + 7 * Math.cos(a)) * 10) / 10, Math.round((y + (up ? -7 : 7) * Math.sin(a)) * 10) / 10]);
+      }
+      return pts;
+    };
+    const items = [];
+    // 停滞前線（y 160）: 青と赤の線を 26 ずつ交互に、青い線には上向きの三角、赤い線には下向きの半円
+    [[30, 'blue'], [56, 'red'], [82, 'blue'], [108, 'red'], [134, 'blue'], [160, 'red']].forEach(([x, c]) => {
+      items.push({ type: 'line', points: [[x, 160], [x + 26, 160]], color: c, width: 3 });
+      if (c === 'blue') items.push({ type: 'polygon', fill: 'blue', stroke: 'none', points: [[x + 6, 160], [x + 20, 160], [x + 13, 150]] });
+      else items.push({ type: 'polygon', fill: 'red', stroke: 'none', points: semi(x + 13, 160, false) });
+    });
+    items.push({ type: 'line', points: [[186, 160], [200, 160]], color: 'blue', width: 3 });
+    // 閉そく前線（y 210）: むらさきの線に三角と半円を交互に
+    items.push({ type: 'line', points: [[30, 210], [200, 210]], color: 'purple', width: 3 });
+    [36, 62, 88, 114, 140, 166].forEach((x, i) => {
+      if (i % 2 === 0) items.push({ type: 'polygon', fill: 'purple', stroke: 'none', points: [[x, 210], [x + 14, 210], [x + 7, 200]] });
+      else items.push({ type: 'polygon', fill: 'purple', stroke: 'none', points: semi(x + 7, 210, true) });
+    });
+    return items;
+  }
+  // 暖気の粒が橙の矢印の先から前線面にそってゆっくりはい上がる。乱層雲は rx 0 → 56 に横へ広がり、
+  // 雲の下に弱い雨が広い範囲に落ちる。停滞前線・閉そく前線の記号は動かさない。止まった絵（0.99）が静止図と同じ
+  const WARM_SLOPE = -50 / 240.8;   // 前線面 (59.2,120)→(300,70) の傾き
+  const WARM_PATH = [[126, 92], [286, 92 + 160 * WARM_SLOPE]];
+  function weWarmFrontSection(t) {
+    const c = ease(stage(t, 0.1, 0.7));
+    const items = [
+      { type: 'rect', x: 20, y: 30, width: 280, height: 90, fill: '#FBE3EC', stroke: 'none' },
+      { type: 'polygon', points: [[59.2, 120], [300, 120], [300, 70]], fill: 'sky', stroke: 'none' },
+      ...flowOn(WARM_PATH, t, 5, 1, q => grain(q.x, q.y, 3, 'orange')),
+      { type: 'ellipse', x: 204.8, y: 70, rx: 56 * c, ry: 10, fill: 'white', stroke: 'gray' },
+    ];
+    // 弱い雨（雲の下、x 156〜221 の 6 本。雲が半分より広がってから、雲の幅の中だけ）
+    if (c > 0.5) {
+      for (let k = 0; k < 6; k++) {
+        const x = 156 + 13 * k;
+        if (Math.abs(x - 204.8) > 56 * c - 4) continue;
+        items.push(grain(x, lerp(84, 116, frac(2 * t + 0.37 * k + 0.1)), 2, 'blue'));
+      }
+    }
+    items.push(
+      { type: 'arrow', x1: 36.8, y1: 110, x2: 126.4, y2: 86, color: 'orange' },
+      { type: 'line', points: [[20, 120], [300, 120]], color: 'brown', width: 3 },
+      text(36.8, 70, '暖気', 14, { bold: true }),
+      text(238.4, 112, '寒気', 14, { bold: true }),
+      text(26, 46, '温暖前線', 13, { bold: true }),
+      text(204, 64, '乱層雲', 12, { bold: true }),
+      ...warmSectionMarks(),
+      text(212, 164, '停滞前線', 13),
+      text(212, 214, '閉そく前線', 13),
+    );
+    return items;
+  }
+
+  // ---- 水そうの実験（weather-mp10-c3）----
+  // 0〜0.15: 左がぬるま湯（赤）、右が冷水（青）で、x 160 にしきり。0.12〜0.2 でしきりを上へぬく。
+  // 0.15〜0.8: 青が底をはうように左へ広がり（先は 0.55 で左の壁に着く）、赤が上へ移って上下 2 層（境 y 130）になる。
+  // 青の形は 5 つの点（上の左はし・右の壁の上・右下・先の下・先の上）。止まった絵（0.99）が静止図（5 分後）と同じ
+  function weTankDensity(t) {
+    const s = ease(stage(t, 0.15, 0.8)), sb = ease(stage(t, 0.15, 0.55));
+    const top = lerp(60, 130, s);
+    const xTop = lerp(160, 40, s), xNose = lerp(160, 40, sb), yNose = lerp(170, 130, s);
+    const items = [
+      { type: 'rect', x: 40, y: 60, width: 240, height: 140, fill: '#F6C1C1', stroke: 'none' },
+      { type: 'polygon', points: [[xTop, top], [280, top], [280, 200], [xNose, 200], [xNose, yNose]], fill: 'sky', stroke: 'none' },
+      { type: 'rect', x: 40, y: 50, width: 240, height: 150, fill: 'none' },
+    ];
+    if (t < 0.2) {
+      const k = stage(t, 0.12, 0.2);
+      items.push({ type: 'line', points: [[160, 50 - 60 * k], [160, 200 - 150 * k]], color: 'line', width: 4 });
+    }
+    if (t < 0.15) {
+      items.push(
+        text(100, 134, 'ぬるま湯', 13, { anchor: 'middle' }),
+        text(220, 134, '冷水', 13, { anchor: 'middle' }),
+        text(160, 32, 'しきりをとる前', 13, { anchor: 'middle', bold: true }),
+      );
+    } else if (t < 0.8) {
+      items.push(text(160, 32, 'しきりをとると…', 13, { anchor: 'middle', bold: true }));
+    } else {
+      items.push(
+        text(160, 100, 'ぬるま湯（赤）', 13, { anchor: 'middle' }),
+        text(160, 170, '冷水（青）', 13, { anchor: 'middle' }),
+        text(160, 32, 'しきりをとって 5 分後', 13, { anchor: 'middle', bold: true }),
+      );
+    }
+    items.push(text(160, 226, '冷たい水は重く、下にもぐりこむ', 12, { anchor: 'middle' }));
+    return items;
+  }
+
+  // ---- 寒冷前線の通過（weather-mp11-c1）----
+  const PASS_TEMP = [[40, 90], [66, 85], [92, 80], [118, 80], [144, 85], [170, 140], [196, 150], [222, 155], [248, 160], [274, 165]];
+  const PASS_WIND = [[40, 28, '南'], [66, 44, '南'], [92, 28, '南西'], [118, 44, '南西'], [144, 28, '南西'],
+    [170, 44, '北西'], [196, 28, '北西'], [222, 44, '北'], [248, 28, '北'], [274, 44, '北']];
+  // 気温の折れ線を 10 時から右へ伸ばし（stage(t, 0, 0.8)）、風向の文字を線の先の時刻まで出す。線が 14 時すぎ
+  // （x 157）をこえると青い点線と「寒冷前線が通過」、急に下がり始める x 170 をこえると「気温が急に下がる」。
+  // 止まった絵（0.99）が静止図と同じ
+  function weFrontPassageGraph(t) {
+    const k = stage(t, 0, 0.8);
+    const xEnd = 40 + 234 * k;
+    const items = [
+      { type: 'line', points: [[40, 190], [290, 190]], width: 2 },
+      { type: 'line', points: [[40, 190], [40, 60]], width: 2 },
+      { type: 'line', points: [[40, 160], [290, 160]], color: 'gray', width: 1, dashed: true },
+      { type: 'line', points: [[40, 110], [290, 110]], color: 'gray', width: 1, dashed: true },
+      text(34, 164, '15', 12, { anchor: 'end' }),
+      text(34, 114, '20', 12, { anchor: 'end' }),
+      text(46, 58, '気温〔℃〕', 12),
+    ];
+    const line = clipX(PASS_TEMP, xEnd);
+    if (line.length >= 2) items.push({ type: 'line', points: line, color: 'orange', width: 3 });
+    items.push(text(4, 30, '風向', 12));
+    PASS_WIND.forEach(([x, y, s]) => { if (x <= xEnd + 1e-9) items.push(text(x, y, s, 12, { anchor: 'middle' })); });
+    [[40, '10時'], [92, '12時'], [144, '14時'], [196, '16時'], [248, '18時']].forEach(([x, s]) => items.push(text(x, 204, s, 12, { anchor: 'middle' })));
+    if (xEnd >= 157) {
+      items.push(
+        { type: 'line', points: [[157, 40], [157, 186]], color: 'blue', width: 2, dashed: true },
+        text(162, 70, '寒冷前線が通過', 12, { bg: true }),
+      );
+    }
+    if (xEnd >= 170) items.push(text(230, 120, '気温が急に下がる', 12, { anchor: 'middle', bg: true }));
+    if (k < 1) { const tip = line[line.length - 1] || PASS_TEMP[0]; items.push(grain(tip[0], tip[1], 4, 'orange')); }
+    return items;
+  }
+
+  // ---- 温帯低気圧の移動（weather-mp11-c2）----
+  // 温暖前線の半円（静止図と同じ 6 つ）と寒冷前線の三角（6 つ）
+  const CYC_WARM_MARKS = [
+    [[168, 86.7], [168.7, 84], [168.3, 81.3], [166.9, 79], [164.7, 77.3], [162.1, 76.6], [159.4, 77], [157, 78.4], [155.4, 80.6]],
+    [[191.5, 97.9], [192.1, 95.3], [191.8, 92.6], [190.4, 90.2], [188.2, 88.6], [185.5, 87.9], [182.8, 88.3], [180.5, 89.7], [178.8, 91.8]],
+    [[214.9, 109.2], [215.6, 106.5], [215.2, 103.8], [213.8, 101.5], [211.6, 99.8], [209, 99.1], [206.3, 99.5], [203.9, 100.9], [202.3, 103.1]],
+    [[238.3, 120.4], [239, 117.8], [238.6, 115.1], [237.3, 112.7], [235.1, 111.1], [232.4, 110.4], [229.7, 110.8], [227.4, 112.2], [225.7, 114.3]],
+    [[261.8, 131.7], [262.5, 129], [262.1, 126.3], [260.7, 124], [258.5, 122.3], [255.9, 121.6], [253.2, 122], [250.8, 123.4], [249.2, 125.6]],
+    [[285.2, 142.9], [285.9, 140.3], [285.5, 137.6], [284.1, 135.2], [281.9, 133.6], [279.3, 132.9], [276.6, 133.3], [274.2, 134.7], [272.6, 136.9]],
+  ];
+  const CYC_COLD_MARKS = [
+    [[131.2, 86.7], [122.5, 97.6], [134.6, 98.4]], [[114.9, 106.9], [106.2, 117.8], [118.3, 118.6]], [[98.6, 127.2], [89.8, 138.1], [102, 138.9]],
+    [[82.3, 147.4], [73.5, 158.3], [85.7, 159.2]], [[66, 167.7], [57.2, 178.6], [69.4, 179.4]], [[49.7, 187.9], [40.9, 198.8], [53.1, 199.7]],
+  ];
+  // 低気圧の中心・2 本の前線・文字が、そろって西から東へ 24 動く（t = 0 は静止図より 24 西。ease(stage(t, 0, 0.8))）。
+  // 2 本の前線のあいだ（暖気の範囲）をうすい赤でぬる。止まった絵（0.99）が静止図の位置。
+  // 計画は「静止図から東へ 40」だが、A（x 304）が場面の右から出るので、西から静止図の位置まで動かす
+  const CYC_SHIFT = 24;
+  function weCycloneMove(t) {
+    const dx = -CYC_SHIFT * (1 - ease(stage(t, 0, 0.8)));
+    const mv = pts => pts.map(([x, y]) => [x + dx, y]);
+    const items = [
+      { type: 'polygon', points: mv([[143, 80], [300, 150], [262, 232], [60, 232], [40, 200]]), fill: '#FBE3EC', stroke: 'none' },
+      { type: 'line', points: mv([[150, 78], [300, 150]]), color: 'red', width: 3 },
+      ...CYC_WARM_MARKS.map(p => ({ type: 'polygon', fill: 'red', stroke: 'none', points: mv(p) })),
+      { type: 'line', points: mv([[135, 82], [40, 200]]), color: 'blue', width: 3 },
+      ...CYC_COLD_MARKS.map(p => ({ type: 'polygon', fill: 'blue', stroke: 'none', points: mv(p) })),
+      text(140 + dx, 72, '低', 20, { anchor: 'middle', bold: true }),
+      text(124 + dx, 96, 'O', 14, { bold: true }),
+      text(304 + dx, 168, 'A', 14, { bold: true }),
+      text(26 + dx, 214, 'B', 14, { bold: true }),
+      text(316, 20, '上が北', 12, { anchor: 'end' }),
+      text(236 + dx, 92, '温暖前線', 12, { bg: true }),
+      text(44 + dx, 150, '寒冷前線', 12, { bg: true }),
+      text(176 + dx, 182, '暖気', 14, { bold: true }),
+      { type: 'arrow', x1: 150, y1: 30, x2: 210, y2: 30, color: 'gray', label: '西から東へ移動' },
+    ];
+    return items;
+  }
+
+  // ---- 冬の季節風（weather-mp12-c1）----
+  // 季節風の粒の道すじ: 大陸 → 日本海 → A の斜面を上がり雲へ → 山をこえて B 側を下りる
+  const MONSOON = [[8, 110], [62, 110], [80, 150], [150, 137], [188, 160], [214, 108], [234, 92], [254, 108], [278, 162]];
+  const MONSOON_LEN = pathLen(MONSOON);
+  const MONSOON_SEA = pathLen(MONSOON.slice(0, 3)) / MONSOON_LEN;    // 日本海に出る所（(80,150)）
+  const MONSOON_COAST = pathLen(MONSOON.slice(0, 5)) / MONSOON_LEN;  // 日本海をわたり終える所（(188,160)）
+  const MONSOON_TOP = pathLen(MONSOON.slice(0, 7)) / MONSOON_LEN;    // 山をこえる所（(234,92)）
+  // 粒の色: 大陸では青（冷たく乾いた風）→ 日本海の上で水色（水蒸気をふくむ）→ 山をこえたら灰色（乾いた風）
+  function monsoonColor(f) {
+    if (f < MONSOON_SEA) return TOKEN_HEX.blue;
+    if (f < MONSOON_COAST) return mix(TOKEN_HEX.blue, TOKEN_HEX.sky, (f - MONSOON_SEA) / (MONSOON_COAST - MONSOON_SEA));
+    if (f < MONSOON_TOP) return TOKEN_HEX.sky;
+    return mix(TOKEN_HEX.sky, TOKEN_HEX.gray, Math.min(1, (f - MONSOON_TOP) / 0.06));
+  }
+  // A の斜面 (200,170)→(235,100) の高さ（雪が積もる所）
+  function slopeA(x) { return x <= 200 ? 172 : 170 - 2 * (x - 200); }
+  // 季節風の粒が日本海をわたって水蒸気をふくみ、A の斜面を上がって雲に入る。雲の下の A 側に雪が降り、
+  // 山をこえた粒は B 側を下りて乾いた風（灰色）になる（t = 1 と t = 0 がつながる）
+  function weWinterMonsoon(t) {
+    const items = [
+      { type: 'polygon', points: [[0, 170], [70, 170], [70, 240], [0, 240]], fill: 'sand', stroke: 'none' },
+      { type: 'rect', x: 70, y: 178, width: 110, height: 62, fill: 'water', stroke: 'none' },
+      { type: 'rect', x: 280, y: 178, width: 40, height: 62, fill: 'water', stroke: 'none' },
+      { type: 'polygon', points: [[180, 178], [200, 170], [235, 100], [270, 170], [280, 178], [280, 240], [180, 240]], fill: 'lightgreen' },
+      { type: 'arrow', x1: 10, y1: 110, x2: 60, y2: 110, color: 'blue', width: 4 },
+      { type: 'arrow', x1: 80, y1: 152, x2: 150, y2: 138, color: 'blue', width: 4 },
+      text(6, 96, '北西の季節風', 12),
+      text(100, 206, '日本海', 12),
+      text(318, 226, '太平洋', 12, { anchor: 'end' }),
+    ];
+    // 雪（A 側の雲の下から斜面まで）
+    for (let k = 0; k < 5; k++) {
+      const x = 196 + 6 * k;
+      items.push(grain(x, lerp(100, slopeA(x) - 3, frac(2 * t + 0.29 * k + 0.05)), 2.5, 'white', 'line'));
+    }
+    items.push(
+      { type: 'ellipse', x: 206, y: 84, rx: 36, ry: 16, fill: 'white', stroke: 'gray' },
+      { type: 'arrow', x1: 186, y1: 164, x2: 218, y2: 108, color: 'orange' },
+      { type: 'arrow', x1: 252, y1: 108, x2: 276, y2: 160, color: 'orange' },
+    );
+    for (let k = 0; k < 8; k++) {
+      const f = frac(t + (k + 0.5) / 8);
+      const q = along(MONSOON, f);
+      items.push(grain(q.x, q.y, 4, monsoonColor(f), 'ink'));
+    }
+    items.push(
+      text(182, 130, 'A', 15, { bold: true, anchor: 'end' }),
+      text(284, 130, 'B', 15, { bold: true }),
+      text(160, 40, 'A 上昇気流 → 雪', 12, { bg: true }),
+      text(316, 60, 'B 下降気流', 12, { anchor: 'end', bg: true }),
+      text(316, 78, '→ 晴れ', 12, { anchor: 'end', bg: true }),
+    );
+    return items;
+  }
+
+  // ---- 春の天気の 3 日間（weather-mp13-c1）----
+  // こま i（0〜2）の左はし x 6・110・214。各こまの 高・低 の位置（高は丸と字、低は字）
+  const SPRING = [
+    { x: 6, title: [56, '1 日目'], line: [[48, 180], [64, 140], [72, 100], [86, 66]], high: [24, 114, 120], low: [86, 166] },
+    { x: 110, title: [160, '2 日目'], line: [[152, 180], [168, 140], [176, 100], [190, 66]], high: [168, 114, 120], low: [198, 52] },
+    { x: 214, title: [264, '3 日目'], line: [[256, 180], [272, 140], [280, 100], [294, 66]], high: [296, 118, 124], low: [232, 90] },
+  ];
+  // 強調したこまの 高・低 がすべり始める位置。2 日目は 1 日目の位置（こまの中の同じ座標）から、
+  // 3 日目の高は 2 日目の位置から。3 日目の低は西から来た新しい低気圧なので、こまの左はしの近くから
+  const SPRING_FROM = [null, { high: [128, 114, 120], low: [190, 166] }, { high: [272, 114, 120], low: [224, 92] }];
+  // 1 日目 → 2 日目 → 3 日目のこまを順に太わくで強調し（各 0.3 周）、強調したこまの 高・低 をすべらせる。
+  // 0.9 からあとは強調なし。止まった絵（0.99）が静止図と同じ
+  function weSpring3Days(t) {
+    const now = t < 0.9 ? Math.floor(t / 0.3) : -1;
+    const m = now >= 0 ? ease(stage(t, 0.3 * now, 0.3 * now + 0.2)) : 1;
+    const items = [];
+    SPRING.forEach((f, i) => {
+      let hx = f.high[0], hy = f.high[1], hty = f.high[2], lx = f.low[0], ly = f.low[1];
+      const from = SPRING_FROM[i];
+      if (i === now && from) {
+        hx = lerp(from.high[0], hx, m); hy = lerp(from.high[1], hy, m); hty = lerp(from.high[2], hty, m);
+        lx = lerp(from.low[0], lx, m); ly = lerp(from.low[1], ly, m);
+      }
+      items.push(
+        { type: 'rect', x: f.x, y: 30, width: 100, height: 170, fill: 'white', stroke: 'line' },
+        { type: 'line', points: f.line, color: 'green', width: 6 },
+        text(f.title[0], 22, f.title[1], 13, { anchor: 'middle', bold: true }),
+        { type: 'circle', x: hx, y: hy, r: 15, fill: 'none', stroke: 'gray' },
+        text(hx, hty, '高', 16, { anchor: 'middle', bold: true }),
+        text(lx, ly, '低', 16, { anchor: 'middle', bold: true }),
+      );
+    });
+    if (now >= 0) {
+      const x = SPRING[now].x;
+      items.push({ type: 'line', points: [[x, 30], [x + 100, 30], [x + 100, 200], [x, 200], [x, 30]], color: 'blue', width: 4 });
+    }
+    items.push(text(160, 226, '高気圧も低気圧も西から東へ', 12, { anchor: 'middle' }));
+    return items;
+  }
+
+  // ---- 台風の進路（weather-mp13-c3）----
+  const TYPHOON = [[140, 208], [152, 182], [196, 150], [252, 120], [304, 100]];
+  // 台風の丸が進路にそって (140,208) から北上し、日本付近で東寄りに曲がる（ease(stage(t, 0, 0.8))）。
+  // 丸の中のうずの線 2 本は反時計回りに回る（onCircle の角が増える向き）。t = 0 が静止図の位置
+  function weTyphoonPath(t) {
+    const q = along(TYPHOON, ease(stage(t, 0, 0.8)));
+    const a = 720 * t;
+    return japanMp().concat([
+      { type: 'line', points: [[150, 238], [140, 208], [152, 182], [196, 150], [252, 120], [304, 100]], color: 'red', width: 3, dashed: true, arrow: true },
+      { type: 'circle', x: q.x, y: q.y, r: 12, fill: 'white', stroke: 'red' },
+      { type: 'line', points: arc(q.x, q.y, 7, a, a + 110, 8), color: 'red', width: 2 },
+      { type: 'line', points: arc(q.x, q.y, 7, a + 180, a + 290, 8), color: 'red', width: 2 },
+      text(6, 236, '台風の進路の例', 12, { bg: true }),
+      text(316, 70, '北上すると東寄りに', 12, { anchor: 'end', bg: true }),
+    ]);
+  }
+
+  // ---- 海陸風（weather-mp14-c1）----
+  // 昼: 地表を海 → 陸、陸の上で上がり、上空を陸 → 海、海の上で下がる輪。夜はその逆（右の絵）
+  const BREEZE_DAY = [[16, 98], [140, 98], [140, 46], [16, 46], [16, 98]];
+  const BREEZE_NIGHT = [[304, 98], [180, 98], [180, 46], [304, 46], [304, 98]];
+  // 昼と夜の絵で、空気の粒が輪をつくって流れる。陸（昼）・海（夜）の上に小さな上向きの矢印を足す（t = 1 と t = 0 がつながる）
+  function weSeaLandBreeze(t) {
+    const air = q => grain(q.x, q.y, 3.5, 'white', 'line');
+    return [
+      { type: 'rect', x: 5, y: 120, width: 75, height: 80, fill: '#9CC3F0', stroke: 'none' },
+      { type: 'rect', x: 80, y: 110, width: 75, height: 90, fill: 'sand', stroke: 'none' },
+      text(43, 170, '海', 14, { anchor: 'middle' }),
+      text(117, 170, '陸', 14, { anchor: 'middle' }),
+      { type: 'arrow', x1: 23, y1: 98, x2: 133, y2: 98, color: 'blue' },
+      { type: 'arrow', x1: 133, y1: 46, x2: 23, y2: 46, color: 'gray', width: 2 },
+      { type: 'arrow', x1: 148, y1: 90, x2: 148, y2: 58, color: 'orange', width: 2 },
+      ...flowOn(BREEZE_DAY, t, 6, 1, air),
+      { type: 'rect', x: 165, y: 120, width: 75, height: 80, fill: '#9CC3F0', stroke: 'none' },
+      { type: 'rect', x: 240, y: 110, width: 75, height: 90, fill: 'sand', stroke: 'none' },
+      text(203, 170, '海', 14, { anchor: 'middle' }),
+      text(277, 170, '陸', 14, { anchor: 'middle' }),
+      { type: 'arrow', x1: 297, y1: 98, x2: 187, y2: 98, color: 'blue' },
+      { type: 'arrow', x1: 187, y1: 46, x2: 297, y2: 46, color: 'gray', width: 2 },
+      { type: 'arrow', x1: 172, y1: 90, x2: 172, y2: 58, color: 'orange', width: 2 },
+      ...flowOn(BREEZE_NIGHT, t, 6, 1, air),
+      text(80, 224, '昼: 海風（海 → 陸）', 13, { anchor: 'middle', bold: true }),
+      text(240, 224, '夜: 陸風（陸 → 海）', 13, { anchor: 'middle', bold: true }),
+    ];
+  }
+
+  // ---- 地球規模の大気の動き（weather-mp14-c2）----
+  // 赤道で上がり、上空を中緯度へ進み、中緯度で下がって地表を赤道へもどる輪。中緯度から高緯度へは偏西風の矢印にそって流れる
+  const GLOBAL_LOOP = [[50, 178], [50, 50], [130, 50], [130, 178], [50, 178]];
+  const GLOBAL_WEST = [[140, 172], [270, 172]];
+  function weGlobalWind(t) {
+    return [
+      { type: 'line', points: [[20, 190], [304, 190]], color: 'brown', width: 3 },
+      { type: 'arrow', x1: 50, y1: 180, x2: 50, y2: 60, color: 'orange' },
+      { type: 'arrow', x1: 58, y1: 50, x2: 122, y2: 50, color: 'gray', width: 2 },
+      { type: 'arrow', x1: 130, y1: 60, x2: 130, y2: 176, color: 'blue' },
+      { type: 'arrow', x1: 122, y1: 178, x2: 60, y2: 178, color: 'gray', width: 2 },
+      { type: 'arrow', x1: 140, y1: 172, x2: 270, y2: 172, color: 'blue', width: 4 },
+      ...flowOn(GLOBAL_LOOP, t, 6, 1, q => grain(q.x, q.y, 3.5, 'white', 'line')),
+      ...flowOn(GLOBAL_WEST, t, 3, 1, q => grain(q.x, q.y, 3.5, 'white', 'blue')),
+      text(50, 210, '赤道', 13, { anchor: 'middle' }),
+      text(130, 210, '中緯度', 13, { anchor: 'middle' }),
+      text(290, 210, '高緯度', 13, { anchor: 'middle' }),
+      text(205, 160, 'X', 16, { anchor: 'middle', bold: true }),
+      text(56, 110, '上昇（気圧が低い）', 12, { bg: true }),
+      text(136, 140, '下降（気圧が高い）', 12, { bg: true }),
+      text(262, 158, '偏西風', 13, { bold: true, bg: true }),
+    ];
+  }
+
+  // ================================================================
+  // ミニプリント（3nen）。docs/plans/mp-figures-3nen.md の「動く図（新規）」の地球と宇宙の 9 本
+  // 静止図は content/space.js の space-mp○-c○。静止図と同じ部品は同じ座標・文字・色で描く
+  // （計画の「動く図（使い回し）」の 5 枚（sp-rotation・sp-noon-altitude・sp-seasons・sp-orbit-midnight・sp-moon-phase）は、
+  // 既存の kind をそのまま使う）
+  // ================================================================
+
+  // ---- 地球の自転（space-mp2-c2）----
+  // 横から見た地球（中心 (150,125)、半径 70。地軸は北極が右上へ 23.6° かたむく）の上で、経線（45° ごと）が西 → 東（左 → 右）へ流れる。
+  // 1 周で経線 1 本分（45°）ずれるので t = 1 と t = 0 がつながる。地軸・北極・南極と文字は固定
+  const SPIN_C = [150, 125], SPIN_R = 70;
+  const SPIN_TILT = Math.atan2(76, 174);   // 地軸 (112,212)→(188,38) のかたむき
+  // 経度 lon（度。見ている正面が 0、東が正）の経線の、見えている側（手前）の点の列
+  function meridian(lon) {
+    const pts = [], L = lon * Math.PI / 180, ct = Math.cos(SPIN_TILT), st = Math.sin(SPIN_TILT);
+    for (let lat = -90; lat <= 90; lat += 10) {
+      const B = lat * Math.PI / 180;
+      const x = SPIN_R * Math.cos(B) * Math.sin(L), y = -SPIN_R * Math.sin(B);   // 地軸がたてのときの位置（y は下向き）
+      pts.push([SPIN_C[0] + x * ct - y * st, SPIN_C[1] + x * st + y * ct]);
+    }
+    return pts;
+  }
+  // 見えている経線の経度（小さい順。並びを変えないので t = 1 と t = 0 で同じ順になる）
+  function spinMeridians(t) { return [0, 1, 2, 3].map(k => wrap(-67.5 + 45 * k + 45 * t, -90, 90)).sort((a, b) => a - b); }
+  function spEarthSpin(t) {
+    return [
+      { type: 'circle', x: 150, y: 125, r: 70, fill: 'sky', stroke: 'line' },
+      ...spinMeridians(t).map(lon => ({ type: 'line', points: meridian(lon), color: 'line', width: 1.5 })),
+      { type: 'line', points: [[112, 212], [188, 38]], width: 2, arrow: true },
+      { type: 'line', points: [[84, 132], [110, 142], [150, 145], [190, 142], [214, 132]], color: 'blue', width: 3, arrow: true },
+      text(196, 40, '北極', 12),
+      text(104, 228, '南極', 12, { anchor: 'end' }),
+      text(196, 62, '地軸', 12, { bold: true }),
+      text(220, 150, '自転（西→東）', 12),
+      text(316, 210, '1 周 約 4 万 km', 12, { anchor: 'end' }),
+      text(316, 230, '直径 約 1 万 3000 km', 12, { anchor: 'end' }),
+    ];
+  }
+
+  // ---- 公転の軌道と星座（content/space.js の orbitBase・starDots と同じ部品。太陽 (160,120)、軌道の半径 62）----
+  const STAR_NAMES = [   // 星座 [名前, 太陽から見た向き（度）, 星の点, 文字の位置と寄せ]
+    { name: 'オリオン座', a: 0, dot: [290, 120], x: 316, y: 92, anchor: 'end' },
+    { name: 'しし座', a: 90, dot: [160, 24], x: 188, y: 30 },
+    { name: 'さそり座', a: 180, dot: [30, 120], x: 4, y: 92 },
+    { name: 'ペガスス座', a: 270, dot: [160, 216], x: 188, y: 222 },
+  ];
+  const EARTH_POS = [   // 地球 A〜D [名前, 太陽から見た向き（度）]
+    { name: 'A', a: 0 }, { name: 'B', a: 90 }, { name: 'C', a: 180 }, { name: 'D', a: 270 },
+  ];
+  // starColor: 星座の名前 → 文字の色（強調する星座だけ）
+  function orbitStars(starColor) {
+    const items = [
+      { type: 'circle', x: 160, y: 120, r: 62, fill: 'none', stroke: 'gray' },
+      arcLine(160, 120, 62, 300, 330, { color: 'blue', width: 3, arrow: true }),
+      { type: 'circle', x: 160, y: 120, r: 16, fill: 'yellow', stroke: 'orange' },
+      text(160, 124, '太陽', 12, { anchor: 'middle' }),
+    ];
+    ORBIT_PTS.forEach(([x, y]) => items.push({ type: 'circle', x, y, r: 9, fill: 'sky', stroke: 'line' }));
+    items.push(
+      text(234, 112, 'A', 13, { bold: true }),
+      text(172, 54, 'B', 13, { bold: true }),
+      text(86, 112, 'C', 13, { anchor: 'end', bold: true }),
+      text(172, 196, 'D', 13, { bold: true }),
+    );
+    STAR_NAMES.forEach(s => {
+      const c = (starColor || {})[s.name];
+      items.push(text(s.x, s.y, s.name, 12, Object.assign(s.anchor ? { anchor: s.anchor } : {}, c ? { color: c, bold: true } : {})));
+    });
+    STAR_NAMES.forEach(s => {
+      const c = (starColor || {})[s.name];
+      items.push({ type: 'circle', x: s.dot[0], y: s.dot[1], r: 6, fill: c ? (c === 'blue' ? 'sky' : 'orange') : 'yellow', stroke: c || 'orange' });
+    });
+    return items;
+  }
+  const nearestBy = (list, a) => list.reduce((best, e) => (angDiff(a, e.a) < angDiff(a, best.a) ? e : best), list[0]);
+
+  // ---- 黄道（space-mp3-c3）----
+  // 地球が公転の円を反時計回りに 1 周し（角 ＝ 360t 度。t = 0 で A）、地球 → 太陽の向きの点線を星座の並び（横 130・たて 96 の楕円）の
+  // 手前まで伸ばす。その先の星座（太陽と同じ方向で見えない）を orange にし、下の文を「地球が ○ のとき、太陽は ○○座の方向に見える」に
+  // 変える（○ はいちばん近い A〜D）。t = 0 が静止図と同じ。t = 1 と t = 0 がつながる
+  function eclipticLine(phi) {
+    const c = Math.cos(deg(phi + 180)), s = -Math.sin(deg(phi + 180));
+    const far = 1 / Math.hypot(c / 130, s / 96);   // 太陽から楕円までの長さ
+    return [[160 - 52 * c, 120 - 52 * s], [160 + (far - 10) * c, 120 + (far - 10) * s]];
+  }
+  function spEcliptic(t) {
+    const phi = 360 * t;
+    const star = nearestBy(STAR_NAMES, phi + 180), at = nearestBy(EARTH_POS, phi);
+    const [ex, ey] = onCircle(160, 120, 62, phi);
+    return orbitStars({ [star.name]: 'orange' }).concat([
+      { type: 'circle', x: ex, y: ey, r: 9, fill: 'sky', stroke: 'blue' },
+      { type: 'line', points: eclipticLine(phi), color: 'blue', width: 2, dashed: true, arrow: true },
+      text(4, 236, '地球が ' + at.name + ' のとき、太陽は' + star.name + 'の方向に見える', 12),
+    ]);
+  }
+
+  // ---- 東・南・西・北の空の星の動き（space-mp5-c1）----
+  // content/space.js の skyPanel と同じ部品（(x0, y0) は左上、幅 w・高さ h）。lines に星が動く線の点の列を返す
+  function skyPanelMp(x0, y0, w, h, kind, title, lines) {
+    const items = [{ type: 'rect', x: x0, y: y0, width: w, height: h, fill: '#F3F6FB', stroke: 'line' }];
+    const g = y0 + h - 12, mid = x0 + w / 2;
+    const add = (it) => { items.push(it); lines.push(it.points); };
+    if (kind !== 'north') items.push({ type: 'line', points: [[x0 + 4, g], [x0 + w - 4, g]], color: 'brown', width: 2 });
+    if (kind === 'north') {
+      const cy = y0 + h / 2 + 4;
+      [12, 24, 36].forEach(r => add(arcLine(mid, cy, r, -40, 120, { color: 'blue', width: 2, arrow: true })));
+      items.push({ type: 'circle', x: mid, y: cy, r: 3.5, fill: 'ink', stroke: 'none' });
+    }
+    if (kind === 'east' || kind === 'west') {
+      const step = (w - 52) / 2;
+      for (let k = 0; k < 3; k++) {
+        const xa = x0 + 8 + k * step, xb = xa + 34, top = g - 50;
+        add({ type: 'line', points: kind === 'east' ? [[xa, g], [xb, top]] : [[xa, top], [xb, g]], color: 'blue', width: 2, arrow: true });
+      }
+    }
+    if (kind === 'south') [34, 50].forEach(r => add(arcLine(mid, g + 14, r, 155, 25, { color: 'blue', width: 2, arrow: true })));
+    items.push(text(x0 + 6, y0 + 16, title, 12, { bold: true }));
+    return items;
+  }
+  // 4 つの空で、星の点が同時にそれぞれの線の上を動く（東: 右上へ、南: 東から西へ弧、西: 右下へ、北: 北極星を中心に反時計回り）。
+  // 線と文字は静止図のまま。進む（0〜0.8）→ 止まる → t = 0 で線の始めにもどる。t = 0 が静止図（＋線の始めの星）
+  function spFourSky(t) {
+    const lines = [];
+    const items = [
+      ...skyPanelMp(6, 6, 150, 100, 'east', '東の空', lines),
+      ...skyPanelMp(164, 6, 150, 100, 'south', '南の空', lines),
+      ...skyPanelMp(6, 120, 150, 100, 'west', '西の空', lines),
+      ...skyPanelMp(164, 120, 150, 100, 'north', '北の空', lines),
+    ];
+    const k = stage(t, 0, 0.8);
+    lines.forEach(pts => { const q = along(pts, k); items.push({ type: 'circle', x: q.x, y: q.y, r: 4, fill: 'yellow', stroke: 'ink' }); });
+    items.push(text(160, 236, '北の空の中心: 北極星（ほとんど動かない）', 12, { anchor: 'middle' }));
+    return items;
+  }
+
+  // ---- 地点ごとの方位（space-mp6-c1）----
+  // 北極の真上から見た地球（中心 (160,120)、半径 44。太陽の光は左から）の上を観測者が自転とともに反時計回りに回り（角 ＝ 270 + 360t 度。
+  // t = 0 が夕方）、その点の南（地球の外向き）・東（自転で進む向き）・西の矢印と文字がいっしょに回る。観測者の近く（70° 以内）にある
+  // 時刻の文字は矢印と重なるので描かない。下の文は「○○の地点での方位」（○○ はいちばん近い時刻）。t = 1 と t = 0 がつながる
+  const LD_TIMES = [
+    { name: '正午', a: 180, x: 108, y: 125, anchor: 'end' },
+    { name: '夕方', a: 270 },
+    { name: '真夜中', a: 0, x: 212, y: 125 },
+    { name: '明け方', a: 90, x: 160, y: 64, anchor: 'middle' },
+  ];
+  // 観測者の角 a での向き: u は地球の外向き、T は自転で進む向き（どちらも長さ 1）
+  // （cos・sin は 1e-12 に丸める。90° ごとの角でちょうど 0・±1 にして、静止図の文字の位置と同じ数にする）
+  function localFrame(a) {
+    const r = deg(a), c = Math.round(Math.cos(r) * 1e12) / 1e12, s = Math.round(Math.sin(r) * 1e12) / 1e12;
+    return { u: [c, -s], T: [-s, -c] };
+  }
+  // 中心 c から u 方向に p、T 方向に q 進んだ点
+  function inFrame(c, f, p, q) { return [c[0] + p * f.u[0] + q * f.T[0], c[1] + p * f.u[1] + q * f.T[1]]; }
+  function localArrow(c, f, p1, q1, p2, q2) {
+    const [x1, y1] = inFrame(c, f, p1, q1), [x2, y2] = inFrame(c, f, p2, q2);
+    return { type: 'arrow', x1, y1, x2, y2, color: 'green' };
+  }
+  function localLabel(c, f, p, q, s, anchor) {
+    const [x, y] = inFrame(c, f, p, q);
+    return text(x, y, s, 13, Object.assign(anchor ? { anchor } : {}, { bold: true }));
+  }
+  function spLocalDirection(t) {
+    const a = 270 + 360 * t, f = localFrame(a), C = [160, 120];
+    const P = inFrame(C, f, 44, 0);
+    const now = nearestBy(LD_TIMES, a);
+    const items = [
+      { type: 'arrow', x1: 8, y1: 80, x2: 80, y2: 80, color: 'orange' },
+      { type: 'arrow', x1: 8, y1: 160, x2: 80, y2: 160, color: 'orange' },
+      text(8, 66, '太陽の光', 12),
+      ...litBody(160, 120, 44, 180, 'sky', NIGHT),
+      arcLine(160, 120, 58, 20, 55, { color: 'blue', width: 3, arrow: true }),
+    ];
+    LD_TIMES.forEach(e => {
+      if (e.x === undefined || angDiff(a, e.a) < 70) return;
+      items.push(text(e.x, e.y, e.name, 13, Object.assign(e.anchor ? { anchor: e.anchor } : {}, { bold: true })));
+    });
+    items.push(
+      { type: 'circle', x: P[0], y: P[1], r: 4, fill: 'red', stroke: 'none' },   // 観測者
+      localArrow(C, f, 48, 0, 86, 0),
+      localArrow(P, f, 0, 4, 0, 44),
+      localArrow(P, f, 0, -4, 0, -44),
+      // 文字の位置は静止図（夕方）の矢印の先からのずれを、観測者の向きに合わせて回す
+      localLabel(C, f, 86, 8, '南'),
+      localLabel(P, f, 6, 50, '東'),
+      localLabel(P, f, 6, -50, '西', 'end'),
+      text(316, 230, now.name + 'の地点での方位', 12, { anchor: 'end' }),
+    );
+    return items;
+  }
+
+  // ---- 地球が A のときの一晩（space-mp6-c2）----
+  // 地球を A (222,120) に置いたまま自転させ、観測者が 夕方（角 270°）→ 真夜中（0°）→ 明け方（90°）と動く。
+  // 夕方（0〜0.15）・真夜中（0.3〜0.5）・明け方（0.65〜1）で止まり、そのあいだ（0.15〜0.3・0.5〜0.65）で 90° ずつ回る。
+  // 観測者の南・東・西の矢印がいっしょに回り、南の矢印の先にある星座を blue にして「いま南に見える: ○○座」を出す。
+  // 「南」「東」「西」の文字は止まっているあいだだけ（回るあいだは星座の名前と重なるため）。
+  // 止まった絵は真夜中の 0.4（静止図と同じ。南オリオン座・東しし座・西ペガスス座）。t = 0 で夕方にもどる
+  const NA_TIMES = [{ name: '夕方', a: 270 }, { name: '真夜中', a: 0 }, { name: '明け方', a: 90 }];
+  const NA_REST = 0.4;
+  const NA_TURNS = [[0.15, 0.3], [0.5, 0.65]];
+  function nightAngle(t) { return 270 + 90 * NA_TURNS.reduce((s, [a, b]) => s + ease(stage(t, a, b)), 0); }
+  function nightTurning(t) { return NA_TURNS.some(([a, b]) => t > a && t < b); }
+  // 止まっているときの「南」「東」「西」の文字の位置（真夜中は静止図と同じ。夕方・明け方は矢印の先の横で、太陽・星座の名前にかからない所）
+  const NA_LABELS = {
+    '夕方': [[228, 170], [264, 138], [184, 138]],
+    '真夜中': [[256, 140], [228, 80], [228, 168]],
+    '明け方': [[228, 80], [184, 138], [264, 138]],
+  };
+  function spNightAtA(t) {
+    const a = nightAngle(t), f = localFrame(a), E = [222, 120];
+    const star = nearestBy(STAR_NAMES, a), now = nearestBy(NA_TIMES, a);
+    const P = inFrame(E, f, 9, 0);
+    return orbitStars({ [star.name]: 'blue' }).concat([
+      { type: 'circle', x: P[0], y: P[1], r: 3, fill: 'red', stroke: 'none' },   // 観測者
+      localArrow(E, f, 12, 0, 52, 0),
+      localArrow(E, f, 0, 12, 0, 50),
+      localArrow(E, f, 0, -12, 0, -50),
+      ...(nightTurning(t) ? [] : ['南', '東', '西'].map((s, i) => text(NA_LABELS[now.name][i][0], NA_LABELS[now.name][i][1], s, 13, { bold: true }))),
+      text(4, 236, '地球が A のときの' + now.name, 12),
+      text(316, 236, 'いま南に見える: ' + star.name, 12, { anchor: 'end', color: 'blue', bold: true }),
+    ]);
+  }
+
+  // ---- 星の 1 時間ごとの動き（space-mp7-c1）----
+  // content/space.js の skyArc と同じ部品（観測地点 (160,210)、半径 150。15° ごとの印。P は真南）
+  function skyArcMp() {
+    const items = [
+      arcLine(160, 210, 150, 0, 180, { color: 'gray', width: 1.5, dashed: true }),
+      { type: 'line', points: [[6, 210], [314, 210]], color: 'brown', width: 3 },
+      text(16, 230, '東', 14, { anchor: 'middle', bold: true }),
+      text(160, 230, '南', 14, { anchor: 'middle', bold: true }),
+      text(304, 230, '西', 14, { anchor: 'middle', bold: true }),
+    ];
+    for (let a = 15; a < 180; a += 15) {
+      if (a === 90) continue;
+      const [x, y] = onCircle(160, 210, 150, a);
+      items.push({ type: 'circle', x, y, r: 3, fill: 'gray', stroke: 'none' });
+    }
+    items.push({ type: 'circle', x: 160, y: 60, r: 8, fill: 'yellow', stroke: 'orange' }, text(172, 52, 'P', 14, { bold: true }));
+    return items;
+  }
+  // 星の位置（P から西へ w 度）と時刻の文字。前半は今夜: 20 時に P、1 時間ごとに 15° ずつ西へ（印から印へ）。
+  // 後半は 1 か月後: 18 時に P、19 時、20 時と動き、20 時には P より 30° 西（同じ位置に見える時刻が 2 時間早い）
+  const HOUR_STEPS = [   // [始まり, 1 つ目の移動, 止まる, 2 つ目の移動, 止まる]
+    { from: 0, label: (h) => '今夜 ' + h + ' 時', hour0: 20, moves: [[0.1, 0.16], [0.24, 0.3]], until: 0.42, color: 'blue' },
+    { from: 0.42, label: (h) => '1 か月後の ' + h + ' 時', hour0: 18, moves: [[0.54, 0.6], [0.68, 0.74]], until: 0.96, color: 'green' },
+  ];
+  function starHour(t) {
+    const ph = t < HOUR_STEPS[1].from ? HOUR_STEPS[0] : HOUR_STEPS[1];
+    let steps = 0;
+    ph.moves.forEach(([a, b]) => { steps += ease(stage(t, a, b)); });
+    const hours = ph.moves.filter(([a, b]) => t >= (a + b) / 2).length;
+    return { phase: ph, west: 15 * steps, label: ph.label(ph.hour0 + hours) };
+  }
+  function spStarHour(t) {
+    const s = starHour(t);
+    const [x, y] = onCircle(160, 210, 150, 90 - s.west);
+    const items = skyArcMp().concat([
+      text(316, 24, '印は 15° ごと', 12, { anchor: 'end' }),
+      arcLine(160, 210, 166, 90, 75, { color: 'blue', width: 3, arrow: true }),
+      text(200, 62, '1 時間で 15° 西へ', 12),
+      arcLine(160, 210, 130, 90, 60, { color: 'green', width: 3, arrow: true }),
+      text(160, 120, '1 か月で 30° 西へ', 12, { anchor: 'middle' }),
+      text(160, 140, '（同じ時刻にくらべて）', 12, { anchor: 'middle' }),
+      { type: 'circle', x, y, r: 7, fill: 'white', stroke: s.phase.color },
+      text(8, 24, s.label, 13, { color: s.phase.color, bold: true }),
+    ]);
+    if (s.phase === HOUR_STEPS[1]) items.push(text(160, 172, 'P に見える時刻は 2 時間早くなる（18 時）', 12, { anchor: 'middle', color: 'green', bold: true }));
+    return items;
+  }
+
+  // ---- 天動説と地動説（space-mp8-c1）----
+  // content/space.js の geoHelio と同じ部品。左（天動説）では地球のまわりを太陽が、右（地動説）では太陽のまわりを地球が、
+  // 同じ周期で反時計回りに回る（角 ＝ 360t 度）。t = 0 が静止図。t = 1 と t = 0 がつながる
+  function spGeoHelio(t) {
+    const [sx, sy] = onCircle(80, 110, 50, 360 * t), [ex, ey] = onCircle(240, 110, 50, 360 * t);
+    return [
+      { type: 'circle', x: 80, y: 110, r: 50, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 80, y: 110, r: 12, fill: 'sky', stroke: 'line' },
+      { type: 'circle', x: sx, y: sy, r: 10, fill: 'yellow', stroke: 'orange' },
+      arcLine(80, 110, 50, 300, 340, { color: 'blue', width: 2, arrow: true }),
+      { type: 'circle', x: 240, y: 110, r: 50, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 240, y: 110, r: 14, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: ex, y: ey, r: 8, fill: 'sky', stroke: 'line' },
+      arcLine(240, 110, 50, 300, 340, { color: 'blue', width: 2, arrow: true }),
+      text(80, 114, '地球', 11, { anchor: 'middle' }),
+      text(240, 114, '太陽', 11, { anchor: 'middle' }),
+      text(80, 196, '天動説', 14, { anchor: 'middle', bold: true }),
+      text(80, 218, '地球が中心', 12, { anchor: 'middle' }),
+      text(240, 196, '地動説', 14, { anchor: 'middle', bold: true }),
+      text(240, 218, '太陽が中心', 12, { anchor: 'middle' }),
+    ];
+  }
+
+  // ---- 内惑星と外惑星（space-mp9-c1）----
+  // 金星（半径 40）・地球（72）・火星（104）が太陽のまわりを 1 周に 3 回・2 回・1 回（実際の周期の比にほぼ合う整数）反時計回りに回り、
+  // 地球から金星・火星へ点線を引く。左下に、地球から見た太陽と金星・火星のあいだの角を出す（金星は 34° より大きくならない）。
+  // 火星が太陽と反対側（角 150° 以上）にきたら「火星は真夜中にも見える」。文字は静止図の位置のまま。t = 0 が静止図。つながる
+  const PLANETS3 = { venus: { r: 40, a0: 150, n: 3 }, earth: { r: 72, a0: 270, n: 2 }, mars: { r: 104, a0: 60, n: 1 } };
+  function planetAt(name, t) { const p = PLANETS3[name]; return onCircle(160, 120, p.r, p.a0 + 360 * p.n * t); }
+  // 地球から見た、太陽と惑星のあいだの角（度）
+  function elongation(t, name) {
+    const [ex, ey] = planetAt('earth', t), [px, py] = planetAt(name, t);
+    const a1 = Math.atan2(120 - ey, 160 - ex), a2 = Math.atan2(py - ey, px - ex);
+    return angDiff(a1 * 180 / Math.PI, a2 * 180 / Math.PI);
+  }
+  function spInnerOuter(t) {
+    const v = planetAt('venus', t), e = planetAt('earth', t), m = planetAt('mars', t);
+    const ev = Math.round(elongation(t, 'venus')), em = Math.round(elongation(t, 'mars'));
+    const items = [
+      { type: 'circle', x: 160, y: 120, r: 40, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 160, y: 120, r: 72, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 160, y: 120, r: 104, fill: 'none', stroke: 'gray' },
+      { type: 'line', points: [e, v], color: 'gray', width: 1, dashed: true },
+      { type: 'line', points: [e, m], color: 'gray', width: 1, dashed: true },
+      { type: 'circle', x: 160, y: 120, r: 14, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: v[0], y: v[1], r: 6, fill: '#D9C9A8', stroke: 'line' },
+      { type: 'circle', x: e[0], y: e[1], r: 7, fill: 'sky', stroke: 'line' },
+      { type: 'circle', x: m[0], y: m[1], r: 6, fill: '#D9866A', stroke: 'line' },
+      text(118, 94, '金星（内惑星）', 12, { anchor: 'end' }),
+      text(172, 214, '地球', 12),
+      text(222, 26, '火星（外惑星）', 12),
+      text(4, 218, '太陽と金星の角 ' + ev + '°', 12),
+      text(4, 236, '太陽と火星の角 ' + em + '°', 12),
+    ];
+    if (em >= 150) items.push(text(316, 236, '火星は真夜中にも見える', 12, { anchor: 'end', color: 'blue', bold: true }));
+    return items;
+  }
+
+  // ---- 日食と月食の並び（space-mp10-c2）----
+  // 3 段の並びのそれぞれで、月が地球のまわりの軌道の上を動き（k = ease(stage(t, 0, 0.8))）、静止図の位置で止まる。
+  // 上の段（日食）では月が太陽と地球のあいだで一直線になると月の影が地球に落ち、中の段（月食）では月が地球の影に入って暗くなる。
+  // 下の段は一直線にならず影がかからない。止まった絵（0.99）が静止図の並び
+  const ECL_ROWS = [
+    { earth: [230, 40], r: 80, from: 165, to: 180 },    // 日食: 月は地球の左（太陽の側）
+    { earth: [150, 120], r: 80, from: 15, to: 0 },      // 月食: 月は地球の右（太陽と反対側）
+    { earth: [150, 205], r: 29, from: 135, to: 90 },    // 食は起こらない: 月は地球の上
+  ];
+  function eclipseMoon(row, t) {
+    const k = ease(stage(t, 0, 0.8));
+    return { k, p: onCircle(row.earth[0], row.earth[1], row.r, lerp(row.from, row.to, k)) };
+  }
+  function spEclipseLine(t) {
+    const [r1, r2, r3] = ECL_ROWS;
+    const m1 = eclipseMoon(r1, t), m2 = eclipseMoon(r2, t), m3 = eclipseMoon(r3, t);
+    const items = [
+      { type: 'line', points: [[6, 84], [314, 84]], color: 'gray', width: 1, dashed: true },
+      { type: 'line', points: [[6, 160], [314, 160]], color: 'gray', width: 1, dashed: true },
+      // 上の段: 日食
+      { type: 'circle', x: 36, y: 40, r: 18, fill: 'yellow', stroke: 'orange' },
+      { type: 'circle', x: 230, y: 40, r: 13, fill: 'sky', stroke: 'line' },
+    ];
+    if (Math.abs(m1.p[1] - 40) < 3) {   // 一直線: 月の影が地球に落ちる
+      items.push(
+        { type: 'polygon', points: [[m1.p[0], m1.p[1] - 7], [217, 38], [217, 42], [m1.p[0], m1.p[1] + 7]], fill: DARK, stroke: 'none' },
+        { type: 'circle', x: 218, y: 40, r: 3, fill: DARK, stroke: 'none' },
+      );
+    }
+    items.push(
+      { type: 'circle', x: m1.p[0], y: m1.p[1], r: 7, fill: DARK, stroke: 'line' },
+      text(36, 74, '太陽', 12, { anchor: 'middle' }),
+      text(150, 64, '月', 12, { anchor: 'middle' }),
+      text(230, 70, '地球', 12, { anchor: 'middle' }),
+      // 中の段: 月食（地球の影は右へのびる）
+      { type: 'circle', x: 36, y: 120, r: 18, fill: 'yellow', stroke: 'orange' },
+      { type: 'polygon', points: [[150, 107], [250, 114], [250, 126], [150, 133]], fill: '#B9C0CB', stroke: 'none' },
+      { type: 'circle', x: 150, y: 120, r: 13, fill: 'sky', stroke: 'line' },
+    );
+    // 月が地球の影に入るほど暗くなる（影の中心からのずれ 12 → 0）
+    const dark = 1 - Math.min(1, Math.abs(m2.p[1] - 120) / 12);
+    items.push(
+      { type: 'circle', x: m2.p[0], y: m2.p[1], r: 7, fill: mix(TOKEN_HEX.yellow, DARK, dark), stroke: 'line' },
+      text(36, 154, '太陽', 12, { anchor: 'middle' }),
+      text(150, 150, '地球', 12, { anchor: 'middle' }),
+      text(230, 144, '月', 12, { anchor: 'middle' }),
+      // 下の段: 一直線にならない（地球の影は右へのびるが、月にかからない）
+      { type: 'circle', x: 36, y: 205, r: 18, fill: 'yellow', stroke: 'orange' },
+      { type: 'polygon', points: [[150, 192], [222, 197], [222, 213], [150, 218]], fill: '#B9C0CB', stroke: 'none' },
+      { type: 'circle', x: 150, y: 205, r: 13, fill: 'sky', stroke: 'line' },
+      { type: 'circle', x: m3.p[0], y: m3.p[1], r: 7, fill: DARK, stroke: 'line' },
+      text(36, 237, '太陽', 12, { anchor: 'middle' }),
+      text(150, 234, '地球', 12, { anchor: 'middle' }),
+      text(164, 181, '月', 12),
+      text(316, 44, '日食', 13, { anchor: 'end', bold: true }),
+      text(316, 124, '月食', 13, { anchor: 'end', bold: true }),
+      text(316, 209, '食は起こらない', 12, { anchor: 'end' }),
+    );
+    return items;
+  }
+
   const DEFS = [
     ['vo-quake-spread', voQuakeSpread, { restT: 0 }],
     ['vo-seismogram', voSeismogram, { restT: 0.99 }],
@@ -780,9 +1998,45 @@
     ['we-front-move', weFrontMove, { restT: 0 }],
     ['sp-noon-altitude', spNoonAltitude, { restT: 0, period: 8000 }],
     ['sp-sunspot', spSunspot, { restT: SPOT_REST, period: 8000 }],
+    // ミニプリント（1nen）。docs/plans/mp-figures-1nen.md
+    ['vo-focus-epicenter', voFocusEpicenter, { restT: 0 }],
+    ['vo-tremor-record', voTremorRecord, { restT: 0.99 }],
+    ['vo-ps-80km', voPs80km, { restT: 0.99 }],
+    ['vo-fault-uplift', voFaultUplift, { restT: 0.99 }],
+    ['sr-sort-deposit', srSortDeposit, { restT: 0.99 }],
+    ['sr-continent-drift', srContinentDrift, { restT: 0.99 }],
+    // ミニプリント（2nen）。docs/plans/mp-figures-2nen.md
+    ['we-dew-point-graph', weDewPointGraph, { restT: 0.99 }],
+    ['we-rising-air', weRisingAir, { restT: 0 }],
+    ['we-water-cycle', weWaterCycle, { restT: 0 }],
+    ['we-isobar-wind', weIsobarWind, { restT: 0 }],
+    ['we-pressure-section', wePressureSection, { restT: 0 }],
+    ['we-ocean-current', weOceanCurrent, { restT: 0 }],
+    ['we-cold-front-section', weColdFrontSection, { restT: 0.99 }],
+    ['we-warm-front-section', weWarmFrontSection, { restT: 0.99 }],
+    ['we-tank-density', weTankDensity, { restT: 0.99 }],
+    ['we-front-passage-graph', weFrontPassageGraph, { restT: 0.99 }],
+    ['we-cyclone-move', weCycloneMove, { restT: 0.99 }],
+    ['we-winter-monsoon', weWinterMonsoon, { restT: 0 }],
+    ['we-spring-3days', weSpring3Days, { restT: 0.99 }],
+    ['we-typhoon-path', weTyphoonPath, { restT: 0 }],
+    ['we-sea-land-breeze', weSeaLandBreeze, { restT: 0 }],
+    ['we-global-wind', weGlobalWind, { restT: 0 }],
+    // ミニプリント（3nen）。docs/plans/mp-figures-3nen.md
+    ['sp-earth-spin', spEarthSpin, { restT: 0, period: 8000 }],
+    ['sp-ecliptic', spEcliptic, { restT: 0, period: 8000 }],
+    ['sp-four-sky', spFourSky, { restT: 0 }],
+    ['sp-local-direction', spLocalDirection, { restT: 0, period: 8000 }],
+    ['sp-night-at-a', spNightAtA, { restT: NA_REST }],
+    ['sp-star-hour', spStarHour, { restT: 0 }],
+    ['sp-geo-helio', spGeoHelio, { restT: 0, period: 8000 }],
+    ['sp-inner-outer', spInnerOuter, { restT: 0, period: 8000 }],
+    ['sp-eclipse-line', spEclipseLine, { restT: 0.99 }],
   ];
   DEFS.forEach(([kind, fn, opts]) => anim.register(kind, fn, opts));
   // このファイルで足した kind（テスト用）。seismoPoints はテストで静止図の線と比べる
-  const api = { KINDS: DEFS.map(d => d[0]), seismoPoints, seaFloorY, frontShift, noonAltitude, sunspotPhi, NOON_NOW_R };
+  const api = { KINDS: DEFS.map(d => d[0]), seismoPoints, seaFloorY, frontShift, noonAltitude, sunspotPhi, NOON_NOW_R,
+    // ミニプリント（3nen）
+    spinMeridians, eclipticLine, nightAngle, starHour, elongation, planetAt, eclipseMoon, ECL_ROWS };
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

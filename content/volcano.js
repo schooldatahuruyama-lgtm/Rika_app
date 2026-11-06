@@ -1058,27 +1058,30 @@
   // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/volcano.md）
   // ================================================================
 
-  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  // 写真の上の選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（ア・イ…の順）
   function mpRegions(parts) {
     const items = [];
     parts.forEach(([x, y, px, py], i) => {
-      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push(pointer(x < px ? x + 22 : x - 22, y, px, py));
       items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオ'[i] });
     });
     return items;
   }
 
-  // 火山の形を選ぶ図（左から ア ドーム状・イ 円すい・ウ 傾斜がゆるやか。色はすべて同じ）
-  const MP_SHAPES_Q = scene(volcanoShapes(['dome', 'cone', 'shield'], false).concat(regionsAt([60, 160, 260], 206)));
+  // 火山の形の写真（volcano-1-c2 の画像。山は y 105〜140、中心 x 43・135・255）を選ぶ図（左から ア ドーム状・イ 円すい・ウ 傾斜がゆるやか）
+  const MP_SHAPES_Q = scene([photo('volcano-1-c2')].concat(regionsAt([43, 135, 255], 172)));
 
-  // 2 つのつくり（左 ア 斑状組織・右 イ 等粒状組織）を選ぶ図
-  const MP_TEXTURE_Q = scene(porphyryItems(30, 50).concat(granularItems(180, 50), regionsAt([85, 235], 196), [
-    { type: 'text', x: 160, y: 32, text: '火成岩をルーペで見たつくり', size: 13, anchor: 'middle' },
-  ]));
+  // 2 つのつくりの写真（volcano-mp2-c1 の画像。左 ア 斑状組織の円 (80, 118)・右 イ 等粒状組織の円 (240, 118)、半径 75）を選ぶ図。
+  // 「火山岩」「深成岩」の文字は答えが分かるので重ねない
+  const MP_TEXTURE_Q = scene([
+    photo('volcano-mp2-c1'),
+    tag(160, 26, '火成岩をルーペで見たつくり', { size: 13 }),
+  ].concat(regionsAt([80, 240], 216)));
 
-  // 斑状組織の部分を選ぶ図: ア 大きな鉱物（斑晶）・イ 細かい粒の部分（石基）
-  const MP_PORPHYRY_Q = scene(porphyryItems(105, 60).concat(mpRegions([
-    [262, 122, 177, 122], [48, 186, 150, 162],
+  // 安山岩の写真（volcano-2-c2 の画像。円の中心 (107, 115)・半径 102。右は白い余白）の部分を選ぶ図:
+  // ア 大きな鉱物（白い斑晶 (172, 148)）・イ 細かい粒の部分（石基 (150, 200)）
+  const MP_PORPHYRY_Q = scene([photo('volcano-2-c2')].concat(mpRegions([
+    [268, 120, 176, 146], [268, 196, 150, 200],
   ])));
 
   // 地震計の記録を選ぶ図: ア はじめの小さなゆれ・イ あとからくる大きなゆれ
@@ -1129,38 +1132,40 @@
       {
         id: 'volcano-mp1-c1',
         text: '噴火でふき出されたものを**火山噴出物**といいます。流れ出したマグマの**溶岩**、空中で固まった**火山弾**、細かい**火山灰**、**火山ガス**などです。火山ガスの主な成分は水蒸気です。',
-        figure: scene(volcanoSection().concat([
-          { type: 'ellipse', x: 110, y: 40, rx: 10, ry: 7, fill: 'rock' },
-          { type: 'ellipse', x: 226, y: 34, rx: 8, ry: 6, fill: 'rock' },
-          ...[[150, 30], [166, 22], [180, 36], [140, 50], [190, 52]].map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'gray', stroke: 'none' })),
-          { type: 'polygon', points: [[180, 72], [196, 92], [210, 116], [196, 116], [182, 96]], fill: 'orange', stroke: 'none' },
-          { type: 'text', x: 90, y: 64, text: '火山弾', size: 12, anchor: 'middle' },
-          { type: 'text', x: 166, y: 14, text: '火山灰・火山ガス', size: 12, anchor: 'middle' },
-          { type: 'text', x: 236, y: 112, text: '溶岩', size: 12 },
-          { type: 'text', x: 160, y: 236, text: 'マグマ', size: 12, anchor: 'middle' },
-        ])),
+        // 写真（volcano-1-c3 の画像）: 火山噴出物の標本 2×2（左上 溶岩 (5〜150, 8〜110)・右上 火山灰 (160〜315, 12〜105)・
+        // 左下 火山弾 (8〜170, 132〜235)・右下 軽石 (175〜308, 128〜228)）。余白は少ないので、段の間とすきまに書く
+        figure: scene([
+          photo('volcano-1-c3'),
+          pointer(40, 112, 40, 96), tag(40, 126, '溶岩', { size: 15, bold: true }),
+          tag(188, 22, '火山灰', { size: 15, bold: true }),
+          tag(140, 210, '火山弾', { size: 15, bold: true }),
+          tag(248, 178, '軽石', { size: 15, bold: true }),
+          tag(196, 124, '火山ガスの主な成分は水蒸気', { size: 13 }),
+        ]),
       },
       {
         id: 'volcano-mp1-c2',
         text: '火山の形は**マグマのねばりけ**で決まります。ねばりけが強いとドーム状で白っぽく、爆発的に噴火します（雲仙普賢岳）。中くらいだと円すいの形（富士山）、弱いと傾斜がゆるやかで黒っぽくなります（伊豆大島）。',
-        figure: scene(volcanoShapes(['dome', 'cone', 'shield'], true).concat([
-          { type: 'text', x: 60, y: 196, text: 'ドーム状', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 196, text: '円すいの形', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 196, text: 'ゆるやか', size: 12, anchor: 'middle' },
-          { type: 'text', x: 60, y: 60, text: 'ねばりけ 強', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 60, text: 'ねばりけ 弱', size: 12, anchor: 'middle' },
-          { type: 'arrow', x1: 100, y1: 56, x2: 220, y2: 56, color: 'gray' },
-        ])),
+        // 写真（volcano-1-c2 の画像）: 左から 溶岩ドーム・円すいの形の火山・傾斜のゆるやかな火山。山は中段の帯（y 105〜140）に並び、中心は x 43・135・255
+        figure: scene([
+          photo('volcano-1-c2'),
+          tag(43, 162, 'ドーム状', { size: 13 }), tag(135, 162, '円すいの形', { size: 13 }), tag(255, 162, 'ゆるやか', { size: 13 }),
+          tag(50, 200, 'ねばりけ 強', { bold: true }), tag(256, 200, 'ねばりけ 弱', { bold: true }),
+          { type: 'arrow', x1: 150, y1: 195, x2: 100, y2: 195, color: 'blue', width: 2 },
+          { type: 'arrow', x1: 150, y1: 195, x2: 204, y2: 195, color: 'blue', width: 2 },
+        ]),
       },
       {
         id: 'volcano-mp1-c3',
         text: '火山灰を少量の水といっしょに指でやさしく押し洗い（わんがけ）し、にごった水を捨てることをくり返すと、**鉱物**の粒が残ります。白っぽい石英・長石、黒っぽい黒雲母・角閃石・輝石・磁鉄鉱などがあります。',
+        // 写真: わんがけで残った火山灰の鉱物の粒（双眼実体顕微鏡の丸い視野。中心 (160, 120)・半径 112）。白っぽい粒 (90, 160) と黒っぽい粒 (228, 160) がまざる。
+        // 視野が画面いっぱいなので、文字は 4 すみの白い所に置く
         figure: scene([
-          { type: 'ellipse', x: 160, y: 140, rx: 110, ry: 40, fill: 'white' },
-          ...[[110, 132, 'white'], [140, 150, '#3A3A3A'], [170, 128, 'white'], [200, 152, '#F1E9E4'], [226, 136, '#3A3A3A'], [126, 160, '#9DBB6A'], [186, 144, '#3A3A3A']]
-            .map(([x, y, f]) => ({ type: 'polygon', points: hexPoints(x, y, 9, 6), fill: f })),
-          { type: 'text', x: 160, y: 66, text: 'わんがけで残った鉱物の粒', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 210, text: '白っぽい粒と黒っぽい粒', size: 13, anchor: 'middle' },
+          photo('volcano-mp1-c3'),
+          tag(52, 22, 'わんがけで残った', { size: 13 }),
+          tag(40, 40, '鉱物の粒', { size: 13 }),
+          pointer(50, 190, 90, 162), tag(36, 204, '白っぽい粒', { size: 13 }),
+          pointer(270, 190, 228, 162), tag(284, 204, '黒っぽい粒', { size: 13 }),
         ]),
       },
     ],
@@ -1301,29 +1306,26 @@
       {
         id: 'volcano-mp2-c1',
         text: 'マグマが冷えて固まった岩石を**火成岩**といいます。地表付近で急に冷えたものが**火山岩**で**斑状組織**、地下深くでゆっくり冷えたものが**深成岩**で**等粒状組織**です。',
-        figure: scene(porphyryItems(30, 50).concat(granularItems(180, 50), [
-          { type: 'text', x: 85, y: 32, text: '火山岩', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 235, y: 32, text: '深成岩', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 85, y: 186, text: '斑状組織', size: 13, anchor: 'middle' },
-          { type: 'text', x: 235, y: 186, text: '等粒状組織', size: 13, anchor: 'middle' },
-          { type: 'text', x: 85, y: 210, text: '急に冷えた', size: 12, anchor: 'middle' },
-          { type: 'text', x: 235, y: 210, text: 'ゆっくり冷えた', size: 12, anchor: 'middle' },
-        ])),
+        // 写真: 左は安山岩（火山岩。細かい石基の中に大きな斑晶）、右は花こう岩（深成岩。同じくらいの大きさの鉱物）をルーペで見たようす。
+        // 円の中心 (80, 118)・(240, 118)、半径 75。上下は白い余白
+        figure: scene([
+          photo('volcano-mp2-c1'),
+          tag(80, 28, '火山岩', { bold: true }),
+          tag(240, 28, '深成岩', { bold: true }),
+          tag(80, 214, '斑状組織', { size: 13 }), tag(80, 233, '（急に冷えた）', { size: 13 }),
+          tag(240, 214, '等粒状組織', { size: 13 }), tag(240, 233, '（ゆっくり冷えた）', { size: 13 }),
+        ]),
       },
       {
         id: 'volcano-mp2-c2',
         text: '火山岩には流紋岩・安山岩・玄武岩、深成岩には花こう岩・閃緑岩・はんれい岩があります。白っぽいのは流紋岩と花こう岩、黒っぽいのは玄武岩とはんれい岩です。',
+        // 写真（volcano-2-c4 の画像）: 上の段 火山岩（流紋岩・安山岩・玄武岩。y 10〜90）、下の段 深成岩（花こう岩・閃緑岩・はんれい岩。y 132〜218）。左ほど白っぽい
         figure: scene([
-          { type: 'text', x: 16, y: 80, text: '火山岩', size: 13, bold: true },
-          { type: 'text', x: 16, y: 140, text: '深成岩', size: 13, bold: true },
-          ...[['流紋岩', '花こう岩', '#EEEAE0'], ['安山岩', '閃緑岩', '#A8A39A'], ['玄武岩', 'はんれい岩', '#4A4540']].flatMap(([a, b, f], i) => [
-            { type: 'rect', x: 80 + 76 * i, y: 56, width: 70, height: 36, fill: f },
-            { type: 'rect', x: 80 + 76 * i, y: 116, width: 70, height: 36, fill: f },
-            { type: 'text', x: 115 + 76 * i, y: 110, text: a, size: 12, anchor: 'middle' },
-            { type: 'text', x: 115 + 76 * i, y: 170, text: b, size: 12, anchor: 'middle' },
-          ]),
-          { type: 'text', x: 115, y: 210, text: '白っぽい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 267, y: 210, text: '黒っぽい', size: 13, anchor: 'middle' },
+          photo('volcano-2-c4'),
+          tag(52, 104, '流紋岩', { size: 13 }), tag(160, 104, '安山岩', { size: 13 }), tag(265, 104, '玄武岩', { size: 13 }),
+          tag(80, 124, '上: 火山岩　下: 深成岩', { size: 13, bold: true }),
+          tag(240, 124, '白っぽい ←→ 黒っぽい', { size: 13, bold: true }),
+          tag(52, 233, '花こう岩', { size: 13 }), tag(158, 233, '閃緑岩', { size: 13 }), tag(265, 233, 'はんれい岩', { size: 13 }),
         ]),
       },
     ],
@@ -1442,6 +1444,7 @@
     lessons: [
       {
         id: 'volcano-mp3-c1',
+        anim: 'vo-focus-epicenter',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地震が発生した地下の場所を**震源**、その真上の地表の地点を**震央**といいます。ゆれは震源から四方八方へ、ほぼ同じ速さで伝わります。震源から震央までの距離を震源の深さといいます。',
         figure: scene([
           { type: 'rect', x: 0, y: 70, width: 320, height: 170, fill: 'sand', stroke: 'none' },
@@ -1462,6 +1465,7 @@
       },
       {
         id: 'volcano-mp3-c2',
+        anim: 'vo-tremor-record',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地震計の記録では、はじめの小さなゆれを**初期微動**、あとからくる大きなゆれを**主要動**といいます。初期微動は速い P 波、主要動はおそい S 波で起こります。2 つの波が着くまでの時間の差が**初期微動継続時間**です。',
         figure: scene([
           seismoLine(),
@@ -1476,6 +1480,7 @@
       },
       {
         id: 'volcano-mp3-c3',
+        anim: 'vo-ps-80km',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: 'グラフは、P 波（秒速 8 km）と S 波（秒速 4 km）の伝わり方です。震源から 80 km の地点では、P 波が 10 秒後、S 波が 20 秒後に着くので、初期微動継続時間は 10 秒です。震源から遠いほど長くなります。',
         figure: scene(mpWaveItems()),
       },
@@ -1602,11 +1607,13 @@
     lessons: [
       {
         id: 'volcano-mp4-c1',
+        anim: 'vo-plate-rebound',   // 動く図の使い回し（js/anim-earth.js）。figure は静止図として残す
         text: '地球の表面は、**プレート**という岩盤でおおわれています。日本付近では、海洋プレートが大陸プレートの下に沈みこみ、引きずられた大陸プレートがはね返って大きな地震が起こります。',
         figure: scene(plateItems({ arrows: true })),
       },
       {
         id: 'volcano-mp4-c2',
+        anim: 'vo-fault-uplift',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '内陸の地震は、断層がずれて起こります。今後も動く可能性がある断層を**活断層**といいます。地震で大地がもち上がることを**隆起**、沈むことを**沈降**、地面が急にやわらかくなることを**液状化現象**といいます。',
         figure: scene([
           { type: 'polygon', points: [[20, 120], [150, 120], [170, 200], [20, 200]], fill: 'sand' },

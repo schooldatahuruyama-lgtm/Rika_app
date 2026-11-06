@@ -1013,20 +1013,21 @@
   // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/plants.md）
   // ================================================================
 
-  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  // 写真の上の選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（ア・イ…の順）
   function mpRegions(parts) {
     const items = [];
     parts.forEach(([x, y, px, py], i) => {
-      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push(pointer(x < px ? x + 22 : x - 22, y, px, py));
       items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオカキ'[i] });
     });
     return items;
   }
 
-  // 花の断面（flower()）の部分を選ぶ図: ア 柱頭・イ やく・ウ 花弁・エ がく・オ 花柱・カ 子房・キ 胚珠
-  const MP_FLOWER_Q = scene(flower().concat(mpRegions([
-    [40, 50, 154, 88], [40, 104, 118, 100], [34, 164, 90, 150], [40, 220, 116, 200],
-    [284, 110, 162, 128], [284, 162, 182, 178], [284, 214, 170, 186],
+  // アブラナの花をたてに切った写真（plants-1-c2 の画像）の部分を選ぶ図: ア 柱頭・イ やく・ウ 花弁・エ がく・オ 花柱・カ 子房・キ 胚珠
+  // 柱頭 (150, 33)、やく (203, 50)、花弁（左）(60, 100)、がく（左下の緑）(108, 178)、花柱 (160, 104)、子房の右はし (183, 176)、胚珠 (160, 190)
+  const MP_FLOWER_Q = scene([photo('plants-1-c2')].concat(mpRegions([
+    [40, 24, 150, 33], [290, 26, 203, 50], [30, 150, 60, 104], [40, 206, 108, 178],
+    [290, 120, 160, 104], [290, 170, 183, 176], [290, 218, 160, 190],
   ])));
 
   // 種子植物の分け方（SEED_TREE）に、なかまの名前を書いたもの（解説用）
@@ -1034,14 +1035,14 @@
     [['裸子植物', 36], ['単子葉類', 92], ['合弁花類', 148], ['離弁花類', 204]].map(([t, y]) => ({ type: 'text', x: 266, y: y + 5, text: t, size: 12 })),
   ));
 
-  // マツの枝（pineBranch()）を選ぶ図: ア 雌花・イ 雄花・ウ 1 年前の雌花（まつかさになりかけ）
-  const MP_PINE_Q = scene(pineBranch().concat(mpRegions([
-    [272, 44, 213, 44], [272, 140, 172, 140], [40, 150, 86, 188],
+  // マツの枝先の写真（plants-2-c2 の画像）を選ぶ図: ア 枝の先の雌花 (153, 15)・イ 根もとの雄花 (105, 95)・ウ 1 年前の雌花 (189, 151)
+  const MP_PINE_Q = scene([photo('plants-2-c2')].concat(mpRegions([
+    [216, 22, 156, 16], [40, 72, 105, 95], [284, 128, 191, 151],
   ])));
 
-  // イヌワラビ（fern()）の部分を選ぶ図: ア 葉・イ 茎（地下茎）・ウ 根
-  const MP_FERN_Q = scene(fern().concat(mpRegions([
-    [270, 60, 222, 64], [284, 160, 250, 160], [40, 200, 70, 196],
+  // イヌワラビの写真（plants-4-c1 の画像。地面 y 150）の部分を選ぶ図: ア 地上の葉 (76, 72)・イ 地下茎 (262, 186)・ウ 根 (98, 206)
+  const MP_FERN_Q = scene([photo('plants-4-c1')].concat(mpRegions([
+    [36, 100, 76, 72], [296, 120, 262, 186], [36, 206, 98, 206],
   ])));
 
   // 葉・茎の断面・根の小さな図（中心の x が cx。y は 50〜170 に収まる）
@@ -1092,28 +1093,13 @@
     return scene(items);
   }
 
-  // ゼニゴケの雄株（傘が円ばんの形）と雌株（傘が切れこみのある形で、下に胞子のう）。ア 雄株・イ 雌株 のように左右を kinds で決める
-  function mpMossItems(cx, kind) {
-    const items = [
-      { type: 'polygon', points: [[cx - 50, 190], [cx - 30, 176], [cx, 182], [cx + 30, 174], [cx + 50, 190], [cx, 196]], fill: 'green' },
-      { type: 'line', points: [[cx - 20, 194], [cx - 26, 214]], color: 'line', width: 1 },
-      { type: 'line', points: [[cx, 196], [cx, 218]], color: 'line', width: 1 },
-      { type: 'line', points: [[cx + 20, 194], [cx + 26, 214]], color: 'line', width: 1 },
-      { type: 'line', points: [[cx, 180], [cx, 100]], color: 'green', width: 3 },
-    ];
-    if (kind === 'male') {
-      items.push({ type: 'ellipse', x: cx, y: 96, rx: 26, ry: 8, fill: 'green' });
-    } else {
-      [-24, -12, 0, 12, 24].forEach(dx => items.push({ type: 'line', points: [[cx, 98], [cx + dx, 86 + Math.abs(dx) / 2]], color: 'green', width: 5 }));
-      [-14, 0, 14].forEach(dx => items.push({ type: 'circle', x: cx + dx, y: 108, r: 4, fill: 'yellow' }));
-    }
-    return items;
-  }
-  const MP_MOSS_Q = scene([].concat(mpMossItems(90, 'female'), mpMossItems(230, 'male'), [
-    { type: 'text', x: 160, y: 24, text: 'ゼニゴケ（2 つの株）', size: 13, anchor: 'middle' },
-    { type: 'region', id: 'r1', x: 90, y: 58, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 230, y: 58, r: 22, label: 'イ' },
-  ]));
+  // ゼニゴケの写真（plants-4-c2 の画像）。左は雌株（柄の先が切れこみのあるかさの形。x 5〜160）、右は雄株（柄の先が円ばんの形。x 162〜312）。
+  // どちらも下は y 185 まで。選ぶ場所は それぞれの株の下（ア 左・イ 右）
+  const MP_MOSS_Q = scene([
+    photo('plants-4-c2'),
+    { type: 'region', id: 'r1', x: 80, y: 212, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 236, y: 212, r: 22, label: 'イ' },
+  ]);
 
   // ---- ステージ plants-mp1: プリント 1（花のつくり、果実と種子） ----
   const plMp1 = {
@@ -1122,16 +1108,21 @@
       {
         id: 'plants-mp1-c1',
         text: '花は外側から、**がく**・**花弁**・おしべ・めしべの順についています。めしべの先は**柱頭**、その下の細い部分は**花柱**、根もとのふくらみは**子房**で、子房の中に**胚珠**があります。おしべの先は**やく**です。',
-        figure: scene(flower().concat([
-          [12, 54, '柱頭', 154, 88], [12, 104, 'やく', 118, 100], [12, 160, '花弁', 90, 150], [12, 222, 'がく', 116, 200],
-          [264, 114, '花柱', 162, 128], [264, 166, '子房', 182, 178], [264, 218, '胚珠', 170, 186],
-        ].flatMap(([x, y, t, px, py]) => [
-          { type: 'line', points: [[x < px ? x + 28 : x - 4, y - 5], [px, py]], color: 'line', width: 1 },
-          { type: 'text', x, y, text: t, size: 13 },
-        ]))),
+        // 写真（plants-1-c2 の画像）: アブラナの花をたてに切った断面。部品の位置は MP_FLOWER_Q の上のコメント
+        figure: scene([
+          photo('plants-1-c2'),
+          pointer(80, 20, 148, 32), tag(60, 22, '柱頭'),
+          pointer(266, 26, 203, 50), tag(282, 26, 'やく'),
+          pointer(34, 130, 58, 104), tag(28, 144, '花弁'),
+          pointer(58, 196, 106, 178), tag(40, 200, 'がく'),
+          pointer(270, 120, 161, 104), tag(290, 124, '花柱'),
+          pointer(270, 170, 183, 176), tag(290, 174, '子房'),
+          pointer(270, 214, 161, 192), tag(290, 218, '胚珠'),
+        ]),
       },
       {
         id: 'plants-mp1-c2',
+        anim: 'pl-ovary-to-fruit',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: 'めしべの柱頭に花粉がつくことを**受粉**といいます。受粉すると、子房は育って**果実**になり、子房の中の胚珠は**種子**になります。サクランボは、サクラの子房が育った果実です。',
         figure: scene([
           { type: 'ellipse', x: 70, y: 130, rx: 30, ry: 26, fill: 'lightgreen' },
@@ -1254,28 +1245,25 @@
       {
         id: 'plants-mp2-c1',
         text: 'マツの花は、たくさんの**りん片**が集まってできています。新しい枝の先に雌花、根もとに雄花がつきます。雌花のりん片には**胚珠**がむき出しでつき、雄花のりん片には花粉の入った**花粉のう**がつきます。',
-        figure: scene(pineBranch().concat([
-          [236, 40, '雌花', 213, 44], [236, 144, '雄花', 172, 140], [12, 150, '1 年前の雌花', 86, 188],
-        ].flatMap(([x, y, t, px, py]) => [
-          { type: 'line', points: [[x < px ? x + 64 : x - 4, y - 5], [px, py]], color: 'line', width: 1 },
-          { type: 'text', x, y, text: t, size: 13 },
-        ]))),
+        // 写真（plants-2-c2 の画像）: 春のマツの枝先（新しい枝の先に雌花、根もとに雄花、古い枝に 1 年前の雌花）
+        figure: scene([
+          photo('plants-2-c2'),
+          pointer(198, 18, 153, 15), tag(214, 22, '雌花'),
+          pointer(44, 70, 105, 95), tag(28, 72, '雄花'),
+          pointer(220, 130, 189, 151), tag(268, 132, '1 年前の雌花', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-mp2-c2',
         text: '子房がなく、胚珠がむき出しの植物を**裸子植物**、胚珠が子房の中にある植物を**被子植物**といいます。裸子植物には子房がないので、種子はできても果実はできません。マツ・スギ・イチョウ・ソテツは裸子植物です。',
+        // 写真: 左はサクラの花をたてに切った断面（x 5〜185。子房の中に胚珠 (92, 170)）、右はマツの雌花のりん片（x 192〜315。胚珠 2 つ (230, 155)・(272, 152) がむき出し）
         figure: scene([
-          { type: 'ellipse', x: 80, y: 120, rx: 40, ry: 34, fill: 'lightgreen' },
-          { type: 'circle', x: 70, y: 124, r: 9, fill: 'white' },
-          { type: 'circle', x: 92, y: 124, r: 9, fill: 'white' },
-          { type: 'text', x: 80, y: 60, text: '被子植物', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 80, y: 180, text: '胚珠は子房の中', size: 13, anchor: 'middle' },
-          { type: 'polygon', points: [[200, 150], [240, 90], [280, 150]], fill: 'brown' },
-          { type: 'circle', x: 226, y: 132, r: 9, fill: 'white' },
-          { type: 'circle', x: 254, y: 132, r: 9, fill: 'white' },
-          { type: 'text', x: 240, y: 60, text: '裸子植物', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 240, y: 180, text: '胚珠がむき出し', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 222, text: '白い丸が胚珠', size: 12, anchor: 'middle' },
+          photo('plants-mp2-c2'),
+          tag(92, 18, '被子植物', { bold: true }),
+          tag(255, 18, '裸子植物', { bold: true }),
+          pointer(138, 190, 96, 172), pointer(164, 190, 226, 160), tag(151, 198, '胚珠'),
+          tag(92, 232, '胚珠は子房の中', { size: 13 }),
+          tag(255, 232, '胚珠がむき出し', { size: 13 }),
         ]),
       },
       {
@@ -1391,25 +1379,35 @@
       {
         id: 'plants-mp3-c1',
         text: '子葉が 2 枚の**双子葉類**は、葉脈が網の目のような**網状脈**で、根は太い**主根**と細い**側根**からなります。茎の断面では、維管束が輪のように並んでいます。',
-        figure: mpPartsScene('双子葉類（アブラナ・サクラなど）', ['netLeaf', 'ringStem', 'tapRoot'], true),
+        // 写真: 双子葉類（ホウセンカ）の 葉（網状脈。x 10〜93）・茎の横断面（赤く染まった維管束が輪に並ぶ。中心 (157, 117)）・根（主根と側根。x 215〜310）
+        figure: scene([
+          photo('plants-mp3-c1'),
+          tag(150, 16, '双子葉類（アブラナ・サクラなど）', { size: 13 }),
+          tag(52, 232, '網状脈', { size: 13 }),
+          tag(157, 196, '輪のように並ぶ', { size: 13 }),
+          tag(250, 236, '主根と側根', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-mp3-c2',
         text: '子葉が 1 枚の**単子葉類**は、葉脈が平行に並ぶ**平行脈**で、根は同じくらいの太さの根がたくさん出る**ひげ根**です。茎の断面では、維管束が散らばっています。イネ・トウモロコシ・ツユクサ・ユリがこのなかまです。',
-        figure: mpPartsScene('単子葉類（イネ・ツユクサなど）', ['parLeaf', 'scatterStem', 'fibrousRoot'], true),
+        // 写真: 単子葉類（トウモロコシ）の 葉（平行脈。x 10〜110）・茎の横断面（赤く染まった維管束が散らばる。中心 (150, 115)）・根（ひげ根。x 195〜315）
+        figure: scene([
+          photo('plants-mp3-c2'),
+          tag(160, 18, '単子葉類（イネ・ツユクサなど）', { size: 13 }),
+          tag(70, 232, '平行脈', { size: 13 }),
+          tag(150, 182, '散らばる', { size: 13 }),
+          tag(262, 228, 'ひげ根', { size: 13 }),
+        ]),
       },
       {
         id: 'plants-mp3-c3',
         text: '葉にあるすじを**葉脈**といいます。根の先近くには、細い毛のような**根毛**がたくさんあります。根毛があると、根が土とふれる面積が広くなり、水や養分を吸収しやすくなります。',
+        // 写真: ダイコンの芽ばえの根（拡大）。根毛が根の先の近く (150〜270, 110〜210) に密に生え、根の先 (290, 218) そのものにはない。左上は子葉
         figure: scene([
-          { type: 'line', points: [[160, 30], [160, 200]], color: 'brown', width: 8 },
-          ...[50, 70, 90, 110, 130, 150, 170].flatMap(y => [
-            { type: 'line', points: [[156, y], [130, y - 8]], color: 'brown', width: 1 },
-            { type: 'line', points: [[164, y], [190, y - 8]], color: 'brown', width: 1 },
-          ]),
-          { type: 'line', points: [[200, 100], [236, 100]], color: 'line', width: 1 },
-          { type: 'text', x: 240, y: 104, text: '根毛', size: 14 },
-          { type: 'text', x: 160, y: 228, text: '根の先近く（拡大）', size: 13, anchor: 'middle' },
+          photo('plants-mp3-c3'),
+          pointer(240, 96, 205, 128), tag(256, 90, '根毛', { bold: true }),
+          tag(130, 226, '根の先近く（拡大）', { size: 13 }),
         ]),
       },
     ],
@@ -1425,9 +1423,14 @@
       figureChoice({
         id: 'plants-mp3-p1', concept: 'pl-monodi',
         prompt: '被子植物の葉のようすです。双子葉類の葉はどちら？ ア・イから選ぼう。',
-        figure: mpPartsScene('2 種類の葉', ['parLeaf', 'netLeaf'], false),
-        answer: 'r2',
-        explanation: '双子葉類の葉脈は、網の目のように広がる網状脈です（イ）。アのように平行に並ぶ平行脈は、単子葉類の葉です。',
+        // 写真（plants-3-c2 の画像）: 左 ホウセンカの葉（網状脈。x 22〜136）、右 トウモロコシの葉（平行脈。x 155〜305）。どちらも y 190 まで
+        figure: scene([
+          photo('plants-3-c2'),
+          { type: 'region', id: 'r1', x: 80, y: 214, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 230, y: 214, r: 22, label: 'イ' },
+        ]),
+        answer: 'r1',
+        explanation: '双子葉類の葉脈は、網の目のように広がる網状脈です（ア）。イのように平行に並ぶ平行脈は、単子葉類の葉です。',
         hint: '網の目のようなすじの葉をさがそう。',
       }),
       fill({
@@ -1461,9 +1464,14 @@
       figureChoice({
         id: 'plants-mp3-p4', concept: 'pl-monodi',
         prompt: '被子植物の根のようすです。双子葉類の根はどちら？ ア・イから選ぼう。',
-        figure: mpPartsScene('2 種類の根', ['fibrousRoot', 'tapRoot'], false),
-        answer: 'r2',
-        explanation: '双子葉類の根は、太い主根と、そこから出る細い側根からなります（イ）。アのひげ根は単子葉類の根です。',
+        // 写真（plants-3-c3 の画像）: 左 ホウセンカの根（主根と側根。x 35〜130）、右 トウモロコシの根（ひげ根。x 145〜285）。根は下のほうまでのびるので、選ぶ場所は上の白い余白
+        figure: scene([
+          photo('plants-3-c3'),
+          { type: 'region', id: 'r1', x: 40, y: 40, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 290, y: 40, r: 22, label: 'イ' },
+        ]),
+        answer: 'r1',
+        explanation: '双子葉類の根は、太い主根と、そこから出る細い側根からなります（ア）。イのひげ根は単子葉類の根です。',
         hint: '太い根が 1 本あるのはどちらかな。',
       }),
     ],
@@ -1507,7 +1515,7 @@
       figureChoice({
         id: 'plants-mp3-r5', concept: 'pl-monodi',
         prompt: '子葉が 1 枚の植物（単子葉類）の葉と根の組み合わせを考えます。ア〜エのうち、単子葉類の根はどれ？',
-        figure: mpPartsScene('葉と根', ['netLeaf', 'parLeaf', 'tapRoot', 'fibrousRoot'], false),
+        figure: LEAF_ROOT,   // 写真（plants-3-p2 の画像）: 左から ア 網状脈・イ 平行脈・ウ 主根と側根・エ ひげ根
         answer: 'r4',
         explanation: '単子葉類の根はひげ根（エ）で、葉は平行脈（イ）です。双子葉類は、網状脈の葉（ア）と主根・側根（ウ）です。',
         hint: '同じくらいの太さの根がたくさん出ているものだよ。',
@@ -1522,11 +1530,13 @@
       {
         id: 'plants-mp4-c1',
         text: 'ワラビ・ゼンマイ・スギナなどの**シダ植物**は、根・茎・葉の区別があり、茎は地下にあります。ゼニゴケなどの**コケ植物**は根・茎・葉の区別がなく、根のように見える**仮根**はからだを固定します。どちらも**胞子**でふえ、光合成をします。',
-        figure: scene(fern().concat([
-          { type: 'text', x: 226, y: 56, text: '葉', size: 13 },
-          { type: 'text', x: 316, y: 152, text: '茎（地下茎）', size: 12, anchor: 'end' },
-          { type: 'text', x: 40, y: 222, text: '根', size: 13 },
-        ])),
+        // 写真（plants-4-c1 の画像）: 掘り出したイヌワラビ（地上は葉、土の中を横にのびる地下茎と根。地面 y 150）
+        figure: scene([
+          photo('plants-4-c1'),
+          pointer(36, 101, 76, 70), tag(30, 112, '葉'),
+          pointer(270, 176, 266, 188), tag(270, 172, '茎（地下茎）', { size: 13 }),
+          pointer(48, 210, 96, 204), tag(36, 214, '根'),
+        ]),
       },
       {
         id: 'plants-mp4-c2',
@@ -1602,11 +1612,11 @@
     retryPool: [
       figureChoice({
         id: 'plants-mp4-r1', concept: 'pl-spore',
-        prompt: 'ゼニゴケには雄株と雌株があります。胞子のう（黄色の粒）をつける雌株に対して、雄株はどちら？ ア・イから選ぼう。',
+        prompt: 'ゼニゴケの写真です。ゼニゴケには雄株と雌株があります。柄の先がかさの形をした雌株に対して、雄株はどちら？ ア・イから選ぼう。',
         figure: MP_MOSS_Q,
         answer: 'r2',
         explanation: '雌株の傘は切れこみのある形で、その下に胞子のうができます（ア）。雄株の傘は円ばんのような形です（イ）。胞子は雌株でつくられます。',
-        hint: '胞子のうがないほうをさがそう。',
+        hint: '雄株の柄の先は、円ばんのような形だよ。',
       }),
       choice({
         id: 'plants-mp4-r2', concept: 'pl-classify',

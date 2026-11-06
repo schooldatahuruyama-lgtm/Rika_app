@@ -1078,30 +1078,30 @@
   // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/animals.md）
   // ================================================================
 
-  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  // 写真の上の選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（ア・イ…の順）
   function mpRegions(parts) {
     const items = [];
     parts.forEach(([x, y, px, py], i) => {
-      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push(pointer(x < px ? x + 22 : x - 22, y, px, py));
       items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオ'[i] });
     });
     return items;
   }
 
-  // イカ（squid()）の部分を選ぶ図: ア 外とう膜・イ あし・ウ 目
-  const MP_SQUID_Q = scene(squid().concat(mpRegions([
-    [270, 90, 192, 90], [56, 212, 128, 206], [56, 150, 138, 141],
+  // イカの写真（animals-3-c3 の画像）の部分を選ぶ図: ア 胴の外側（外とう膜）(207, 80)・イ 胴の中（内臓）(156, 112)・ウ あし (108, 199)
+  const MP_SQUID_Q = scene([photo('animals-3-c3')].concat(mpRegions([
+    [282, 80, 207, 80], [40, 100, 156, 112], [40, 200, 108, 199],
   ])));
 
-  // 昆虫（insect()）を上から見た図の部分を選ぶ: ア 頭部・イ 胸部・ウ 腹部（中心 (160, 120)、倍率 1.6）
-  const MP_INSECT_Q = scene(insect(160, 120, 1.6).concat([
-    { type: 'region', id: 'r1', x: 86, y: 196, r: 22, label: 'ア' },
-    { type: 'line', points: [[86, 174], [86, 136]], color: 'line', width: 1 },
-    { type: 'region', id: 'r2', x: 131, y: 50, r: 22, label: 'イ' },
-    { type: 'line', points: [[131, 72], [131, 104]], color: 'line', width: 1 },
-    { type: 'region', id: 'r3', x: 208, y: 196, r: 22, label: 'ウ' },
-    { type: 'line', points: [[208, 174], [208, 140]], color: 'line', width: 1 },
-  ]));
+  // 横から見たバッタの写真（animals-3-c2 の画像）の部分を選ぶ: ア 頭部 (37, 104)・イ 胸部 (62, 104)・ウ 腹部 (122, 124)。体の区切りに青い線
+  const MP_INSECT_Q = scene([
+    photo('animals-3-c2'),
+    { type: 'line', points: [[44, 94], [44, 132]], color: 'blue', width: 2 },
+    { type: 'line', points: [[92, 100], [92, 138]], color: 'blue', width: 2 },
+    pointer(24, 62, 37, 104), { type: 'region', id: 'r1', x: 24, y: 40, r: 22, label: 'ア' },
+    pointer(74, 62, 62, 104), { type: 'region', id: 'r2', x: 74, y: 40, r: 22, label: 'イ' },
+    pointer(130, 62, 122, 124), { type: 'region', id: 'r3', x: 130, y: 40, r: 22, label: 'ウ' },
+  ]);
 
   // ---- ステージ animals-mp1: プリント 1（セキツイ動物と無セキツイ動物、5 つのなかまの特徴） ----
   const anMp1 = {
@@ -1110,14 +1110,16 @@
       {
         id: 'animals-mp1-c1',
         text: '背骨をもつ動物を**セキツイ動物**、もたない動物を**無セキツイ動物**といいます。セキツイ動物は、魚類・両生類・ハチュウ類・鳥類・ホニュウ類の 5 つのなかまに分けられます。',
-        figure: scene(fiveAnimals().concat([
-          { type: 'text', x: 60, y: 106, text: '魚類', size: 13, anchor: 'middle' },
-          { type: 'text', x: 165, y: 106, text: '両生類', size: 13, anchor: 'middle' },
-          { type: 'text', x: 262, y: 106, text: 'ハチュウ類', size: 13, anchor: 'middle' },
-          { type: 'text', x: 105, y: 206, text: '鳥類', size: 13, anchor: 'middle' },
-          { type: 'text', x: 225, y: 206, text: 'ホニュウ類', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 232, text: 'どれも背骨がある', size: 13, anchor: 'middle', bold: true },
-        ])),
+        // 写真（animals-1-c2 の画像）: 上段 メダカ・トノサマガエル・ニホントカゲ、下段 ハト・柴犬。上は白い余白
+        figure: scene([
+          photo('animals-1-c2'),
+          tag(160, 18, 'どれも背骨がある（セキツイ動物）', { bold: true }),
+          tag(54, 90, '魚類', { bold: true }),
+          tag(160, 90, '両生類', { bold: true }),
+          tag(234, 90, 'ハチュウ類', { bold: true }),
+          tag(80, 228, '鳥類', { bold: true }),
+          tag(240, 228, 'ホニュウ類', { bold: true }),
+        ]),
       },
       {
         id: 'animals-mp1-c2',
@@ -1252,21 +1254,28 @@
       {
         id: 'animals-mp2-c1',
         text: '昆虫類・クモ類・多足類・甲殻類をまとめて**節足動物**といいます。体はかたい**外骨格**でおおわれ、あしに節があります。昆虫のあしは 6 本、クモのあしは 8 本です。エビ・カニは**甲殻類**です。',
-        figure: scene(insect(160, 110, 1.6).concat([
-          { type: 'text', x: 86, y: 190, text: '頭部', size: 13, anchor: 'middle' },
-          { type: 'text', x: 131, y: 50, text: '胸部（あし 6 本）', size: 13, anchor: 'middle' },
-          { type: 'text', x: 208, y: 190, text: '腹部', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 226, text: '昆虫の体は 3 つに分かれる', size: 13, anchor: 'middle' },
-        ])),
+        // 写真（animals-3-c2 の画像）: 横から見たトノサマバッタ（左）、クモ（右上）、エビ（右下）。バッタの体の区切りに青い線
+        // バッタの頭部 (28〜45, 98〜128)、胸部 (44〜90。後ろあしのつけ根 (84, 132) も胸部)、腹部 (92〜155, 115〜138)
+        figure: scene([
+          photo('animals-3-c2'),
+          { type: 'line', points: [[44, 94], [44, 132]], color: 'blue', width: 2 },
+          { type: 'line', points: [[92, 100], [92, 138]], color: 'blue', width: 2 },
+          pointer(28, 60, 37, 102), tag(28, 56, '頭部', { size: 13 }),
+          pointer(78, 40, 60, 104), tag(84, 34, '胸部（あし 6 本）', { size: 13 }),
+          pointer(130, 60, 120, 130), tag(130, 56, '腹部', { size: 13 }),
+          tag(86, 200, '昆虫の体は 3 つに分かれる', { size: 13, bold: true }),
+        ]),
       },
       {
         id: 'animals-mp2-c2',
         text: 'タコ・イカ・アサリ・ナメクジなどは**軟体動物**です。背骨も節もなく、内臓は**外とう膜**という膜に包まれています。ミミズ・ヒトデ・クラゲなども、節足動物でも軟体動物でもない無セキツイ動物です。',
-        figure: scene(squid().concat([
-          { type: 'line', points: [[214, 90], [192, 90]], color: 'line', width: 1 },
-          { type: 'text', x: 218, y: 94, text: '外とう膜', size: 13 },
-          { type: 'text', x: 40, y: 40, text: 'イカ', size: 14, bold: true },
-        ])),
+        // 写真（animals-3-c3 の画像）: 腹側から切り開いたイカ（胴が上・あしが下。外とう膜を左右に開き、中の内臓とえらが見える）
+        figure: scene([
+          photo('animals-3-c3'),
+          tag(40, 30, 'イカ', { size: 15, bold: true }),
+          pointer(242, 54, 207, 80), tag(272, 60, '外とう膜'),
+          tag(272, 80, '（内臓を包む）', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1280,10 +1289,10 @@
     problems: [
       figureChoice({
         id: 'animals-mp2-p1', concept: 'an-mollusc',
-        prompt: '図はイカです。内臓を包んでいる膜「外とう膜」はどれ？ ア〜ウから選ぼう。',
+        prompt: '図は腹側から切り開いたイカの写真です（ア: 胴の外側の部分、イ: 胴の中にある部分、ウ: 頭から下にのびている部分）。内臓を包んでいる膜「外とう膜」はどれ？',
         figure: MP_SQUID_Q,
         answer: 'r1',
-        explanation: 'イカの胴の部分は外とう膜で、内臓を包んでいます。外とう膜をもつのが軟体動物の特徴です。',
+        explanation: 'イカの胴の外側の部分（ア）が外とう膜で、胴の中の内臓（イ）を包んでいます。ウはあしです。外とう膜をもつのが軟体動物の特徴です。',
         hint: '胴の部分を包んでいる膜だよ。',
       }),
       fill({
@@ -1334,7 +1343,7 @@
     retryPool: [
       figureChoice({
         id: 'animals-mp2-r1', concept: 'an-arthropod',
-        prompt: '図は昆虫を上から見たようすです。6 本のあしが出ている部分はどこ？ ア〜ウから選ぼう。',
+        prompt: '図はバッタを横から見た写真です。6 本のあしが出ている部分はどこ？ ア〜ウから選ぼう。',
         figure: MP_INSECT_Q,
         answer: 'r2',
         explanation: '昆虫の体は頭部・胸部・腹部に分かれ、6 本のあしはすべて胸部から出ています（イ）。',

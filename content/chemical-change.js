@@ -1060,18 +1060,14 @@
     { type: 'region', id: 'r2', x: 210, y: 110, r: 22, label: 'イ' },
   ]));
 
-  // スチールウール（燃やす前・燃やした後）
+  // スチールウールの写真（chemical-change-mp7-p1）: 左の皿 (5〜155, 40〜170。中心 (80, 100)) に燃やす前の銀色のスチールウール、
+  // 右の皿 (162〜315, 40〜170。中心 (238, 105)) に燃やした後の黒っぽくくずれたもの。下は白い余白
   const STEEL_Q = scene([
-    { type: 'ellipse', x: 90, y: 170, rx: 60, ry: 12, fill: 'glass' },
-    { type: 'ellipse', x: 230, y: 170, rx: 60, ry: 12, fill: 'glass' },
-    { type: 'line', points: [[50, 160], [64, 128], [78, 158], [92, 124], [106, 156], [120, 126], [132, 160]], color: 'gray', width: 2 },
-    { type: 'line', points: [[56, 150], [72, 136], [86, 152], [100, 132], [116, 150], [128, 138]], color: 'gray', width: 2 },
-    { type: 'line', points: [[190, 160], [204, 128], [218, 158], [232, 124], [246, 156], [260, 126], [272, 160]], color: '#333333', width: 2 },
-    { type: 'line', points: [[196, 150], [212, 136], [226, 152], [240, 132], [256, 150], [268, 138]], color: '#333333', width: 2 },
-    { type: 'text', x: 90, y: 206, text: '燃やす前', size: 13, anchor: 'middle' },
-    { type: 'text', x: 230, y: 206, text: '燃やした後', size: 13, anchor: 'middle' },
-    { type: 'region', id: 'r1', x: 90, y: 90, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 230, y: 90, r: 22, label: 'イ' },
+    photo('chemical-change-mp7-p1'),
+    tag(80, 190, '燃やす前', { size: 13 }),
+    tag(238, 190, '燃やした後', { size: 13 }),
+    { type: 'region', id: 'r1', x: 80, y: 218, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 238, y: 218, r: 22, label: 'イ' },
   ]);
 
   // 反応と温度の実験（左 ア: 鉄粉＋活性炭＋食塩水、右 イ: 水酸化バリウム＋塩化アンモニウム）
@@ -1132,23 +1128,39 @@
       {
         id: 'chemical-change-mp1-c1',
         text: '水に少量の**水酸化ナトリウム**をとかすと電流が流れやすくなります。電流を流すと、**陰極**に水素、**陽極**に酸素が集まり、体積は水素が酸素の約 2 倍です。電流を流して物質を分解することを**電気分解**といいます。',
-        figure: electrolysisScene([
-          { type: 'text', x: 88, y: 30, text: '水素', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 218, y: 30, text: '酸素', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 112, y: 176, text: '陰極', size: 12 },
-          { type: 'text', x: 194, y: 176, text: '陽極', size: 12, anchor: 'end' },
-          { type: 'text', x: 153, y: 110, text: '体積 2：1', size: 13, anchor: 'middle' },
+        // 写真（chem-1-c4 の画像）: H 字形の管の水の電気分解。左の管 (118〜138) は黒い導線で電源の−極、気体 25〜62。
+        // 右の管 (182〜202) は赤い導線で＋極、気体 25〜45。電極は管の下 (110〜140)。左右は白い余白
+        figure: scene([
+          photo('chem-1-c4'),
+          pointer(78, 42, 122, 42), tag(58, 47, '水素', { size: 16, bold: true }),
+          pointer(242, 36, 198, 36), tag(262, 41, '酸素', { size: 16, bold: true }),
+          pointer(98, 124, 124, 124), tag(58, 129, '陰極'),
+          tag(58, 147, '（電源の−極）', { size: 13 }),
+          pointer(222, 124, 196, 124), tag(262, 129, '陽極'),
+          tag(262, 147, '（電源の＋極）', { size: 13 }),
+          tag(56, 182, '体積の比', { size: 13 }),
+          tag(56, 200, '水素：酸素', { size: 13 }),
+          tag(56, 224, '2：1', { size: 16, bold: true }),
+          pointer(224, 176, 198, 96),
+          tag(264, 190, '水酸化ナトリウム', { size: 13 }),
+          tag(264, 208, 'をとかした水', { size: 13 }),
         ]),
       },
       {
         id: 'chemical-change-mp1-c2',
         text: '白い**炭酸水素ナトリウム**を加熱するときは、試験管の口を少し下げます。できた水が加熱部分に流れて試験管が割れるのを防ぐためです。火を消す前には、ガラス管を石灰水から出して、石灰水の**逆流**を防ぎます。',
-        figure: scene(heatingItems('white').concat([
-          { type: 'text', x: 70, y: 70, text: '炭酸水素ナトリウム', size: 12, anchor: 'middle' },
-          { type: 'text', x: 176, y: 98, text: '口を少し下げる', size: 12, anchor: 'middle' },
-          { type: 'text', x: 60, y: 190, text: '加熱', size: 12, anchor: 'middle' },
-          { type: 'text', x: 220, y: 236, text: '石灰水', size: 12, anchor: 'middle' },
-        ])),
+        // 写真（chem-1-c2 の画像）: 試験管の底の粉 (45〜100, 72〜92)、ゴム栓 (155〜172, 88〜105)、炎 (45〜60, 85〜118)、
+        // 石灰水の試験管 (246, 140〜192)。下は白い余白
+        figure: scene([
+          photo('chem-1-c2'),
+          pointer(72, 37, 60, 82), tag(80, 30, '炭酸水素ナトリウム'),
+          pointer(206, 54, 168, 91), tag(240, 30, '口を少し下げる'),
+          tag(240, 48, '（割れるのを防ぐ）', { size: 13 }),
+          pointer(30, 122, 47, 106), tag(22, 136, '加熱'),
+          pointer(204, 154, 242, 172), tag(184, 150, '石灰水'),
+          tag(160, 220, '火を消す前にガラス管を石灰水から出す', { size: 13 }),
+          tag(160, 238, '（石灰水の逆流を防ぐ）', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1251,32 +1263,37 @@
       {
         id: 'chemical-change-mp2-c1',
         text: '炭酸水素ナトリウムを加熱すると、**炭酸ナトリウム**（白い固体）・**水**・**二酸化炭素**の 3 つの物質に分かれます。1 種類の物質が 2 種類以上の物質に分かれる化学変化を**分解**、加熱による分解を**熱分解**といいます。',
-        // 炭酸水素ナトリウム → 3 つの物質
+        // 写真（chem-1-c3 の画像）: 青い塩化コバルト紙 (12〜116, 82〜128)、赤色（桃色）になった紙 (131〜232, 82〜128)、
+        // 白くにごった石灰水の試験管 (246〜302, 0〜165)。下は白い余白
         figure: scene([
-          { type: 'rect', x: 80, y: 20, width: 160, height: 40, fill: 'white' },
-          { type: 'text', x: 160, y: 46, text: '炭酸水素ナトリウム', size: 14, anchor: 'middle', bold: true },
-          { type: 'arrow', x1: 150, y1: 62, x2: 64, y2: 126, width: 2 },
-          { type: 'arrow', x1: 160, y1: 62, x2: 160, y2: 126, width: 2 },
-          { type: 'arrow', x1: 170, y1: 62, x2: 256, y2: 126, width: 2 },
-          { type: 'rect', x: 8, y: 130, width: 104, height: 40, fill: 'white' },
-          { type: 'text', x: 60, y: 155, text: '炭酸ナトリウム', size: 13, anchor: 'middle' },
-          { type: 'rect', x: 124, y: 130, width: 72, height: 40, fill: 'sky' },
-          { type: 'text', x: 160, y: 155, text: '水', size: 13, anchor: 'middle' },
-          { type: 'rect', x: 208, y: 130, width: 104, height: 40, fill: 'white' },
-          { type: 'text', x: 260, y: 155, text: '二酸化炭素', size: 13, anchor: 'middle' },
-          { type: 'text', x: 60, y: 190, text: '白い固体', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 190, text: '液体', size: 12, anchor: 'middle' },
-          { type: 'text', x: 260, y: 190, text: '気体', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 226, text: '1 種類 → 3 種類（分解）', size: 13, anchor: 'middle' },
+          photo('chem-1-c3'),
+          tag(122, 64, '塩化コバルト紙'),
+          tag(64, 152, '青色'),
+          { type: 'arrow', x1: 86, y1: 147, x2: 134, y2: 147, color: 'ink', width: 2 },
+          tag(182, 152, '赤色（桃色）'),
+          tag(122, 176, '→ 水ができた', { size: 13, bold: true }),
+          tag(274, 182, '白くにごる', { size: 13 }),
+          tag(274, 199, '→ 二酸化炭素', { size: 13, bold: true }),
+          tag(160, 220, '炭酸水素ナトリウム → 炭酸ナトリウム＋水＋二酸化炭素', { size: 13 }),
+          tag(160, 238, '1 種類 → 3 種類（分解）', { size: 13, bold: true }),
         ]),
       },
       {
         id: 'chemical-change-mp2-c2',
         text: '加熱前と加熱後の固体を水にとかし、**フェノールフタレイン液**を加えると、炭酸水素ナトリウムはうすい赤色、炭酸ナトリウムは濃い赤色になります。炭酸ナトリウムのほうが水によくとけ、強いアルカリ性を示します。',
-        figure: scene(twoTubeItems('#F7C6D9', '#E0457B', '加熱前の物質', '加熱後の物質', '水にとかしてフェノールフタレイン液を加える').concat([
-          { type: 'text', x: 128, y: 140, text: 'うすい赤色', size: 12 },
-          { type: 'text', x: 228, y: 140, text: '濃い赤色', size: 12 },
-        ])),
+        // 写真: 試験管立て (28〜292, 48〜175) に試験管 2 本。左 (x 131) はうすい赤色で底 (131, 152) に白い粉がとけ残り、
+        // 右 (x 186) は濃い赤むらさき。下は白い余白
+        figure: scene([
+          photo('chemical-change-mp2-c2'),
+          pointer(92, 134, 124, 152), tag(70, 130, 'とけ残り', { size: 13 }),
+          tag(80, 184, '加熱前の物質', { size: 13, bold: true }),
+          tag(80, 201, '炭酸水素ナトリウム', { size: 13 }),
+          tag(80, 218, '→ うすい赤色', { size: 13 }),
+          tag(240, 184, '加熱後の物質', { size: 13, bold: true }),
+          tag(240, 201, '炭酸ナトリウム', { size: 13 }),
+          tag(240, 218, '→ 濃い赤色', { size: 13 }),
+          tag(160, 236, '水にとかしフェノールフタレイン液を加えた', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1680,6 +1697,7 @@
     lessons: [
       {
         id: 'chemical-change-mp5-c1',
+        anim: 'ch-water-formation',   // 動く図の使い回し（js/anim-chem.js）。figure は静止図として残す
         text: '**化学反応式**は、矢印の左に反応前、右に反応後の物質を化学式で書き、左右で原子の種類と数をそろえます。数をそろえるときは化学式の前に**係数**をつけ、化学式の中の小さな数字は変えません。',
         // 2Cu ＋ O₂ → 2CuO のモデル
         figure: scene([
@@ -1832,19 +1850,17 @@
       {
         id: 'chemical-change-mp6-c1',
         text: '鉄粉（灰色）と硫黄（黄色）の混合物を加熱すると、光と熱を出して反応が進み、黒色の**硫化鉄**ができます。2 つ以上の物質が結びついて別の物質ができる化学変化を**化合**といい、できた物質を**化合物**といいます。',
-        // 鉄 ＋ 硫黄 → 硫化鉄
+        // 写真（chem-3-c2 の画像）: 左の皿 (82, 32〜160) に鉄粉と硫黄の粉、右の皿 (235, 32〜160) に黒い硫化鉄。皿の下 165 より下は白い余白
         figure: scene([
-          { type: 'circle', x: 50, y: 90, r: 28, fill: 'rock' },
-          { type: 'text', x: 50, y: 140, text: '鉄粉（灰色）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 100, y: 96, text: '＋', size: 16, anchor: 'middle' },
-          { type: 'circle', x: 150, y: 90, r: 28, fill: 'yellow' },
-          { type: 'text', x: 150, y: 140, text: '硫黄（黄色）', size: 12, anchor: 'middle' },
-          { type: 'arrow', x1: 186, y1: 90, x2: 224, y2: 90, width: 2 },
-          { type: 'text', x: 205, y: 76, text: '加熱', size: 12, anchor: 'middle' },
-          { type: 'circle', x: 266, y: 90, r: 28, fill: '#333333' },
-          { type: 'text', x: 266, y: 140, text: '硫化鉄（黒色）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 190, text: 'Fe ＋ S → FeS', size: 18, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 222, text: '結びついて別の物質（化合物）ができる', size: 12, anchor: 'middle' },
+          photo('chem-3-c2'),
+          tag(82, 24, '加熱前', { size: 16, bold: true }),
+          { type: 'arrow', x1: 118, y1: 18, x2: 198, y2: 18, color: 'ink', width: 2 },
+          tag(158, 40, '加熱', { size: 13 }),
+          tag(235, 24, '加熱後', { size: 16, bold: true }),
+          tag(86, 180, '鉄粉（灰色）＋硫黄（黄色）', { size: 13 }),
+          tag(235, 180, '硫化鉄（黒色）', { size: 13 }),
+          tag(160, 206, 'Fe ＋ S → FeS', { size: 16, bold: true }),
+          tag(160, 230, '結びついて別の物質（化合物）ができる', { size: 13 }),
         ]),
       },
       {
@@ -1968,31 +1984,43 @@
       {
         id: 'chemical-change-mp7-c1',
         text: '赤茶色の銅の粉末をステンレス皿で加熱すると、空気中の酸素と結びついて黒色の**酸化銅**になり、質量が増えます。増えた分が結びついた酸素の質量です。スチールウール（鉄）を燃やすと、黒っぽい**酸化鉄**ができ、質量が増えます。',
-        // 銅の粉末を加熱する
+        // 写真（chem-3-c3 の画像）: 上の皿 (12〜140, 8〜92) に銅の粉、下の皿 (12〜140, 98〜185) に酸化銅の粉、
+        // 右にピンセットではさんだマグネシウムリボン (220〜255, 50〜165)。強い光は (230, 150)。下は白い余白
         figure: scene([
-          { type: 'text', x: 160, y: 30, text: '加熱すると酸素と結びつく', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 54, text: '赤茶色 → 黒色（酸化銅）', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 160, y: 78, text: '質量は増える', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 132, text: '銅の粉末', size: 13, anchor: 'middle' },
-          { type: 'ellipse', x: 160, y: 148, rx: 40, ry: 6, fill: 'brown', stroke: 'none' },
-          { type: 'rect', x: 100, y: 152, width: 120, height: 12, rx: 4, fill: 'glass' },
-          { type: 'text', x: 228, y: 164, text: 'ステンレス皿', size: 12 },
-          { type: 'flame', x: 160, y: 204 },
-          { type: 'text', x: 160, y: 226, text: 'ガスバーナー', size: 12, anchor: 'middle' },
+          photo('chem-3-c3'),
+          tag(174, 46, '銅'),
+          tag(174, 64, '（赤茶色）', { size: 13 }),
+          { type: 'arrow', x1: 174, y1: 72, x2: 174, y2: 124, color: 'ink', width: 2 },
+          tag(174, 102, '加熱', { size: 13 }),
+          tag(174, 142, '酸化銅'),
+          tag(174, 160, '（黒色）', { size: 13 }),
+          tag(76, 204, '質量は増える', { size: 13, bold: true }),
+          tag(76, 221, '（増えた分 ＝', { size: 13 }),
+          tag(76, 238, '結びついた酸素）', { size: 13 }),
+          pointer(242, 184, 232, 166),
+          tag(252, 200, 'マグネシウム', { size: 13 }),
+          tag(252, 218, '激しく光と熱を出す', { size: 13 }),
+          tag(252, 236, '酸化 ＝ 燃焼', { size: 13, bold: true }),
         ]),
       },
       {
         id: 'chemical-change-mp7-c2',
         text: 'エタノールなど炭素と水素をふくむ物質を燃やすと、**二酸化炭素**と**水**ができます。燃やした後の集気びんに石灰水を入れてふると白くにごり、びんの内側のくもりに**塩化コバルト紙**をつけると赤色（桃色）になります。',
-        // 集気びんの中でエタノールを燃やす
+        // 写真（sub-1-c3 の画像。ほかの単元の画像なので src を直接書く）: 左の集気びん (25〜105, 10〜170) の中で燃えるろうそく、
+        // 右の集気びん (215〜295, 10〜170) は燃やした後に石灰水を入れてふったもの（白くにごる）。下は白い余白
         figure: scene([
-          { type: 'text', x: 160, y: 30, text: '集気びん', size: 13, anchor: 'middle' },
-          { type: 'rect', x: 100, y: 40, width: 120, height: 150, rx: 8, fill: 'glass', stroke: 'line' },
-          { type: 'rect', x: 140, y: 154, width: 40, height: 30, fill: 'white' },
-          { type: 'flame', x: 160, y: 154 },
-          { type: 'text', x: 226, y: 176, text: 'エタノール', size: 12 },
-          { type: 'text', x: 160, y: 214, text: '石灰水を入れてふる → 白くにごる（二酸化炭素）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 234, text: 'くもり → 塩化コバルト紙が赤色（水）', size: 12, anchor: 'middle' },
+          { type: 'image', src: 'assets/images/substance/sub-1-c3.jpg' },
+          tag(160, 24, 'ろう・エタノール', { size: 13 }),
+          tag(160, 42, 'などを燃やす', { size: 13 }),
+          { type: 'arrow', x1: 116, y1: 90, x2: 206, y2: 90, color: 'blue', width: 3 },
+          tag(161, 78, '燃やした後', { size: 13 }),
+          tag(74, 186, 'びんの内側がくもる', { size: 13 }),
+          tag(74, 203, '塩化コバルト紙が赤色', { size: 13 }),
+          tag(74, 220, '→ 水', { size: 13, bold: true }),
+          tag(255, 186, '石灰水を入れてふる', { size: 13 }),
+          tag(255, 203, '白くにごる', { size: 13 }),
+          tag(255, 220, '→ 二酸化炭素', { size: 13, bold: true }),
+          tag(160, 238, '炭素と水素をふくむ物質 → 二酸化炭素と水', { size: 13 }),
         ]),
       },
     ],
@@ -2100,16 +2128,24 @@
       {
         id: 'chemical-change-mp8-c1',
         text: '酸化物から酸素をうばう化学変化を**還元**といいます。黒色の酸化銅と炭素の粉を混ぜて加熱すると、赤茶色の**銅**ができ、こすると金属の光沢が出ます。炭素は酸素をうばって**二酸化炭素**になり、石灰水を白くにごらせます。',
-        figure: scene(heatingItems('#333333').concat([
-          { type: 'text', x: 90, y: 40, text: '黒色 → 赤茶色（銅）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 70, y: 70, text: '酸化銅＋炭素', size: 12, anchor: 'middle' },
-          { type: 'text', x: 176, y: 98, text: '口を少し下げる', size: 12, anchor: 'middle' },
-          { type: 'text', x: 60, y: 190, text: '加熱', size: 12, anchor: 'middle' },
-          { type: 'text', x: 220, y: 236, text: '石灰水', size: 12, anchor: 'middle' },
-        ])),
+        // 写真: スタンドに口を少し下げて固定した試験管（底 (42, 76)〜ゴム栓 (148, 92)）。中の黒い粉 (88, 86)、底の赤茶色の所 (58, 80)。
+        // 炎 (60, 95〜125)。ゴム管のピンチコック (228, 85)、白くにごった石灰水の試験管 (275, 150〜195)。上は白い余白
+        figure: scene([
+          photo('chemical-change-mp8-c1'),
+          pointer(96, 26, 92, 82), tag(4, 22, '酸化銅＋炭素（黒色）', { size: 13, anchor: 'start' }),
+          pointer(40, 50, 58, 78), tag(4, 46, '→ 赤茶色（銅）', { size: 13, anchor: 'start' }),
+          pointer(188, 36, 152, 86), tag(206, 30, '口を少し下げる', { size: 13 }),
+          pointer(246, 64, 230, 80), tag(274, 60, 'ピンチコック', { size: 13 }),
+          tag(22, 118, '加熱', { size: 13 }),
+          pointer(204, 152, 268, 168),
+          tag(176, 150, '石灰水が', { size: 13 }),
+          tag(176, 168, '白くにごる', { size: 13 }),
+          tag(176, 186, '（二酸化炭素）', { size: 13 }),
+        ]),
       },
       {
         id: 'chemical-change-mp8-c2',
+        anim: 'ch-reduction-model',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '加熱をやめるときは、ガラス管を石灰水から出してから火を消し、**ピンチコック**でゴム管を閉じます。できた銅が空気にふれて、再び酸化されるのを防ぐためです。酸化銅の還元と炭素の酸化は、同時に起こります。',
         // 2CuO ＋ C → 2Cu ＋ CO₂ のモデル
         figure: scene([
@@ -2128,6 +2164,7 @@
       },
       {
         id: 'chemical-change-mp8-c3',
+        anim: 'ch-heat-thermometer',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: 'まわりに熱を出して温度が上がる化学変化を**発熱反応**、まわりから熱をうばって温度が下がる化学変化を**吸熱反応**といいます。物質がもっている**化学エネルギー**が、化学変化によって熱として出入りします。',
         figure: scene(heatBeakerItems().concat([
           { type: 'arrow', x1: 126, y1: 150, x2: 126, y2: 104, color: 'red', width: 3 },
@@ -2259,6 +2296,7 @@
     lessons: [
       {
         id: 'chemical-change-mp9-c1',
+        anim: 'ch-precipitate-mass',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '化学変化の前後で、物質全体の質量は変わりません。これを**質量保存の法則**といいます。うすい硫酸と塩化バリウム水溶液を混ぜると白い**沈殿**ができますが、全体の質量は同じです。原子の種類と数が変わらないからです。',
         // 混ぜる前と混ぜた後の質量
         figure: scene([
@@ -2280,6 +2318,7 @@
       },
       {
         id: 'chemical-change-mp9-c2',
+        anim: 'ch-open-container',   // 動く図の使い回し（js/anim-chem.js）。figure は静止図として残す
         text: '密閉した容器の中で塩酸と炭酸水素ナトリウムを反応させると、二酸化炭素が発生しても質量は変わりません。ふたをゆるめると気体が出ていき、質量は小さくなります。また、銅の質量とできる酸化銅の質量は**比例**します。',
         // ふたをしたまま と ふたをゆるめる
         figure: scene([

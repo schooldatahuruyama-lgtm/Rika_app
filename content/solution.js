@@ -959,29 +959,12 @@
   // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/solution.md）
   // ================================================================
 
-  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
-  function mpRegions(parts) {
-    const items = [];
-    parts.forEach(([x, y, px, py], i) => {
-      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
-      items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオ'[i] });
-    });
-    return items;
-  }
-
-  // ろ過の装置（大きい図）。ろうとの足の先 (160, 196) は、ビーカー（底の中央 (196, 230)、左の壁 x=156）の内側の壁につく
-  function mpFilterItems() {
-    return [
-      { type: 'polygon', points: [[110, 60], [210, 60], [166, 118], [154, 118]], fill: 'glass' },
-      { type: 'polygon', points: [[118, 64], [202, 64], [160, 112]], fill: 'white' },
-      { type: 'line', points: [[160, 118], [160, 196]], color: 'line', width: 6 },
-      { type: 'beaker', x: 196, y: 230, width: 80, height: 90, level: 0.2 },
-      { type: 'line', points: [[196, 18], [168, 86]], color: 'gray', width: 4 },
-    ];
-  }
-  // ろ過の部分を選ぶ図: ア ガラス棒・イ ろ紙・ウ ろうと・エ ビーカー
-  const MP_FILTER_Q = scene(mpFilterItems().concat(mpRegions([
-    [262, 34, 190, 34], [40, 76, 132, 72], [40, 150, 157, 150], [284, 196, 236, 196],
+  // ろ過の写真（sol-4-c4 の画像）の部分を選ぶ図: ア ガラス棒 (188, 66)・イ ろ紙 (150, 95)・ウ ろうと（輪の下の細い所）(155, 137)・エ 下のビーカー (194, 192)
+  const MP_FILTER_Q = scene([photo('sol-4-c4')].concat([
+    [280, 104, 188, 66], [40, 84, 150, 95], [40, 150, 155, 137], [280, 182, 194, 192],
+  ].flatMap(([x, y, px, py], i) => [
+    pointer(x < px ? x + 22 : x - 22, y, px, py),
+    { type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエ'[i] },
   ])));
 
   // 水 100 g にとける質量の表（目安の値。ミョウバンは結晶の水をふくむ質量）
@@ -1057,19 +1040,19 @@
       {
         id: 'solution-mp1-c2',
         text: '**ろ過**では、ろ紙をろうとにつけ、液はガラス棒に伝わらせて入れます。ろうとの足のとがったほうは、ビーカーの内側の壁につけます。液はろ紙の 8 分目くらいまでにします。',
-        figure: scene(mpFilterItems().concat([
-          { type: 'line', points: [[214, 34], [190, 34]], color: 'line', width: 1 },
-          { type: 'text', x: 218, y: 38, text: 'ガラス棒', size: 12 },
-          { type: 'line', points: [[96, 72], [132, 72]], color: 'line', width: 1 },
-          { type: 'text', x: 92, y: 76, text: 'ろ紙', size: 12, anchor: 'end' },
-          { type: 'line', points: [[96, 150], [157, 150]], color: 'line', width: 1 },
-          { type: 'text', x: 92, y: 154, text: 'ろうと', size: 12, anchor: 'end' },
-          { type: 'line', points: [[96, 196], [157, 192]], color: 'line', width: 1 },
-          { type: 'text', x: 92, y: 200, text: '足を壁につける', size: 12, anchor: 'end' },
-        ])),
+        // 写真（sol-4-c4 の画像）: ろうと台のろうと (122〜190, 80〜118) にろ紙。ガラス棒 (172, 90)〜(207, 35) を伝わらせて注ぎ、
+        // ろうとの足は下のビーカー (148〜200, 147〜210) の内側の壁につく。文字は右の白い余白 (205〜320) に置く
+        figure: scene([
+          photo('sol-4-c4'),
+          pointer(236, 92, 188, 70), tag(266, 96, 'ガラス棒', { size: 13 }),
+          pointer(246, 118, 178, 102), tag(266, 122, 'ろ紙', { size: 13 }),
+          pointer(240, 142, 160, 134), tag(266, 146, 'ろうと', { size: 13 }),
+          pointer(214, 172, 155, 192), tag(264, 176, '足を壁につける', { size: 13, bold: true }),
+        ]),
       },
       {
         id: 'solution-mp1-c3',
+        anim: 'sl-filter-pass',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: 'ろ紙には小さな穴がたくさんあります。泥のように穴より大きい粒はろ紙の上に残り、水や水にとけた物質の粒は穴より小さいので通りぬけます。これで泥水から泥を分けられます。',
         // ろ紙の穴と粒の大きさ
         figure: scene([
@@ -1435,21 +1418,20 @@
     lessons: [
       {
         id: 'solution-mp4-c1',
+        anim: 'sl-crystal-start',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: 'とかした量と、その温度の溶解度が等しくなったとき、水溶液は飽和水溶液になります。それより冷やすと**結晶**が出はじめます。硝酸カリウム 50 g なら 30 ℃ と 40 ℃ の間です。',
         figure: mpLineScene('硝酸カリウム 50 g をとかした水溶液', [32, 46, 64, 85, 110, 138], [30, 40]),
       },
       {
         id: 'solution-mp4-c2',
         text: '冷やしたときに出てくる結晶の質量は、とかした質量 − 冷やした温度の溶解度 です。ミョウバン 50 g を 20 ℃ まで冷やすと 50 − 11 ＝ 39 g が出てきます。これを**再結晶**といいます。',
+        // 写真: ミョウバン水溶液を冷やしたビーカー。底に透明な正八面体の結晶がたくさん出ている（結晶 y 130〜210、液面 y 約 98）。
+        // ビーカーが大きく余白が少ないので、式はビーカーのふちの上、数は結晶より上の澄んだ液の上に下地つきで置く
         figure: scene([
-          { type: 'text', x: 160, y: 46, text: '出てくる結晶 ＝ とかした量 − 溶解度', size: 15, anchor: 'middle', bold: true },
-          { type: 'beaker', x: 90, y: 190, width: 80, height: 90, level: 0.7 },
-          { type: 'arrow', x1: 142, y1: 150, x2: 178, y2: 150, color: 'blue' },
-          { type: 'text', x: 160, y: 136, text: '冷やす', size: 12, anchor: 'middle' },
-          { type: 'beaker', x: 230, y: 190, width: 80, height: 90, level: 0.7 },
-          { type: 'polygon', points: [[200, 186], [210, 176], [222, 182], [236, 174], [248, 184], [260, 186]], fill: 'white' },
-          { type: 'text', x: 90, y: 214, text: '50 g がとけている', size: 12, anchor: 'middle' },
-          { type: 'text', x: 230, y: 214, text: '20 ℃: 39 g が結晶に', size: 12, anchor: 'middle' },
+          photo('solution-mp4-c2'),
+          tag(160, 24, '出てくる結晶 ＝ とかした量 − 溶解度', { bold: true }),
+          tag(160, 118, '20 ℃: 39 g が結晶に', { size: 13 }),
+          pointer(262, 164, 238, 168), tag(288, 152, 'ミョウバン', { size: 13 }), tag(288, 170, 'の結晶', { size: 13 }),
         ]),
       },
     ],

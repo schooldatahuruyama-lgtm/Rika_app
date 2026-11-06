@@ -987,6 +987,7 @@
     lessons: [
       {
         id: 'motion-mp1-c1',
+        anim: 'mo-water-pressure',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '水の重さによって生じる圧力を**水圧**といいます。水圧は、水中の物体のあらゆる向きの面に垂直にはたらき、深いほど大きくなります。同じ深さなら、ゴム膜を横に向けても下に向けても、へこみ方は変わりません。',
         // 水そうの中の、両はしにゴム膜をはったパイプ。深いほどへこみが大きい
         figure: scene([
@@ -1000,6 +1001,7 @@
       },
       {
         id: 'motion-mp1-c2',
+        anim: 'mo-buoyancy-depth',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '水中の物体には、下の面と上の面の水圧の差によって、上向きの**浮力**がはたらきます。浮力 ＝ 空気中でのばねばかりの値 − 水中での値 です。物体の全体が水に入ったあとは、深くしても浮力は変わりません。',
         // A 空気中 2.0 N、B 半分 1.7 N、C 全体 1.4 N（C の浮力は 0.6 N）
         figure: scene(buoyFigure([2.0, 1.7, 1.4]).concat([
@@ -1114,6 +1116,7 @@
     lessons: [
       {
         id: 'motion-mp2-c1',
+        anim: 'mo-angle-resultant',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '一直線上の 2 力の**合力**は、同じ向きなら 2 力の和、反対向きなら 2 力の差で、向きは大きいほうの力と同じです。2 力に角度があるときの合力は、2 力の和より小さく、差より大きくなります。',
         // 上: 同じ向き 2 N ＋ 3 N ＝ 5 N。下: 反対向き 3 N と 1 N → 2 N（1 N ＝ 24px）
         figure: scene([
@@ -1133,6 +1136,7 @@
       },
       {
         id: 'motion-mp2-c2',
+        anim: 'mo-compose-steps',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '角度のある 2 力の合力は、2 力を 2 辺とする**平行四辺形**をかき、作用点から対角線を引いて求めます。方眼では、力 A の矢印の先から、力 B と同じ向き・長さだけ進んだ点が合力の先です。',
         // 方眼 40px。O(60,190)、A の先 (140,190)、B の先 (140,110)、合力の先 (220,110)
         figure: scene([
@@ -1270,6 +1274,7 @@
     lessons: [
       {
         id: 'motion-mp3-c1',
+        anim: 'mo-split-steps',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '1 つの力を、同じはたらきをする 2 つの力に分けることを**力の分解**、分けた力を**分力**といいます。分けたい 2 つの向きの線を引き、もとの力が対角線になる平行四辺形をかくと、2 辺が分力になります。',
         // O(60,190) の力 C（青）を、横向き（OA）と縦向き（OB）の分力（緑）に分ける
         figure: scene([
@@ -1291,6 +1296,7 @@
       },
       {
         id: 'motion-mp3-c2',
+        anim: 'mo-slope-split',   // 動く図（js/anim-physics.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '斜面上の物体にはたらく重力は、斜面に平行な分力と、斜面に垂直な分力に分けられます。斜面に平行な分力が物体を斜面に沿って下へ動かそうとし、斜面の傾きが大きいほど、この分力は大きくなります。',
         figure: scene(slopeBlock().concat([
           { type: 'line', points: [[99, 143], [131, 207]], color: 'gray', width: 2, dashed: true },
@@ -1459,6 +1465,7 @@
     lessons: [
       {
         id: 'motion-mp4-c1',
+        anim: 'mo-action-reaction',   // 動く図（js/anim-physics.js。ミニプリントの使い回し）。figure は静止図として残す
         text: 'A が B を押すと、A も B から、同じ大きさで反対向きの力を受けます（**作用・反作用の法則**）。スケートボードに乗った人がもう 1 人を押すと、押した人も押された人も、たがいに反対向きに動きます。',
         figure: scene([
           { type: 'arrow', x1: 110, y1: 60, x2: 40, y2: 60, color: 'green' },
@@ -1632,6 +1639,7 @@
       },
       {
         id: 'motion-mp5-c2',
+        anim: 'mo-timer-tape',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '**記録タイマー**の打点の間隔が広いほど、速く動いています。1 秒間に 50 打点のタイマーでは、10 打点の間が 0.2 秒です。斜面を下る台車には斜面に沿って下向きの力がはたらき続けるので、だんだん速くなります。',
         figure: scene([
           note(10, 30, '同じ時間ごとの打点', 13),
@@ -1768,6 +1776,7 @@
     lessons: [
       {
         id: 'motion-mp6-c1',
+        anim: 'mo-friction-slow',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '机の上をすべる木片には、運動と反対向きに**摩擦力**がはたらき続けるので、だんだんおそくなって止まります。摩擦や空気の抵抗がなければ、水平面上の台車は**等速直線運動**を続けます。',
         figure: scene([
           { type: 'line', points: [[10, 170], [310, 170]], color: 'line', width: 3 },
@@ -1781,6 +1790,7 @@
       },
       {
         id: 'motion-mp6-c2',
+        anim: 'mo-uniform-graph',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '等速直線運動では、時間と速さのグラフは横軸に平行な直線、時間と移動距離のグラフは原点を通る右上がりの直線になります。移動距離は時間に比例します。',
         figure: scene([
           ...miniAxes(40), ...miniAxes(190),
@@ -1796,6 +1806,7 @@
       },
       {
         id: 'motion-mp6-c3',
+        anim: 'mo-inertia-start',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '力がはたらかないとき、静止している物体は静止し続け、動いている物体は等速直線運動を続けます（**慣性の法則**）。止まっていた電車が急に動き出すと、乗客のからだは止まったままでいようとして、後ろへかたむきます。',
         figure: scene([
           note(20, 30, '電車が急に動き出すと、からだは後ろへ', 14),
@@ -2068,6 +2079,7 @@
     lessons: [
       {
         id: 'motion-mp8-c1',
+        anim: 'mo-pulley-compare',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '**定滑車**は力の向きを変えるだけで、引く力も引く距離も、直接持ち上げるときと同じです。**動滑車**を使うと、引く力は半分になりますが、ひもを引く距離は 2 倍になります。',
         figure: scene(twoPulleys().concat([
           note(80, 206, '定滑車', 14, 'middle'),
@@ -2180,6 +2192,7 @@
     lessons: [
       {
         id: 'motion-mp9-c1',
+        anim: 'mo-lever',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: 'てこを使うと、支点から遠いところを押すほど小さい力ですみますが、押し下げる距離は長くなります。支点から物体まで 1 m、手まで 4 m なら、力は 4 分の 1、押し下げる距離は 4 倍で、仕事は変わりません。',
         figure: scene(lever().concat([
           { type: 'arrow', x1: 290, y1: 110, x2: 290, y2: 146, color: 'blue' },
@@ -2300,6 +2313,7 @@
     lessons: [
       {
         id: 'motion-mp10-c1',
+        anim: 'mo-ball-block',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: 'ほかの物体に**仕事をすることができる**物体は、**エネルギー**をもっているといいます。高い所にある物体がもつ**位置エネルギー**は、高さが高いほど、質量が大きいほど大きくなります。',
         // レールを転がり下りた球が木片に当たり、木片を動かす（＝木片に仕事をする）
         figure: scene([
@@ -2310,7 +2324,7 @@
           { type: 'rect', x: 200, y: 166, width: 44, height: 24, fill: 'brown', label: '木片' },
           { type: 'arrow', x1: 250, y1: 150, x2: 300, y2: 150, color: 'blue' },
           note(250, 136, '動いた距離', 12),
-          note(120, 30, '高い・重い → 木片を遠くまで動かす', 13),
+          note(92, 30, '高い・重い → 木片を遠くまで動かす', 13),
           note(160, 226, '木片を動かす ＝ 木片に仕事をする', 13, 'middle'),
         ]),
       },
@@ -2486,6 +2500,7 @@
       },
       {
         id: 'motion-mp11-c2',
+        anim: 'mo-pendulum',   // 動く図（js/anim-physics.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '位置エネルギーと運動エネルギーの和を**力学的エネルギー**といいます。ふりこはいちばん低い位置で速さが最大になり、摩擦や空気の抵抗がなければ、はなした位置と同じ高さまで上がります（**力学的エネルギーの保存**）。',
         figure: scene([
           ...swingPath(),

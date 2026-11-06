@@ -809,51 +809,37 @@
     return scene(items);
   }
 
-  // 上皿てんびん（正面から）。調節ねじは うでの両はし。withRegions で ア 皿・イ 針・ウ 調節ねじ を選ぶ場所にする
+  // 上皿てんびんの写真（sub-2-c4 の画像）。左の皿 (90, 92)、中央の針 (161, 47〜100)、調節ねじは うでの両はし (60, 117)・(262, 117)。
+  // withRegions で ア 皿・イ 針・ウ 調節ねじ（右はし）を選ぶ場所にする
   function balanceScene(withRegions) {
-    const items = [
-      { type: 'rect', x: 50, y: 196, width: 220, height: 18, fill: 'gray' },
-      { type: 'rect', x: 150, y: 110, width: 20, height: 86, fill: 'glass' },
-      { type: 'rect', x: 50, y: 100, width: 220, height: 10, fill: 'gray' },
-      { type: 'line', points: [[80, 100], [80, 86]], width: 3 },
-      { type: 'line', points: [[240, 100], [240, 86]], width: 3 },
-      { type: 'ellipse', x: 80, y: 82, rx: 42, ry: 7, fill: 'glass' },
-      { type: 'ellipse', x: 240, y: 82, rx: 42, ry: 7, fill: 'glass' },
-      { type: 'circle', x: 46, y: 105, r: 6, fill: 'ink' },
-      { type: 'circle', x: 274, y: 105, r: 6, fill: 'ink' },
-      { type: 'line', points: [[160, 110], [160, 182]], color: 'red', width: 2 },
-      { type: 'line', points: [[140, 186], [180, 186]], width: 2 },
-    ];
+    const items = [photo('sub-2-c4')];
     if (withRegions) {
-      items.push({ type: 'region', id: 'r1', x: 80, y: 46, r: 22, label: 'ア' });
-      items.push({ type: 'region', id: 'r2', x: 206, y: 160, r: 22, label: 'イ' });
-      items.push({ type: 'region', id: 'r3', x: 290, y: 140, r: 22, label: 'ウ' });
-      items.push({ type: 'line', points: [[184, 160], [164, 160]], color: 'blue', width: 2 });
-      items.push({ type: 'line', points: [[282, 120], [276, 110]], color: 'blue', width: 2 });
+      items.push(pointer(57, 62, 60, 88), { type: 'region', id: 'r1', x: 56, y: 40, r: 22, label: 'ア' });
+      items.push(pointer(190, 46, 163, 64), { type: 'region', id: 'r2', x: 212, y: 46, r: 22, label: 'イ' });
+      items.push(pointer(280, 132, 266, 120), { type: 'region', id: 'r3', x: 294, y: 150, r: 22, label: 'ウ' });
     } else {
-      items.push({ type: 'text', x: 80, y: 60, text: '皿', size: 14, anchor: 'middle' });
-      items.push({ type: 'text', x: 190, y: 166, text: '針', size: 14 });
-      items.push({ type: 'text', x: 296, y: 140, text: '調節ねじ', size: 13, anchor: 'end' });
+      items.push(pointer(57, 36, 60, 88), tag(56, 30, '皿'));
+      items.push(pointer(131, 63, 159, 70), tag(120, 66, '針'));
+      items.push(pointer(286, 136, 266, 120), pointer(42, 136, 58, 120), tag(290, 150, '調節ねじ', { size: 13 }), tag(34, 150, '調節ねじ', { size: 13 }));
     }
     return scene(items);
   }
 
-  // メスシリンダーの液面を大きくした図。ふちの高さ y=90、へこんだ所 y=140。withRegions で ア ふち・イ へこんだ所
+  // メスシリンダーの液面の写真（sub-2-c3 の画像）。管のかべ（内側）x 約 30・162、液面のふち（かべぎわで上がった所）y 約 111、
+  // へこんだ平らな所 y 約 122。右半分は白い余白。withRegions で ア ふち・イ へこんだ所
   function meniscusScene(withRegions) {
     const items = [
-      { type: 'polygon', points: [[82, 90], [110, 124], [160, 140], [210, 124], [238, 90], [238, 228], [82, 228]], fill: 'water', stroke: 'none' },
-      { type: 'line', points: [[82, 90], [110, 124], [160, 140], [210, 124], [238, 90]], color: 'blue', width: 2 },
-      { type: 'line', points: [[80, 20], [80, 230]], width: 3 },
-      { type: 'line', points: [[240, 20], [240, 230]], width: 3 },
-      { type: 'line', points: [[240, 90], [268, 90]], color: 'gray', width: 1, dashed: true },
-      { type: 'line', points: [[160, 140], [268, 140]], color: 'gray', width: 1, dashed: true },
-      { type: 'text', x: 92, y: 40, text: '液面を真横から見る', size: 13 },
+      photo('sub-2-c3'),
+      tag(244, 40, '液面を真横から見る', { size: 13 }),
     ];
     if (withRegions) {
-      items.push({ type: 'region', id: 'r1', x: 292, y: 90, r: 22, label: 'ア' });
-      items.push({ type: 'region', id: 'r2', x: 292, y: 140, r: 22, label: 'イ' });
+      items.push({ type: 'line', points: [[160, 111], [270, 92]], color: 'ink', width: 2 });
+      items.push({ type: 'line', points: [[96, 122], [270, 144]], color: 'ink', width: 2 });
+      items.push({ type: 'region', id: 'r1', x: 292, y: 88, r: 22, label: 'ア' });
+      items.push({ type: 'region', id: 'r2', x: 292, y: 148, r: 22, label: 'イ' });
     } else {
-      items.push({ type: 'text', x: 160, y: 168, text: 'ここを読む', size: 14, anchor: 'middle' });
+      items.push({ type: 'arrow', x1: 300, y1: 122, x2: 152, y2: 122, color: 'red', width: 3 });
+      items.push(tag(244, 150, 'ここを読む'), tag(244, 170, '（へこんだ所）', { size: 13 }));
     }
     return scene(items);
   }
@@ -896,44 +882,41 @@
       {
         id: 'substance-mp1-c1',
         text: '食塩・砂糖・デンプンはどれも白い粉ですが、水にとけるか、熱すると黒くこげるかで見分けられます。熱すると黒くこげる砂糖やデンプンは、**炭素**をふくむ**有機物**です。食塩は**無機物**です。',
+        // 写真: 熱したあとの燃焼さじ 3 本（左 食塩: 白いまま、中 砂糖: 黒くこげて泡立つ、右 デンプン: 黒くこげる）。さじの中心 x 55・160・268、y 70〜150。下は白い余白
         figure: scene([
-          { type: 'text', x: 90, y: 40, text: '水にとける', size: 13, anchor: 'middle' },
-          { type: 'text', x: 220, y: 40, text: '熱すると', size: 13, anchor: 'middle' },
-          ...[[80, '食塩', 'とける', 'こげない'], [130, '砂糖', 'とける', '黒くこげる'], [180, 'デンプン', 'とけにくい', '黒くこげる']].flatMap(([y, name, w, h]) => [
-            { type: 'text', x: 10, y, text: name, size: 14 },
-            { type: 'text', x: 90, y, text: w, size: 14, anchor: 'middle' },
-            { type: 'text', x: 220, y, text: h, size: 14, anchor: 'middle' },
-          ]),
-          { type: 'line', points: [[10, 52], [310, 52]], color: 'gray', width: 1 },
-          { type: 'text', x: 160, y: 224, text: '黒くこげる → 有機物（炭素をふくむ）', size: 14, anchor: 'middle' },
+          photo('substance-mp1-c1'),
+          tag(55, 172, '食塩', { bold: true }), tag(55, 192, 'こげない', { size: 13 }),
+          tag(160, 172, '砂糖', { bold: true }), tag(160, 192, '黒くこげる', { size: 13 }),
+          tag(268, 172, 'デンプン', { bold: true }), tag(268, 192, '黒くこげる', { size: 13 }),
+          tag(160, 226, '黒くこげる → 有機物（炭素をふくむ）'),
         ]),
       },
       {
         id: 'substance-mp1-c2',
         text: '鉄・銅・アルミニウムなどの**金属**は、みがくと光る（**金属光沢**）、電気をよく通す、熱をよく伝える、たたくと広がり引っぱるとのびる、という性質があります。磁石につくのは鉄など一部だけです。',
+        // 写真（sub-1-c2 の画像）: みがいた鉄・銅・アルミニウムの板（y 50〜140。どれも光を反射して光る。銅の光る所 (172, 67)）。上下は白い余白
         figure: scene([
-          { type: 'rect', x: 30, y: 60, width: 90, height: 60, fill: 'gray' },
-          { type: 'line', points: [[44, 74], [64, 94]], color: 'white', width: 3 },
-          { type: 'line', points: [[58, 70], [84, 96]], color: 'white', width: 3 },
-          { type: 'text', x: 75, y: 146, text: '金属光沢', size: 14, anchor: 'middle' },
-          { type: 'text', x: 150, y: 70, text: '・電気をよく通す', size: 14 },
-          { type: 'text', x: 150, y: 100, text: '・熱をよく伝える', size: 14 },
-          { type: 'text', x: 150, y: 130, text: '・広がる・のびる', size: 14 },
-          { type: 'text', x: 20, y: 206, text: '磁石につくのは鉄など一部だけ', size: 14 },
+          photo('sub-1-c2'),
+          pointer(160, 34, 172, 64), tag(160, 28, '金属光沢（みがくと光る）'),
+          tag(56, 162, '鉄', { size: 13 }),
+          tag(159, 162, '銅', { size: 13 }),
+          tag(262, 162, 'アルミニウム', { size: 13 }),
+          tag(160, 186, '・電気をよく通す　・熱をよく伝える', { size: 13 }),
+          tag(160, 207, '・広がる・のびる', { size: 13 }),
+          tag(160, 230, '磁石につくのは鉄など一部だけ', { size: 13 }),
         ]),
       },
       {
         id: 'substance-mp1-c3',
         text: '**プラスチック**は石油を原料につくられる有機物です。軽い、さびない、形をつくりやすい、酸やアルカリに強い、などの性質があり、電気は通しにくいです。燃やすと有毒な気体が出るものもあります。',
+        // 写真: プラスチックの製品（左から 消しゴム (48, 120)、CD ケース (148, 120)、ポリエチレンのバケツ (260, 120)）。上下は白い余白
         figure: scene([
-          { type: 'rect', x: 30, y: 60, width: 50, height: 36, fill: 'white', label: 'PVC' },
-          { type: 'rect', x: 120, y: 56, width: 70, height: 44, fill: 'sky', label: 'PS' },
-          { type: 'polygon', points: [[230, 50], [290, 50], [280, 110], [240, 110]], fill: 'lightgreen' },
-          { type: 'text', x: 55, y: 124, text: '消しゴム', size: 13, anchor: 'middle' },
-          { type: 'text', x: 155, y: 124, text: 'CD ケース', size: 13, anchor: 'middle' },
-          { type: 'text', x: 260, y: 130, text: 'バケツ（PE）', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 180, text: '原料は石油・軽い・さびない', size: 14, anchor: 'middle' },
-          { type: 'text', x: 160, y: 206, text: '電気を通しにくい', size: 14, anchor: 'middle' },
+          photo('substance-mp1-c3'),
+          tag(48, 186, '消しゴム', { size: 13 }),
+          tag(148, 186, 'CD ケース', { size: 13 }),
+          tag(262, 186, 'バケツ（PE）', { size: 13 }),
+          tag(160, 212, '原料は石油・軽い・さびない'),
+          tag(160, 234, '電気を通しにくい'),
         ]),
       },
     ],
@@ -1224,7 +1207,14 @@
       {
         id: 'substance-mp3-c2',
         text: '体積が同じ 5 cm³ の金属でも、鉄・銅・アルミニウムでは質量がちがいます。密度は物質ごとに決まっているので、**密度**を求めると物質を見分ける手がかりになります。',
-        figure: metals5('？ g', false),
+        // 写真: 同じ大きさの金属の立方体（左から 鉄・銅・アルミニウム。中心 x 58・160・262、y 68〜176）
+        figure: scene([
+          photo('substance-mp3-c2'),
+          tag(160, 34, 'どれも体積 5 cm³'),
+          tag(58, 198, '鉄'), tag(58, 222, '39.5 g', { size: 15, bold: true }),
+          tag(160, 198, '銅'), tag(160, 222, '44.8 g', { size: 15, bold: true }),
+          tag(262, 198, 'アルミニウム'), tag(262, 222, '？ g', { size: 15, bold: true }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1335,25 +1325,28 @@
     lessons: [
       {
         id: 'substance-mp4-c1',
+        anim: 'su-three-methods',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '水にとけにくい気体は**水上置換法**、水にとけやすく空気より軽い気体は**上方置換法**、水にとけやすく空気より重い気体は**下方置換法**で集めます。酸素や水素は水上置換法、アンモニアは上方置換法です。',
         figure: collectPlain(),
       },
       {
         id: 'substance-mp4-c2',
         text: '**二酸化炭素**は石灰石にうすい塩酸を、**酸素**は二酸化マンガンにオキシドール（うすい過酸化水素水）を加えて発生させます。二酸化炭素は石灰水を白くにごらせ、酸素はものが燃えるのを助けます。',
+        // 写真: 試験管立ての 2 本の試験管。左 (113, 0〜218) は石灰石＋うすい塩酸で泡、右 (205, 0〜218) は黒い二酸化マンガン＋オキシドールで細かい泡。
+        // 余白がないので、文字は試験管立てより上の左右のすみ（x 0〜88・230〜320、y 0〜72）に置く
         figure: scene([
-          { type: 'tube', x: 80, y: 170, height: 100, level: 0.35, liquid: 'sky' },
-          { type: 'circle', x: 80, y: 160, r: 7, fill: 'rock' },
-          { type: 'text', x: 80, y: 200, text: '石灰石＋塩酸', size: 13, anchor: 'middle' },
-          { type: 'text', x: 80, y: 224, text: '→ 二酸化炭素', size: 13, anchor: 'middle' },
-          { type: 'tube', x: 240, y: 170, height: 100, level: 0.35, liquid: 'sky' },
-          { type: 'circle', x: 240, y: 162, r: 6, fill: 'ink' },
-          { type: 'text', x: 240, y: 200, text: '二酸化マンガン＋', size: 13, anchor: 'middle' },
-          { type: 'text', x: 240, y: 224, text: 'オキシドール → 酸素', size: 13, anchor: 'middle' },
+          photo('substance-mp4-c2'),
+          tag(44, 22, '石灰石', { size: 13 }),
+          tag(44, 40, '＋塩酸', { size: 13 }),
+          tag(46, 62, '→ 二酸化炭素', { size: 13, bold: true }),
+          tag(275, 22, '二酸化マンガン', { size: 13 }),
+          tag(275, 40, '＋オキシドール', { size: 13 }),
+          tag(275, 62, '→ 酸素', { size: 13, bold: true }),
         ]),
       },
       {
         id: 'substance-mp4-c3',
+        anim: 'su-discard-first',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '**水上置換法**では、水を満たした試験管を水の中で逆さに立てておきます。はじめに出てくる気体は装置の中の空気がまざっているので集めません。集め終わったら、水の中でゴム栓をしてから取り出します。',
         figure: scene([
           { type: 'rect', x: 60, y: 110, width: 200, height: 100, fill: 'none' },
@@ -1529,6 +1522,7 @@
       },
       {
         id: 'substance-mp5-c2',
+        anim: 'su-ammonia-fountain',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: 'アンモニアを満たしたフラスコに少し水を入れると、アンモニアが水にとけてフラスコの中の気体が減り、ビーカーの水が吸い上げられて**噴水**になります。フェノールフタレイン溶液を入れた水は、赤い噴水になります。',
         figure: scene([
           { type: 'circle', x: 160, y: 70, r: 50, fill: 'white' },
@@ -1549,15 +1543,14 @@
       {
         id: 'substance-mp5-c3',
         text: '身のまわりの気体として、漂白剤と酸性の洗剤を混ぜると出る有毒な**塩素**、風船に入れる軽い**ヘリウム**、ガスボンベで使うプロパン、不完全燃焼で出る有毒な一酸化炭素などがあります。',
+        // 写真: 左から ひものついた風船 (52, 85)、カセットこんろ用のガスボンベ (140, 70〜195)、洗剤と漂白剤のボトル (217, 285。y 65〜195)。容器に文字はない
         figure: scene([
-          { type: 'ellipse', x: 70, y: 70, rx: 34, ry: 42, fill: 'pink' },
-          { type: 'line', points: [[70, 112], [74, 190]], color: 'gray', width: 2 },
-          { type: 'text', x: 70, y: 214, text: 'ヘリウム', size: 14, anchor: 'middle' },
-          { type: 'rect', x: 140, y: 80, width: 50, height: 110, fill: 'gray', rx: 14 },
-          { type: 'text', x: 165, y: 214, text: 'プロパン', size: 14, anchor: 'middle' },
-          { type: 'text', x: 210, y: 70, text: 'まぜるな', size: 14, bold: true },
-          { type: 'text', x: 210, y: 92, text: '危険', size: 14, bold: true },
-          { type: 'text', x: 210, y: 130, text: '→ 塩素', size: 14 },
+          photo('substance-mp5-c3'),
+          tag(52, 214, 'ヘリウム'),
+          tag(140, 212, 'プロパン'),
+          tag(140, 232, '（ガスボンベ）', { size: 13 }),
+          tag(250, 212, 'まぜるな危険', { bold: true }),
+          tag(250, 232, '→ 塩素'),
         ]),
       },
     ],

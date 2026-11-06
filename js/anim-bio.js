@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
   const anim = typeof require === 'function' ? require('./anim.js') : root.RikaQuest.anim;
-  const { stage, lerp, ease, growLine, along, pathLen, u } = anim.helpers;
+  const { stage, lerp, ease, growLine, along, partial, pathLen, u, mix, TOKEN_HEX } = anim.helpers;
 
   // 小数部分（0 以上 1 未満）
   function frac(x) { return x - Math.floor(x); }
@@ -527,6 +527,529 @@
     return items;
   }
 
+  // ================================================================
+  // ミニプリント（1nen）。docs/plans/mp-figures-1nen.md の「動く図（新規）」の基礎（basics）3 本と植物 1 本。
+  // basics は顕微鏡・観察の器具なので生物のファイルに置く（ろうそくの燃焼 ba-candle-air も単元でまとめてここ）
+  // ================================================================
+
+  // ---- 観察・実験の基礎（basics）----
+
+  // 顕微鏡の使い方の ①〜④ を順に太字にし、右の小さな顕微鏡（横から見た図）で、① 反射鏡で明るくする ② プレパラートをのせる
+  // ③ 横から見て対物レンズを近づける ④ のぞきながら遠ざけてピントを合わせる、を見せる（bas-2-c3）。
+  // 止まった絵（0.99）は ④ の終わり（ピントが合った像）。左の手順の文字の位置は静止図のまま
+  const FOCUS_STEPS = [
+    [20, 40, '① 反射鏡で明るくする', 0], [20, 80, '② プレパラートをのせる', 1], [20, 120, '③ 横から見て近づける', 2],
+    [20, 160, '④ のぞきながら遠ざけて', 3], [44, 180, 'ピントを合わせる', 3],
+  ];
+  function focusStep(t) { return t < 0.2 ? 0 : t < 0.4 ? 1 : t < 0.6 ? 2 : 3; }
+  function focusDz(t) { return 12 * ease(stage(t, 0.42, 0.58)) - 8 * ease(stage(t, 0.62, 0.85)); }   // 対物レンズが下がった量
+  function baFocusSteps(t) {
+    const step = focusStep(t);
+    const dz = focusDz(t);
+    const light = stage(t, 0.02, 0.15);                  // 反射鏡で視野が明るくなる
+    const slideIn = 24 * (1 - ease(stage(t, 0.22, 0.36)));   // プレパラートが右から入る
+    const items = FOCUS_STEPS.map(([x, y, s, k]) => Object.assign({ type: 'text', x, y, text: s, size: 14 },
+      k === step ? { bold: true, color: 'blue' } : {}));
+    items.push(
+      { type: 'line', points: [[240, 40], [240, 168]], color: 'gray', width: 2, arrow: true },
+      { type: 'text', x: 160, y: 224, text: 'はじめは低倍率で', size: 14, anchor: 'middle', bold: true },
+      // 視野（右上の丸）。暗い → 明るい
+      { type: 'circle', x: 264, y: 26, r: 16, fill: mix(TOKEN_HEX.gray, TOKEN_HEX.white, light) },
+    );
+    // ④ で像が見えはじめ、ぼやけた像（大きくうすい）→ はっきりした像（小さく濃い）
+    if (t >= 0.6) {
+      const blur = 1 - ease(stage(t, 0.62, 0.85));
+      items.push({ type: 'circle', x: 264, y: 26, r: 6 + 5 * blur, fill: mix(TOKEN_HEX.green, TOKEN_HEX.white, 0.65 * blur), stroke: 'none' });
+    }
+    // 小さな顕微鏡（横から見た図）: 接眼レンズ・鏡筒・対物レンズ（dz だけ上下する）、ステージ、反射鏡
+    items.push(
+      { type: 'rect', x: 281, y: 50 + dz, width: 8, height: 12, fill: 'glass' },
+      { type: 'rect', x: 279, y: 62 + dz, width: 12, height: 48, fill: 'glass' },
+      { type: 'rect', x: 281, y: 110 + dz, width: 8, height: 18, fill: 'gray' },
+      { type: 'rect', x: 256, y: 150, width: 60, height: 6, fill: 'gray' },
+      { type: 'ellipse', x: 286, y: 180, rx: 12, ry: 5, fill: mix(TOKEN_HEX.glass, TOKEN_HEX.yellow, light) },
+    );
+    if (t >= 0.2) items.push({ type: 'rect', x: 266 + slideIn, y: 145, width: 40, height: 5, fill: 'sky' });
+    // ③ 横から見る目の印
+    if (step === 2) {
+      items.push(
+        { type: 'ellipse', x: 252, y: 140, rx: 7, ry: 4, fill: 'white' },
+        { type: 'circle', x: 254, y: 140, r: 2, fill: 'ink', stroke: 'none' },
+      );
+    }
+    return items;
+  }
+
+  // プレパラートを右上へ動かすと、視野の中の像は反対の左下へ動く（bas-3-c2）。像はプレパラートの印を
+  // 上下左右逆（180° 回した形）に 2 倍にしたもの。止まった絵（0.99）は静止図と同じ矢印の長さと位置
+  const MARK = [[-6, 6], [6, 6], [6, -6]];   // プレパラートの印（右上が直角の三角形）
+  function baImageReverse(t) {
+    const k = ease(stage(t, 0.1, 0.7));
+    const sx = -18 * (1 - k), sy = 14 * (1 - k);   // プレパラートの、静止図の位置からのずれ（右上へ動いて 0 になる）
+    const items = [
+      { type: 'rect', x: 20 + sx, y: 80 + sy, width: 120, height: 40, fill: 'glass' },
+      { type: 'polygon', points: MARK.map(([dx, dy]) => [80 + sx + dx, 100 + sy + dy]), fill: 'red', stroke: 'none' },
+      { type: 'text', x: 80, y: 60, text: 'プレパラートを右上へ', size: 13, anchor: 'middle' },
+      { type: 'circle', x: 240, y: 110, r: 60, fill: 'white' },
+      // 像: 逆向き・2 倍の大きさで、プレパラートと同じ量だけ反対の向きに動く（視野の中心より右下、矢印にかからない所）
+      { type: 'polygon', points: MARK.map(([dx, dy]) => [256 - sx - 2 * dx, 140 - sy - 2 * dy]), fill: 'red', stroke: 'none' },
+      { type: 'text', x: 240, y: 196, text: '像は左下へ動く', size: 13, anchor: 'middle' },
+    ];
+    if (50 * k >= 14) {
+      items.push(
+        { type: 'arrow', x1: 80, y1: 140, x2: 80 + 40 * k, y2: 140 - 30 * k, color: 'blue' },
+        { type: 'arrow', x1: 260, y1: 92, x2: 260 - 40 * k, y2: 92 + 36 * k, color: 'orange' },
+      );
+    }
+    return items;
+  }
+
+  // ふたをした集気びんのろうそくは、炎が少しずつ小さくなって消える（酸素が減る）。ふたなし・下にすき間のあるびんは、
+  // 空気の粒が下から入って炎の上を通り口から出ていき、燃え続ける（bas-4-c3）。
+  // 最後にふたを少し開けて火をつけ直し、t = 1 で t = 0（両方燃えている＝静止図）とつながる
+  function candleScale(t) {
+    if (t < 0.1) return 1;
+    if (t < 0.55) return 1 - ease(stage(t, 0.1, 0.55));
+    if (t < 0.86) return 0;
+    if (t < 0.95) return ease(stage(t, 0.86, 0.95));
+    return 1;
+  }
+  const CANDLE_AIR = [[172, 184], [214, 184], [220, 156], [236, 116], [236, 36]];   // 空気の粒の道すじ（下のすき間 → 炎の上 → 口）
+  function baCandleAir(t) {
+    const s = candleScale(t);
+    const lid = 48 - 18 * (ease(stage(t, 0.8, 0.86)) - ease(stage(t, 0.92, 0.98)));   // ふた（火をつけ直す間だけ上げる）
+    const items = [
+      { type: 'rect', x: 54, y: 188, width: 72, height: 12, fill: 'brown' },
+      { type: 'line', points: [[62, 56], [62, 188]], color: 'ink', width: 3 },
+      { type: 'line', points: [[118, 56], [118, 188]], color: 'ink', width: 3 },
+      { type: 'rect', x: 84, y: 148, width: 12, height: 40, fill: 'white' },
+    ];
+    // 炎: 燃えているときは静止図と同じ flame。小さくなるときは同じ色の楕円 2 つで描く
+    if (s >= 1) items.push({ type: 'flame', x: 90, y: 148 });
+    else if (s > 0.03) {
+      items.push(
+        { type: 'ellipse', x: 90, y: 148 - 16 * s, rx: 12 * s, ry: 16 * s, fill: 'orange', stroke: 'none' },
+        { type: 'ellipse', x: 90, y: 148 - 9 * s, rx: 5 * s, ry: 9 * s, fill: 'yellow', stroke: 'none' },
+      );
+    }
+    items.push(
+      { type: 'rect', x: 56, y: lid, width: 68, height: 8, fill: 'gray' },
+      { type: 'rect', x: 194, y: 188, width: 72, height: 12, fill: 'brown' },
+      { type: 'line', points: [[202, 56], [202, 176]], color: 'ink', width: 3 },
+      { type: 'line', points: [[258, 56], [258, 176]], color: 'ink', width: 3 },
+      { type: 'rect', x: 224, y: 148, width: 12, height: 40, fill: 'white' },
+      { type: 'flame', x: 230, y: 148 },
+      { type: 'arrow', x1: 180, y1: 182, x2: 200, y2: 182, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 230, y1: 70, x2: 230, y2: 40, color: 'blue', width: 2 },
+    );
+    for (let k = 0; k < 4; k++) {
+      const q = along(CANDLE_AIR, frac(2 * t + k / 4 + 0.125));   // t = 0 で道すじのはしに粒がない（1 周の切れ目でつながる）
+      items.push({ type: 'circle', x: q.x, y: q.y, r: 3, fill: 'sky', stroke: 'blue' });
+    }
+    items.push(
+      { type: 'text', x: 90, y: 228, text: 'ふたをする', size: 13, anchor: 'middle' },
+      { type: 'text', x: 230, y: 228, text: '空気が入れかわる', size: 13, anchor: 'middle' },
+    );
+    if (t >= 0.55 && t < 0.8) items.push(text(90, 30, '火が消える', { size: 13, anchor: 'middle', color: 'red', bold: true }));
+    return items;
+  }
+
+  // ---- 植物のなかま（plants）----
+
+  // 花粉が柱頭に着くと（受粉）、子房が大きくなりながら赤い果実に、胚珠が種子に変わる。育つ絵は左の絵から右の絵の位置へ
+  // 移っていく（plants-mp1-c2）。止まった絵（0.99）は静止図と同じ（左右 2 つの絵が並んだ形）
+  const POLLEN = [[40, 20, 66, 58], [52, 14, 70, 56], [64, 22, 74, 58]];   // [はじめの x, y, 柱頭に着いた x, y]
+  function plOvaryToFruit(t) {
+    const fall = ease(stage(t, 0.02, 0.25));
+    const g = ease(stage(t, 0.3, 0.85));
+    const items = [
+      { type: 'ellipse', x: 70, y: 130, rx: 30, ry: 26, fill: 'lightgreen' },
+      { type: 'circle', x: 70, y: 132, r: 9, fill: 'white' },
+      { type: 'line', points: [[70, 104], [70, 60]], color: 'green', width: 4 },
+      { type: 'text', x: 70, y: 186, text: '子房と胚珠', size: 13, anchor: 'middle' },
+      { type: 'arrow', x1: 118, y1: 130, x2: 190, y2: 130, color: 'gray' },
+      { type: 'text', x: 154, y: 118, text: '受粉後', size: 13, anchor: 'middle' },
+    ];
+    if (t > 0.02) {
+      POLLEN.forEach(([x0, y0, x1, y1]) => items.push({ type: 'circle', x: lerp(x0, x1, fall), y: lerp(y0, y1, fall), r: 3, fill: 'yellow', stroke: 'orange' }));
+    }
+    if (fall >= 1) items.push(text(84, 64, '受粉', { color: 'orange', bold: true }));
+    // 育つ絵（左の子房と同じ所から、右の果実の所へ）
+    if (t >= 0.3) {
+      const cx = lerp(70, 250, g);
+      if (g >= 1) {
+        items.push(
+          { type: 'circle', x: 250, y: 130, r: 38, fill: 'red' },
+          { type: 'circle', x: 250, y: 132, r: 13, fill: 'white' },
+          { type: 'line', points: [[250, 92], [256, 52]], color: 'green', width: 4 },
+        );
+      } else {
+        const ry = lerp(26, 38, g);
+        items.push(
+          { type: 'ellipse', x: cx, y: 130, rx: lerp(30, 38, g), ry, fill: mix(TOKEN_HEX.lightgreen, TOKEN_HEX.red, g) },
+          { type: 'circle', x: cx, y: 132, r: lerp(9, 13, g), fill: 'white' },
+          { type: 'line', points: [[cx, 130 - ry], [cx + 6 * g, 130 - ry - lerp(44, 40, g)]], color: 'green', width: 4 },
+        );
+      }
+    }
+    items.push({ type: 'text', x: 250, y: 196, text: '果実と種子', size: 13, anchor: 'middle' });
+    return items;
+  }
+
+  // ================================================================
+  // ミニプリント（2nen）。docs/plans/mp-figures-2nen.md の「動く図（新規）」の生命（body）の 5 本
+  // 静止図は content/body.js の body-mp○-c○。静止図と同じ部品は同じ座標・文字・色で描く
+  // （計画の bo-voluntary-path は、既存の bo-reflex を使い回す）
+  // ================================================================
+
+  // 点 a → b の割合 k の位置
+  function between(a, b, k) { return { x: lerp(a[0], b[0], k), y: lerp(a[1], b[1], k) }; }
+
+  // ---- 光合成（body-mp3-c1）----
+  // 粒: 左の箱の二酸化炭素（gray）・水（sky）が矢印 (140,120)→(180,120) を通って右の箱へ移り、
+  // デンプン（white）・酸素（sky）に変わる（矢印のまん中 x 160 をこえた所で変わる）
+  const PHOTO_GRAINS = [
+    { from: [30, 104], to: [196, 100], before: 'gray', after: 'white' },
+    { from: [112, 104], to: [302, 100], before: 'gray', after: 'white' },
+    { from: [30, 140], to: [196, 142], before: 'sky', after: 'sky' },
+    { from: [112, 140], to: [302, 142], before: 'sky', after: 'sky' },
+  ];
+  // 太陽から葉緑体へ光の点が下り、粒が左の箱から右の箱へ移って変わる。t = 0 は粒が左の箱の中
+  function boPhotosynthesisFlow(t) {
+    const items = [
+      { type: 'circle', x: 160, y: 36, r: 14, fill: 'yellow', stroke: 'orange' },
+      text(160, 72, '光エネルギー', { size: 13, anchor: 'middle' }),
+      { type: 'rect', x: 6, y: 92, width: 130, height: 56, fill: 'white' },
+      text(71, 126, '二酸化炭素 ＋ 水', { size: 14, anchor: 'middle' }),
+      { type: 'arrow', x1: 140, y1: 120, x2: 180, y2: 120, width: 3 },
+      { type: 'rect', x: 184, y: 92, width: 130, height: 56, fill: 'white' },
+      text(249, 116, 'デンプンなど', { size: 14, anchor: 'middle' }),
+      text(249, 138, '＋ 酸素', { size: 14, anchor: 'middle' }),
+      text(160, 176, '葉緑体で', { size: 13, anchor: 'middle' }),
+      { type: 'ellipse', x: 160, y: 196, rx: 16, ry: 9, fill: 'green', stroke: 'none' },
+    ];
+    for (let k = 0; k < 3; k++) {
+      const y = lerp(52, 186, frac(t + (k + 0.5) / 3));
+      items.push({ type: 'circle', x: 160, y, r: 3, fill: 'yellow', stroke: 'orange' });
+    }
+    PHOTO_GRAINS.forEach((g, k) => {
+      const p = ease(stage(t, 0.15 + 0.05 * k, 0.6 + 0.05 * k));
+      const q = along([g.from, [140, 120], [180, 120], g.to], p);
+      items.push(dot(q, 5, q.x > 160 ? g.after : g.before));
+    });
+    items.push(text(160, 232, '材料は気孔と根から入り、酸素は気孔から出る', { size: 12, anchor: 'middle' }));
+    return items;
+  }
+
+  // ---- 昼と夜の気体の出入り（body-mp3-c2）----
+  // 矢印 [x1, y1, x2, y2, 粒の色, 粒の数, 速さ]。X（光合成）は Y（呼吸）の 2 倍の数で 2 倍の速さ。酸素 sky・二酸化炭素 gray
+  const GAS_FLOWS = [
+    [12, 62, 56, 110, 'gray', 4, 2], [104, 110, 148, 62, 'sky', 4, 2],        // 昼の X: 二酸化炭素が入り、酸素が出る
+    [12, 196, 58, 160, 'sky', 2, 1], [102, 160, 148, 196, 'gray', 2, 1],      // 昼の Y: 酸素が入り、二酸化炭素が出る
+    [172, 196, 218, 160, 'sky', 2, 1], [262, 160, 308, 196, 'gray', 2, 1],    // 夜の Y
+  ];
+  // 昼は X と Y の矢印の上を、夜は Y の矢印の上だけを粒が流れる（t = 1 と t = 0 がつながる）
+  function boDayNightGas(t) {
+    const items = [
+      { type: 'line', points: [[160, 10], [160, 230]], color: 'gray', width: 1, dashed: true },
+      text(80, 24, '昼', { size: 16, anchor: 'middle', bold: true }),
+      text(240, 24, '夜', { size: 16, anchor: 'middle', bold: true }),
+      { type: 'line', points: [[80, 210], [80, 128]], color: 'green', width: 4 },
+      { type: 'ellipse', x: 62, y: 132, rx: 18, ry: 8, fill: 'green', stroke: 'none' },
+      { type: 'ellipse', x: 98, y: 132, rx: 18, ry: 8, fill: 'green', stroke: 'none' },
+      { type: 'line', points: [[240, 210], [240, 128]], color: 'green', width: 4 },
+      { type: 'ellipse', x: 222, y: 132, rx: 18, ry: 8, fill: 'green', stroke: 'none' },
+      { type: 'ellipse', x: 258, y: 132, rx: 18, ry: 8, fill: 'green', stroke: 'none' },
+      { type: 'arrow', x1: 12, y1: 62, x2: 56, y2: 110, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 104, y1: 110, x2: 148, y2: 62, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 12, y1: 196, x2: 58, y2: 160, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 102, y1: 160, x2: 148, y2: 196, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 172, y1: 196, x2: 218, y2: 160, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 262, y1: 160, x2: 308, y2: 196, color: 'orange', width: 2 },
+    ];
+    GAS_FLOWS.forEach(([x1, y1, x2, y2, fill, n, speed]) => {
+      for (let k = 0; k < n; k++) items.push(dot(between([x1, y1], [x2, y2], frac(speed * t + (k + 0.5) / n)), 4, fill));
+    });
+    items.push(
+      text(80, 40, 'X（昼だけ）', { size: 12, anchor: 'middle' }),
+      text(80, 232, 'Y（昼も夜も）', { size: 12, anchor: 'middle' }),
+      text(240, 232, 'Y', { size: 12, anchor: 'middle' }),
+      text(4, 56, '二酸化炭素', { size: 12 }),
+      text(156, 56, '酸素', { size: 12, anchor: 'end' }),
+      text(4, 214, '酸素', { size: 12 }),
+      text(156, 214, '二酸化炭素', { size: 12, anchor: 'end' }),
+      text(166, 214, '酸素', { size: 12 }),
+      text(316, 214, '二酸化炭素', { size: 12, anchor: 'end' }),
+      text(240, 60, 'X: 光合成（昼だけ）', { size: 12, anchor: 'middle' }),
+      text(240, 80, 'Y: 呼吸（昼も夜も）', { size: 12, anchor: 'middle' }),
+    );
+    return items;
+  }
+
+  // ---- 心臓と血液の流れ（body-mp7-c2）----
+  // 4 つの部屋（静止図と同じ rect）
+  const HEART_ROOMS = [[100, 70, 50, '右心房'], [100, 120, 64, '右心室'], [160, 70, 50, '左心房'], [160, 120, 64, '左心室']];
+  // 血液の道すじ: 大静脈 → 右心房 → 右心室 → 肺動脈（左を上へ）→ 肺（上）→ 肺静脈（右を下へ）→ 左心房 → 左心室 → 大動脈。
+  // 部屋の外の道すじ（灰色の細い線）は題の文字（x 52〜268、y 34〜46）にかからないよう、x 46・274 と y 20 を通す
+  const HEART_PATH = [[8, 96], [130, 96], [130, 152], [100, 152], [46, 152], [46, 20], [146, 20], [174, 20],
+    [274, 20], [274, 96], [190, 96], [190, 152], [220, 152], [312, 152]];
+  const HEART_LEN = pathLen(HEART_PATH);
+  const HEART_LUNG_IN = pathLen(HEART_PATH.slice(0, 7)) / HEART_LEN, HEART_LUNG_OUT = pathLen(HEART_PATH.slice(0, 8)) / HEART_LEN;
+  const HEART_DARK = mix(TOKEN_HEX.pink, TOKEN_HEX.red, 0.45);
+  // 血液の粒が道すじを順に進み（stage(t, 0, 0.9)）、肺を通ると青 → 赤に変わる。いま粒がいる部屋の色を濃くする。
+  // t = 0 は粒が大静脈の入口で、部屋の色は静止図のまま
+  function boHeartFlow(t) {
+    const f = stage(t, 0, 0.9);
+    const q = along(HEART_PATH, f);
+    const items = [
+      { type: 'line', points: [[8, 96], [100, 96]], color: 'gray', width: 2 },
+      { type: 'line', points: [[100, 152], [46, 152], [46, 20], [146, 20]], color: 'gray', width: 2 },
+      { type: 'line', points: [[174, 20], [274, 20], [274, 96], [220, 96]], color: 'gray', width: 2 },
+      { type: 'line', points: [[220, 152], [312, 152]], color: 'gray', width: 2 },
+      { type: 'ellipse', x: 160, y: 20, rx: 14, ry: 10, fill: 'pink', stroke: 'line' },
+    ];
+    HEART_ROOMS.forEach(([x, y, h, label]) => {
+      const inside = f > 0 && q.x > x && q.x < x + 60 && q.y > y && q.y < y + h;
+      items.push({ type: 'rect', x, y, width: 60, height: h, fill: inside ? HEART_DARK : 'pink', label });
+    });
+    const blood = f <= HEART_LUNG_IN ? TOKEN_HEX.blue : f >= HEART_LUNG_OUT ? TOKEN_HEX.red
+      : mix(TOKEN_HEX.blue, TOKEN_HEX.red, (f - HEART_LUNG_IN) / (HEART_LUNG_OUT - HEART_LUNG_IN));
+    items.push(
+      { type: 'circle', x: q.x, y: q.y, r: 6, fill: blood, stroke: 'ink' },
+      text(160, 24, '肺', { size: 12, anchor: 'middle' }),
+      text(8, 90, '大静脈', { size: 12 }),
+      text(50, 60, '肺動脈', { size: 12 }),
+      text(270, 60, '肺静脈', { size: 12, anchor: 'end' }),
+      text(312, 146, '大動脈', { size: 12, anchor: 'end' }),
+      text(160, 44, '正面から見た図（図の左がからだの右）', { size: 12, anchor: 'middle' }),
+      text(160, 210, '全身 → 右心房 → 右心室 → 肺', { size: 12, anchor: 'middle' }),
+      text(160, 230, '肺 → 左心房 → 左心室 → 全身', { size: 12, anchor: 'middle' }),
+    );
+    return items;
+  }
+
+  // ---- 呼吸の道すじ（body-mp8-c1）----
+  const BREATH_AIR = [[[160, 10], [160, 80], [104, 128], [100, 146]], [[160, 10], [160, 80], [216, 128], [220, 146]]];
+  // 肺胞と毛細血管のあいだの気体の移り方 [はじめ, 終わり, 色]（酸素 blue は肺胞 → 毛細血管、二酸化炭素 gray は毛細血管 → 肺胞）
+  const BREATH_GAS = [
+    [[100, 150], [86, 184], 'blue'], [[73, 150], [96, 150], 'gray'],
+    [[220, 150], [234, 184], 'blue'], [[247, 150], [224, 150], 'gray'],
+  ];
+  const CAP_LEFT = [[132, 176], [116, 186], [88, 186], [72, 166], [74, 136], [88, 124]];
+  const CAP_RIGHT = [[188, 176], [204, 186], [232, 186], [248, 166], [246, 136], [232, 124]];
+  // 空気の粒（white）が気管 → 気管支 → 肺胞へ入って出る（u(t) で行き来する）。肺胞から毛細血管へ酸素（blue）、
+  // 毛細血管から肺胞へ二酸化炭素（gray）が移る。色の決まりは bo-alveoli と同じ。t = 1 と t = 0 がつながる
+  function boBreathPath(t) {
+    const items = [
+      { type: 'line', points: [[160, 14], [160, 80]], color: 'pink', width: 12 },
+      { type: 'line', points: [[160, 80], [104, 128]], color: 'pink', width: 8 },
+      { type: 'line', points: [[160, 80], [216, 128]], color: 'pink', width: 8 },
+    ];
+    [[100, 150], [80, 142], [120, 142], [88, 166], [112, 166], [220, 150], [200, 142], [240, 142], [208, 166], [232, 166]]
+      .forEach(([x, y]) => items.push({ type: 'circle', x, y, r: 12, fill: 'white', stroke: 'line' }));
+    items.push(
+      { type: 'line', points: CAP_RIGHT, color: 'red', width: 2 },
+      { type: 'line', points: CAP_LEFT, color: 'red', width: 2 },
+    );
+    for (let k = 0; k < 4; k++) items.push(dot(along(BREATH_AIR[k % 2], Math.min(1, 0.15 * (k >> 1) + 0.7 * u(t))), 3.5, 'white'));
+    [CAP_LEFT, CAP_RIGHT].forEach(cap => {
+      for (let k = 0; k < 2; k++) items.push(dot(along(cap, frac(t + (k + 0.5) / 2)), 3, 'red'));
+    });
+    BREATH_GAS.forEach(([a, b, fill]) => {
+      for (let k = 0; k < 2; k++) items.push(dot(between(a, b, frac(t + (k + 0.5) / 2)), 3, fill));
+    });
+    items.push(
+      text(174, 40, '気管', { size: 13 }),
+      text(198, 100, '気管支', { size: 13 }),
+      { type: 'line', points: [[256, 146], [238, 146]], color: 'gray', width: 1, dashed: true },
+      text(260, 151, '肺胞', { size: 13 }),
+      { type: 'line', points: [[40, 204], [76, 176]], color: 'gray', width: 1, dashed: true },
+      text(6, 222, '毛細血管', { size: 13 }),
+      text(6, 20, '白: 空気　青: 酸素'),
+      text(6, 36, '灰: 二酸化炭素'),
+    );
+    return items;
+  }
+
+  // ---- うでの曲げのばし（body-mp11-c1）----
+  // 関節 (170,130) を中心に、前腕・手・前腕につくけんを回す。静止図（曲げた位置）からの回り ＝ 30.3° × (1 − u)（画面で時計回り）
+  const ARM_JOINT = [170, 130];
+  const ARM_BEND = Math.atan2(126 - 64, 280 - 174);   // 静止図の前腕の上向きの角（約 30.3°）
+  function armRot(p, a) {
+    const dx = p[0] - ARM_JOINT[0], dy = p[1] - ARM_JOINT[1];
+    return [ARM_JOINT[0] + dx * Math.cos(a) - dy * Math.sin(a), ARM_JOINT[1] + dx * Math.sin(a) + dy * Math.cos(a)];
+  }
+  // 前腕と手が、まっすぐ（t = 0）から曲げた位置（t = 0.5、静止図）まで回ってもどる（曲がり ＝ u(t)）。
+  // 内側の筋肉は短く太く（rx 56・ry 9.5 → 50・13）、外側の筋肉は長く細く（rx 44・ry 16 → 50・13）なる。
+  // 「手」の文字は手といっしょに動く。止まった絵（0.5）が静止図と同じ。t = 1 と t = 0 がつながる
+  function boArmBend(t) {
+    const b = u(t);
+    const a = ARM_BEND * (1 - b);
+    const inRx = lerp(56, 50, b), inRy = lerp(9.5, 13, b), outRx = lerp(44, 50, b), outRy = lerp(16, 13, b);
+    const hand = armRot([286, 58], a);
+    return [
+      { type: 'line', points: [[30, 130], [166, 130]], color: 'rock', width: 10 },
+      { type: 'line', points: [armRot([174, 126], a), armRot([280, 64], a)], color: 'rock', width: 10 },
+      { type: 'circle', x: hand[0], y: hand[1], r: 12, fill: 'pink', stroke: 'line' },
+      { type: 'line', points: [[100 - inRx + 2, 106], [28, 120]], color: 'ink', width: 2 },
+      { type: 'line', points: [[100 + inRx - 2, 106], armRot([196, 112], a)], color: 'ink', width: 2 },
+      { type: 'line', points: [[100 - outRx + 2, 154], [28, 140]], color: 'ink', width: 2 },
+      { type: 'line', points: [[100 + outRx - 2, 154], armRot([172, 140], a)], color: 'ink', width: 2 },
+      { type: 'ellipse', x: 100, y: 106, rx: inRx, ry: inRy, fill: 'pink', stroke: 'line' },
+      { type: 'ellipse', x: 100, y: 154, rx: outRx, ry: outRy, fill: '#E6A57E', stroke: 'line' },
+      { type: 'circle', x: 170, y: 130, r: 9, fill: 'white', stroke: 'ink' },
+      text(8, 76, 'かた'),
+      // 手の文字: 曲げた位置で静止図の (304,40)（手の右上）、まっすぐでは手の上
+      text(hand[0] + lerp(-4, 18, b), hand[1] - 18, '手'),
+      text(22, 100, 'けん', { size: 13 }),
+      text(170, 160, '関節', { size: 13, anchor: 'middle' }),
+      text(100, 86, '縮む（内側の筋肉）', { size: 12, anchor: 'middle' }),
+      text(100, 186, 'ゆるむ（外側の筋肉）', { size: 12, anchor: 'middle' }),
+      text(316, 236, 'うでを曲げたとき', { size: 12, anchor: 'end' }),
+    ];
+  }
+
+  // ================================================================
+  // ミニプリント（3nen）。docs/plans/mp-figures-3nen.md の「動く図（新規）」の生命の連続性の 3 本
+  // 静止図は content/heredity.js の heredity-mp○-c○。静止図と同じ部品は同じ座標・文字・色で描く
+  // （計画の「動く図（使い回し）」の heredity-mp2-c2（he-meiosis-fertilize）と、nature-mp1-c2（na-balance）・
+  // nature-mp2-c1（na-carbon-cycle）は、既存の kind をそのまま使う）
+  // ================================================================
+
+  // ---- 体細胞分裂の順番（heredity-mp1-c1）----
+  // content/heredity.js の divCell と同じ部品（中心 (cx, cy)、1 辺 52 の細胞。step 0 分裂前 〜 4 しきりができる）を、
+  // 1 つ前の形から形 step へ割合 s（0〜1）で動かす（s = 1 で静止図の形）。fill は細胞の色
+  const MITOSIS_F1 = [[-12, -10, -5, -2], [3, -12, 10, -5], [-11, 4, -4, 11], [4, 3, 11, 10]];   // 現れた染色体（左上・右上・左下・右下）
+  const MITOSIS_DY = [-15, -5, 5, 15];                                                        // 中央に並んだ染色体の y のずれ
+  const PURPLE_PALE = mix(TOKEN_HEX.white, TOKEN_HEX.purple, 0.25);
+  function mitosisCell(cx, cy, step, s, fill) {
+    const items = [{ type: 'rect', x: cx - 26, y: cy - 26, width: 52, height: 52, rx: 4, fill, stroke: 'green' }];
+    if (step === 0) items.push({ type: 'circle', x: cx, y: cy, r: 11, fill: 'purple', stroke: 'line' });
+    if (step === 1) {
+      // 核が大きくなって白くなり、ひものような染色体が太く・濃くなって見えてくる
+      items.push({ type: 'circle', x: cx, y: cy, r: lerp(11, 18, s), fill: s >= 1 ? 'white' : mix(TOKEN_HEX.purple, TOKEN_HEX.white, s), stroke: 'line' });
+      MITOSIS_F1.forEach(([a, b, c, d]) => items.push(chrom(cx + a, cy + b, cx + c, cy + d, lerp(1, 4, s), s >= 1 ? 'purple' : mix(TOKEN_HEX.white, TOKEN_HEX.purple, s))));
+    }
+    if (step === 2) {
+      // 核の膜が消え、染色体が中央に集まって並ぶ
+      if (s < 1) items.push({ type: 'circle', x: cx, y: cy, r: 18, fill: mix(TOKEN_HEX.white, TOKEN_HEX.lightgreen, s), stroke: s < 0.8 ? 'line' : 'none' });
+      MITOSIS_F1.forEach(([a, b, c, d], i) => {
+        const dy = MITOSIS_DY[i];
+        items.push(chrom(cx + lerp(a, -6, s), cy + lerp(b, dy, s), cx + lerp(c, 6, s), cy + lerp(d, dy, s)));
+      });
+    }
+    if (step === 3) {
+      // 中央の染色体が 2 つに分かれて両端へ動く
+      MITOSIS_DY.forEach(dy => {
+        items.push(chrom(cx + lerp(-6, -20, s), cy + dy, cx + lerp(0, -13, s), cy + dy));
+        items.push(chrom(cx + lerp(0, 13, s), cy + dy, cx + lerp(6, 20, s), cy + dy));
+      });
+    }
+    if (step === 4) {
+      // 中央にしきりが伸び、両端の染色体がまとまって 2 つの核になる
+      const k = Math.min(1, s / 0.6), n = stage(s, 0.4, 1);
+      if (k > 0) items.push({ type: 'line', points: [[cx, cy - 26 * k], [cx, cy + 26 * k]], color: 'green', width: 2 });
+      if (n < 1) {
+        MITOSIS_DY.forEach(dy => {
+          const y = cy + dy * (1 - n);
+          items.push(chrom(cx + lerp(-20, -13, n), y, cx - 13 - 7 * (1 - n), y, lerp(4, 2, n)));
+          items.push(chrom(cx + 13 + 7 * (1 - n), y, cx + lerp(20, 13, n), y, lerp(4, 2, n)));
+        });
+      }
+      if (n > 0) {
+        items.push({ type: 'circle', x: cx - 13, y: cy, r: 7 * n, fill: 'purple', stroke: 'line' });
+        items.push({ type: 'circle', x: cx + 13, y: cy, r: 7 * n, fill: 'purple', stroke: 'line' });
+      }
+    }
+    return items;
+  }
+  // 細胞 i（左から 0〜4）を強調する時間 [0.02 + 0.18i, 0.2 + 0.18i)。強調中の前 0.14 で 1 つ前の形から次の形へ動く。
+  // 強調が始まる前の細胞は、細胞の枠だけ。止まった絵（0.99）が静止図と同じ
+  const MITOSIS_FROM = (i) => 0.02 + 0.18 * i;
+  function heMitosisSteps(t) {
+    const items = [{ type: 'text', x: 160, y: 30, text: '体細胞分裂の順番（植物の細胞）', size: 13, anchor: 'middle' }];
+    for (let i = 0; i < 5; i++) {
+      const cx = 34 + 62 * i, from = MITOSIS_FROM(i);
+      const active = t >= from && t < from + 0.18;
+      const fill = active ? '#FFF3C4' : 'lightgreen';
+      if (t < from) items.push({ type: 'rect', x: cx - 26, y: 70, width: 52, height: 52, rx: 4, fill, stroke: 'green' });
+      else items.push(...mitosisCell(cx, 96, i, i === 0 ? 1 : stage(t, from, from + 0.14), fill));
+    }
+    ['分裂前', '染色体が', '中央に', '両端に', 'しきりが'].forEach((s, i) => items.push(text(34 + 62 * i, 150, s, { anchor: 'middle' })));
+    ['', '現れる', '並ぶ', '分かれる', 'できる'].forEach((s, i) => items.push(text(34 + 62 * i, 166, s, { anchor: 'middle' })));
+    items.push(
+      { type: 'arrow', x1: 30, y1: 196, x2: 290, y2: 196, color: 'gray', width: 2 },
+      Object.assign(text(160, 222, '1 つの細胞が 2 つになる'), { size: 13, anchor: 'middle' }),
+    );
+    return items;
+  }
+
+  // ---- 花粉管がのびて受精する（heredity-mp3-c1）----
+  // 柱頭の花粉から花粉管（orange）が花柱の中を胚珠へ伸び（0.05〜0.45）、精細胞（点）が管の先の少し後ろを進む。止まって見せる
+  // （0.45〜0.55。止まった絵 0.5 が静止図と同じ: 花粉管が胚珠まで伸び、精細胞が (157,150)）。そのあと精細胞が卵細胞へ進み（0.55〜0.75）、
+  // 2 つの核が重なって卵細胞の色が変わる（受精、0.75〜0.8）。0.8〜1 は「受精」を見せ、t = 0 で花粉管のない絵にもどる。
+  // （計画は restT 0.99 だが、受精のあとの絵は静止図とちがうので、静止図と同じ形の 0.5 にした）
+  const POLLEN_TUBE = [[150, 32], [154, 80], [157, 140], [158, 176]];
+  const SPERM_TO_EGG = [[157, 150], [158, 176], [160, 198]];
+  const SPERM_K = pathLen([[150, 32], [154, 80], [157, 140], [157, 150]]) / pathLen(POLLEN_TUBE);   // 静止図の精細胞の位置（管の割合）
+  const PT_REST = 0.5;
+  const FERTILIZED = mix(TOKEN_HEX.pink, TOKEN_HEX.purple, 0.55);
+  function pollenTubeState(t) {
+    const k = stage(t, 0.05, 0.45);
+    const sperm = t < 0.55 ? along(POLLEN_TUBE, SPERM_K * k) : along(SPERM_TO_EGG, stage(t, 0.55, 0.75));
+    return { k, sperm, merge: stage(t, 0.75, 0.8) };
+  }
+  function hePollenTube(t) {
+    const { k, sperm, merge } = pollenTubeState(t);
+    const tube = partial(POLLEN_TUBE, k);
+    const items = [
+      { type: 'ellipse', x: 160, y: 182, rx: 70, ry: 46, fill: 'lightgreen', stroke: 'green' },
+      { type: 'rect', x: 150, y: 40, width: 20, height: 104, fill: 'lightgreen', stroke: 'green' },
+      { type: 'ellipse', x: 160, y: 38, rx: 24, ry: 8, fill: 'green', stroke: 'green' },
+      { type: 'ellipse', x: 160, y: 192, rx: 28, ry: 22, fill: 'white', stroke: 'green' },
+      { type: 'circle', x: 160, y: 198, r: 8, fill: merge >= 1 ? FERTILIZED : merge > 0 ? mix(TOKEN_HEX.pink, FERTILIZED, merge) : 'pink', stroke: 'ink' },
+    ];
+    if (tube.length >= 2) items.push({ type: 'line', points: tube, color: 'orange', width: 3 });
+    items.push({ type: 'circle', x: 150, y: 28, r: 7, fill: 'yellow', stroke: 'ink' });
+    if (merge < 1) items.push({ type: 'circle', x: sperm.x, y: sperm.y, r: 5 * (1 - merge), fill: 'purple', stroke: 'ink' });
+    items.push(
+      { type: 'line', points: [[144, 26], [96, 26]], color: 'ink', width: 2 },
+      text(92, 30, '花粉', { size: 13, anchor: 'end' }),
+      { type: 'line', points: [[155, 100], [96, 100]], color: 'ink', width: 2 },
+      text(92, 104, '花粉管', { size: 13, anchor: 'end' }),
+      { type: 'line', points: [[162, 150], [232, 120]], color: 'ink', width: 2 },
+      text(236, 120, '精細胞', { size: 13 }),
+      { type: 'line', points: [[186, 186], [238, 160]], color: 'ink', width: 2 },
+      text(242, 160, '胚珠', { size: 13 }),
+      { type: 'line', points: [[168, 200], [238, 214]], color: 'ink', width: 2 },
+      text(242, 220, '卵細胞', { size: 13 }),
+    );
+    if (merge >= 1) items.push(text(242, 190, '受精', { size: 13, color: 'blue', bold: true }));
+    return items;
+  }
+
+  // ---- DNA の二重らせん（heredity-mp4-c3）----
+  // content/heredity.js の helixItems と同じ形（x = 30 + 11i、i = 0〜24。y = 110 ∓ 36·sin(iπ/6)）の 2 本の鎖の位相を 2πt だけ進め、
+  // 二重らせんが回っているように見せる。横木（奇数の i、2 本の鎖のあいだが 8 より大きい所）も長さが合わせて変わる。
+  // t = 0 が静止図。t = 1 と t = 0 がつながる（位相 1 周）
+  function helixDy(i, t) { return 36 * Math.sin(i * Math.PI / 6 + 2 * Math.PI * t); }
+  function heDnaHelix(t) {
+    const a = [], b = [], items = [];
+    for (let i = 0; i <= 24; i++) {
+      const x = 30 + 11 * i, dy = helixDy(i, t);
+      a.push([x, 110 - dy]);
+      b.push([x, 110 + dy]);
+      if (i % 2 === 1 && Math.abs(dy) > 8) items.push({ type: 'line', points: [[x, 110 - dy], [x, 110 + dy]], color: 'gray', width: 2 });
+    }
+    items.push(
+      { type: 'line', points: a, color: 'blue', width: 4 },
+      { type: 'line', points: b, color: 'orange', width: 4 },
+      text(160, 34, 'DNA の二重らせん（モデル）', { size: 14, anchor: 'middle', bold: true }),
+      text(160, 206, '2 本の鎖がねじれている', { size: 13, anchor: 'middle' }),
+    );
+    return items;
+  }
+
   const DEFS = [
     ['bo-reflex', boReflex, { restT: 0.99 }],
     ['he-chromosome-copy', heChromosomeCopy, { restT: 0.99 }],
@@ -538,9 +1061,26 @@
     ['an-body-temp', anBodyTemp, { restT: 0 }],
     ['bo-alveoli', boAlveoli, { restT: 0 }],
     ['na-greenhouse', naGreenhouse, { restT: 0.99 }],
+    // ミニプリント（1nen）。docs/plans/mp-figures-1nen.md
+    ['ba-focus-steps', baFocusSteps, { restT: 0.99 }],
+    ['ba-image-reverse', baImageReverse, { restT: 0.99 }],
+    ['ba-candle-air', baCandleAir, { restT: 0 }],
+    ['pl-ovary-to-fruit', plOvaryToFruit, { restT: 0.99 }],
+    // ミニプリント（2nen）。docs/plans/mp-figures-2nen.md
+    ['bo-photosynthesis-flow', boPhotosynthesisFlow, { restT: 0 }],
+    ['bo-day-night-gas', boDayNightGas, { restT: 0 }],
+    ['bo-heart-flow', boHeartFlow, { restT: 0 }],
+    ['bo-breath-path', boBreathPath, { restT: 0 }],
+    ['bo-arm-bend', boArmBend, { restT: 0.5 }],
+    // ミニプリント（3nen）。docs/plans/mp-figures-3nen.md
+    ['he-mitosis-steps', heMitosisSteps, { restT: 0.99 }],
+    ['he-pollen-tube', hePollenTube, { restT: PT_REST }],
+    ['he-dna-helix', heDnaHelix, { restT: 0 }],
   ];
   DEFS.forEach(([kind, fn, opts]) => anim.register(kind, fn, opts));
   // このファイルで足した kind（テスト用）と、テストで使う値
-  const api = { KINDS: DEFS.map(d => d[0]), balanceAmounts, CARBON_PATHS, airTemp, gy, CAPILLARY, AIR_PATH, O2_MOVE, CO2_MOVE, RIDE_GAP };
+  const api = { KINDS: DEFS.map(d => d[0]), balanceAmounts, CARBON_PATHS, airTemp, gy, CAPILLARY, AIR_PATH, O2_MOVE, CO2_MOVE, RIDE_GAP,
+    // ミニプリント（3nen）
+    pollenTubeState, helixDy };
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

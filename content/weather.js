@@ -1176,30 +1176,32 @@
       {
         id: 'weather-mp1-c1',
         text: '空気にも重さがあり、その重さによって生じる圧力を**大気圧**（気圧）といいます。天気では**ヘクトパスカル**（hPa）を使い、海面での大気圧は約 1013 hPa（1 気圧）です。高い山の上ほど上にある空気が少ないので、大気圧は小さくなります。',
-        // 海面と山頂の上にある空気の重さ（矢印の長さ）のちがい
+        // 写真（weather-1-c2 の画像）: 同じ菓子の袋。左 (8〜148, 22〜178) はふもと、右 (162〜312, 14〜178) は山頂でぱんぱん。下は白い余白
         figure: scene([
-          { type: 'rect', x: 0, y: 0, width: 320, height: 240, fill: 'sky', stroke: 'none' },
-          { type: 'rect', x: 0, y: 200, width: 130, height: 40, fill: '#9CC3F0', stroke: 'none' },
-          { type: 'polygon', points: [[130, 240], [130, 200], [230, 80], [320, 200], [320, 240]], fill: 'rock' },
-          { type: 'arrow', x1: 40, y1: 60, x2: 40, y2: 194, color: 'blue' },
-          { type: 'arrow', x1: 90, y1: 60, x2: 90, y2: 194, color: 'blue' },
-          { type: 'arrow', x1: 230, y1: 34, x2: 230, y2: 74, color: 'blue' },
-          { type: 'text', x: 65, y: 46, text: '上にある空気の重さ', size: 12, anchor: 'middle' },
-          { type: 'text', x: 65, y: 226, text: '海面 約 1013 hPa', size: 12, anchor: 'middle' },
-          { type: 'text', x: 236, y: 24, text: '山頂 大気圧が小さい', size: 12, anchor: 'middle' },
+          photo('weather-1-c2'),
+          tag(78, 196, 'ふもと', { size: 15, bold: true }),
+          tag(78, 214, '海面 約1013hPa', { size: 13 }),
+          tag(238, 196, '山頂', { size: 15, bold: true }),
+          tag(238, 214, '大気圧が小さい→ふくらむ', { size: 13 }),
+          tag(160, 234, '上にある空気が少ないほど大気圧は小さい', { size: 13 }),
         ]),
       },
       {
         id: 'weather-mp1-c2',
         text: '**圧力**〔Pa〕＝面を垂直におす力〔N〕÷力がはたらく面積〔m²〕です。同じ力でも、面積が小さいほど圧力は大きくなります。1 m² ＝ 10000 cm² なので、cm² は m² になおして計算します。100 g の物体にはたらく重力は約 1 N です。',
-        // 鉛筆の両はしを押すと、とがった先の指のほうが痛い
-        figure: scene(pencilItems().concat([
-          { type: 'text', x: 62, y: 166, text: '痛い', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 62, y: 184, text: '面積が小さい', size: 12, anchor: 'middle' },
-          { type: 'text', x: 262, y: 166, text: '痛くない', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 262, y: 184, text: '面積が大きい', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 222, text: '圧力〔Pa〕＝力〔N〕÷面積〔m²〕', size: 14, anchor: 'middle', bold: true },
-        ])),
+        // 写真: 黄色い鉛筆（x 48〜258, y 117〜143）の両はしを指で押す。左の指 (0〜58, 70〜148) は芯の先、右の指 (255〜320, 65〜135) は平らなおしり。上下は白い余白
+        figure: scene([
+          photo('weather-mp1-c2'),
+          tag(160, 30, '同じ力で両はしを指で押す', { size: 13 }),
+          tag(185, 104, '鉛筆', { size: 13 }),
+          tag(60, 172, 'とがった先', { bold: true }),
+          tag(60, 191, '→ 痛い', { size: 13 }),
+          tag(60, 209, '面積が小さい', { size: 13 }),
+          tag(262, 172, '平らなおしり', { bold: true }),
+          tag(262, 191, '→ 痛くない', { size: 13 }),
+          tag(262, 209, '面積が大きい', { size: 13 }),
+          tag(160, 233, '圧力〔Pa〕＝力〔N〕÷面積〔m²〕', { bold: true }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1334,39 +1336,48 @@
       {
         id: 'weather-mp2-c1',
         text: '気温は、地上約 1.5 m の高さで、直射日光の当たらない風通しのよい場所ではかります。気圧の単位は hPa、湿度の単位は % です。**風向**は風がふいてくる向きで、北からふく風を「北の風」といいます。**風力**は 0〜12 の 13 段階で表します。',
-        // 地上約 1.5 m の高さに置いた温度計
+        // 写真: 芝生の上の百葉箱（箱 x 30〜165, y 18〜122、脚の下 y 220）。扉が開き、中の温度計 (95, 60〜97)。扉のよろい戸 (142, 85)。右は白い余白
         figure: scene([
-          { type: 'rect', x: 0, y: 200, width: 320, height: 40, fill: 'lightgreen', stroke: 'none' },
-          { type: 'line', points: [[160, 200], [160, 120]], color: 'brown', width: 4 },
-          { type: 'rect', x: 128, y: 76, width: 64, height: 46, fill: 'white', label: '温度計' },
-          { type: 'arrow', x1: 230, y1: 160, x2: 230, y2: 100, color: 'blue' },
-          { type: 'arrow', x1: 230, y1: 160, x2: 230, y2: 198, color: 'blue' },
-          { type: 'line', points: [[196, 99], [240, 99]], color: 'gray', width: 1, dashed: true },
-          { type: 'text', x: 240, y: 156, text: '地上 約 1.5 m', size: 13 },
-          { type: 'text', x: 160, y: 40, text: '直射日光が当たらず、風通しのよい所', size: 12, anchor: 'middle' },
+          photo('weather-mp2-c1'),
+          tag(250, 34, '百葉箱', { size: 16, bold: true }),
+          pointer(198, 72, 152, 82), tag(258, 76, 'よろい戸で風が通る', { size: 13 }),
+          { type: 'arrow', x1: 180, y1: 150, x2: 180, y2: 80, color: 'blue', width: 2 },
+          { type: 'arrow', x1: 180, y1: 150, x2: 180, y2: 218, color: 'blue', width: 2 },
+          tag(190, 154, '地上 約 1.5 m', { size: 13, anchor: 'start' }),
+          tag(252, 196, '直射日光が当たらず', { size: 13 }),
+          tag(252, 216, '風通しのよい所', { size: 13 }),
         ]),
       },
       {
         id: 'weather-mp2-c2',
         text: '**乾湿計**は、乾球温度計と、水でぬらしたガーゼで包んだ湿球温度計でできています。湿球は水が蒸発するときに熱をうばわれるので、ふつう乾球より低い値を示します。乾球の示度と、乾球と湿球の示度の差から、湿度表で湿度を読みとります。',
-        // 乾球 18 ℃・湿球 14 ℃（差 4 ℃）
-        figure: scene(thermometer(70, 18, '乾球').concat(thermometer(170, 14, '湿球'), [
-          { type: 'ellipse', x: 170, y: 210, rx: 14, ry: 15, fill: 'none', stroke: 'gray' },
-          { type: 'text', x: 200, y: 230, text: 'ぬれたガーゼ', size: 12 },
-          { type: 'text', x: 230, y: 70, text: '差が大きいほど', size: 12 },
-          { type: 'text', x: 230, y: 88, text: '湿度は低い', size: 12 },
-        ])),
+        // 写真: 板（x 125〜194）に 2 本の温度計。左 x 146（球 (146, 162) はむき出し）、右 x 174（球はガーゼ (174, 160) で包まれ、
+        // ガーゼのはしが下の水つぼ (160, 212) にひたる）。左右は白い余白
+        figure: scene([
+          photo('weather-mp2-c2'),
+          pointer(78, 58, 142, 66), tag(56, 62, '乾球', { size: 15, bold: true }),
+          pointer(242, 58, 178, 66), tag(264, 62, '湿球', { size: 15, bold: true }),
+          pointer(222, 152, 180, 162), tag(264, 156, 'ぬれたガーゼ', { size: 13 }),
+          pointer(236, 206, 184, 212), tag(266, 210, '水つぼ', { size: 13 }),
+          tag(62, 132, '湿球は水が蒸発', { size: 13 }),
+          tag(62, 150, 'して熱をうばわれ、', { size: 13 }),
+          tag(62, 168, '低い値になる', { size: 13 }),
+        ]),
       },
       {
         id: 'weather-mp2-c3',
         text: '全国約 1300 か所で、降水量・気温・風向・風速などを自動で観測するしくみを**アメダス**（地域気象観測システム）といいます。集めたデータをもとに、コンピュータで大気の変化を計算して予報することを**数値予報**といいます。',
-        // 日本の地図と観測所（点）
-        figure: scene(japanItems().concat(
-          [[262, 46], [280, 52], [240, 92], [226, 112], [200, 130], [170, 150], [140, 166], [150, 186], [104, 192], [210, 108]]
-            .map(([x, y]) => ({ type: 'circle', x, y, r: 4, fill: 'blue', stroke: 'none' })),
-          [{ type: 'text', x: 20, y: 40, text: '● 観測所（アメダス）', size: 13 },
-            { type: 'text', x: 20, y: 222, text: 'データ → コンピュータで計算 → 数値予報', size: 12 }],
-        )),
+        // 写真: 金網で囲まれた観測所（楕円 x 20〜240, y 55〜215 にぼかし）。ポールの先の風向風速計 (128, 40)、
+        // 雨量計 (75, 178)、温度計のおおい (142, 178)。上と右は白い余白
+        figure: scene([
+          photo('weather-mp2-c3'),
+          tag(160, 18, 'アメダス（地域気象観測システム）の観測所', { size: 13 }),
+          pointer(198, 46, 140, 42), tag(240, 50, '風向風速計', { size: 13 }),
+          pointer(42, 146, 68, 168), tag(40, 140, '雨量計', { size: 13 }),
+          pointer(236, 176, 152, 178), tag(270, 180, '温度計', { size: 13 }),
+          tag(160, 214, '全国 約 1300 か所で自動観測', { size: 13 }),
+          tag(160, 234, '→ コンピュータで計算 → 数値予報', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1666,21 +1677,21 @@
       {
         id: 'weather-mp4-c1',
         text: '金属のコップにくみ置きの水を入れ、氷水を少しずつ加えて冷やします。表面がくもり始めたときの水温が、そのときの空気の**露点**です。くもりの正体は、空気中の水蒸気が冷やされてできた水滴です。金属のコップは熱を伝えやすく、くもりも見やすいです。',
-        // 金属のコップ・温度計・表面の水滴
+        // 写真（weather-2-c2 の画像）: 氷水と温度計（上はし (138, 0)〜液だめ (115, 95)）を入れた金属のコップ（x 4〜162, y 50〜225）。
+        // 表面 (140, 170) が細かい水滴でくもる。右は白い余白
         figure: scene([
-          { type: 'beaker', x: 130, y: 210, width: 100, height: 120, level: 0.7, liquid: 'water' },
-          { type: 'line', points: [[150, 70], [150, 196]], color: 'red', width: 4 },
-          { type: 'rect', x: 144, y: 50, width: 12, height: 26, fill: 'white' },
-          ...[[78, 120], [76, 150], [80, 180], [182, 130], [184, 165], [180, 195]].map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'sky', stroke: 'blue' })),
-          { type: 'text', x: 166, y: 62, text: '温度計', size: 12 },
-          { type: 'text', x: 200, y: 110, text: '表面に水滴', size: 12 },
-          { type: 'text', x: 200, y: 128, text: '（くもり）', size: 12 },
-          { type: 'text', x: 130, y: 234, text: '金属のコップ', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 24, text: 'くもり始めた水温 ＝ 露点', size: 14, anchor: 'middle', bold: true },
+          photo('weather-2-c2'),
+          pointer(204, 30, 138, 26), tag(240, 34, '温度計', { size: 13 }),
+          pointer(190, 112, 158, 122), tag(250, 108, '金属のコップ', { size: 13 }),
+          tag(250, 126, '（熱を伝えやすい）', { size: 13 }),
+          pointer(184, 166, 140, 170), tag(250, 170, '表面に水滴（くもり）', { size: 13 }),
+          tag(246, 204, 'くもり始めたときの', { size: 13 }),
+          tag(246, 226, '水温 ＝ 露点', { size: 16, bold: true }),
         ]),
       },
       {
         id: 'weather-mp4-c2',
+        anim: 'we-dew-point-graph',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: 'グラフでは、空気の点から左へ水平に進み、飽和水蒸気量の曲線とぶつかる気温が露点です。さらに冷やすと、その空気の水蒸気量と、下げた気温での飽和水蒸気量の差の分だけ水滴が出てきます。',
         // A（30 ℃・15 g/m³）。左へ進むと約 17 ℃ で曲線にぶつかる。5 ℃ まで冷やすと 15 − 6.8 ≒ 8 g
         figure: scene(graphItems().concat(airDot(30, 15, 'A'), [
@@ -2110,6 +2121,7 @@
     lessons: [
       {
         id: 'weather-mp7-c1',
+        anim: 'we-rising-air',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '空気が上昇すると、上空ほど気圧が低いので**膨張**し、温度が下がります。温度が**露点**に達すると、水蒸気が水滴になります。さらに温度が 0 ℃ より低くなると、氷の粒もできます。これらが集まって浮かんでいるものが雲です。',
         figure: scene(cloudRiseItems().concat([
           { type: 'text', x: 6, y: 150, text: '× 氷の粒', size: 12 },
@@ -2120,6 +2132,7 @@
       },
       {
         id: 'weather-mp7-c2',
+        anim: 'we-water-cycle',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '地球上の水の約 97 % は海にあります。海や陸の水は、**太陽**のエネルギーによって蒸発して水蒸気になり、雲をつくって、雨や雪（**降水**）として地上にもどります。このように水がすがたを変えながらめぐることを**水の循環**といいます。',
         figure: scene(waterCycleItems().concat([
           { type: 'text', x: 108, y: 140, text: '蒸発', size: 13, bold: true },
@@ -2334,6 +2347,7 @@
     lessons: [
       {
         id: 'weather-mp8-c1',
+        anim: 'we-isobar-wind',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '**等圧線**は 4 hPa ごとに引き、20 hPa ごとに太い線にします。線の数をたどると、ある地点の気圧が分かります。風は気圧の高いほうから低いほうへふき、北半球では地球の自転の影響で、進む向きの右にずれてふきます。',
         figure: scene(windAtItems(false).concat([
           { type: 'text', x: 208, y: 168, text: '実際の風', size: 12 },
@@ -2343,6 +2357,7 @@
       },
       {
         id: 'weather-mp8-c2',
+        anim: 'we-pressure-section',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '**高気圧**の中心では**下降気流**が生じ、地表付近では時計回りに風がふき出します。**低気圧**の中心では**上昇気流**が生じ、反時計回りに風がふきこみます。上昇気流のある低気圧の中心付近では、雲ができやすくなります。',
         figure: scene(highLowSectionItems().concat([
           { type: 'text', x: 80, y: 36, text: '高気圧（下降気流）', size: 12, anchor: 'middle' },
@@ -2508,6 +2523,7 @@
       },
       {
         id: 'weather-mp9-c2',
+        anim: 'we-ocean-current',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '日本の近くには、暖かい**暖流**と冷たい**寒流**が流れています。太平洋側の**日本海流**（黒潮）と日本海側の**対馬海流**は暖流、太平洋側の**千島海流**（親潮）と日本海側のリマン海流は寒流です。',
         figure: scene(currentItems(true).concat([
           { type: 'text', x: 146, y: 132, text: '対馬海流', size: 12, anchor: 'middle', bg: true },
@@ -2661,6 +2677,7 @@
     lessons: [
       {
         id: 'weather-mp10-c1',
+        anim: 'we-cold-front-section',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '寒気と暖気の境の面を**前線面**、前線面が地表と交わる線を**前線**といいます。**寒冷前線**では、寒気が暖気の下にもぐりこんで暖気を急におし上げるので、**積乱雲**ができ、せまい範囲に強い雨が短時間降ります。',
         figure: scene(coldSection(20, 40, 280, '寒冷前線').concat([
           { type: 'text', x: 170, y: 72, text: '積乱雲', size: 12, bold: true },
@@ -2671,6 +2688,7 @@
       },
       {
         id: 'weather-mp10-c2',
+        anim: 'we-warm-front-section',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '**温暖前線**では、暖気が寒気の上をゆるやかにはい上がるので、**乱層雲**などができ、広い範囲に弱い雨が長時間降ります。寒気と暖気の勢力がつり合うと**停滞前線**、寒冷前線が温暖前線に追いつくと**閉そく前線**ができます。',
         figure: scene(warmSection(20, 30, 280, '温暖前線').concat([
           { type: 'text', x: 204, y: 64, text: '乱層雲', size: 12, bold: true },
@@ -2682,6 +2700,7 @@
       },
       {
         id: 'weather-mp10-c3',
+        anim: 'we-tank-density',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '水槽の左にぬるま湯、右に冷水を入れてしきりをとると、冷たい水は暖かい水より重い（密度が大きい）ので下にもぐりこみ、暖かい水は上へ移ります。寒気と暖気も同じように、寒気が下に、暖気が上になります。',
         figure: scene(tankItems()),
       },
@@ -2876,15 +2895,17 @@
     lessons: [
       {
         id: 'weather-mp11-c1',
+        anim: 'we-front-passage-graph',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '寒冷前線が通過すると、気温が急に下がり、風向は南寄りから北寄りに変わります。通過するときは、強い雨が短時間降ることが多いです。温暖前線が通過すると、気温が上がり、風向は南寄りに変わります。',
         figure: scene(passageItems(false).concat([
           { type: 'line', points: [[157, 40], [157, 186]], color: 'blue', width: 2, dashed: true },
-          { type: 'text', x: 162, y: 54, text: '寒冷前線が通過', size: 12, bg: true },
+          { type: 'text', x: 162, y: 70, text: '寒冷前線が通過', size: 12, bg: true },
           { type: 'text', x: 230, y: 120, text: '気温が急に下がる', size: 12, anchor: 'middle', bg: true },
         ])),
       },
       {
         id: 'weather-mp11-c2',
+        anim: 'we-cyclone-move',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '中緯度で発生し、寒冷前線と温暖前線をともなう低気圧を**温帯低気圧**といいます。中心から南西へ寒冷前線、南東へ温暖前線がのび、2 つの前線のあいだの地表は暖気におおわれます。**偏西風**によって西から東へ移動します。',
         figure: scene(lowFrontItems(false).concat([
           { type: 'text', x: 236, y: 92, text: '温暖前線', size: 12, bg: true },
@@ -3025,6 +3046,7 @@
     lessons: [
       {
         id: 'weather-mp12-c1',
+        anim: 'we-winter-monsoon',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '冬は、大陸で冷たく乾いたシベリア気団が発達し、**西高東低**の気圧配置になります。北西の季節風は日本海の上で水蒸気をふくみ、山にぶつかって**上昇気流**となって日本海側に雪を降らせます。山をこえた乾いた風が下りる太平洋側は晴れます。',
         figure: scene(winterFlowItems(false).concat([
           { type: 'text', x: 160, y: 40, text: 'A 上昇気流 → 雪', size: 12, bg: true },
@@ -3217,6 +3239,7 @@
     lessons: [
       {
         id: 'weather-mp13-c1',
+        anim: 'we-spring-3days',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '春と秋は、大陸から**移動性高気圧**と低気圧が交互にやってきて、偏西風によって西から東へ移動します。そのため天気は数日の周期で変わります。移動性高気圧は、大陸の暖かく乾いた揚子江気団の一部が移ってきたものです。',
         figure: scene([...springPanel(6, 1, '1 日目'), ...springPanel(110, 2, '2 日目'), ...springPanel(214, 3, '3 日目'),
           { type: 'text', x: 160, y: 226, text: '高気圧も低気圧も西から東へ', size: 12, anchor: 'middle' }]),
@@ -3224,14 +3247,21 @@
       {
         id: 'weather-mp13-c2',
         text: '6〜7 月ごろ、北の**オホーツク海高気圧**と南の太平洋高気圧の勢力がつり合い、あいだに停滞前線ができます。この時期の停滞前線を**梅雨前線**といい、雨の日が何日も続きます。',
-        figure: scene(tsuyuMapItems().concat([
-          { type: 'text', x: 316, y: 76, text: 'オホーツク海高気圧', size: 12, anchor: 'end', bg: true },
-          { type: 'text', x: 180, y: 236, text: '太平洋高気圧', size: 12, anchor: 'end', bg: true },
-          { type: 'text', x: 60, y: 176, text: '梅雨前線', size: 12, bg: true },
-        ])),
+        // 写真（weather-4-c4 の画像）: 2 枚組の雲画像。左 (4〜158, 47〜193) は梅雨のころで、本州の南に東西にのびる雲の帯
+        // (4〜158, 115〜175)。右 (162〜317, 47〜193) は夏で雲が少ない（台風は写っていない）。上下は白い余白
+        figure: scene([
+          photo('weather-4-c4'),
+          tag(80, 20, '梅雨のころ', { size: 15, bold: true }), tag(240, 22, '夏（梅雨明けのあと）', { size: 13 }),
+          tag(84, 40, 'オホーツク海高気圧（北）', { size: 13 }),
+          pointer(40, 199, 40, 168), tag(62, 212, '梅雨前線の雲の帯', { size: 13 }),
+          tag(84, 232, '太平洋高気圧（南）', { size: 13 }),
+          tag(240, 212, '2 つの高気圧がつり合う', { size: 13 }),
+          tag(240, 232, '→ 停滞前線（梅雨前線）', { size: 13 }),
+        ]),
       },
       {
         id: 'weather-mp13-c3',
+        anim: 'we-typhoon-path',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '熱帯の海上で発生した**熱帯低気圧**のうち、最大風速が秒速 17.2 m 以上になったものを**台風**といいます。台風は夏から秋に日本に近づき、北上すると偏西風の影響で、進路を東寄りに変えることが多いです。',
         figure: scene(japanSmall().concat([
           { type: 'line', points: [[150, 238], [140, 208], [152, 182], [196, 150], [252, 120], [304, 100]], color: 'red', width: 3, dashed: true, arrow: true },
@@ -3420,11 +3450,13 @@
     lessons: [
       {
         id: 'weather-mp14-c1',
+        anim: 'we-sea-land-breeze',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '海に面した地域では、昼は陸が海よりあたたまりやすく、陸で上昇気流が生じるので、海から陸へ海風がふきます。夜は陸が冷えやすいので、陸から海へ陸風がふきます。これらを**海陸風**といいます。季節ごとにふく**季節風**も同じしくみです。',
         figure: scene(breezeItems(true)),
       },
       {
         id: 'weather-mp14-c2',
+        anim: 'we-global-wind',   // 動く図（js/anim-earth.js）。figure は静止図として残す
         text: '赤道付近はよくあたためられて上昇気流が生じ、気圧が低くなります。上昇した空気は中緯度で下降し、そこは気圧が高くなります。そこから高緯度へふく風は、地球の自転の影響で右にずれて西風になります。これが**偏西風**です。',
         figure: scene(globalWindItems().concat([
           { type: 'text', x: 56, y: 110, text: '上昇（気圧が低い）', size: 12, bg: true },
@@ -3435,13 +3467,16 @@
       {
         id: 'weather-mp14-c3',
         text: '日本は降水量が多く、雨や雪は農業用水・工業用水・生活用水に使われます。一方で、せまい範囲の大雨（**集中豪雨**）は洪水や土砂くずれを、台風は強風や高潮を起こします。積乱雲の下では、激しいうず巻き状の風の**竜巻**が起こることもあります。',
+        // 写真: 2×2 の風景。上段 左 ダム湖 (8〜152, 6〜95)・右 用水路 (168〜312, 6〜95)、下段 左 竜巻 (8〜152, 126〜210。
+        // うずの先 (75, 200) が地面につく)・右 大雪 (168〜312, 126〜212)。上段と下段のあいだと下は白い余白
         figure: scene([
-          { type: 'rect', x: 10, y: 40, width: 145, height: 170, fill: '#E8F4FF' },
-          { type: 'rect', x: 165, y: 40, width: 145, height: 170, fill: '#FFF1E6' },
-          { type: 'text', x: 82, y: 66, text: '恵み', size: 16, anchor: 'middle', bold: true },
-          { type: 'text', x: 237, y: 66, text: '災害', size: 16, anchor: 'middle', bold: true },
-          ...['農業用水', '工業用水', '生活用水', '雪どけ水'].map((s, i) => ({ type: 'text', x: 82, y: 100 + 28 * i, text: s, size: 13, anchor: 'middle' })),
-          ...['集中豪雨', '台風（強風・高潮）', '竜巻', '大雪'].map((s, i) => ({ type: 'text', x: 237, y: 100 + 28 * i, text: s, size: 13, anchor: 'middle' })),
+          photo('weather-mp14-c3'),
+          tag(26, 22, '恵み', { size: 15, bold: true }),
+          tag(26, 144, '災害', { size: 15, bold: true }),
+          tag(80, 113, 'ダム（生活・工業用水）', { size: 13 }),
+          tag(240, 113, '用水路（農業用水）', { size: 13 }),
+          tag(80, 228, '竜巻（積乱雲の下）', { size: 13 }),
+          tag(240, 228, '大雪', { size: 13 }),
         ]),
       },
     ],

@@ -974,12 +974,6 @@
     { type: 'text', x: 286, y: 205, text: '細胞膜', size: 13, anchor: 'middle' },
   ]));
 
-  // ふ入りの葉（FU_LEAF_Q から選ぶ場所を除き、青紫色になる所を書く）
-  const FU_LEAF_RESULT = scene(FU_LEAF_Q.items.filter(it => it.type !== 'region').concat([
-    { type: 'text', x: 210, y: 82, text: '青紫色', size: 14, anchor: 'middle', bold: true, color: 'purple' },
-    { type: 'text', x: 160, y: 232, text: '緑色で光が当たった部分だけ青紫色', size: 12, anchor: 'middle' },
-  ]));
-
   // BTB 溶液の試験管 A（水草あり）・B（水草なし）に光を当てる。A の中心 x 120、B の中心 x 220
   function btbItems(colorA, colorB) {
     return [
@@ -1030,60 +1024,54 @@
     { type: 'region', id: 'r4', x: 125, y: 178, r: 22, label: 'エ' },
   ]));
 
-  // 茎の断面 2 つ。左 (80, 112) は維管束が輪のように並ぶ、右 (240, 112) は散らばる
-  function stemPairItems() {
-    const items = [
-      { type: 'circle', x: 80, y: 112, r: 56, fill: 'lightgreen', stroke: 'green' },
-      { type: 'circle', x: 240, y: 112, r: 56, fill: 'lightgreen', stroke: 'green' },
-    ];
-    for (let i = 0; i < 8; i++) {
-      const a = i * Math.PI / 4;
-      items.push({ type: 'circle', x: Math.round(80 + 38 * Math.cos(a)), y: Math.round(112 + 38 * Math.sin(a)), r: 7, fill: 'white', stroke: 'line' });
-    }
-    [[-30, -20], [-10, -36], [14, -30], [34, -12], [-36, 8], [-14, -10], [8, -4], [30, 14], [-24, 30], [0, 20], [20, 36], [-4, 42]]
-      .forEach(([dx, dy]) => items.push({ type: 'circle', x: 240 + dx, y: 112 + dy, r: 5, fill: 'white', stroke: 'line' }));
-    items.push({ type: 'text', x: 160, y: 234, text: '茎の断面（白い丸が維管束）', size: 12, anchor: 'middle' });
-    return items;
-  }
-  const STEM_PAIR_Q = scene(stemPairItems().concat([
-    { type: 'region', id: 'r1', x: 80, y: 196, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 240, y: 196, r: 22, label: 'イ' },
-  ]));
+  // 茎の断面の写真（body-mp4-c1。赤い色水を吸わせた）。左の視野 (5〜152, 35〜182) は維管束が輪のように並ぶ、
+  // 右の視野 (167〜312, 35〜182) は散らばる。植物名は書かない（答えになる）
+  const STEM_PAIR_Q = scene([
+    photo('body-mp4-c1'),
+    tag(160, 22, '赤い色水を吸わせた茎の断面', { size: 13, anchor: 'middle' }),
+    { type: 'region', id: 'r1', x: 80, y: 210, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 240, y: 210, r: 22, label: 'イ' },
+  ]);
 
-  // 消化にかかわる器官の名前（gutItems に名前を書く）
-  const GUT_NAMES = scene(gutItems().concat([
-    leader(36, 96, 84, 92),
-    { type: 'text', x: 6, y: 101, text: '肝臓', size: 13 },
-    leader(198, 36, 172, 50),
-    { type: 'text', x: 200, y: 40, text: '食道', size: 13 },
-    leader(284, 96, 246, 100),
-    { type: 'text', x: 288, y: 101, text: '胃', size: 13 },
-    leader(264, 146, 236, 145),
-    { type: 'text', x: 268, y: 151, text: 'すい臓', size: 13 },
-    leader(264, 192, 202, 190),
-    { type: 'text', x: 268, y: 197, text: '小腸', size: 13 },
-    leader(36, 186, 100, 186),
-    { type: 'text', x: 6, y: 191, text: '大腸', size: 13 },
-  ]));
+  // 人体模型の消化にかかわる器官の写真（body-3-c1）。肝臓 (128, 50)・胃 (200, 52)・小腸 (160, 150)・大腸（左のたての部分 (100, 150)）
+  // 名前は body-3-c1 と同じ位置。胆のうは肝臓の下 (124, 78) にあり、写真でははっきり見えないので引き出し線だけ
+  const GUT_NAMES = scene([
+    photo('body-3-c1'),
+    pin(258, 16, 180, 16), tag(262, 21, '食道'),
+    pin(258, 46, 212, 46), tag(262, 51, '胃'),
+    pin(258, 84, 196, 82), tag(262, 89, 'すい臓'),
+    pin(258, 136, 190, 144), tag(262, 141, '小腸'),
+    pin(258, 222, 166, 224), tag(262, 227, '肛門'),
+    pin(42, 46, 112, 52), tag(8, 51, '肝臓'),
+    pin(58, 96, 124, 78), tag(8, 101, '胆のう'),
+    pin(42, 146, 100, 146), tag(8, 151, '大腸'),
+    tag(4, 236, '図の左がからだの右', { size: 13 }),
+  ]);
+  // 同じ写真で器官を選ぶ図（ア 肝臓・イ 胃・ウ 小腸・エ 大腸）。器官の名前は書かない
+  const GUT_PHOTO_Q = scene([
+    photo('body-3-c1'),
+    tag(4, 236, '図の左がからだの右', { size: 13 }),
+    { type: 'region', id: 'r1', x: 128, y: 50, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 200, y: 52, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 160, y: 150, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 100, y: 156, r: 22, label: 'エ' },
+  ]);
 
-  // だ液の実験。A（デンプンのり＋水）の中心 x 120、B（デンプンのり＋だ液）の中心 x 200。約 40 ℃ の湯に入れる
+  // だ液の実験の写真（body-3-c3）。約 40 ℃ の湯（ビーカー 90〜210, 90〜225）に試験管 2 本。左が A（デンプンのり＋水）x 145、
+  // 右が B（デンプンのり＋だ液）x 172（液 y 140〜205）。右に温度計（x 190〜205）。左と右は白い余白
   function salivaItems() {
     return [
-      { type: 'beaker', x: 160, y: 214, width: 220, height: 120, level: 0.7, liquid: 'water' },
-      { type: 'tube', x: 120, y: 204, height: 120, level: 0.5, liquid: '#F4EFD9' },
-      { type: 'tube', x: 200, y: 204, height: 120, level: 0.5, liquid: '#F4EFD9' },
-      { type: 'line', points: [[256, 96], [256, 198]], color: 'red', width: 3 },
-      { type: 'circle', x: 256, y: 202, r: 5, fill: 'red', stroke: 'none' },
-      { type: 'text', x: 120, y: 76, text: 'A', size: 15, anchor: 'middle', bold: true },
-      { type: 'text', x: 200, y: 76, text: 'B', size: 15, anchor: 'middle', bold: true },
-      { type: 'text', x: 6, y: 20, text: 'A: デンプンのり＋水', size: 13 },
-      { type: 'text', x: 6, y: 40, text: 'B: デンプンのり＋だ液', size: 13 },
-      { type: 'text', x: 316, y: 236, text: '約 40 ℃ の湯', size: 12, anchor: 'end' },
+      photo('body-3-c3'),
+      tag(8, 22, 'A: デンプンのり＋水', { size: 13 }),
+      tag(8, 42, 'B: デンプンのり＋だ液', { size: 13 }),
+      tag(145, 62, 'A', { size: 15, anchor: 'middle', bold: true }),
+      tag(172, 62, 'B', { size: 15, anchor: 'middle', bold: true }),
+      pin(90, 212, 110, 204), tag(8, 216, '約40℃の湯', { size: 13 }),
     ];
   }
   const SALIVA_Q = scene(salivaItems().concat([
-    { type: 'region', id: 'r1', x: 120, y: 170, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 200, y: 170, r: 22, label: 'イ' },
+    pin(66, 140, 138, 170), { type: 'region', id: 'r1', x: 44, y: 140, r: 22, label: 'ア' },
+    pin(254, 140, 180, 170), { type: 'region', id: 'r2', x: 276, y: 140, r: 22, label: 'イ' },
   ]));
 
   // 血液を顕微鏡で見たようす（模式図）。赤血球 (70, 120) など、血小板の集まり (142, 128)、白血球 (230, 96)、血しょう (60, 190)
@@ -1129,26 +1117,20 @@
     { type: 'region', id: 'r3', x: 220, y: 150, r: 22, label: 'ウ' },
   ]));
 
-  // じん臓とぼうこう（正面から見た模式図）。じん臓 (100, 80)・(220, 80)、輸尿管の中ほど (125, 139)、ぼうこう (160, 180)
+  // 人体模型の排出にかかわる器官の写真（body-mp8-c2。消化管を取りはずして正面から。図の左がからだの右）。
+  // じん臓 (125, 65)・(198, 62)、輸尿管（左 x 135〜140, y 75〜180。右 x 182〜178）、ぼうこう (160, 192)、
+  // 大静脈（青）x 152、大動脈（赤）x 165。左右は白い余白
   function kidneyItems() {
     return [
-      { type: 'line', points: [[152, 16], [152, 150]], color: 'red', width: 6 },
-      { type: 'line', points: [[168, 16], [168, 150]], color: 'blue', width: 6 },
-      { type: 'line', points: [[118, 70], [202, 70]], color: 'red', width: 3 },
-      { type: 'line', points: [[118, 92], [202, 92]], color: 'blue', width: 3 },
-      { type: 'ellipse', x: 100, y: 80, rx: 20, ry: 32, fill: 'brown' },
-      { type: 'ellipse', x: 220, y: 80, rx: 20, ry: 32, fill: 'brown' },
-      { type: 'line', points: [[104, 110], [146, 168]], color: 'line', width: 3 },
-      { type: 'line', points: [[216, 110], [174, 168]], color: 'line', width: 3 },
-      { type: 'ellipse', x: 160, y: 180, rx: 28, ry: 18, fill: 'yellow', stroke: 'line' },
-      { type: 'line', points: [[160, 198], [160, 226]], color: 'line', width: 3 },
-      { type: 'text', x: 316, y: 236, text: '赤: 動脈　青: 静脈', size: 12, anchor: 'end' },
+      photo('body-mp8-c2'),
+      tag(160, 16, '図の左がからだの右', { size: 13, anchor: 'middle' }),
+      tag(160, 234, '赤: 動脈　青: 静脈', { size: 13, anchor: 'middle' }),
     ];
   }
   const KIDNEY_Q = scene(kidneyItems().concat([
-    { type: 'region', id: 'r1', x: 100, y: 80, r: 22, label: 'ア' },
-    { type: 'region', id: 'r2', x: 160, y: 180, r: 22, label: 'イ' },
-    { type: 'region', id: 'r3', x: 125, y: 139, r: 22, label: 'ウ' },
+    pin(56, 66, 108, 66), { type: 'region', id: 'r1', x: 34, y: 66, r: 22, label: 'ア' },
+    pin(264, 194, 180, 194), { type: 'region', id: 'r2', x: 286, y: 194, r: 22, label: 'イ' },
+    pin(56, 140, 136, 140), { type: 'region', id: 'r3', x: 34, y: 140, r: 22, label: 'ウ' },
   ]));
 
   // ヒトの目の断面（模式図。左から光が入る）。レンズ (120, 120)、虹彩 x 102、網膜は奥の赤い線、視神経は右へ出る黄色の線
@@ -1357,16 +1339,37 @@
       {
         id: 'body-mp2-c1',
         text: 'ふ入りの葉の白い部分には**葉緑体**がありません。一晩暗い所に置いた葉の一部をアルミニウムはくでおおい、光を当ててからヨウ素液で調べると、緑色で光が当たった部分だけにデンプンができています。',
-        figure: FU_LEAF_RESULT,
+        // 写真（body-2-c2 の画像）: 左の葉 (8〜150, 5〜178) はふ入りで、まん中をアルミニウムはく (8〜148, 63〜110) でおおってある。
+        // 右の葉 (170〜310, 5〜178) は脱色してヨウ素液につけたもの（上と下の緑色だった部分だけ青紫色、はくの下 (240, 95) は色が変わらない）
+        figure: scene([
+          photo('body-2-c2'),
+          pin(30, 24, 26, 50), tag(8, 18, 'ふ（白い部分）', { size: 13 }),
+          tag(70, 90, 'アルミニウムはく', { size: 13, anchor: 'middle' }),
+          { type: 'arrow', x1: 128, y1: 140, x2: 180, y2: 140, width: 3 },
+          tag(155, 162, '脱色', { size: 13, anchor: 'middle' }),
+          tag(155, 179, 'ヨウ素液', { size: 13, anchor: 'middle' }),
+          pin(64, 184, 74, 150), tag(64, 198, '緑色の部分', { size: 13, anchor: 'middle' }),
+          tag(244, 100, 'はくの下', { size: 13, anchor: 'middle' }),
+          pin(244, 184, 244, 140), tag(244, 198, '青紫色', { size: 13, anchor: 'middle', bold: true }),
+          tag(160, 228, '緑色で光が当たった部分だけ青紫色', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-mp2-c2',
         text: '青色の**BTB溶液**に息をふきこんで緑色にし、水草を入れた A と入れない B に光を当てます。A だけ青色になるのは、光合成で二酸化炭素が使われたからです。B のように条件を 1 つだけ変えてくらべる実験を**対照実験**といいます。',
-        figure: scene(btbItems('blue', 'green').concat([
-          { type: 'text', x: 310, y: 24, text: '光を当てたあと', size: 13, anchor: 'end' },
-          { type: 'text', x: 138, y: 124, text: '青色', size: 13, color: 'blue', bold: true },
-          { type: 'text', x: 238, y: 124, text: '緑色のまま', size: 13 },
-        ])),
+        // 写真: 試験管立て (88〜258, 65〜180) の試験管 2 本に左から電灯 (0〜78, 5〜175) の光。左の A (x 150) は水草入りで青色、
+        // 右の B (x 200) は何も入れず緑色（液 y 52〜162）。右上と下は白い余白
+        figure: scene([
+          photo('body-mp2-c2'),
+          tag(150, 44, 'A', { size: 15, anchor: 'middle', bold: true }),
+          tag(200, 44, 'B', { size: 15, anchor: 'middle', bold: true }),
+          tag(272, 40, 'B は対照実験', { size: 13, anchor: 'middle' }),
+          tag(120, 198, '水草を入れる', { size: 13, anchor: 'middle' }),
+          tag(120, 216, '→ 青色', { size: 13, anchor: 'middle', bold: true }),
+          tag(244, 198, '何も入れない', { size: 13, anchor: 'middle' }),
+          tag(244, 216, '→ 緑色のまま', { size: 13, anchor: 'middle', bold: true }),
+          tag(160, 236, 'BTB 溶液に息をふきこみ緑色にして光を当てた', { size: 13, anchor: 'middle' }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1475,6 +1478,7 @@
     lessons: [
       {
         id: 'body-mp3-c1',
+        anim: 'bo-photosynthesis-flow',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '光合成は、**光エネルギー**を使って細胞の**葉緑体**で行われます。材料は二酸化炭素と水で、デンプンなどの養分と酸素ができます。式で表すと「二酸化炭素 ＋ 水 → デンプンなど ＋ 酸素」です。',
         // 光合成の式
         figure: scene([
@@ -1493,6 +1497,7 @@
       },
       {
         id: 'body-mp3-c2',
+        anim: 'bo-day-night-gas',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '植物は昼も夜も**呼吸**をして、酸素をとり入れ二酸化炭素を出します。光合成は光が当たる昼だけです。昼は光合成のほうがさかんなので、全体としては二酸化炭素をとり入れ、酸素を出しているように見えます。',
         figure: scene(dayNightItems().concat([
           { type: 'text', x: 4, y: 56, text: '二酸化炭素', size: 12 },
@@ -1608,27 +1613,35 @@
       {
         id: 'body-mp4-c1',
         text: '茎の断面には、**道管**と**師管**が集まった**維管束**があります。ヒマワリやアサガオなどの**双子葉類**では維管束が輪のように並び、トウモロコシやユリなどの**単子葉類**では茎全体に散らばっています。',
-        figure: scene(stemPairItems().concat([
-          { type: 'text', x: 80, y: 192, text: 'ヒマワリなど', size: 13, anchor: 'middle' },
-          { type: 'text', x: 80, y: 210, text: '輪のように並ぶ', size: 12, anchor: 'middle' },
-          { type: 'text', x: 240, y: 192, text: 'トウモロコシなど', size: 13, anchor: 'middle' },
-          { type: 'text', x: 240, y: 210, text: '散らばっている', size: 12, anchor: 'middle' },
-        ])),
+        // 写真: 赤い色水を吸わせた茎の断面（丸い視野 2 つ）。左 (5〜152, 35〜182) はヒマワリで赤い点（維管束）が輪に並ぶ
+        // （例 (100, 68)）。右 (167〜312, 35〜182) はトウモロコシで赤い点が全体に散らばる（例 (222, 84)）。上と下は白い余白
+        figure: scene([
+          photo('body-mp4-c1'),
+          pin(144, 24, 102, 66), pin(176, 24, 231, 72), tag(160, 22, '維管束', { size: 14, anchor: 'middle' }),
+          tag(80, 200, 'ヒマワリ（双子葉類）', { size: 13, anchor: 'middle', bold: true }),
+          tag(80, 218, '輪のように並ぶ', { size: 13, anchor: 'middle' }),
+          tag(240, 200, 'トウモロコシ（単子葉類）', { size: 13, anchor: 'middle', bold: true }),
+          tag(240, 218, '散らばっている', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-mp4-c2',
         text: '葉の表皮には、2 つの**孔辺細胞**に囲まれたすきまの**気孔**があります。根から吸い上げた水は、気孔から水蒸気となって出ていきます。これを**蒸散**といいます。ワセリンで気孔をふさぐと、蒸散は起こりにくくなります。',
-        // 気孔と孔辺細胞
+        // 写真（body-2-c3 の画像）: 葉の裏の表皮（視野の円 x 5〜195・y 20〜212）。三日月形の孔辺細胞 2 つ（左 x 70〜98、右 x 106〜130、
+        // y 78〜148）が気孔（x 96〜107、y 92〜132）を囲む。右は白い余白
         figure: scene([
-          { type: 'rect', x: 20, y: 20, width: 280, height: 200, fill: 'lightgreen', stroke: 'line' },
-          { type: 'ellipse', x: 140, y: 120, rx: 22, ry: 52, fill: 'green', stroke: 'ink' },
-          { type: 'ellipse', x: 180, y: 120, rx: 22, ry: 52, fill: 'green', stroke: 'ink' },
-          { type: 'ellipse', x: 160, y: 120, rx: 5, ry: 34, fill: 'ink', stroke: 'none' },
-          leader(230, 80, 194, 90),
-          { type: 'text', x: 234, y: 85, text: '孔辺細胞', size: 13 },
-          leader(230, 150, 163, 132),
-          { type: 'text', x: 234, y: 155, text: '気孔', size: 13 },
-          { type: 'text', x: 160, y: 236, text: '水蒸気・酸素・二酸化炭素が出入りする', size: 12, anchor: 'middle' },
+          photo('body-2-c3'),
+          pin(222, 92, 124, 98),
+          pin(222, 92, 84, 84),
+          tag(226, 97, '孔辺細胞'),
+          pin(222, 146, 102, 118),
+          tag(226, 151, '気孔'),
+          tag(262, 22, '葉の裏の表皮', { size: 13, anchor: 'middle' }),
+          tag(262, 40, '（顕微鏡）', { size: 13, anchor: 'middle' }),
+          tag(262, 180, '水蒸気・酸素・', { size: 13, anchor: 'middle' }),
+          tag(262, 197, '二酸化炭素が出入り', { size: 13, anchor: 'middle' }),
+          tag(262, 219, '蒸散: 水が水蒸気に', { size: 13, anchor: 'middle' }),
+          tag(262, 236, 'なって気孔から出る', { size: 13, anchor: 'middle' }),
         ]),
       },
     ],
@@ -1768,7 +1781,7 @@
       figureChoice({
         id: 'body-mp5-p1', concept: 'bo-digestion',
         prompt: 'ヒトの消化にかかわる器官の図です（図の左がからだの右。ア: 図の左上の大きな器官、イ: 図の右上のふくろのような器官、ウ: 中央で長く折りたたまれた管、エ: そのまわりを囲む太い管）。口から入った食物が通らない器官はどれ？',
-        figure: GUT_Q,
+        figure: GUT_PHOTO_Q,
         answer: 'r1',
         explanation: 'アは肝臓で、食物は通りません。食物は、イの胃、ウの小腸、エの大腸を通ります。肝臓でつくられた胆汁は、管を通って小腸へ出されます。',
         hint: '消化管（食物の通り道）ではない器官をさがそう。',
@@ -1821,7 +1834,7 @@
       figureChoice({
         id: 'body-mp5-r1', concept: 'bo-digestion',
         prompt: 'ヒトの消化にかかわる器官の図です（図の左がからだの右。ア: 図の左上の大きな器官、イ: 図の右上のふくろのような器官、ウ: 中央で長く折りたたまれた管、エ: そのまわりを囲む太い管）。分解された養分の多くを吸収する器官はどれ？',
-        figure: GUT_Q,
+        figure: GUT_PHOTO_Q,
         answer: 'r3',
         explanation: '養分の多くは小腸（ウ）の柔毛から吸収されます。大腸（エ）では、おもに水分が吸収されます。',
         hint: '柔毛がたくさんある長い管だよ。',
@@ -1878,7 +1891,13 @@
       {
         id: 'body-mp6-c2',
         text: 'デンプンのりに水を加えた A と、だ液を加えた B を約 40 ℃ に保ちます。**ヨウ素液**を加えると A だけ青紫色になり、**ベネジクト液**を加えて加熱すると B だけ赤褐色の沈殿ができます。だ液がデンプンを麦芽糖などに変えたのです。',
-        figure: scene(salivaItems()),
+        figure: scene(salivaItems().concat([
+          tag(262, 110, 'ヨウ素液', { size: 13, anchor: 'middle' }),
+          tag(262, 128, '→ A だけ青紫色', { size: 13, anchor: 'middle', bold: true }),
+          tag(262, 164, 'ベネジクト液で加熱', { size: 13, anchor: 'middle' }),
+          tag(262, 182, '→ B だけ赤褐色', { size: 13, anchor: 'middle', bold: true }),
+          tag(262, 200, 'の沈殿', { size: 13, anchor: 'middle', bold: true }),
+        ])),
       },
     ],
     warmup: choice({
@@ -1982,16 +2001,25 @@
       {
         id: 'body-mp7-c1',
         text: '血液の固形の成分は、酸素を運ぶ**赤血球**、細菌などを分解する**白血球**、出血したとき血液を固める**血小板**です。液体の**血しょう**は養分や不要な物質を運び、一部は毛細血管からしみ出して細胞のまわりを満たす**組織液**になります。',
-        figure: scene(bloodItems().concat([
-          leader(44, 38, 52, 48),
-          { type: 'text', x: 18, y: 32, text: '赤血球', size: 13 },
-          { type: 'text', x: 124, y: 102, text: '血小板', size: 13, anchor: 'middle' },
-          { type: 'text', x: 230, y: 140, text: '白血球', size: 13, anchor: 'middle' },
-          { type: 'text', x: 24, y: 214, text: '血しょう（液体）', size: 13 },
-        ])),
+        // 写真（body-4-c3 の画像）: 染めた血液の顕微鏡写真（視野の円 x 5〜212, y 10〜228）。名前と引き出し線は body-4-c3 と同じ位置。
+        // 右の白い余白に、それぞれのはたらきを書く
+        figure: scene([
+          photo('body-4-c3'),
+          pin(220, 46, 190, 60), tag(224, 51, '赤血球'),
+          tag(216, 68, '酸素を運ぶ', { size: 13 }),
+          pin(220, 90, 156, 83), tag(224, 95, '血小板'),
+          tag(216, 112, '血液を固める', { size: 13 }),
+          pin(220, 136, 173, 146), tag(224, 141, '白血球'),
+          tag(216, 158, '細菌などを分解', { size: 13 }),
+          pin(220, 186, 160, 190), tag(216, 186, '血しょう（液体）', { size: 13 }),
+          tag(216, 203, '養分・不要な物質', { size: 13 }),
+          tag(216, 220, 'を運ぶ → 組織液', { size: 13 }),
+          tag(266, 237, '染めた血液', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-mp7-c2',
+        anim: 'bo-heart-flow',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '心臓は**右心房**・**右心室**・**左心房**・**左心室**の 4 つの部屋に分かれています。全身からもどった血液は、大静脈 → 右心房 → 右心室 → 肺動脈 → 肺 → 肺静脈 → 左心房 → 左心室 → 大動脈と流れます。',
         figure: scene(heartRooms(true).concat([
           { type: 'text', x: 160, y: 44, text: '正面から見た図（図の左がからだの右）', size: 12, anchor: 'middle' },
@@ -2100,6 +2128,7 @@
     lessons: [
       {
         id: 'body-mp8-c1',
+        anim: 'bo-breath-path',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '鼻や口から吸った空気は、**気管** → **気管支** → **肺胞**へ入ります。肺胞のまわりの毛細血管で、酸素が血液にとりこまれ、二酸化炭素が出されます。肺胞がたくさんあるので表面積が大きく、気体の交換を効率よく行えます。',
         figure: scene(lungItems().concat([
           { type: 'text', x: 174, y: 40, text: '気管', size: 13 },
@@ -2113,15 +2142,17 @@
       {
         id: 'body-mp8-c2',
         text: 'タンパク質が分解されてできる有害な**アンモニア**は、血液で**肝臓**に運ばれ、害の少ない**尿素**に変えられます。尿素などは**じん臓**で血液からこし出されて尿になり、**輸尿管**を通って**ぼうこう**にためられます。',
-        figure: scene(kidneyItems().concat([
-          { type: 'text', x: 140, y: 14, text: '大動脈', size: 12, anchor: 'end' },
-          { type: 'text', x: 180, y: 14, text: '大静脈', size: 12 },
-          leader(250, 46, 234, 56),
-          { type: 'text', x: 252, y: 44, text: 'じん臓', size: 13 },
-          leader(70, 156, 120, 140),
-          { type: 'text', x: 20, y: 166, text: '輸尿管', size: 13 },
-          { type: 'text', x: 196, y: 206, text: 'ぼうこう', size: 13 },
-        ])),
+        figure: scene([
+          photo('body-mp8-c2'),
+          tag(160, 16, '図の左がからだの右', { size: 13, anchor: 'middle' }),
+          pin(52, 62, 108, 66), tag(30, 66, 'じん臓', { anchor: 'middle' }),
+          pin(268, 62, 214, 62), tag(290, 66, 'じん臓', { anchor: 'middle' }),
+          pin(84, 100, 150, 104), tag(4, 104, '大静脈（青）', { size: 13 }),
+          pin(238, 104, 168, 104), tag(316, 108, '大動脈（赤）', { size: 13, anchor: 'end' }),
+          pin(56, 136, 136, 136), tag(30, 140, '輸尿管', { anchor: 'middle' }),
+          pin(260, 190, 180, 192), tag(290, 194, 'ぼうこう', { size: 13, anchor: 'middle' }),
+          tag(160, 234, 'じん臓で尿素などをこし出す', { size: 13, anchor: 'middle' }),
+        ]),
       },
     ],
     warmup: choice({
@@ -2162,7 +2193,7 @@
       }),
       figureChoice({
         id: 'body-mp8-p3', concept: 'bo-circulation',
-        prompt: 'ヒトの排出にかかわる器官の模式図です（ア: 左右に 1 つずつある器官、イ: 下にあるふくろ、ウ: アとイをつなぐ管）。血液中から尿素などの不要な物質をこし出すのはどれ？',
+        prompt: 'ヒトの排出にかかわる器官（人体模型の写真。図の左がからだの右）です（ア: 左右に 1 つずつある器官、イ: 下にあるふくろ、ウ: アとイをつなぐ管）。血液中から尿素などの不要な物質をこし出すのはどれ？',
         figure: KIDNEY_Q,
         answer: 'r1',
         explanation: '血液中から尿素などをこし出して尿をつくるのは、じん臓（ア）です。尿は輸尿管（ウ）を通ってぼうこう（イ）にためられます。',
@@ -2192,7 +2223,7 @@
     retryPool: [
       figureChoice({
         id: 'body-mp8-r1', concept: 'bo-circulation',
-        prompt: 'ヒトの排出にかかわる器官の模式図です（ア: 左右に 1 つずつある器官、イ: 下にあるふくろ、ウ: アとイをつなぐ管）。尿を一時ためておくのはどれ？',
+        prompt: 'ヒトの排出にかかわる器官（人体模型の写真。図の左がからだの右）です（ア: 左右に 1 つずつある器官、イ: 下にあるふくろ、ウ: アとイをつなぐ管）。尿を一時ためておくのはどれ？',
         figure: KIDNEY_Q,
         answer: 'r2',
         explanation: '尿を一時ためておくのはぼうこう（イ）です。アはじん臓、ウは輸尿管です。',
@@ -2224,44 +2255,51 @@
       {
         id: 'body-mp9-c1',
         text: '目では、**レンズ**（水晶体）で光が屈折し、**網膜**に像を結びます。網膜の細胞が受けとった刺激は、視神経で脳へ伝わります。**虹彩**はひとみの大きさを変えて、目に入る光の量を調節します。',
-        figure: scene(eyeItems().concat([
-          { type: 'text', x: 120, y: 30, text: 'レンズ（水晶体）', size: 13, anchor: 'middle' },
-          { type: 'text', x: 48, y: 210, text: '虹彩', size: 13, anchor: 'middle' },
-          { type: 'text', x: 284, y: 30, text: '網膜', size: 13, anchor: 'middle' },
-          { type: 'text', x: 290, y: 150, text: '視神経', size: 13, anchor: 'middle' },
-        ])),
+        // 写真: 目の模型を横から半分に切った断面。左が前で、透明なふくらんだレンズ (103, 125)、そのすぐ外の茶色の虹彩 (115, 90〜170)、
+        // 奥の内側を赤い網膜がおおい、右から黄色の視神経 (215〜245, 120〜150) が出る。上と下は白い余白
+        figure: scene([
+          photo('body-mp9-c1'),
+          { type: 'arrow', x1: 4, y1: 126, x2: 58, y2: 126, color: 'orange' },
+          tag(22, 112, '光', { size: 14, anchor: 'middle', bold: true }),
+          pin(100, 36, 103, 110), tag(100, 30, 'レンズ（水晶体）', { size: 13, anchor: 'middle' }),
+          pin(84, 196, 114, 160), tag(76, 212, '虹彩', { size: 13, anchor: 'middle' }),
+          pin(214, 36, 196, 84), tag(222, 30, '網膜', { size: 13, anchor: 'middle' }),
+          pin(270, 108, 240, 130), tag(286, 102, '視神経', { size: 13, anchor: 'middle' }),
+          tag(160, 234, '網膜に像を結ぶ → 視神経で脳へ', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'body-mp9-c2',
         text: '耳では、音で**鼓膜**が振動し、**耳小骨**を通って**うずまき管**に伝わり、そこの細胞が音の刺激を受けとります。**半規管**はからだの傾きや回転を感じます。鼻はにおい、舌は味、皮ふは圧力・温度・痛みを受けとります。',
-        figure: scene(earItems().concat([
-          { type: 'text', x: 104, y: 196, text: '鼓膜', size: 13, anchor: 'middle' },
-          { type: 'text', x: 130, y: 92, text: '耳小骨', size: 13, anchor: 'middle' },
-          { type: 'text', x: 186, y: 200, text: 'うずまき管', size: 13, anchor: 'middle' },
-          leader(230, 66, 222, 64),
-          { type: 'text', x: 234, y: 70, text: '半規管', size: 13 },
-        ])),
+        // 写真: 耳の模型の断面。左に耳（耳の穴 65〜140, 105〜145）、その奥に鼓膜 (143, 125)、耳小骨 3 つ (155〜205, 95〜130)、
+        // かたつむりの形のうずまき管 (255, 130)、3 つの輪の半規管 (197〜250, 50〜100)。上と下は白い余白
+        figure: scene([
+          photo('body-mp9-c2'),
+          pin(124, 30, 143, 116), tag(120, 24, '鼓膜', { size: 13, anchor: 'middle' }),
+          pin(180, 30, 172, 102), tag(180, 24, '耳小骨', { size: 13, anchor: 'middle' }),
+          pin(240, 30, 222, 62), tag(244, 24, '半規管', { size: 13, anchor: 'middle' }),
+          pin(268, 200, 258, 152), tag(270, 212, 'うずまき管', { size: 13, anchor: 'middle' }),
+          tag(116, 216, '音 → 鼓膜が振動 → 耳小骨', { size: 13, anchor: 'middle' }),
+          tag(116, 234, '→ うずまき管で受けとる', { size: 13, anchor: 'middle' }),
+          tag(316, 234, '半規管: 傾き・回転', { size: 13, anchor: 'end' }),
+        ]),
       },
       {
         id: 'body-mp9-c3',
         text: '外界の刺激を受けとる器官を**感覚器官**といいます。シマウマのような草食動物は目が顔の横につき、広い範囲を見わたせます。ライオンのような肉食動物は目が前向きで、立体的に見える範囲が広く、えものとの距離をつかみやすいです。',
-        // 上から見た頭と、目で見える範囲
+        // 写真（animals-4-c3 の画像。ほかの単元の画像なので src を直接書く）: ライオンの顔 (0〜165, 0〜185。目 (62, 79)・(108, 79) が前に並ぶ)と
+        // シマウマの顔 (195〜315, 5〜185。目 (220, 80)・(278, 80) が横につく)。下は白い余白。青い楕円と矢印は目の向き（animals-4-c3 と同じ）
         figure: scene([
-          { type: 'polygon', points: [[56, 118], [4, 50], [4, 200]], fill: 'sky', stroke: 'none' },
-          { type: 'polygon', points: [[104, 118], [156, 50], [156, 200]], fill: 'sky', stroke: 'none' },
-          { type: 'ellipse', x: 80, y: 130, rx: 26, ry: 36, fill: 'white', stroke: 'ink' },
-          { type: 'circle', x: 56, y: 118, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'circle', x: 104, y: 118, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'polygon', points: [[226, 124], [176, 34], [252, 34]], fill: 'sky', stroke: 'none' },
-          { type: 'polygon', points: [[254, 124], [228, 34], [304, 34]], fill: 'sky', stroke: 'none' },
-          { type: 'polygon', points: [[240, 76], [228, 34], [252, 34]], fill: '#9CC3F5', stroke: 'none' },
-          { type: 'ellipse', x: 240, y: 150, rx: 30, ry: 32, fill: 'sand', stroke: 'ink' },
-          { type: 'circle', x: 226, y: 124, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'circle', x: 254, y: 124, r: 5, fill: 'ink', stroke: 'none' },
-          { type: 'text', x: 80, y: 24, text: '上から見た図', size: 12, anchor: 'middle' },
-          { type: 'text', x: 80, y: 226, text: 'シマウマ: 目が横向き', size: 12, anchor: 'middle' },
-          { type: 'text', x: 240, y: 208, text: 'ライオン: 目が前向き', size: 12, anchor: 'middle' },
-          { type: 'text', x: 240, y: 228, text: '濃い所は立体的に見える', size: 12, anchor: 'middle' },
+          { type: 'image', src: 'assets/images/animals/animals-4-c3.jpg' },
+          { type: 'ellipse', x: 86, y: 78, rx: 34, ry: 12, fill: 'none', stroke: 'blue' },
+          { type: 'arrow', x1: 212, y1: 81, x2: 190, y2: 81, color: 'blue', width: 2 },
+          { type: 'arrow', x1: 286, y1: 81, x2: 310, y2: 81, color: 'blue', width: 2 },
+          tag(82, 201, '肉食動物（ライオン）', { size: 13, anchor: 'middle', bold: true }),
+          tag(82, 218, '目が前向き', { size: 13, anchor: 'middle' }),
+          tag(82, 235, '立体的に見える範囲が広い', { size: 13, anchor: 'middle' }),
+          tag(252, 201, '草食動物（シマウマ）', { size: 13, anchor: 'middle', bold: true }),
+          tag(252, 218, '目が横向き', { size: 13, anchor: 'middle' }),
+          tag(252, 235, '広い範囲を見わたせる', { size: 13, anchor: 'middle' }),
         ]),
       },
     ],
@@ -2384,6 +2422,7 @@
     lessons: [
       {
         id: 'body-mp10-c1',
+        anim: 'bo-reflex',   // 動く図の使い回し（js/anim-bio.js）。figure は静止図として残す
         text: '脳と脊髄を**中枢神経**、そこから枝分かれして全身に広がる神経を**末しょう神経**といいます。刺激の信号は**感覚神経**で中枢神経へ、中枢神経からの命令は**運動神経**で筋肉へ伝わります。',
         figure: scene(nerveItems(true).concat([
           { type: 'text', x: 108, y: 40, text: '脳', size: 13 },
@@ -2507,6 +2546,7 @@
     lessons: [
       {
         id: 'body-mp11-c1',
+        anim: 'bo-arm-bend',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: 'ヒトのからだは、約 200 個の骨が組み合わさった**骨格**で支えられています。骨と骨のつなぎ目で曲がるところを**関節**、筋肉が骨についている部分を**けん**といいます。うでを曲げるときは、内側の筋肉が縮み、外側の筋肉がゆるみます。',
         figure: scene(armItems().concat([
           { type: 'text', x: 22, y: 100, text: 'けん', size: 13 },
@@ -2519,26 +2559,17 @@
       {
         id: 'body-mp11-c2',
         text: 'セキツイ動物は、魚類・両生類・ハチュウ類・鳥類・ホニュウ類に分けられます。分ける基準には、子のうまれ方（**胎生**か**卵生**か）、呼吸のしかた、卵に殻があるか、体温が変わるか（**恒温動物**か**変温動物**か）などがあります。',
-        // 5 つのなかまと、分ける基準
+        // 写真（animals-1-c2 の画像。ほかの単元の画像なので src を直接書く）: 上段 メダカ (52, 48)・トノサマガエル (155, 48)・
+        // ニホントカゲ (262, 55)、下段 ハト (80, 160)・柴犬 (240, 155)。上と、上段と下段のあいだは白い余白
         figure: scene([
-          { type: 'line', points: [[4, 52], [124, 52]], color: 'blue', width: 3 },
-          { type: 'text', x: 64, y: 44, text: '子はえらで呼吸', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[132, 52], [316, 52]], color: 'blue', width: 3 },
-          { type: 'text', x: 224, y: 44, text: '肺で呼吸', size: 12, anchor: 'middle' },
-          ...['魚類', '両生類', 'ハチュウ類', '鳥類', 'ホニュウ類'].flatMap((t, i) => [
-            { type: 'rect', x: 2 + i * 64, y: 64, width: 60, height: 40, fill: 'white' },
-            { type: 'text', x: 32 + i * 64, y: 89, text: t, size: 12, anchor: 'middle', bold: true },
-          ]),
-          { type: 'line', points: [[4, 118], [252, 118]], color: 'green', width: 3 },
-          { type: 'text', x: 128, y: 136, text: '卵生', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[260, 118], [316, 118]], color: 'green', width: 3 },
-          { type: 'text', x: 288, y: 136, text: '胎生', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[132, 158], [252, 158]], color: 'orange', width: 3 },
-          { type: 'text', x: 192, y: 176, text: '殻のある卵', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[4, 198], [188, 198]], color: 'gray', width: 3 },
-          { type: 'text', x: 96, y: 218, text: '変温動物', size: 12, anchor: 'middle' },
-          { type: 'line', points: [[196, 198], [316, 198]], color: 'red', width: 3 },
-          { type: 'text', x: 256, y: 218, text: '恒温動物', size: 12, anchor: 'middle' },
+          { type: 'image', src: 'assets/images/animals/animals-1-c2.jpg' },
+          tag(160, 18, '魚類〜鳥類は卵生、ホニュウ類だけ胎生', { size: 13, anchor: 'middle' }),
+          tag(54, 90, '魚類', { anchor: 'middle', bold: true }),
+          tag(160, 90, '両生類', { anchor: 'middle', bold: true }),
+          tag(250, 90, 'ハチュウ類', { anchor: 'middle', bold: true }),
+          tag(80, 218, '鳥類', { anchor: 'middle', bold: true }),
+          tag(240, 218, 'ホニュウ類', { anchor: 'middle', bold: true }),
+          tag(160, 237, '体温が一定 → 恒温動物（鳥類・ホニュウ類）', { size: 13, anchor: 'middle' }),
         ]),
       },
     ],

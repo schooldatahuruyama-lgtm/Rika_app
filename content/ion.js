@@ -1040,15 +1040,6 @@
     ];
   }
 
-  // 木炭電池（横から見た図）。中心の木炭（上下にはみ出す）に、食塩水をしみこませたろ紙を巻き、外側にアルミニウムはく
-  function charcoalItems() {
-    return [
-      { type: 'rect', x: 150, y: 30, width: 40, height: 190, rx: 6, fill: '#4A4A4A', stroke: 'ink' },
-      { type: 'rect', x: 132, y: 70, width: 76, height: 110, fill: 'white', stroke: 'line' },
-      { type: 'rect', x: 140, y: 86, width: 60, height: 78, fill: 'glass', stroke: 'line' },
-    ];
-  }
-
   // 5 種類の金属の名前の札（左から 亜鉛・銅・マグネシウム・鉄・アルミニウム。中心 x 36・98・160・222・284）
   const METALS = ['亜鉛', '銅', 'マグネシウム', '鉄', 'アルミニウム'];
   function metalCards() {
@@ -1102,14 +1093,19 @@
       {
         id: 'ion-mp1-c1',
         text: '水溶液に電流が流れるかは、電極を電池と豆電球（または電流計）につないで調べます。豆電球がつかなくても、電流計の針が動けば電流は流れています。調べる水溶液をかえるたびに、電極を**精製水**で洗います。',
-        // 電流が流れるかを調べる装置（豆電球はついていない）と、調べ方の注意
-        figure: scene(conductItems(80, false).concat([
-          { type: 'text', x: 80, y: 222, text: '調べる水溶液', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 60, text: '・豆電球がつかないときは', size: 12 },
-          { type: 'text', x: 172, y: 78, text: '電流計で調べる', size: 12 },
-          { type: 'text', x: 160, y: 112, text: '・水溶液をかえるたびに', size: 12 },
-          { type: 'text', x: 172, y: 130, text: '電極を精製水で洗う', size: 12 },
-        ])),
+        // 写真: 電流が流れるかを調べる装置。ビーカー (65〜135, 90〜172) の無色の水溶液に、ステンレスの電極 2 本 (x 80・118)。
+        // 左下の乾電池 (78〜142, 172〜198) → 黒い導線 → 左の電極 → 水溶液 → 右の電極 → 赤い導線 → 豆電球 (215, 150。点灯) → 電池 と 1 つの輪。
+        // 右はしに精製水の洗浄びん (262〜312, 15〜175)。上と左下は白い余白
+        figure: scene([
+          photo('ion-mp1-c1'),
+          tag(4, 18, '豆電球がつかないときは電流計で調べる', { size: 13, anchor: 'start' }),
+          pointer(94, 48, 81, 96), pointer(106, 48, 117, 96), tag(100, 44, '電極', { bold: true }),
+          pointer(216, 132, 216, 143), tag(216, 126, '豆電球', { bold: true }),
+          tag(287, 120, '精製水', { size: 13 }),
+          pointer(56, 208, 98, 152), tag(46, 222, '調べる水溶液', { size: 13 }),
+          tag(316, 206, '水溶液をかえるたびに', { size: 13, anchor: 'end' }),
+          tag(316, 224, '電極を精製水で洗う', { size: 13, anchor: 'end' }),
+        ]),
       },
       {
         id: 'ion-mp1-c2',
@@ -1405,20 +1401,26 @@
       {
         id: 'ion-mp3-c1',
         text: '青色の**塩化銅水溶液**に電流を流し続けると、陰極に赤色の物質（**銅**）が付き、陽極からは刺激臭のある気体（**塩素**）が出ます。化学反応式は CuCl₂ → Cu ＋ Cl₂ です。続けると、水溶液の青色はうすくなります。',
-        // 電気分解の装置（左の電極が陽極、右の電極が陰極）
-        figure: scene(electrolysisItems('sky').concat([
-          { type: 'text', x: 78, y: 100, text: '陽極', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 242, y: 100, text: '陰極', size: 13, anchor: 'middle', bold: true },
-          { type: 'circle', x: 96, y: 160, r: 4, fill: 'white', stroke: 'line' },
-          { type: 'circle', x: 124, y: 145, r: 4, fill: 'white', stroke: 'line' },
-          { type: 'circle', x: 98, y: 182, r: 4, fill: 'white', stroke: 'line' },
-          { type: 'rect', x: 204, y: 150, width: 12, height: 50, fill: 'brown' },
-          { type: 'text', x: 110, y: 234, text: '塩素が出る', size: 12, anchor: 'middle' },
-          { type: 'text', x: 210, y: 234, text: '赤い銅が付く', size: 12, anchor: 'middle' },
-        ])),
+        // 写真（ion-2-c1 の使い回し）: ビーカー (67〜245, 45〜235)、液面 y 82。左の炭素棒 (106〜126) は黒い導線につながり、下半分に赤茶色の銅が付く。
+        // 右の炭素棒 (196〜212) は赤い導線につながり、まわりに泡。導線の色（黒＝−、赤＝＋）に合わせて、左を陰極、右を陽極とした（ion-2-c1 と同じ）
+        figure: scene([
+          photo('ion-2-c1'),
+          tag(160, 14, 'CuCl₂ → Cu ＋ Cl₂', { bold: true }),
+          pointer(66, 96, 108, 70), tag(4, 100, '陰極（−）', { size: 13, bold: true, anchor: 'start' }),
+          tag(4, 120, '黒い導線', { size: 13, anchor: 'start' }),
+          pointer(60, 150, 106, 150), tag(33, 155, '赤い銅', { size: 13 }),
+          tag(33, 173, 'が付く', { size: 13 }),
+          pointer(254, 96, 213, 70), tag(316, 100, '陽極（＋）', { size: 13, bold: true, anchor: 'end' }),
+          tag(316, 120, '赤い導線', { size: 13, anchor: 'end' }),
+          pointer(250, 150, 222, 150), tag(316, 155, '塩素が出る', { size: 13, anchor: 'end' }),
+          tag(316, 173, '（刺激臭）', { size: 13, anchor: 'end' }),
+          tag(160, 212, '塩化銅水溶液（青色）', { size: 13 }),
+          tag(160, 230, '→ 続けると青色がうすくなる', { size: 13 }),
+        ]),
       },
       {
         id: 'ion-mp3-c2',
+        anim: 'io-cucl2-ions',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '銅イオン Cu2+ は陰極へ移動し、電子を 2 個受け取って銅原子になり、陰極に付きます。塩化物イオン Cl- は陽極へ移動し、電子を 1 個失って塩素原子になります。塩素原子は 2 個結びついて塩素分子 Cl₂ になり、気体として出ていきます。',
         // イオンの動く向きと、電極で起こる変化
         figure: scene(electrolysisItems('sky').concat([
@@ -1543,13 +1545,22 @@
       {
         id: 'ion-mp4-c1',
         text: '電解質の水溶液に、**種類のちがう 2 種類の金属**を入れて導線でつなぐと、電圧が生じて電流が流れます。これが**化学電池**です。金属が 2 枚とも同じとき、水溶液が砂糖水のとき、水溶液の中で 2 枚の金属がふれ合っているときは、電圧計の針は振れません。',
-        // うすい塩酸に亜鉛板と銅板を入れた電池
-        figure: scene(cellItems('亜鉛板', '銅板').concat([
-          { type: 'text', x: 160, y: 234, text: 'うすい塩酸（電解質の水溶液）', size: 12, anchor: 'middle' },
-        ])),
+        // 写真: うすい塩酸の入ったビーカー (35〜162, 88〜210) に、銀灰色の亜鉛板 (59〜83, 100〜198) と赤茶色の銅板 (114〜140, 100〜198) を離して立て、
+        // 上で導線とクリップでつなぎ、右のモーター (208〜265, 145〜205) のプロペラが回る。どちらの板の表面からも小さな泡。左上・右上と下は白い余白
+        figure: scene([
+          photo('ion-mp4-c1'),
+          pointer(40, 70, 66, 110), tag(26, 64, '亜鉛板', { bold: true }),
+          pointer(106, 70, 124, 110), tag(100, 64, '銅板', { bold: true }),
+          tag(264, 60, '種類のちがう', { size: 13 }),
+          tag(264, 78, '2 つの金属', { size: 13 }),
+          tag(264, 96, '→ 電流が流れる', { size: 13, bold: true }),
+          tag(236, 226, 'モーター', { size: 13 }),
+          tag(100, 232, 'うすい塩酸（電解質の水溶液）', { size: 13 }),
+        ]),
       },
       {
         id: 'ion-mp4-c2',
+        anim: 'io-hcl-cell',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '亜鉛板（**−極**）では、亜鉛原子が電子を 2 個失って亜鉛イオンになり、とけ出します（Zn → Zn2+ ＋ 2e-）。電子は導線を通って銅板（**＋極**）へ移り、銅板の表面で水素イオンが電子を受け取って水素になります（2H+ ＋ 2e- → H₂）。',
         // 電子の流れる向きと、電流の向き
         figure: scene(cellItems('亜鉛板（−極）', '銅板（＋極）').concat([
@@ -1705,16 +1716,17 @@
       {
         id: 'ion-mp5-c2',
         text: '**木炭電池**は、木炭に**食塩水**をしみこませたろ紙を巻き、その上にアルミニウムはくを巻いてつくります。木炭が＋極、アルミニウムはくが−極です。電流を流し続けると、アルミニウムがとけて、はくがぼろぼろになります。',
-        // 木炭電池のつくり
-        figure: scene(charcoalItems().concat([
-          { type: 'line', points: [[110, 44], [150, 44]], color: 'ink', width: 2 },
-          { type: 'text', x: 106, y: 48, text: '木炭（＋極）', size: 12, anchor: 'end' },
-          { type: 'line', points: [[204, 78], [246, 26]], color: 'ink', width: 2 },
-          { type: 'text', x: 240, y: 20, text: '食塩水をしみこませたろ紙', size: 11, anchor: 'middle' },
-          { type: 'line', points: [[200, 130], [234, 130]], color: 'ink', width: 2 },
-          { type: 'text', x: 238, y: 126, text: 'アルミニウム', size: 12 },
-          { type: 'text', x: 238, y: 142, text: 'はく（−極）', size: 12 },
-        ])),
+        // 写真: 縦に立てた備長炭 (145〜180, 37〜210)。上から、炭がはみ出した部分 (37〜70)、白いろ紙が見えるすき間 (70〜75)、アルミニウムはく (75〜185)、
+        // はくの下のふちから見えるろ紙 (185〜190)、炭 (190〜210)。炭の上のはしに黒いクリップ、はくに赤いクリップ、右下にモーター (235〜300, 150〜200)。左側は白い余白
+        figure: scene([
+          photo('ion-mp5-c2'),
+          pointer(132, 48, 152, 50), tag(128, 52, '木炭（＋極）', { bold: true, anchor: 'end' }),
+          pointer(138, 74, 152, 73), tag(136, 78, 'ろ紙', { bold: true, anchor: 'end' }),
+          tag(136, 96, '食塩水をしみこませた', { size: 13, anchor: 'end' }),
+          pointer(138, 130, 154, 130), tag(136, 134, 'アルミニウムはく', { bold: true, anchor: 'end' }),
+          tag(136, 152, '（−極）', { size: 13, anchor: 'end' }),
+          tag(160, 232, '電流を流し続けると、はくがぼろぼろになる', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1801,17 +1813,17 @@
       }),
       figureChoice({
         id: 'ion-mp5-r3', concept: 'io-battery',
-        prompt: '木炭電池を横から見た図です。ア〜ウのうち、アルミニウムはくはどれ？',
-        figure: scene(charcoalItems().concat([
-          { type: 'line', points: [[60, 44], [150, 44]], color: 'gray', width: 2 },
-          { type: 'line', points: [[60, 125], [140, 125]], color: 'gray', width: 2 },
-          { type: 'line', points: [[60, 200], [118, 200], [136, 176]], color: 'gray', width: 2 },
-          { type: 'region', id: 'r1', x: 38, y: 44, r: 22, label: 'ア' },
-          { type: 'region', id: 'r2', x: 38, y: 125, r: 22, label: 'イ' },
+        prompt: '木炭電池を横から見た写真です。ア〜ウのうち、アルミニウムはくはどれ？',
+        // 写真（ion-mp5-c2 と同じ画像）: 上から 炭がはみ出した部分 (145〜180, 37〜70)、アルミニウムはく (75〜185)、はくの下のふちから見えるろ紙 (185〜190)
+        figure: scene([
+          photo('ion-mp5-c2'),
+          pointer(60, 50, 152, 52),
+          pointer(60, 130, 150, 130),
+          pointer(60, 200, 150, 188),
+          { type: 'region', id: 'r1', x: 38, y: 50, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 38, y: 130, r: 22, label: 'イ' },
           { type: 'region', id: 'r3', x: 38, y: 200, r: 22, label: 'ウ' },
-          { type: 'text', x: 196, y: 208, text: '中心の黒い棒は上下に', size: 12 },
-          { type: 'text', x: 196, y: 224, text: 'はみ出している', size: 12 },
-        ])),
+        ]),
         answer: 'r2',
         explanation: '木炭（ア）にろ紙（ウ）を巻き、いちばん外側にアルミニウムはく（イ）を巻きます。図では、ろ紙はアルミニウムはくのふちから少し見えています。',
         hint: 'アルミニウムはくは、いちばん外側に巻くよ。',
@@ -1841,6 +1853,7 @@
     lessons: [
       {
         id: 'ion-mp6-c1',
+        anim: 'io-daniell',   // 動く図（js/anim-chem.js。ミニプリントの使い回し）。figure は静止図として残す
         text: 'ダニエル電池の−極では、亜鉛が電子を 2 個失って亜鉛イオンになり、とけ出します（Zn → Zn2+ ＋ 2e-）。電子は導線を通って銅板へ流れ、＋極では銅イオンが電子を 2 個受け取って銅原子になり、銅板に付きます（Cu2+ ＋ 2e- → Cu）。',
         // ダニエル電池と、それぞれの極で起こる変化
         figure: scene(daniellItems().concat([
@@ -1853,25 +1866,27 @@
       {
         id: 'ion-mp6-c2',
         text: 'マンガン乾電池・アルカリ乾電池のような使い切りの電池を**一次電池**、鉛蓄電池（車のバッテリー）やリチウムイオン電池（スマートフォン）のように充電してくり返し使える電池を**二次電池**といいます。乾電池 1 個の電圧は 1.5 V です。',
-        // 一次電池と二次電池の例
+        // 写真: 左 一次電池（円筒形の乾電池 2 本 (20〜53, 105〜190)・(61〜80, 120〜189)、ボタン形のリチウム電池 (82〜115, 187〜208)）、
+        // 右 二次電池（車のバッテリー (156〜273, 82〜179)、スマートフォン用の電池パック (175〜265, 177〜218)、円筒形の充電池 (281〜303, 129〜196)）。
+        // 電池は無地。上は白い余白
         figure: scene([
-          { type: 'rect', x: 10, y: 20, width: 145, height: 190, rx: 8, fill: '#FFF3C4', stroke: 'line' },
-          { type: 'rect', x: 165, y: 20, width: 145, height: 190, rx: 8, fill: 'sky', stroke: 'line' },
-          { type: 'text', x: 82, y: 46, text: '一次電池', size: 15, anchor: 'middle', bold: true },
-          { type: 'text', x: 237, y: 46, text: '二次電池', size: 15, anchor: 'middle', bold: true },
-          { type: 'text', x: 82, y: 70, text: '（使い切り）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 237, y: 70, text: '（充電できる）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 82, y: 110, text: 'マンガン乾電池', size: 13, anchor: 'middle' },
-          { type: 'text', x: 82, y: 140, text: 'アルカリ乾電池', size: 13, anchor: 'middle' },
-          { type: 'text', x: 82, y: 170, text: 'リチウム電池', size: 13, anchor: 'middle' },
-          { type: 'text', x: 237, y: 110, text: '鉛蓄電池', size: 13, anchor: 'middle' },
-          { type: 'text', x: 237, y: 140, text: 'ニッケル水素電池', size: 12, anchor: 'middle' },
-          { type: 'text', x: 237, y: 170, text: 'リチウムイオン電池', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 232, text: '乾電池 1 個の電圧 … 1.5 V', size: 13, anchor: 'middle' },
+          photo('ion-mp6-c2'),
+          tag(70, 22, '一次電池（使い切り）', { size: 13, bold: true }),
+          tag(238, 22, '二次電池（充電できる）', { size: 13, bold: true }),
+          tag(62, 66, 'マンガン・アルカリ', { size: 13 }),
+          tag(46, 86, '乾電池', { size: 13 }),
+          pointer(80, 206, 90, 200), tag(42, 214, 'リチウム電池', { size: 13 }),
+          tag(214, 148, '鉛蓄電池', { size: 13 }),
+          tag(214, 166, '車のバッテリー', { size: 13 }),
+          tag(220, 202, 'リチウムイオン電池', { size: 13 }),
+          tag(292, 96, 'ニッケル', { size: 13 }),
+          tag(292, 114, '水素電池', { size: 13 }),
+          tag(160, 234, '乾電池 1 個の電圧 … 1.5 V', { size: 13 }),
         ]),
       },
       {
         id: 'ion-mp6-c3',
+        anim: 'io-fuel-cell',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '水を電気分解したあとの装置に電子オルゴールをつなぐと、音が鳴ります。陰極側にたまった水素と、陽極側にたまった酸素が結びついて水ができるときに、電気が取り出せるのです。これが**燃料電池**で、酸素の側が＋極になります（2H₂ ＋ O₂ → 2H₂O）。',
         // 燃料電池になった、水の電気分解の装置
         figure: scene(fuelCellItems()),
@@ -2019,6 +2034,7 @@
       },
       {
         id: 'ion-mp7-c2',
+        anim: 'io-oh-migration',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '食塩水（電解質の水溶液）でしめらせたろ紙に赤色リトマス紙をのせ、中央に水酸化ナトリウム水溶液をつけて電圧を加えると、青色が陽極側へ広がります。アルカリ性を示すのは陰イオンの**水酸化物イオン** OH- です。酸性を示すのは陽イオンの**水素イオン** H+ で、陰極側へ動きます。',
         // 赤色リトマス紙の青くなった部分が、陽極（電源の＋極）側へ広がる
         figure: scene([
@@ -2167,6 +2183,7 @@
     lessons: [
       {
         id: 'ion-mp8-c1',
+        anim: 'io-btb-neutral',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: 'BTB 溶液を加えた水酸化ナトリウム水溶液は青色です。塩酸を少しずつ加えると、緑色（中性）になり、さらに加えると黄色（酸性）になります。酸の H+ とアルカリの OH- が結びついて水ができ、たがいの性質を打ち消し合う反応を**中和**といいます。',
         // 塩酸を加えていったときの BTB 溶液の色
         figure: scene([
@@ -2209,14 +2226,13 @@
       figureChoice({
         id: 'ion-mp8-p1', concept: 'io-neutral',
         prompt: 'BTB 溶液を加えた水酸化ナトリウム水溶液に、塩酸を少しずつ加えていきました。ア〜ウは、そのとちゅうの液の色です（ア 黄色、イ 緑色、ウ 青色）。ちょうど中和して中性になったときの色はどれ？',
+        // 写真（ion-3-c3 の使い回し）: 試験管立てに試験管 3 本。左 (115) 黄色、中央 (160) 緑色、右 (205) 青色、液は y 122〜190、試験管立ての下は y 202
         figure: scene([
-          { type: 'text', x: 160, y: 30, text: '塩酸を加えていくとちゅうの液', size: 14, anchor: 'middle' },
-          { type: 'tube', x: 60, y: 160, height: 100, level: 0.6, liquid: 'yellow' },
-          { type: 'tube', x: 160, y: 160, height: 100, level: 0.6, liquid: 'green' },
-          { type: 'tube', x: 260, y: 160, height: 100, level: 0.6, liquid: 'blue' },
-          { type: 'region', id: 'r1', x: 60, y: 204, r: 22, label: 'ア' },
-          { type: 'region', id: 'r2', x: 160, y: 204, r: 22, label: 'イ' },
-          { type: 'region', id: 'r3', x: 260, y: 204, r: 22, label: 'ウ' },
+          photo('ion-3-c3'),
+          tag(160, 24, '塩酸を加えていくとちゅうの液'),
+          { type: 'region', id: 'r1', x: 115, y: 218, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 218, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 205, y: 218, r: 22, label: 'ウ' },
         ]),
         answer: 'r2',
         explanation: 'BTB 溶液は中性で緑色です。はじめは青色（アルカリ性）で、塩酸を加えると緑色（中性）になり、さらに加えると黄色（酸性）になります。',
@@ -2325,6 +2341,7 @@
     lessons: [
       {
         id: 'ion-mp9-c1',
+        anim: 'io-neutral-model',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '塩酸に水酸化ナトリウム水溶液を加えると、加えた OH- は H+ と結びついて水になります。H+ が残っているうちは酸性、H+ も OH- もなくなると中性、OH- があまるとアルカリ性です。Na+ と Cl- は、水溶液の中でイオンのまま残ります。',
         // 中和のモデル（水の分子はかいていない）
         figure: scene([
