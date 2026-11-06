@@ -193,3 +193,7 @@ implemented (opus, js/sfx.js). Codex round1 High 1（iOS の interrupted から�
 Ruling: 300 枚のカードを学年ごと（opus ×3）に判定 → 写真 100（生成 58＋使い回し）、動く図 121（新規 kind 87＋使い回し 34）、簡略図 79。ミニプリントのカードは既存の kind を使い回してよく、その場合は静止図の文字一致の検査を受けない（content-all の決まりを変更）。basics の接頭辞 ba-。電流の回路写真は電流計の端子の色が逆だったので 2 回作り直し（電圧計の＋側も指定）。 — コスト: 使い回しの動く図は動いている間だけ元のカードのラベルになる。
 implemented: 画像の生成 58 枚（sonnet courier ×3＋作り直し 2）、動く図 1nen/2nen/3nen（opus ×3、順に）、写真の組みこみ 1nen/2nen/3nen（opus ×3）。tests 748。kinds 88 → 175、画像 110 → 168 枚（6.0 MB）。controller: 新しい origin（SW なし）で動く図と写真を目で確認。
 レビュー: Codex 上限 → Claude 代行 round1 High 1（回路の写真の配線）/Medium 2（文字の重なり・視度調節リングの左右）/Low 6 → fix（opus。回路は回路図に戻し、顕微鏡の写真は左右反転）→ Codex round2 Low 1（VERSION）→ controller で -27 → complete。写真は最終 98 枚、動く図 121 枚。
+
+## 追加作業 2026-11-07: ライブクイズ（Kahoot! 風。ユーザー指示。案 A Firebase をユーザー決定）
+Ruling: Firebase Realtime Database の REST（fetch）＋ EventSource ストリームで rooms/<code> を読み書き。SDK は入れない（依存なし・静的サイトのまま）。先生の設定は DB の URL だけ（端末の localStorage）。生徒は部屋コードで参加（ログインなし）。得点は正解 500＋速さ 500。教材の問題は学習記録に反映（phase live）。規則は rooms/ だけ書けて形を検証。匿名ゆえ部屋コードを知れば書けるのは割り切り（設計書 14 章）。 — コスト: 先生が Firebase を準備する手間（docs/live/setup.md）。実 DB は未確認。
+implemented (opus ×2: A js/live.js + js/live-db.js、B js/ui-live-host.js + js/ui-live.js). Codex round1 High 4/Medium 2 → fix → round2 High 3 → サイクル 2: fix → Codex が週の上限（11/11 まで）→ Claude round1 Medium 2/Low 2 → fix → Claude round2 Low 1（記録のみ）→ complete（tests 778）。VERSION 2026-11-07-28。

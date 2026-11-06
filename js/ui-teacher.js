@@ -21,7 +21,7 @@
   const RECENT_LIMIT = 20;        // 詳細に出す最近の取り組みの件数
   const CLASS_WEAK_LIMIT = 10;    // クラスのまとめに出す概念の数
   const TABLE_WEAK_LIMIT = 2;     // 一覧の「苦手」に出す概念の数
-  const PHASE_LABEL = { retry: '類題', check: '確認問題', review: '復習', warmup: '予想' };
+  const PHASE_LABEL = { retry: '類題', check: '確認問題', review: '復習', warmup: '予想', live: 'ライブクイズ' };
 
   const CAUTION = 'この端末に保存された記録を表示します。ほかの端末の記録は『記録ファイルを読みこむ』で合わせて見られます（この端末の記録には入れません）。';
 
@@ -461,6 +461,11 @@
           cardTitle('教材を作る（AI）'),
           el('p', { text: '単元名やプリントから教材の下書きを作り、確かめてから公開します。' }),
           button('教材を作る', () => ctx.go('author'), 'btn-primary btn-block'),
+        ]),
+        card([
+          cardTitle('ライブクイズ'),
+          el('p', { text: '先生が出題し、生徒が自分の端末でいっせいに答えます（Kahoot! のような形。通信が必要）。' }),
+          button('ライブクイズを始める', () => ctx.go('live-host'), 'btn-primary btn-block'),
         ]),
         card([
           cardTitle('書き出す'),

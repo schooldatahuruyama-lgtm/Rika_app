@@ -2396,3 +2396,356 @@ ruby.rq-ruby rt {
 .word-btn[aria-pressed="true"] ruby.rq-ruby rt {
   color: inherit;
 }
+
+/* ---- ライブクイズ（js/ui-live-host.js・js/ui-live.js。設計書 14 章） ----
+   選択肢の 4 色（ア 青・イ 緑・ウ だいだい・エ むらさき）は先生と生徒で同じ。アクセントカラー（--blue）はテーマで変わるので使わない */
+:root {
+  --live-a: #2F6FE0;
+  --live-a-soft: #E3EDFF;
+  --live-b: #1F9A55;
+  --live-b-soft: #E0F4E8;
+  --live-c: #E07B12;
+  --live-c-soft: #FFEEDB;
+  --live-d: #8A4FD6;
+  --live-d-soft: #EFE5FC;
+  --live-ng: #C0392B;
+}
+
+/* 部屋コード（スクリーンに大きく映す） */
+.live-code {
+  margin: 8px 0 12px;
+  font-size: 48px;
+  font-weight: bold;
+  letter-spacing: 0.3em;
+  line-height: 1.2;
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.live-code-input {
+  font-size: 28px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.live-url {
+  word-break: break-all;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 15px;
+}
+
+.live-row {
+  margin-top: 10px;
+}
+
+.live-error {
+  margin: 8px 0 0;
+  color: #A03A00;
+  font-weight: bold;
+}
+
+.live-error:empty {
+  display: none;
+}
+
+.live-stage-list,
+.live-picked-list,
+.live-players {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.live-picked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid #E3EAF7;
+}
+
+.live-picked-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.live-picked .btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 16px;
+}
+
+.live-custom-opts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.live-start {
+  margin-top: 16px;
+}
+
+.live-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.live-players li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--chip);
+  font-weight: bold;
+}
+
+.live-room-line {
+  margin: 0 0 8px;
+}
+
+.live-small {
+  margin-top: 12px;
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.live-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-count,
+.live-phase {
+  margin: 0;
+  font-weight: bold;
+  color: var(--muted);
+}
+
+.live-question {
+  margin: 12px 0 16px;
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 1.5;
+}
+
+/* 選択肢: 2 列（スマホ幅では 1 列） */
+.live-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.live-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 2px solid transparent;
+  border-left-width: 10px;
+  border-radius: 12px;
+  font-size: 19px;
+  font-weight: bold;
+  color: var(--text);
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.live-opt-label {
+  flex: 0 0 auto;
+  font-size: 22px;
+}
+
+.live-opt-a { background: var(--live-a-soft); border-color: var(--live-a-soft); border-left-color: var(--live-a); }
+.live-opt-b { background: var(--live-b-soft); border-color: var(--live-b-soft); border-left-color: var(--live-b); }
+.live-opt-c { background: var(--live-c-soft); border-color: var(--live-c-soft); border-left-color: var(--live-c); }
+.live-opt-d { background: var(--live-d-soft); border-color: var(--live-d-soft); border-left-color: var(--live-d); }
+.live-opt-a .live-opt-label { color: var(--live-a); }
+.live-opt-b .live-opt-label { color: var(--live-b); }
+.live-opt-c .live-opt-label { color: var(--live-c); }
+.live-opt-d .live-opt-label { color: var(--live-d); }
+
+/* 生徒の答えるボタン（.btn の青い枠・白い背景を選択肢の色に置きかえる） */
+.btn.live-choice {
+  width: 100%;
+  min-height: 80px;
+  color: var(--text);
+}
+
+.btn.live-choice.live-opt-a:hover { background: #D2E2FF; }
+.btn.live-choice.live-opt-b:hover { background: #CDEDDA; }
+.btn.live-choice.live-opt-c:hover { background: #FFE2C2; }
+.btn.live-choice.live-opt-d:hover { background: #E4D4FA; }
+
+.btn.live-choice:disabled {
+  opacity: 0.55;
+  color: var(--text);
+}
+
+.btn.live-choice.live-opt-a:disabled { background: var(--live-a-soft); border-color: var(--live-a-soft); border-left-color: var(--live-a); }
+.btn.live-choice.live-opt-b:disabled { background: var(--live-b-soft); border-color: var(--live-b-soft); border-left-color: var(--live-b); }
+.btn.live-choice.live-opt-c:disabled { background: var(--live-c-soft); border-color: var(--live-c-soft); border-left-color: var(--live-c); }
+.btn.live-choice.live-opt-d:disabled { background: var(--live-d-soft); border-color: var(--live-d-soft); border-left-color: var(--live-d); }
+
+/* 自分が選んだ答え（押したあとも濃いまま、太い枠で示す） */
+.btn.live-choice.is-picked,
+.btn.live-choice.is-picked:disabled {
+  opacity: 1;
+  border-color: var(--text);
+  border-left-color: var(--text);
+}
+
+/* 残り時間（残り 5 秒で赤） */
+.live-timer {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-weight: bold;
+}
+
+.live-timer-num {
+  font-size: 44px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.live-timer-num.is-low {
+  color: var(--live-ng);
+}
+
+.live-timer-unit {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.live-joined,
+.live-wait {
+  margin: 12px 0 0;
+  font-weight: bold;
+}
+
+.live-wait {
+  font-size: 22px;
+}
+
+.live-status {
+  margin: 12px 0 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* 答え合わせの横棒（幅は % で JS が入れる。正解は緑、ほかは灰色） */
+.live-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.live-bar-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: bold;
+}
+
+.live-bar-num {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.live-bar-track {
+  height: 18px;
+  margin-top: 4px;
+  border-radius: 9px;
+  background: #EEF1F6;
+  overflow: hidden;
+}
+
+.live-bar {
+  height: 100%;
+  min-width: 4px;
+  border-radius: 9px;
+  background: #A9B3C4;
+}
+
+.live-bar.is-correct {
+  background: var(--ok);
+}
+
+.live-answer {
+  margin: 14px 0 0;
+  font-size: 19px;
+  font-weight: bold;
+  color: #17683B;
+}
+
+.live-sub {
+  margin: 18px 0 6px;
+  font-size: 18px;
+}
+
+.live-result {
+  margin: 10px 0 0;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.live-result.is-ok { color: #17683B; }
+.live-result.is-ng { color: var(--live-ng); }
+.live-result.is-none { color: var(--muted); }
+
+.live-points,
+.live-total {
+  margin: 10px 0 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* 順位の表 */
+.live-rank {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 18px;
+}
+
+.live-rank th,
+.live-rank td {
+  padding: 8px 6px;
+  border-top: 1px solid #E3EAF7;
+  text-align: left;
+}
+
+.live-rank thead th {
+  border-top: none;
+  border-bottom: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.live-rank .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-rank tr.is-me {
+  background: #FFF4D6;
+  font-weight: bold;
+}
+
+@media (max-width: 479px) {
+  .live-options,
+  .live-custom-opts {
+    grid-template-columns: 1fr;
+  }
+
+  .live-code {
+    font-size: 40px;
+    letter-spacing: 0.2em;
+  }
+}

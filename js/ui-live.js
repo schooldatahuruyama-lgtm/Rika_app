@@ -1,0 +1,577 @@
+// ライブクイズの生徒の画面（ブラウザ専用。ui-live-host.js の後に読み込む）。RikaQuest.ui.screens.live を足す。設計書 14 章。
+// 参加（部屋コード。データベースの URL がなければその入力も）→ 待機 → 問題に答える → 答え合わせ → … → 最終順位。
+// 部屋のデータの形・得点は js/live.js（RikaQuest.live）、通信は js/live-db.js（RikaQuest.liveDb）。
+// 学習記録には ctx.live.record(events, profileId)（js/app.js）で入れる。受信した部屋データから、答え合わせが済んだ問題の
+// サーバーにある自分の回答だけを入れる（live.pendingRecords。答え合わせの画面を見ていなくても、戻ったときにまとめて入れる）。1 問につき 1 回。
+// 処理済みは 2 段: 記録のメモリに入れた分はメモリ（memDone）、保存に成功した分は sessionStorage（部屋ごとの問題 id の一覧）。
+// 状態の進め方は live.nextDoneState・live.flushState。ライブ以外の保存（設定・バッジの既読など）が成功したときも、
+// ctx.live.onSaved の通知で保存できた分を sessionStorage に書く。
+// 参加者の id（pid）はこのタブの sessionStorage に生徒ごとに持ち、描き直し・読み込み直しでも同じ pid で戻る。
+// 利用者の文字はすべて textContent で入れる。ふりがなを付けないのは部屋コードとニックネームだけ（data-no-ruby）。
+// 部屋の受信（watch）は画面を離れたら止める（後片付けの関数を返す）。参加中の部屋は、ページを読み込み直すまで覚えておく。
+(function (root) {
+  'use strict';
+
+  const RQ = root.RikaQuest;
+  const H = RQ.ui.helpers;
+  const el = H.el;
+  const button = H.button;
+  const card = H.card;
+  const cardTitle = H.cardTitle;
+
+  function L() { return RQ.live; }
+  function LD() { return RQ.liveDb; }
+
+  const LABELS = ['ア', 'イ', 'ウ', 'エ'];
+  const OPT_CLASSES = ['live-opt-a', 'live-opt-b', 'live-opt-c', 'live-opt-d'];
+  const TOP = 5;
+  const TICK_MS = 250;
+  const RETRY_MS = 3000;
+  const PID_KEY = 'rika-quest:live-player';        // sessionStorage: 生徒の id → pid
+  // sessionStorage: 学習記録に入れて保存できた問題（live.addRecorded の形。'<生徒 id>:<pid>:<部屋コード>' → { qids, createdAt, savedAt }）。
+  // 以前の形（キーの配列）は読まれても空の一覧として扱い、次に書くときに置きかわる
+  const RECORDED_KEY = 'rika-quest:live-recorded';
+  const RECONNECTING = '接続が切れました。再接続しています';
+  const GAVE_UP = '接続できません（通信を確かめてください）';
+  const RECONNECTED = '再接続しました';
+  const NOTICE_MS = 4000;         // 「再接続しました」を出しておく時間
+  const BAD_URL = '先生のデータベースの URL（https:// で始まる URL）を入れてください。';
+
+  function plain(text) { return String(text || '').split('**').join(''); }
+  function errMsg(e) { return e && e.message ? e.message : String(e); }
+
+  // ---- 画面をまたいで持つ状態（ページを読み込み直すまで） ----
+
+  let renderSeq = 0;
+  let active = null;              // いまの描画 { ctx, isCurrent, paint }
+  let joinError = '';
+  let joining = false;
+  let editUrl = false;            // URL を入れ直す
+  const typed = { code: '', url: null };   // 入力の書きかけ（描き直しても消さない。url は null なら保存した URL）
+  // 参加中の部屋 { code, pid, profileId, name, db, offset, sessionId, data, gone, answering（問題 id → 送った選択肢 id。表示だけに使う）,
+  //   sendFail（送れなかった答え { qid, choice, message } | null）, stop, retryTimer, timerNode, timeUpIndex,
+  //   conn（'ok' | 'reconnecting' | 'gave-up'）, connError（受信が止まった理由）, notice, noticeTimer }
+  let joined = null;
+  let ticker = null;
+  const memPids = {};             // sessionStorage が使えないとき
+  // 学習記録（メモリ）に入れた問題（部屋のキー → 問題 id の配列）。保存の成否によらず入れる（読み込み直すまでの二重加算を防ぐ）。
+  // 読み込み直すと消える（そのときは保存できた分だけが sessionStorage に残り、ほかは取り直して入れる）
+  let memDone = {};
+  // 記録には入れた（いまの記録のメモリにある）が、まだ sessionStorage に書いていない問題 [{ roomKey, qid, createdAt }]。
+  // 保存に失敗した分は、あとで store の保存が成功したとき（メモリの記録がまるごと保存される）にいっしょに書く
+  let unsavedDone = [];
+  // ctx.live.onSaved の解除の関数。unsavedDone があるあいだだけ購読する（ライブの画面を離れてからの保存の成功も拾うため）
+  let offSaved = null;
+  let savedSource = null;         // 購読に使う ctx.live
+
+  function repaint() {
+    if (active && active.isCurrent()) active.paint();
+  }
+
+  function errorLine(text) {
+    return el('p', { class: 'live-error', role: 'alert', text: text || '' });
+  }
+
+  function session() {
+    try { return root.sessionStorage || null; } catch (e) { return null; }
+  }
+
+  function readJson(key, fallback) {
+    const s = session();
+    if (!s) return fallback;
+    try {
+      const v = JSON.parse(s.getItem(key) || 'null');
+      return v === null ? fallback : v;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, value) {
+    const s = session();
+    if (!s) return false;
+    try { s.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+  }
+
+  // 生徒（プロフィール）ごとの pid。同じタブでは同じ pid
+  function pidFor(profileId) {
+    const map = readJson(PID_KEY, {});
+    const saved = map && typeof map === 'object' ? map[profileId] : null;
+    if (typeof saved === 'string' && /^p[a-z0-9]{8}$/.test(saved)) return saved;
+    if (memPids[profileId]) return memPids[profileId];
+    const pid = L().newPlayerId();
+    memPids[profileId] = pid;
+    const next = map && typeof map === 'object' && !Array.isArray(map) ? map : {};
+    next[profileId] = pid;
+    writeJson(PID_KEY, next);
+    return pid;
+  }
+
+  function doneState() {
+    return { memDone, unsavedDone, persisted: readJson(RECORDED_KEY, {}) };
+  }
+
+  // roomKey の部屋で処理済みの問題 id（sessionStorage の保存できた分と、記録のメモリに入れた分）
+  function doneQids(roomKey) {
+    return L().doneQidsOf(doneState(), roomKey);
+  }
+
+  // unsavedDone があるあいだだけ保存の成功を購読する
+  function syncSavedListener() {
+    if (unsavedDone.length > 0 && !offSaved && savedSource && typeof savedSource.onSaved === 'function') {
+      offSaved = savedSource.onSaved(() => flushDone(Date.now() + (joined ? joined.offset || 0 : 0)));
+    } else if (unsavedDone.length === 0 && offSaved) {
+      const off = offSaved;
+      offSaved = null;
+      off();
+    }
+  }
+
+  // 1 問を記録に入れようとした結果で処理済みを進める。sessionStorage に書けなければ、保存できた分も unsavedDone に残して次の機会に回す
+  function applyDone(ev) {
+    const prev = doneState();
+    let next = L().nextDoneState(prev, ev);
+    if (next.persisted !== prev.persisted && !writeJson(RECORDED_KEY, next.persisted)) {
+      next = L().nextDoneState(prev, Object.assign({}, ev, { result: { applied: true, saved: false } }));
+    }
+    memDone = next.memDone;
+    unsavedDone = next.unsavedDone;
+    syncSavedListener();
+  }
+
+  // 保存できた記録の分（unsavedDone）を sessionStorage の処理済みに書く（store の保存が成功したとき）。書けなければ次の機会に回す
+  function flushDone(now) {
+    if (unsavedDone.length === 0) { syncSavedListener(); return; }
+    const flushed = L().flushState(doneState(), now);
+    if (writeJson(RECORDED_KEY, flushed.persisted)) unsavedDone = flushed.unsavedDone;
+    syncSavedListener();
+  }
+
+  function roomPath(j, sub) {
+    return 'rooms/' + j.code + (sub ? '/' + sub : '');
+  }
+
+  // 部屋コードの入力を英大文字だけに
+  function normalizeCode(text) {
+    return String(text || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  }
+
+  // ---- 受信 ----
+
+  function stopWatch(j) {
+    if (!j) return;
+    if (j.retryTimer) { clearTimeout(j.retryTimer); j.retryTimer = null; }
+    if (typeof j.stop === 'function') { try { j.stop(); } catch (e) { /* 無視 */ } }
+    j.stop = null;
+  }
+
+  // 切れていたのがつながったら「再接続しました」を少しのあいだ出す
+  function connBack(j) {
+    if (j.conn === 'ok') return;
+    j.conn = 'ok';
+    j.connError = '';
+    j.notice = RECONNECTED;
+    if (j.noticeTimer) clearTimeout(j.noticeTimer);
+    j.noticeTimer = setTimeout(() => {
+      j.noticeTimer = null;
+      j.notice = '';
+      if (joined === j) repaint();
+    }, NOTICE_MS);
+  }
+
+  function startWatch(j) {
+    stopWatch(j);
+    j.stop = j.db.watch(roomPath(j), (raw) => {
+      if (joined !== j) return;
+      connBack(j);
+      if (raw === null) {
+        j.gone = true;
+        stopWatch(j);
+      } else {
+        j.data = L().safeRoom(raw);
+        recordAnswers(j);
+      }
+      repaint();
+    }, (e) => {
+      // 受信が止まった（live-db がつなぎ直しをあきらめた・規則で読めない）。少し待ってこちらでつなぎ直す
+      if (joined !== j) return;
+      j.conn = 'gave-up';
+      j.connError = e && e.kind !== 'gave-up' && e.message ? e.message : GAVE_UP;
+      j.notice = '';
+      j.stop = null;
+      repaint();
+      j.retryTimer = setTimeout(() => {
+        j.retryTimer = null;
+        if (joined === j && active && active.isCurrent()) startWatch(j);
+      }, RETRY_MS);
+    }, (info) => {
+      // 切れた（live-db がつなぎ直している）・つながった
+      if (joined !== j || !info) return;
+      if (info.kind === 'reconnecting' && j.conn === 'ok') {
+        j.conn = 'reconnecting';
+        j.notice = '';
+        repaint();
+      } else if (info.kind === 'reconnected') {
+        connBack(j);
+        repaint();
+      }
+    });
+  }
+
+  // 受信の状態の 1 行（ふだんは何も出さない）
+  function connLine(j) {
+    if (j.conn === 'reconnecting') return errorLine(RECONNECTING);
+    if (j.conn === 'gave-up') return errorLine(j.connError || GAVE_UP);
+    if (j.notice) return el('p', { class: 'live-status', role: 'status', text: j.notice });
+    return null;
+  }
+
+  function leave() {
+    stopWatch(joined);
+    joined = null;
+  }
+
+  // ---- 時間 ----
+
+  function serverNow(j) {
+    return Date.now() + (j.offset || 0);
+  }
+
+  function remaining(j, s) {
+    if (typeof s.startedAt !== 'number') return s.seconds;
+    return Math.max(0, Math.ceil(s.seconds - (serverNow(j) - s.startedAt) / 1000));
+  }
+
+  function tick() {
+    const j = joined;
+    if (!j || !j.data || j.gone || !active || !active.isCurrent()) return;
+    const s = j.data.state;
+    if (s.phase !== 'show') return;
+    const left = remaining(j, s);
+    if (j.timerNode) {
+      j.timerNode.textContent = String(left);
+      j.timerNode.classList.toggle('is-low', left <= 5);
+    }
+    // 時間切れになったら、ボタンを押せなくするために描き直す（1 問につき 1 回）
+    if (left <= 0 && j.timeUpIndex !== s.index) {
+      j.timeUpIndex = s.index;
+      repaint();
+    }
+  }
+
+  // ---- 自分の答え ----
+
+  function currentQuestion(j) {
+    const s = j.data.state;
+    return s.index >= 0 ? j.data.questions[s.index] || null : null;
+  }
+
+  // 画面に出す自分の選択肢 id（サーバーで確かめられた分。なければ送信中・送った分）。なければ null。
+  // 学習記録には使わない（記録は recordAnswers が受信した answers だけから入れる）
+  function myChoice(j, q) {
+    const a = (j.data.answers[q.id] || {})[j.pid];
+    if (a && typeof a.choice === 'string') return a.choice;
+    return typeof j.answering[q.id] === 'string' ? j.answering[q.id] : null;
+  }
+
+  // 受信した部屋データから、答え合わせが済んだ問題の自分の回答（サーバーにあるものだけ）で、まだ入れていないものを学習記録に入れる。
+  // 答え合わせの画面を見ていなくても（切れた・画面を離れたあと、次の問題や最終順位で戻ったときも）まとめて入れる。1 問につき 1 回。
+  // 参加した生徒といまの生徒がちがうときは入れない（記録先を取りちがえない）。効果音は、いま答え合わせを見ている問題だけ
+  function recordAnswers(j) {
+    if (!j.data || !active || !active.isCurrent()) return;
+    const ctx = active.ctx;
+    const profile = H.currentProfile(ctx.store);
+    if (!profile || profile.id !== j.profileId) return;
+    if (!ctx.live || typeof ctx.live.record !== 'function') return;
+    const s = j.data.state;
+    const cur = currentQuestion(j);
+    const roomKey = L().recordRoomKey(j.profileId, j.pid, j.code);
+    const createdAt = j.data.meta ? j.data.meta.createdAt : null;
+    savedSource = ctx.live;
+    L().pendingRecords(j.data, j.pid, doneQids(roomKey), j.profileId, j.code).forEach((item) => {
+      let result = { applied: false, saved: false };
+      try {
+        const r = ctx.live.record(L().recordEvents(item.question, item.choice, item.correct, j.sessionId), j.profileId);
+        if (r && typeof r === 'object') result = { applied: r.applied === true, saved: r.applied === true && r.saved === true };
+      } catch (e) {
+        console.error(e);   // 例外は記録に入らなかったものとみなす（次の受信で取り直す）
+      }
+      // 入れなかった分は処理済みにしない。入れた分はメモリの処理済みに、保存に成功していれば sessionStorage にも書く
+      // （保存に失敗した分は unsavedDone に残し、あとで store の保存が成功したときに書く。読み込み直すとメモリの記録とともに消えるので取り直す）
+      applyDone({ key: roomKey, qid: item.qid, createdAt, now: Date.now() + (j.offset || 0), result });
+      if (!result.applied) return;
+      if (s.phase === 'reveal' && cur && cur.id === item.question.id && RQ.sfx && typeof RQ.sfx.play === 'function') {
+        try { RQ.sfx.play(item.correct ? 'correct' : 'wrong'); } catch (e) { console.error(e); }
+      }
+    });
+  }
+
+  async function answer(j, q, choice) {
+    if (joined !== j) return;
+    const confirmed = (j.data.answers[q.id] || {})[j.pid];
+    if (confirmed || typeof j.answering[q.id] === 'string') return;
+    if (remaining(j, j.data.state) <= 0) return;
+    j.answering[q.id] = choice;
+    j.sendFail = null;
+    repaint();
+    try {
+      await j.db.put(roomPath(j, 'answers/' + q.id + '/' + j.pid), { choice, at: { '.sv': 'timestamp' } });
+    } catch (e) {
+      // 送れなかった: 選び直し・「もう一度送る」ができるように、送信中の印を外す
+      delete j.answering[q.id];
+      j.sendFail = { qid: q.id, choice, message: errMsg(e) };
+    }
+    repaint();
+  }
+
+  // ---- 参加 ----
+
+  async function join(ctx, codeText, urlText) {
+    if (joining) return;
+    const profile = H.currentProfile(ctx.store);
+    if (!profile) return;
+    const code = normalizeCode(codeText);
+    if (!L().isRoomCode(code)) {
+      joinError = '部屋コードは 6 文字です（英字と数字。I・O・0・1 は使いません）。';
+      repaint();
+      return;
+    }
+    const url = LD().normalizeUrl(urlText === null ? ctx.live.dbUrl() : urlText);
+    if (!url) { joinError = BAD_URL; repaint(); return; }
+    if (urlText !== null) ctx.live.setDbUrl(url);
+    joining = true;
+    joinError = '';
+    // 参加を始めたときの描画の世代と生徒。通信のあいだに画面を離れた・生徒が変わったら、参加を取りやめる（何もしない）
+    const seq = renderSeq;
+    const stale = () => {
+      const now = H.currentProfile(ctx.store);
+      return seq !== renderSeq || !now || now.id !== profile.id;
+    };
+    repaint();
+    try {
+      const db = LD().createDb({ baseUrl: url });
+      const meta = await db.get('rooms/' + code + '/meta');
+      if (stale()) return;
+      if (!meta) throw new Error('その部屋コードの部屋は見つかりません。コードを確かめてね。');
+      const offset = await db.serverTime();
+      if (stale()) return;
+      if (L().isStale(meta, Date.now() + offset)) throw new Error('古い部屋です。先生に新しい部屋コードを聞いてね。');
+      const pid = pidFor(profile.id);
+      const name = String(profile.nickname || '').slice(0, L().MAX_NAME) || 'なまえ';
+      // 読み込み直して入り直したときは、得点を 0 に戻さない
+      const existing = await db.get('rooms/' + code + '/players/' + pid);
+      if (stale()) return;
+      if (!existing || typeof existing !== 'object') {
+        await db.put('rooms/' + code + '/players/' + pid, { name, joinedAt: { '.sv': 'timestamp' }, score: 0 });
+        if (stale()) return;
+      }
+      leave();
+      joined = {
+        code, pid, profileId: profile.id, name, db, offset, sessionId: ctx.live.sessionId(),
+        data: null, gone: false, answering: {}, sendFail: null, stop: null, retryTimer: null, timerNode: null, timeUpIndex: -1,
+        conn: 'ok', connError: '', notice: '', noticeTimer: null,
+      };
+      editUrl = false;
+      typed.code = '';
+      typed.url = null;
+      if (active && active.isCurrent()) startWatch(joined);
+    } catch (e) {
+      joinError = errMsg(e);
+    } finally {
+      joining = false;
+      repaint();
+    }
+  }
+
+  function joinCard(ctx) {
+    const profile = H.currentProfile(ctx.store);
+    const savedUrl = LD().normalizeUrl(ctx.live.dbUrl());
+    const needUrl = !savedUrl || editUrl;
+    const codeInput = el('input', {
+      class: 'text-input live-code-input', id: 'live-code-input', type: 'text', autocomplete: 'off',
+      autocapitalize: 'characters', spellcheck: 'false', maxlength: 6, placeholder: 'ABC234', 'data-no-ruby': true,
+    });
+    codeInput.value = typed.code;
+    codeInput.addEventListener('input', () => {
+      const v = normalizeCode(codeInput.value);
+      if (v !== codeInput.value) codeInput.value = v;
+      typed.code = v;
+    });
+    const urlInput = needUrl ? el('input', {
+      class: 'text-input', id: 'live-url-input', type: 'url', autocomplete: 'off', spellcheck: 'false',
+      placeholder: 'https://○○-default-rtdb.firebaseio.com',
+    }) : null;
+    if (urlInput) {
+      urlInput.value = typed.url !== null ? typed.url : savedUrl || '';
+      urlInput.addEventListener('input', () => { typed.url = urlInput.value; });
+    }
+    const submit = (ev) => {
+      if (ev) ev.preventDefault();
+      join(ctx, codeInput.value, urlInput ? urlInput.value : null);
+    };
+    const form = el('form', { class: 'author-form', onsubmit: submit }, [
+      needUrl ? el('label', { class: 'author-field' }, [
+        el('span', { class: 'field-label', text: '先生のデータベースの URL' }),
+        urlInput,
+        el('span', { class: 'author-hint muted', text: '先生が黒板に書いた URL を入れてね（1 度入れたら、この端末が覚えます）。' }),
+      ]) : null,
+      el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: '部屋コード（6 文字）' }), codeInput]),
+      el('p', null, [el('span', { 'data-no-ruby': true, text: profile ? profile.nickname : '' }), ' さんとして参加します。']),
+      el('button', { type: 'submit', class: 'btn btn-primary btn-block', disabled: joining, text: joining ? '参加しています…' : '参加する' }),
+      errorLine(joinError),
+    ]);
+    return card([
+      cardTitle('ライブクイズに参加'),
+      form,
+      !needUrl ? button('データベースの URL を入れ直す', () => { editUrl = true; repaint(); }, 'btn-block live-small') : null,
+    ]);
+  }
+
+  // ---- 部屋の画面 ----
+
+  function roomLine(j) {
+    return el('p', { class: 'muted live-room-line' }, [
+      '部屋 ', el('span', { 'data-no-ruby': true, text: j.code }), '・', el('span', { 'data-no-ruby': true, text: j.name }), ' さん',
+    ]);
+  }
+
+  function rankTable(rows, mePid) {
+    return el('table', { class: 'live-rank' }, [
+      el('thead', null, [el('tr', null, [el('th', { text: '順位' }), el('th', { text: 'ニックネーム' }), el('th', { class: 'num', text: '得点' })])]),
+      el('tbody', null, rows.map((row) => el('tr', { class: row.pid === mePid ? 'is-me' : null }, [
+        el('td', { text: row.rank + ' 位' }),
+        el('td', { 'data-no-ruby': true, text: row.name }),
+        el('td', { class: 'num', text: String(row.score) }),
+      ]))),
+    ]);
+  }
+
+  function waitCard(j) {
+    const d = j.data;
+    return card([
+      cardTitle('参加しました'),
+      el('p', { class: 'live-wait', text: '先生が問題を出すのを待とう。' }),
+      el('p', { class: 'live-joined', text: '参加者 ' + Object.keys(d.players).length + ' 人' }),
+    ]);
+  }
+
+  function showCard(j) {
+    const s = j.data.state;
+    const q = currentQuestion(j);
+    if (!q) return waitCard(j);
+    const left = remaining(j, s);
+    const mine = myChoice(j, q);
+    const timeUp = left <= 0;
+    const fail = mine === null && j.sendFail && j.sendFail.qid === q.id ? j.sendFail : null;
+    j.timerNode = el('span', { class: 'live-timer-num' + (left <= 5 ? ' is-low' : ''), text: String(left) });
+    const buttons = q.options.map((o, i) => el('button', {
+      type: 'button',
+      class: 'btn live-choice live-opt ' + OPT_CLASSES[i % OPT_CLASSES.length] + (mine === o.id ? ' is-picked' : ''),
+      disabled: mine !== null || timeUp,
+      'aria-pressed': mine === o.id ? 'true' : 'false',
+      onclick: () => answer(j, q, o.id),
+    }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) })]));
+    return card([
+      el('div', { class: 'live-head' }, [
+        el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + j.data.questions.length + ' 問目' }),
+        el('p', { class: 'live-timer', 'aria-label': '残り時間（秒）' }, [j.timerNode, el('span', { class: 'live-timer-unit', text: '秒' })]),
+      ]),
+      el('p', { class: 'live-question', text: plain(q.prompt) }),
+      el('div', { class: 'live-options' }, buttons),
+      el('p', { class: 'live-status', role: 'status', text: mine !== null ? '答えた！ 答え合わせを待とう。' : timeUp ? '時間切れ' : '答えをえらぼう（1 回だけ）' }),
+      fail ? errorLine('送れませんでした。もう一度送ってね（' + fail.message + '）') : null,
+      fail && !timeUp ? button('もう一度送る', () => answer(j, q, fail.choice), 'btn-primary btn-block') : null,
+    ]);
+  }
+
+  function revealCard(j) {
+    const d = j.data;
+    const s = d.state;
+    const q = currentQuestion(j);
+    if (!q) return waitCard(j);
+    const mine = myChoice(j, q);
+    const correct = mine !== null && mine === q.answer;
+    const ci = q.options.findIndex((o) => o.id === q.answer);
+    const player = d.players[j.pid] || null;
+    const myAnswer = (d.answers[q.id] || {})[j.pid] || null;
+    const scored = !!player && player.lastQ === q.id;
+    const points = scored && typeof player.lastPoints === 'number' ? player.lastPoints
+      : myAnswer ? L().scoreFor(q, myAnswer, s.startedAt, s.seconds) : 0;
+    const board = L().leaderboard(d.players);
+    const me = board.find((r) => r.pid === j.pid) || null;
+    return card([
+      el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + d.questions.length + ' 問目の答え合わせ' }),
+      el('p', { class: 'live-result ' + (mine === null ? 'is-none' : correct ? 'is-ok' : 'is-ng'), text: mine === null ? '答えなかった' : correct ? '○ 正解！' : '× ざんねん' }),
+      el('p', { class: 'live-answer', text: '正解: ' + (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '') }),
+      el('p', { class: 'live-points', text: 'この問題 ' + points + ' 点' }),
+      me ? el('p', { class: 'live-total', text: 'いまの合計 ' + me.score + ' 点・' + me.rank + ' 位（' + board.length + ' 人中）' + (scored ? '' : '（計算中）') }) : null,
+    ]);
+  }
+
+  function endedCard(j, ctx) {
+    const board = L().leaderboard(j.data.players);
+    const top = board.slice(0, TOP);
+    const me = board.find((r) => r.pid === j.pid) || null;
+    const rows = me && !top.some((r) => r.pid === me.pid) ? top.concat([me]) : top;
+    return card([
+      cardTitle('最終順位'),
+      me ? el('p', { class: 'live-total', text: 'あなたは ' + me.rank + ' 位（' + me.score + ' 点）' }) : null,
+      rows.length > 0 ? rankTable(rows, j.pid) : null,
+      button('ホームへ', () => { leave(); ctx.go('home'); }, 'btn-primary btn-block'),
+    ]);
+  }
+
+  function roomView(j, ctx) {
+    j.timerNode = null;
+    if (j.gone) {
+      return [card([
+        cardTitle('ライブクイズ'),
+        el('p', { text: '先生が部屋を閉じました。' }),
+        button('ホームへ', () => { leave(); ctx.go('home'); }, 'btn-primary btn-block'),
+      ])];
+    }
+    if (!j.data) return [roomLine(j), connLine(j), card([el('p', { text: 'つないでいます…' })])];
+    const phase = j.data.state.phase;
+    let body;
+    if (phase === 'show') body = showCard(j);
+    else if (phase === 'reveal') body = revealCard(j);
+    else if (phase === 'ended') body = endedCard(j, ctx);
+    else body = waitCard(j);
+    return [roomLine(j), connLine(j), body, phase === 'ended' ? null : button('部屋から出る', () => { leave(); repaint(); }, 'btn-block live-small')];
+  }
+
+  // ---- 画面 ----
+
+  function renderLive(section, ctx) {
+    const mine = ++renderSeq;
+    const isCurrent = () => mine === renderSeq && ctx.state.screen === 'live';
+    const profile = H.currentProfile(ctx.store);
+    // 生徒が変わっていたら、前の生徒の部屋からは出る
+    if (joined && (!profile || joined.profileId !== profile.id)) leave();
+
+    function paint() {
+      if (!isCurrent()) return;
+      const y = root.scrollY;
+      const children = [H.topBar('ライブクイズ', 'ホーム', () => ctx.go('home'))];
+      if (joined) children.push(...roomView(joined, ctx));
+      else children.push(joinCard(ctx));
+      section.replaceChildren(...children.filter(Boolean));
+      root.scrollTo(0, y);
+    }
+
+    active = { ctx, isCurrent, paint };
+    if (joined && !joined.gone) startWatch(joined);
+    if (ticker) clearInterval(ticker);
+    ticker = setInterval(tick, TICK_MS);
+    paint();
+
+    return function cleanup() {
+      if (ticker) { clearInterval(ticker); ticker = null; }
+      stopWatch(joined);
+      if (joined) joined.timerNode = null;
+    };
+  }
+
+  RQ.ui.screens.live = renderLive;
+  RQ.ui.renderLive = renderLive;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
