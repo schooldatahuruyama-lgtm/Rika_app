@@ -96,3 +96,31 @@ test('isUnlocked: 領域の最初は常に解放、2 番目は前のステージ
 test('isUnlocked: 登録されていないステージは false', () => {
   assert.equal(recommend.isUnlocked(makeReg(), record.createRecord(), 'nope'), false);
 });
+
+test('isUnlocked: free: true の領域（ミニプリント）は 2 番目以降も最初から解放', () => {
+  const reg = createRegistry();
+  const u = JSON.parse(JSON.stringify(unit));
+  u.areas[0].free = true;
+  reg.register(u);
+  const fresh = record.createRecord();
+  assert.equal(recommend.isUnlocked(reg, fresh, 's-a2'), true);
+});
+
+test('isUnlocked: 同じ単元の free でない領域は順番のまま（2 番目は前のクリアまで開かない）', () => {
+  const reg = createRegistry();
+  const u = JSON.parse(JSON.stringify(unit));
+  u.areas[1].free = true;   // 領域 b だけ free。領域 a は順番どおり
+  reg.register(u);
+  const fresh = record.createRecord();
+  assert.equal(recommend.isUnlocked(reg, fresh, 's-b1'), true);
+  assert.equal(recommend.isUnlocked(reg, fresh, 's-a1'), true);
+  assert.equal(recommend.isUnlocked(reg, fresh, 's-a2'), false);
+});
+
+test("isUnlocked: free: 'true'（文字列）では free と見なさず、2 番目は開かない", () => {
+  const reg = createRegistry();
+  const u = JSON.parse(JSON.stringify(unit));
+  u.areas[0].free = 'true';
+  reg.register(u);
+  assert.equal(recommend.isUnlocked(reg, record.createRecord(), 's-a2'), false);
+});

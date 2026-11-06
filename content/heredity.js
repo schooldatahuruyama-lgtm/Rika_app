@@ -1,6 +1,7 @@
 // 「生命の連続性」教材データ（中学3年 理科）
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通指示 .ai-tasks/20261104-170000_単元教材の共通指示.md）。
 // 2 領域 × 2 ステージ（細胞分裂と生殖・遺伝と進化）と、概念 5 つ（id は単元の接頭辞 he- を付けて全単元で一意にする）。
+// 領域 3「ミニプリント」（he-miniprint）: 先生のミニプリントの問題を書き直したステージ heredity-mp1〜heredity-mp5（.ai-tasks/20261106-130000_ミニプリント反映_共通.md）。
 // 図（scene）の item は js/figures.js の汎用の部品で描く（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
 // 解説文の **語句** は大切な言葉（用語）。term: true の問題は、その用語を聞く用語問題。
@@ -988,6 +989,808 @@
   };
 
   // ================================================================
+  // 領域 3: ミニプリント（先生が作ったミニプリントの問題を、このアプリの形に書き直したもの）
+  // プリントの文字起こしは miniprint_3nen.md「生命の連続性」。文と図は自作で、プリントの文をそのまま写していない。
+  // 1 ステージ ＝ プリント 2〜4 枚ぶん。学ぶ順（細胞分裂 → 生殖 → 受精と発生 → 遺伝のことば → 遺伝の規則性）に並べた。
+  // ================================================================
+
+  // ---- ミニプリント用の図の部品 ----
+
+  // 受粉したあとのめしべの断面（模式図）。柱頭 (160, 38)、花粉 (150, 30)、花粉管（橙の線）、精細胞 (156, 150)、
+  // 子房 (160, 180)、胚珠 (160, 190)、卵細胞 (160, 196)
+  function pistilItems() {
+    return [
+      { type: 'ellipse', x: 160, y: 182, rx: 70, ry: 46, fill: 'lightgreen', stroke: 'green' },
+      { type: 'rect', x: 150, y: 40, width: 20, height: 104, fill: 'lightgreen', stroke: 'green' },
+      { type: 'ellipse', x: 160, y: 38, rx: 24, ry: 8, fill: 'green', stroke: 'green' },
+      { type: 'ellipse', x: 160, y: 192, rx: 28, ry: 22, fill: 'white', stroke: 'green' },
+      { type: 'circle', x: 160, y: 198, r: 8, fill: 'pink', stroke: 'ink' },
+      { type: 'line', points: [[150, 32], [154, 80], [157, 140], [158, 176]], color: 'orange', width: 3 },
+      { type: 'circle', x: 150, y: 28, r: 7, fill: 'yellow', stroke: 'ink' },
+      { type: 'circle', x: 157, y: 150, r: 5, fill: 'purple', stroke: 'ink' },
+    ];
+  }
+
+  // カエルの発生（受精卵 → 2 細胞 → 4 細胞 → 胚 → おたまじゃくし）。中心 x 30・92・154・216・280、y 90
+  function devItems() {
+    const items = [
+      { type: 'circle', x: 30, y: 90, r: 20, fill: 'sand', stroke: 'brown' },
+      { type: 'circle', x: 92, y: 90, r: 20, fill: 'sand', stroke: 'brown' },
+      { type: 'line', points: [[92, 70], [92, 110]], color: 'brown', width: 2 },
+      { type: 'circle', x: 154, y: 90, r: 20, fill: 'sand', stroke: 'brown' },
+      { type: 'line', points: [[154, 70], [154, 110]], color: 'brown', width: 2 },
+      { type: 'line', points: [[134, 90], [174, 90]], color: 'brown', width: 2 },
+      { type: 'ellipse', x: 216, y: 90, rx: 22, ry: 16, fill: 'sand', stroke: 'brown' },
+      { type: 'line', points: [[200, 92], [232, 92]], color: 'brown', width: 2 },
+      { type: 'ellipse', x: 270, y: 90, rx: 14, ry: 11, fill: 'brown', stroke: 'ink' },
+      { type: 'line', points: [[284, 90], [298, 84], [312, 94]], color: 'brown', width: 4 },
+    ];
+    [[52, 70], [114, 132], [176, 192], [240, 254]].forEach(([a, b]) => items.push({ type: 'arrow', x1: a, y1: 90, x2: b, y2: 90, color: 'gray', width: 2 }));
+    return items;
+  }
+
+  // 無性生殖（左: 1 つの親が 2 つに分かれる）と有性生殖（右: 2 つの生殖細胞が受精する）を並べた図
+  function twoWaysItems() {
+    return [
+      { type: 'rect', x: 8, y: 20, width: 146, height: 150, rx: 8, fill: 'white', stroke: 'line' },
+      { type: 'rect', x: 166, y: 20, width: 146, height: 150, rx: 8, fill: 'white', stroke: 'line' },
+      { type: 'circle', x: 81, y: 58, r: 22, fill: 'lightgreen', stroke: 'green' },
+      { type: 'arrow', x1: 70, y1: 84, x2: 52, y2: 112, color: 'gray', width: 2 },
+      { type: 'arrow', x1: 92, y1: 84, x2: 110, y2: 112, color: 'gray', width: 2 },
+      { type: 'circle', x: 46, y: 136, r: 20, fill: 'lightgreen', stroke: 'green' },
+      { type: 'circle', x: 116, y: 136, r: 20, fill: 'lightgreen', stroke: 'green' },
+      { type: 'circle', x: 200, y: 58, r: 10, fill: 'sky', stroke: 'blue' },
+      { type: 'circle', x: 278, y: 58, r: 20, fill: 'pink', stroke: 'ink' },
+      { type: 'arrow', x1: 210, y1: 72, x2: 230, y2: 112, color: 'gray', width: 2 },
+      { type: 'arrow', x1: 266, y1: 80, x2: 248, y2: 112, color: 'gray', width: 2 },
+      { type: 'circle', x: 239, y: 136, r: 20, fill: 'pink', stroke: 'ink' },
+    ];
+  }
+
+  // 種子のようすの 3 つの枠（ア すべて丸、イ すべてしわ、ウ 丸 3 つとしわ 1 つ）。枠の中心 x 56・160・264
+  function peaBoxes() {
+    const items = [];
+    [56, 160, 264].forEach((cx, k) => {
+      items.push({ type: 'rect', x: cx - 48, y: 40, width: 96, height: 110, rx: 8, fill: 'white', stroke: 'line' });
+      [[-22, 72], [22, 72], [-22, 118], [22, 118]].forEach(([dx, y], i) => {
+        const isRound = k === 0 || (k === 2 && i < 3);
+        items.push(isRound ? roundPea(cx + dx, y, 16) : wrinkled(cx + dx, y, 17));
+      });
+    });
+    return items;
+  }
+
+  // 遺伝子の組み合わせの表（punnett と同じ位置）。top・left は表の外の遺伝子（上 2 つ・左 2 つ）、cells はマスの中（左上・右上・左下・右下）
+  function crossTable(top, left, cells) {
+    const items = [
+      { type: 'rect', x: 110, y: 30, width: 70, height: 36, fill: 'glass', stroke: 'line' },
+      { type: 'rect', x: 180, y: 30, width: 70, height: 36, fill: 'glass', stroke: 'line' },
+      { type: 'rect', x: 60, y: 66, width: 50, height: 52, fill: 'glass', stroke: 'line' },
+      { type: 'rect', x: 60, y: 118, width: 50, height: 52, fill: 'glass', stroke: 'line' },
+      { type: 'rect', x: 110, y: 66, width: 70, height: 52, fill: 'white', stroke: 'line' },
+      { type: 'rect', x: 180, y: 66, width: 70, height: 52, fill: 'white', stroke: 'line' },
+      { type: 'rect', x: 110, y: 118, width: 70, height: 52, fill: 'white', stroke: 'line' },
+      { type: 'rect', x: 180, y: 118, width: 70, height: 52, fill: 'white', stroke: 'line' },
+      { type: 'text', x: 145, y: 54, text: top[0], size: 18, anchor: 'middle', bold: true },
+      { type: 'text', x: 215, y: 54, text: top[1], size: 18, anchor: 'middle', bold: true },
+      { type: 'text', x: 85, y: 98, text: left[0], size: 18, anchor: 'middle', bold: true },
+      { type: 'text', x: 85, y: 150, text: left[1], size: 18, anchor: 'middle', bold: true },
+    ];
+    [[145, 98], [215, 98], [145, 150], [215, 150]].forEach(([x, y], i) =>
+      items.push({ type: 'text', x, y, text: cells[i], size: 18, anchor: 'middle' }));
+    return items;
+  }
+
+  // DNA の二重らせんのモデル（2 本の鎖と、そのあいだの横の線）
+  function helixItems() {
+    const a = [], b = [], items = [];
+    for (let i = 0; i <= 24; i++) {
+      const x = 30 + 11 * i;
+      const dy = Math.round(36 * Math.sin(i * Math.PI / 6));
+      a.push([x, 110 - dy]);
+      b.push([x, 110 + dy]);
+      if (i % 2 === 1 && Math.abs(dy) > 8) items.push({ type: 'line', points: [[x, 110 - dy], [x, 110 + dy]], color: 'gray', width: 2 });
+    }
+    items.push({ type: 'line', points: a, color: 'blue', width: 4 });
+    items.push({ type: 'line', points: b, color: 'orange', width: 4 });
+    return items;
+  }
+
+  // ---- ステージ heredity-mp1: プリント 1 細胞分裂（細胞分裂の順番／細胞分裂の実験） ----
+  const heredityMp1 = {
+    id: 'heredity-mp1', areaId: 'he-miniprint', title: 'プリント 1: 細胞分裂の順番と観察', minutes: 5, concepts: ['he-division'],
+    lessons: [
+      {
+        id: 'heredity-mp1-c1',
+        text: 'からだをつくる細胞が分かれることを**体細胞分裂**といいます。核の中にひものような**染色体**が現れ、細胞の中央に並び、両端に分かれて、しきりができて 2 つの細胞になります。染色体には、形質を決める**遺伝子**がふくまれています。',
+        // 体細胞分裂の順番（左から右へ）
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '体細胞分裂の順番（植物の細胞）', size: 13, anchor: 'middle' },
+          ...divCell(34, 96, 0), ...divCell(96, 96, 1), ...divCell(158, 96, 2), ...divCell(220, 96, 3), ...divCell(282, 96, 4),
+          ...['分裂前', '染色体が', '中央に', '両端に', 'しきりが'].map((t, i) => ({ type: 'text', x: 34 + 62 * i, y: 150, text: t, size: 12, anchor: 'middle' })),
+          ...['', '現れる', '並ぶ', '分かれる', 'できる'].map((t, i) => ({ type: 'text', x: 34 + 62 * i, y: 166, text: t, size: 12, anchor: 'middle' })),
+          { type: 'arrow', x1: 30, y1: 196, x2: 290, y2: 196, color: 'gray', width: 2 },
+          { type: 'text', x: 160, y: 222, text: '1 つの細胞が 2 つになる', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'heredity-mp1-c2',
+        text: '細胞分裂の観察では、分裂がさかんな**根の先端**を使います。うすい塩酸に入れてあたためると、細胞どうしが離れやすくなります。染色液（**酢酸オルセイン液**など）をたらして 3 分ほど置き、カバーガラスをかけて、ろ紙の上からおしつぶします。',
+        // 観察の手順
+        figure: scene([
+          ...['① 根の先端を 2〜3 mm 切りとる', '② うすい塩酸に入れてあたためる', '③ 染色液をたらして 3 分ほど置く', '④ カバーガラスをかけ、おしつぶす'].flatMap((t, i) => [
+            { type: 'rect', x: 16, y: 18 + 54 * i, width: 288, height: 40, rx: 8, fill: i === 1 ? '#FFF3C4' : 'white', stroke: 'line' },
+            { type: 'text', x: 30, y: 44 + 54 * i, text: t, size: 14 },
+          ]),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-mp1-w1', concept: 'he-division',
+      prompt: '予想しよう。タマネギの根で、細胞分裂がさかんに行われているのはどこだと思う？',
+      options: ['根の先端に近い部分', '根もとに近い部分', '根のどこでも同じ'],
+      answer: 'a',
+      explanation: '根は、先端に近い部分で細胞分裂がさかんに行われ、ふえた細胞が大きくなってのびていきます。だから、観察には根の先端を使います。',
+      hint: '根は、どこからのびていくかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-mp1-p1', concept: 'he-division',
+        prompt: '根の先端の細胞の模式図です。A は分裂前の細胞、ア〜エは分裂の途中の細胞です（ア: 染色体が両端に分かれている、イ: 核の中に染色体が現れている、ウ: しきりができて 2 つに分かれている、エ: 染色体が中央に並んでいる）。A のすぐ次に起こる変化はどれ？',
+        figure: DIVISION_Q,
+        answer: 'r2',
+        explanation: '体細胞分裂は、A（分裂前）→ イ（染色体が現れる）→ エ（中央に並ぶ）→ ア（両端に分かれる）→ ウ（しきりができる）の順に進みます。A の次はイです。',
+        hint: '分裂が始まると、まず核の中に何が見えてくるかな。',
+      }),
+      fill({
+        id: 'heredity-mp1-t1', concept: 'he-division', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '細胞分裂のとき、核の中に現れるひものようなものを[b1]という。この中には、形質を決める[b2]がふくまれている。',
+        blanks: [
+          word('b1', ['染色体', '細胞膜', '葉緑体'], '染色体'),
+          word('b2', ['遺伝子', '細胞壁', '核'], '遺伝子'),
+        ],
+        explanation: '分裂のときに見えるひものようなものが**染色体**です。染色体には、形質を決める**遺伝子**がふくまれています。',
+        hint: '染色液でよく染まる「体」だよ。',
+      }),
+      choice({
+        id: 'heredity-mp1-p2', concept: 'he-division',
+        prompt: 'からだをつくる細胞が 2 つに分かれる細胞分裂を何という？',
+        options: ['体細胞分裂', '減数分裂', '受精'],
+        answer: 'a',
+        explanation: 'からだをつくる細胞（体細胞）の分裂を**体細胞分裂**といいます。分裂のあとの細胞の染色体の数は、もとの細胞と同じです。',
+        hint: '「からだの細胞」の分裂という意味の名前だよ。',
+      }),
+      choice({
+        id: 'heredity-mp1-p3', concept: 'he-division',
+        prompt: '細胞分裂の観察で、根の先端をうすい塩酸に入れてあたためるのはなぜ？',
+        options: ['細胞どうしを離れやすくして、重なりを少なくするため', '細胞に色をつけるため', '細胞分裂をさかんにするため'],
+        answer: 'a',
+        explanation: 'うすい塩酸であたためると、細胞どうしをくっつけているものがとけて、細胞が 1 つ 1 つ離れやすくなります。おしつぶしたとき、細胞が重ならずに広がって見やすくなります。',
+        hint: 'あとで、カバーガラスの上からおしつぶすよ。',
+      }),
+      choice({
+        id: 'heredity-mp1-p4', concept: 'he-division',
+        prompt: '根の先端に染色液をたらしてから、カバーガラスをかけるまで、どのくらい待つとよい？',
+        options: ['3 分ほど', '3 秒ほど', '30 秒ほど'],
+        answer: 'a',
+        explanation: '染色液がしみこんで核や染色体がよく染まるまでには、少し時間がかかります。3 分ほど置いてから、カバーガラスをかけます。',
+        hint: '色がしっかりしみこむには、時間が必要だね。',
+      }),
+      choice({
+        id: 'heredity-mp1-p5', concept: 'he-division',
+        prompt: '細胞分裂の観察で、核や染色体を染めるのに使う液はどれ？',
+        options: ['酢酸オルセイン液', 'ヨウ素液', 'BTB 溶液'],
+        answer: 'a',
+        explanation: '酢酸オルセイン液（または酢酸カーミン液）は、核や染色体を赤く染めます。ヨウ素液はデンプン、BTB 溶液は酸性・アルカリ性を調べる液です。',
+        hint: '核や染色体を赤むらさき色に染める液だよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'heredity-mp1-r1', concept: 'he-division',
+        prompt: '根の先端の細胞の模式図です。A は分裂前の細胞、ア〜エは分裂の途中の細胞です（ア: 染色体が両端に分かれている、イ: 核の中に染色体が現れている、ウ: しきりができて 2 つに分かれている、エ: 染色体が中央に並んでいる）。分裂のいちばん最後のようすはどれ？',
+        figure: DIVISION_Q,
+        answer: 'r3',
+        explanation: '両端に分かれた染色体のあいだにしきりができて、2 つの細胞に分かれます。最後はウです。そのあと、それぞれの細胞が大きくなります。',
+        hint: '1 つの細胞が 2 つになったら、分裂は終わりだよ。',
+      }),
+      choice({
+        id: 'heredity-mp1-r2', concept: 'he-division',
+        prompt: 'タマネギの根で細胞分裂を観察するとき、根のどの部分を切りとって使う？',
+        options: ['先端から 2〜3 mm の部分', '根もとから 2〜3 mm の部分', '根のまん中の部分'],
+        answer: 'a',
+        explanation: '細胞分裂がさかんなのは、根の先端に近い部分です。分裂している細胞をたくさん見るために、先端から 2〜3 mm の部分を切りとって使います。',
+        hint: '分裂がさかんな部分を使うよ。',
+      }),
+      fill({
+        id: 'heredity-mp1-r3', concept: 'he-division',
+        prompt: '図の A・ア〜エ（ア: 染色体が両端に分かれている、イ: 核の中に染色体が現れている、ウ: しきりができて 2 つに分かれている、エ: 染色体が中央に並んでいる）を、体細胞分裂の進む順に並べよう。空らんに入る記号を選ぼう。',
+        text: 'A → [b1] → [b2] → [b3] → ウ',
+        blanks: [
+          word('b1', ['ア', 'イ', 'エ'], 'イ'),
+          word('b2', ['ア', 'イ', 'エ'], 'エ'),
+          word('b3', ['ア', 'イ', 'エ'], 'ア'),
+        ],
+        figure: DIVISION_Q,
+        explanation: '染色体が現れる（イ）→ 中央に並ぶ（エ）→ 両端に分かれる（ア）→ しきりができる（ウ）の順です。',
+        hint: '染色体は、並んでから分かれるよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ heredity-mp2: プリント 2 無性生殖と有性生殖（無性生殖／有性生殖と無性生殖／減数分裂） ----
+  const heredityMp2 = {
+    id: 'heredity-mp2', areaId: 'he-miniprint', title: 'プリント 2: 無性生殖と有性生殖', minutes: 5, concepts: ['he-reproduction'],
+    lessons: [
+      {
+        id: 'heredity-mp2-c1',
+        text: '雌雄が関わらずに子をつくるふえ方を**無性生殖**といいます。ゾウリムシやミカヅキモはからだが 2 つに分かれる**分裂**で、サツマイモはいもから芽が出る**栄養生殖**でふえます。子は親と同じ染色体を受けつぐので、親と同じ形質になります。',
+        // 無性生殖（分裂）と有性生殖（受精）
+        figure: scene(twoWaysItems().concat([
+          { type: 'text', x: 81, y: 192, text: '無性生殖', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 81, y: 212, text: '（分裂など）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 239, y: 192, text: '有性生殖', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 239, y: 212, text: '（受精する）', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'heredity-mp2-c2',
+        text: '生殖細胞（卵・精子など）がつくられるときは、染色体の数がもとの半分になる**減数分裂**が起こります。受精すると、両親から半分ずつ受けついで、もとの数にもどります。有性生殖では、子に両親とちがういろいろな形質が現れます。',
+        // 減数分裂と受精で、染色体の数がどう変わるか（4 本 → 2 本 → 4 本）
+        figure: scene([
+          ...chromCell(40, 66, 26, 4), ...chromCell(40, 166, 26, 4),
+          ...chromCell(140, 66, 18, 2), ...chromCell(140, 166, 18, 2),
+          ...chromCell(262, 116, 30, 4),
+          { type: 'arrow', x1: 70, y1: 66, x2: 116, y2: 66, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 70, y1: 166, x2: 116, y2: 166, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 162, y1: 74, x2: 230, y2: 104, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 162, y1: 158, x2: 230, y2: 128, color: 'gray', width: 2 },
+          { type: 'text', x: 40, y: 24, text: '親（4 本）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 140, y: 24, text: '生殖細胞（2 本）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 262, y: 70, text: '受精卵（4 本）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 92, y: 226, text: '減数分裂', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 210, y: 226, text: '受精', size: 13, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-mp2-w1', concept: 'he-reproduction',
+      prompt: 'ゾウリムシやミカヅキモは、どのようにして子孫を残す？',
+      options: ['からだが 2 つに分かれる', '卵と精子が受精する', '種子をつくる'],
+      answer: 'a',
+      explanation: 'ゾウリムシやミカヅキモは、からだが 2 つに分かれる**分裂**でふえます。雌雄が関わらないので、無性生殖です。',
+      hint: 'からだが 1 つの細胞でできている生物だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-mp2-p1', concept: 'he-reproduction',
+        prompt: '生物のふえ方を表した図です。左（ア）は 1 つの親が 2 つに分かれ、右（イ）は 2 つの細胞が合体して 1 つになっています。無性生殖を表しているのはア・イのどちら？',
+        figure: scene(twoWaysItems().concat([
+          { type: 'region', id: 'r1', x: 81, y: 202, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 239, y: 202, r: 22, label: 'イ' },
+        ])),
+        answer: 'r1',
+        explanation: '無性生殖は、雌雄が関わらず、親のからだの一部が分かれて子になるふえ方です。1 つの親が 2 つに分かれるアが無性生殖です。生殖細胞が合体（受精）するイは有性生殖です。',
+        hint: '雌雄が関わっていないのはどちらかな。',
+      }),
+      fill({
+        id: 'heredity-mp2-t1', concept: 'he-reproduction', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '雌雄が関わらずに子をつくるふえ方を[b1]という。生殖細胞がつくられるとき、染色体の数が半分になる細胞分裂を[b2]という。',
+        blanks: [
+          word('b1', ['無性生殖', '有性生殖', '受精'], '無性生殖'),
+          word('b2', ['減数分裂', '体細胞分裂', '発生'], '減数分裂'),
+        ],
+        explanation: '雌雄が関わらないふえ方が**無性生殖**、生殖細胞をつくるときの、染色体の数が半分になる分裂が**減数分裂**です。',
+        hint: '数が「減る」分裂だよ。',
+      }),
+      choice({
+        id: 'heredity-mp2-p2', concept: 'he-reproduction',
+        prompt: 'サツマイモのいもを土にうめると、芽が出て新しい個体ができます。このようなふえ方を何という？',
+        options: ['栄養生殖', '有性生殖', '受精'],
+        answer: 'a',
+        explanation: '植物のからだの一部（いも・茎・葉など）から新しい個体ができるふえ方を**栄養生殖**といいます。無性生殖の 1 つです。',
+        hint: '養分をためたいもから、新しい個体ができるね。',
+      }),
+      choice({
+        id: 'heredity-mp2-p3', concept: 'he-reproduction',
+        prompt: 'ゾウリムシ・ミカヅキモ・サツマイモ・アサガオ・カエル・ヒトのうち、無性生殖を行う生物をすべて選んだものはどれ？',
+        options: ['ゾウリムシ・ミカヅキモ・サツマイモ', 'アサガオ・カエル・ヒト', 'ゾウリムシ・カエル', 'すべての生物'],
+        answer: 'a',
+        explanation: 'ゾウリムシとミカヅキモは分裂で、サツマイモはいもからの栄養生殖でふえます。アサガオ（種子）・カエル・ヒトは、受精によって子をつくる有性生殖を行います。',
+        hint: '分裂やいもでふえる生物をさがそう。',
+      }),
+      choice({
+        id: 'heredity-mp2-p4', concept: 'he-reproduction',
+        prompt: '無性生殖でできた子の染色体は、親の染色体と比べてどうなっている？',
+        options: ['親とまったく同じ', '親の半分', '親の 2 倍'],
+        answer: 'a',
+        explanation: '無性生殖では、体細胞分裂で子ができるので、子は親と同じ染色体（同じ遺伝子）を受けつぎます。そのため、子の形質は親と同じになります。',
+        hint: '無性生殖の子は、体細胞分裂でできるよ。',
+      }),
+      choice({
+        id: 'heredity-mp2-p5', concept: 'he-reproduction',
+        prompt: '有性生殖のよい点として正しいものはどれ？',
+        options: ['いろいろな形質の子ができるので、環境が変わっても生き残る子がいる可能性が高い', '親とまったく同じ形質の子を、短い期間にたくさんつくれる', '相手がいなくても子をつくれる'],
+        answer: 'a',
+        explanation: '有性生殖では、両親の遺伝子を半分ずつ受けつぐので、いろいろな形質の子ができます。環境が変わったとき、その中に生き残れる子がいる可能性が高くなります。',
+        hint: '両親から遺伝子を受けつぐと、子はどうなるかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'heredity-mp2-r1', concept: 'he-reproduction',
+        prompt: '無性生殖のよい点として正しいものはどれ？',
+        options: ['親と同じ形質の子を、確実に、短い期間でふやせる', 'いろいろな形質の子ができる', '両親の形質を組み合わせられる'],
+        answer: 'a',
+        explanation: '無性生殖では、子は親と同じ遺伝子を受けつぐので、親と同じ形質を確実に残せます。相手がいなくてもふえられるので、短い期間で数をふやせます。',
+        hint: '子が親と同じ遺伝子をもつことの、よい点を考えよう。',
+      }),
+      choice({
+        id: 'heredity-mp2-r2', concept: 'he-reproduction',
+        prompt: '減数分裂でできた生殖細胞の染色体の数は、親の体細胞と比べてどうなっている？',
+        options: ['半分', '同じ', '2 倍'],
+        answer: 'a',
+        explanation: '減数分裂では、対になっている染色体が分かれて別々の生殖細胞に入るので、染色体の数は体細胞の半分になります。',
+        hint: '「減数」という名前から考えよう。',
+      }),
+      choice({
+        id: 'heredity-mp2-r3', concept: 'he-reproduction',
+        prompt: '有性生殖でできた子の染色体は、どのように受けつがれる？',
+        options: ['両親から半分ずつ受けつぐ', '母親からすべて受けつぐ', '父親からすべて受けつぐ'],
+        answer: 'a',
+        explanation: '卵と精子は、どちらも減数分裂で染色体が半分になっています。受精すると、両親から半分ずつ受けついで、もとの数の染色体をもつ子になります。',
+        hint: '卵も精子も、染色体は親の半分だったね。',
+      }),
+      choice({
+        id: 'heredity-mp2-r4', concept: 'he-reproduction',
+        prompt: 'ゾウリムシのように、からだが 2 つに分かれてふえることを何という？',
+        options: ['分裂', '受精', '発生'],
+        answer: 'a',
+        explanation: 'からだが 2 つに分かれてふえることを**分裂**といいます。無性生殖の 1 つで、ゾウリムシやミカヅキモ、アメーバなどがこの方法でふえます。',
+        hint: '「分かれる」ことを表す言葉だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ heredity-mp3: プリント 3 受精と発生（植物の有性生殖／動物の有性生殖／発生の過程） ----
+  const heredityMp3 = {
+    id: 'heredity-mp3', areaId: 'he-miniprint', title: 'プリント 3: 受精と発生', minutes: 5, concepts: ['he-reproduction'],
+    lessons: [
+      {
+        id: 'heredity-mp3-c1',
+        text: '花粉がめしべの柱頭につくと、花粉から**花粉管**がのびます。花粉管の中を**精細胞**が移動して胚珠に届き、精細胞の核と胚珠の中の**卵細胞**の核が合体します。これを**受精**といい、胚珠は種子になります。',
+        // 受粉したあとのめしべ（模式図）
+        figure: scene(pistilItems().concat([
+          { type: 'line', points: [[144, 26], [96, 26]], color: 'ink', width: 2 },
+          { type: 'text', x: 92, y: 30, text: '花粉', size: 13, anchor: 'end' },
+          { type: 'line', points: [[155, 100], [96, 100]], color: 'ink', width: 2 },
+          { type: 'text', x: 92, y: 104, text: '花粉管', size: 13, anchor: 'end' },
+          { type: 'line', points: [[162, 150], [232, 120]], color: 'ink', width: 2 },
+          { type: 'text', x: 236, y: 120, text: '精細胞', size: 13 },
+          { type: 'line', points: [[186, 186], [238, 160]], color: 'ink', width: 2 },
+          { type: 'text', x: 242, y: 160, text: '胚珠', size: 13 },
+          { type: 'line', points: [[168, 200], [238, 214]], color: 'ink', width: 2 },
+          { type: 'text', x: 242, y: 220, text: '卵細胞', size: 13 },
+        ])),
+      },
+      {
+        id: 'heredity-mp3-c2',
+        text: 'カエルは、雄の精巣でつくられた**精子**と、雌の卵巣でつくられた**卵**が受精して**受精卵**になります。受精卵は細胞分裂をくり返して**胚**になり、おたまじゃくしをへて親と同じ形になります。この過程を**発生**といいます。',
+        // カエルの発生
+        figure: scene(devItems().concat([
+          { type: 'text', x: 160, y: 34, text: 'カエルの発生', size: 14, anchor: 'middle', bold: true },
+          ...[['受精卵', 30], ['2 細胞', 92], ['4 細胞', 154], ['胚', 216], ['おたま', 276]].map(([t, x]) => ({ type: 'text', x, y: 136, text: t, size: 12, anchor: 'middle' })),
+          { type: 'text', x: 276, y: 152, text: 'じゃくし', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 196, text: '細胞分裂をくり返して、細胞の数がふえる', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 222, text: '→ やがて親（カエル）と同じ形になる', size: 13, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-mp3-w1', concept: 'he-reproduction',
+      prompt: '予想しよう。花粉がめしべの柱頭についたあと、花粉から何がのびると思う？',
+      options: ['花粉管', '根', '葉'],
+      answer: 'a',
+      explanation: '柱頭についた花粉からは、花粉管が胚珠に向かってのびていきます。花粉管の中を、精細胞が移動します。',
+      hint: '花粉から胚珠まで続く、管のようなものだよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-mp3-p1', concept: 'he-reproduction',
+        prompt: '受粉したあとのめしべの断面の模式図です。ア〜ウの線が指しているもののうち、卵細胞はどれ？',
+        figure: scene(pistilItems().concat([
+          { type: 'line', points: [[155, 100], [82, 100]], color: 'gray', width: 2 },
+          { type: 'line', points: [[162, 150], [240, 132]], color: 'gray', width: 2 },
+          { type: 'line', points: [[168, 200], [240, 214]], color: 'gray', width: 2 },
+          { type: 'region', id: 'r1', x: 58, y: 100, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 264, y: 128, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 264, y: 214, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: '卵細胞は、子房の中の胚珠の中にあります（ウ）。アは花粉からのびた花粉管、イは花粉管の中を移動する精細胞です。',
+        hint: '卵細胞は、胚珠の中にあるよ。',
+      }),
+      fill({
+        id: 'heredity-mp3-t1', concept: 'he-reproduction', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '精細胞の核と卵細胞の核が合体することを[b1]という。受精卵が胚をへて、親と同じ形になるまでの過程を[b2]という。',
+        blanks: [
+          word('b1', ['受精', '受粉', '分裂'], '受精'),
+          word('b2', ['発生', '進化', '遺伝'], '発生'),
+        ],
+        explanation: '生殖細胞の核どうしが合体することを**受精**といいます。受精卵が細胞分裂をくり返して親と同じ形になるまでの過程を**発生**といいます。',
+        hint: '花粉が柱頭につくことは「受粉」。核が合体するのは？',
+      }),
+      fill({
+        id: 'heredity-mp3-p2', concept: 'he-reproduction',
+        prompt: '被子植物の受精のしくみです。空らんに入る言葉を選ぼう。',
+        text: '柱頭についた花粉から[b1]がのび、その中を[b2]が胚珠まで移動する。',
+        blanks: [
+          word('b1', ['花粉管', '道管', '師管'], '花粉管'),
+          word('b2', ['精細胞', '卵細胞', '受精卵'], '精細胞'),
+        ],
+        explanation: '花粉からのびる**花粉管**の中を、雄の生殖細胞である**精細胞**が移動して、胚珠の中の卵細胞に届きます。',
+        hint: '植物の雄の生殖細胞の名前は？',
+      }),
+      choice({
+        id: 'heredity-mp3-p3', concept: 'he-reproduction',
+        prompt: 'カエルの雄の精巣と、雌の卵巣でつくられる生殖細胞の組み合わせとして正しいものはどれ？',
+        options: ['精巣で精子、卵巣で卵', '精巣で卵、卵巣で精子', 'どちらでも受精卵'],
+        answer: 'a',
+        explanation: '動物では、雄の精巣で精子が、雌の卵巣で卵がつくられます。精子と卵が受精して、受精卵になります。',
+        hint: '名前の 1 文字目に注目しよう。',
+      }),
+      choice({
+        id: 'heredity-mp3-p4', concept: 'he-reproduction',
+        prompt: 'カエルの発生の順として正しいものはどれ？',
+        options: ['受精卵 → 細胞が 2 つ → 細胞が 4 つ → 胚 → おたまじゃくし', '受精卵 → おたまじゃくし → 細胞が 2 つ → 胚', '細胞が 4 つ → 細胞が 2 つ → 受精卵 → おたまじゃくし'],
+        answer: 'a',
+        explanation: '受精卵は細胞分裂をくり返し、細胞の数を 2 つ、4 つ…とふやして胚になります。やがておたまじゃくしになり、親と同じ形のカエルになります。',
+        hint: '細胞分裂をすると、細胞の数はふえていくよ。',
+      }),
+      choice({
+        id: 'heredity-mp3-p5', concept: 'he-reproduction',
+        prompt: '受精卵が細胞分裂を始めてから、自分で食物をとり始めるまでの子のことを何という？',
+        options: ['胚', '卵', '精子'],
+        answer: 'a',
+        explanation: '受精卵が細胞分裂を始めてから、自分で食物をとれるようになるまでの子を**胚**といいます。植物では、種子の中にある将来からだになる部分を胚といいます。',
+        hint: '漢字 1 文字の言葉だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'heredity-mp3-r1', concept: 'he-reproduction',
+        prompt: '精子と卵が受精してできる 1 つの細胞を何という？',
+        options: ['受精卵', '胚珠', '生殖細胞'],
+        answer: 'a',
+        explanation: '精子と卵が受精してできた細胞を**受精卵**といいます。受精卵は細胞分裂をくり返して、胚になります。',
+        hint: '「受精した卵」という意味の言葉だよ。',
+      }),
+      figureChoice({
+        id: 'heredity-mp3-r2', concept: 'he-reproduction',
+        prompt: '受粉したあとのめしべの断面の模式図です。ア〜ウの線が指しているもののうち、花粉管の中を胚珠へ移動している細胞はどれ？',
+        figure: scene(pistilItems().concat([
+          { type: 'line', points: [[155, 100], [82, 100]], color: 'gray', width: 2 },
+          { type: 'line', points: [[162, 150], [240, 132]], color: 'gray', width: 2 },
+          { type: 'line', points: [[168, 200], [240, 214]], color: 'gray', width: 2 },
+          { type: 'region', id: 'r1', x: 58, y: 100, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 264, y: 128, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 264, y: 214, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r2',
+        explanation: '花粉管の中を移動しているのは、雄の生殖細胞の精細胞（イ）です。胚珠の中の卵細胞（ウ）に届いて受精します。',
+        hint: '花粉管の中にある、小さな丸をさがそう。',
+      }),
+      choice({
+        id: 'heredity-mp3-r3', concept: 'he-reproduction',
+        prompt: '受精卵が細胞分裂をくり返すと、細胞の数はどうなる？',
+        options: ['2 つ、4 つ、8 つ…とふえていく', '1 つのまま大きくなる', 'だんだん減っていく'],
+        answer: 'a',
+        explanation: '受精卵は、1 回の細胞分裂で 2 つに、次で 4 つに、その次で 8 つに…と、細胞の数をふやしていきます。こうして胚になります。',
+        hint: '1 つの細胞が分裂すると、いくつになるかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ heredity-mp4: プリント 4 遺伝のことばと DNA（遺伝の単語①／遺伝の単語②／遺伝　重要語句／ＤＮＡ） ----
+  const heredityMp4 = {
+    id: 'heredity-mp4', areaId: 'he-miniprint', title: 'プリント 4: 遺伝のことばと DNA', minutes: 5, concepts: ['he-mendel', 'he-reproduction'],
+    lessons: [
+      {
+        id: 'heredity-mp4-c1',
+        text: '親の形質が子に伝わることを**遺伝**といいます。種子の丸としわのように、どちらか一方しか現れない形質どうしを**対立形質**といいます。代々同じ形質が現れる個体の集まりを**純系**といい、エンドウはつぼみのうちに**自家受粉**するので純系ができやすい植物です。',
+        // 対立形質（丸としわ）
+        figure: scene([
+          roundPea(100, 100, 34), wrinkled(220, 100, 36),
+          { type: 'text', x: 100, y: 162, text: '丸い種子', size: 14, anchor: 'middle' },
+          { type: 'text', x: 220, y: 162, text: 'しわのある種子', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 106, text: '⇔', size: 20, anchor: 'middle' },
+          { type: 'text', x: 160, y: 204, text: '対立形質（どちらか一方が現れる）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 30, text: 'エンドウの種子の形', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'heredity-mp4-c2',
+        text: '純系の丸と純系のしわをかけ合わせると、子はすべて丸になります。子に現れる形質を**顕性形質**（優性形質）、現れない形質を**潜性形質**（劣性形質）といいます。対の遺伝子が減数分裂で分かれて別々の生殖細胞に入ることを**分離の法則**といい、メンデルが見つけました。',
+        // AA × aa → Aa（すべて丸）
+        figure: scene([
+          roundPea(70, 70, 24), wrinkled(250, 70, 25),
+          { type: 'text', x: 70, y: 116, text: 'AA（丸）', size: 14, anchor: 'middle' },
+          { type: 'text', x: 250, y: 116, text: 'aa（しわ）', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 76, text: '×', size: 20, anchor: 'middle' },
+          { type: 'arrow', x1: 160, y1: 124, x2: 160, y2: 150, color: 'gray', width: 2 },
+          roundPea(130, 178, 18), roundPea(190, 178, 18),
+          { type: 'text', x: 160, y: 222, text: '子は Aa ですべて丸（丸が顕性）', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'heredity-mp4-c3',
+        text: '遺伝子の本体は**DNA**（**デオキシリボ核酸**）という物質です。DNA は、2 本の鎖がねじれた**二重らせん**の形をしていて、1953 年にワトソンとクリックが、この形のモデルを発表しました。',
+        // DNA の二重らせんのモデル
+        figure: scene(helixItems().concat([
+          { type: 'text', x: 160, y: 34, text: 'DNA の二重らせん（モデル）', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 206, text: '2 本の鎖がねじれている', size: 13, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-mp4-w1', concept: 'he-mendel',
+      prompt: '親の形質が子やそれ以後の世代に伝わることを何という？',
+      options: ['遺伝', '進化', '発生'],
+      answer: 'a',
+      explanation: '親の形質が子やそれ以後の世代に伝わることを**遺伝**といいます。形質を伝えるもとになるものが遺伝子です。',
+      hint: '「遺伝子」という言葉の中にあるよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-mp4-p1', concept: 'he-mendel',
+        prompt: '純系の丸い種子（ア）をつくるエンドウと、純系のしわのある種子（イ）をつくるエンドウをかけ合わせると、子はすべて丸い種子になりました。顕性形質はア・イのどちら？',
+        figure: scene([
+          roundPea(90, 100, 34), wrinkled(230, 100, 36),
+          { type: 'region', id: 'r1', x: 90, y: 180, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 230, y: 180, r: 22, label: 'イ' },
+        ]),
+        answer: 'r1',
+        explanation: '対立形質をもつ純系どうしをかけ合わせたとき、子に現れる形質が顕性形質（優性形質）です。子はすべて丸だったので、丸（ア）が顕性形質、しわ（イ）が潜性形質です。',
+        hint: '子に現れたほうの形質だよ。',
+      }),
+      fill({
+        id: 'heredity-mp4-t1', concept: 'he-mendel', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '遺伝子の本体は[b1]という物質で、日本語では[b2]という。',
+        blanks: [
+          word('b1', ['DNA', 'デンプン', 'タンパク質'], 'DNA'),
+          word('b2', ['デオキシリボ核酸', 'アミノ酸', '脂肪酸'], 'デオキシリボ核酸'),
+        ],
+        explanation: '遺伝子の本体は**DNA**で、日本語の名前は**デオキシリボ核酸**です。DNA は染色体の中にふくまれています。',
+        hint: '英語の頭文字 3 つで表す物質だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-p2', concept: 'he-mendel',
+        prompt: '親、子、孫と、何代にもわたって同じ形質が現れる個体の集まりを何という？',
+        options: ['純系', '対立形質', '雑種'],
+        answer: 'a',
+        explanation: '代々同じ形質が現れる個体の集まりを**純系**といいます。たとえば、純系の丸い種子のエンドウは、自家受粉をくり返しても丸い種子だけをつくります。',
+        hint: '「純粋な系統」を短くした言葉だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-p3', concept: 'he-mendel',
+        prompt: 'エンドウの花のように、つぼみのうちに同じ花の中で起こる受粉を何という？',
+        options: ['自家受粉', '他家受粉', '受精'],
+        answer: 'a',
+        explanation: '同じ花（同じ個体）の中で、めしべに自分の花粉がつく受粉を**自家受粉**といいます。エンドウはつぼみのうちに自家受粉するので、純系ができやすい植物です。',
+        hint: '「自分の家」の中での受粉という意味だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-p4', concept: 'he-mendel',
+        prompt: 'エンドウを使った実験から、遺伝の規則性を見つけた科学者はだれ？',
+        options: ['メンデル', 'ダーウィン', 'ドルトン'],
+        answer: 'a',
+        explanation: 'メンデルは、エンドウの種子の形などの対立形質を何年も調べ、遺伝の規則性（分離の法則など）を見つけました。',
+        hint: 'オーストリアの修道院で、エンドウを育てて調べた人だよ。',
+      }),
+      fill({
+        id: 'heredity-mp4-p5', concept: 'he-mendel',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '丸としわのように、どちらか一方しか現れない形質どうしを[b1]という。純系どうしをかけ合わせたとき、子に現れない形質を[b2]という。',
+        blanks: [
+          word('b1', ['対立形質', '純系', '遺伝子'], '対立形質'),
+          word('b2', ['潜性形質', '顕性形質', '対立形質'], '潜性形質'),
+        ],
+        explanation: 'どちらか一方しか現れない形質どうしを**対立形質**といいます。子に現れない形質は**潜性形質**（劣性形質）、現れる形質は顕性形質（優性形質）です。',
+        hint: '「潜」は、もぐってかくれるという意味の字だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'heredity-mp4-r1', concept: 'he-mendel',
+        prompt: 'DNA は、どのような形をしている？',
+        options: ['2 本の鎖がねじれた二重らせん', '1 本のまっすぐな棒', '丸い粒'],
+        answer: 'a',
+        explanation: 'DNA は、2 本の長い鎖がねじれ合った**二重らせん**の形をしています。',
+        hint: 'らせん階段のような形が 2 本ぶんだよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-r2', concept: 'he-mendel',
+        prompt: 'DNA の二重らせんのモデルを発表した 2 人の科学者の組み合わせはどれ？',
+        options: ['ワトソンとクリック', 'メンデルとダーウィン', 'フレミングとドルトン'],
+        answer: 'a',
+        explanation: '1953 年に、ワトソンとクリックが DNA の二重らせんのモデルを発表しました。メンデルは遺伝の規則性、ダーウィンは進化論、ドルトンは原子説で知られています。',
+        hint: '20 世紀の中ごろの、2 人組の科学者だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-r3', concept: 'he-mendel', term: true,
+        prompt: '次の説明に合う言葉はどれ？「減数分裂のとき、対になっている遺伝子が分かれて、別々の生殖細胞に入ること」',
+        options: ['分離の法則', '自家受粉', '発生'],
+        answer: 'a',
+        explanation: '対になっている遺伝子が、減数分裂で分かれて別々の生殖細胞に入ることを**分離の法則**といいます。メンデルが見つけた規則性の 1 つです。',
+        hint: '遺伝子が「分かれて離れる」ことを表す言葉だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-r4', concept: 'he-mendel',
+        prompt: '純系どうしをかけ合わせたとき、子に現れるほうの形質を何という？',
+        options: ['顕性形質（優性形質）', '潜性形質（劣性形質）', '対立形質'],
+        answer: 'a',
+        explanation: '子に現れるほうの形質を**顕性形質**（優性形質）、現れないほうを潜性形質（劣性形質）といいます。「優れている」という意味ではなく、「現れやすい」という意味です。',
+        hint: '「顕」は、はっきり現れるという意味の字だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-r5', concept: 'he-reproduction',
+        prompt: '卵や精子、卵細胞や精細胞のように、子をつくるための特別な細胞をまとめて何という？',
+        options: ['生殖細胞', '体細胞', '受精卵'],
+        answer: 'a',
+        explanation: '子をつくるための特別な細胞を**生殖細胞**といいます。動物では卵と精子、植物では卵細胞と精細胞です。',
+        hint: '「生殖」のための細胞だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-r6', concept: 'he-reproduction', term: true,
+        prompt: '次の説明に合う言葉はどれ？「生殖細胞がつくられるときに起こる、染色体の数がもとの半分になる細胞分裂」',
+        options: ['減数分裂', '体細胞分裂', '分離の法則'],
+        answer: 'a',
+        explanation: '生殖細胞がつくられるときの、染色体の数が半分になる分裂を**減数分裂**といいます。',
+        hint: '数が「減る」分裂だよ。',
+      }),
+      choice({
+        id: 'heredity-mp4-r7', concept: 'he-reproduction', term: true,
+        prompt: '次の説明に合う言葉はどれ？「雌雄が関わらずに、親のからだの一部から子ができるふえ方」',
+        options: ['無性生殖', '有性生殖', '自家受粉'],
+        answer: 'a',
+        explanation: '雌雄が関わらずに子ができるふえ方を**無性生殖**といいます。分裂や栄養生殖がその例です。',
+        hint: '雌雄（性）が関わらないふえ方だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ heredity-mp5: プリント 5 遺伝の規則性（丸としわを交配／丸としわを交配２／Ａaとaaを交配） ----
+  const heredityMp5 = {
+    id: 'heredity-mp5', areaId: 'he-miniprint', title: 'プリント 5: 丸としわのかけ合わせ', minutes: 5, concepts: ['he-mendel', 'he-ratio'],
+    lessons: [
+      {
+        id: 'heredity-mp5-c1',
+        text: '純系の丸（AA）としわ（aa）をかけ合わせた子は、すべて Aa で丸になります。子（Aa）どうしをかけ合わせると、孫の遺伝子の組み合わせは AA・Aa・aa が 1：2：1 になり、形質は**丸：しわ ＝ 3：1** になります。',
+        // Aa どうしのかけ合わせの表
+        figure: scene(punnett(['AA', 'Aa', 'Aa', 'aa']).concat([
+          { type: 'text', x: 160, y: 198, text: 'AA：Aa：aa ＝ 1：2：1', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 224, text: '丸：しわ ＝ 3：1', size: 15, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'heredity-mp5-c2',
+        text: '子（Aa）と純系のしわ（aa）をかけ合わせると、Aa の生殖細胞は A と a、aa の生殖細胞は a だけなので、子の組み合わせは Aa と aa が 1：1 になります。丸としわが混ざり、**丸：しわ ＝ 1：1** になります。',
+        // Aa と aa のかけ合わせの表
+        figure: scene(crossTable(['A', 'a'], ['a', 'a'], ['Aa', 'aa', 'Aa', 'aa']).concat([
+          { type: 'text', x: 160, y: 198, text: 'Aa（丸）× aa（しわ）', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 224, text: '丸：しわ ＝ 1：1', size: 15, anchor: 'middle', bold: true },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-mp5-w1', concept: 'he-mendel',
+      prompt: '予想しよう。純系の丸い種子のエンドウと、純系のしわのある種子のエンドウをかけ合わせると、子の種子はどうなると思う？',
+      options: ['すべて丸', 'すべてしわ', '丸としわが半分ずつ'],
+      answer: 'a',
+      explanation: '純系の丸（AA）と純系のしわ（aa）の子は、すべて Aa になります。丸が顕性形質なので、子の種子はすべて丸になります。',
+      hint: '丸としわのうち、顕性形質はどちらだったかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-mp5-p1', concept: 'he-ratio',
+        prompt: '子の代（Aa）どうしをかけ合わせて、孫の代の種子をたくさん調べました。孫の種子の丸としわの数の割合を表しているのはア〜ウのどれ？（ア すべて丸、イ すべてしわ、ウ 丸 3 つにしわ 1 つの割合）',
+        figure: scene(peaBoxes().concat([
+          { type: 'region', id: 'r1', x: 56, y: 192, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 192, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 264, y: 192, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: 'Aa どうしの孫は AA：Aa：aa ＝ 1：2：1 です。AA と Aa は丸、aa はしわなので、丸：しわ ＝ 3：1 になります（ウ）。',
+        hint: '孫の代では、しわの種子も現れるよ。',
+      }),
+      fill({
+        id: 'heredity-mp5-t1', concept: 'he-mendel', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '純系の丸としわをかけ合わせると、子はすべて丸になる。このように子に現れる形質を[b1]という。減数分裂で対の遺伝子が別々の生殖細胞に入ることを[b2]という。',
+        blanks: [
+          word('b1', ['顕性形質', '潜性形質', '対立形質'], '顕性形質'),
+          word('b2', ['分離の法則', '自家受粉', '発生'], '分離の法則'),
+        ],
+        explanation: '子に現れる形質が**顕性形質**（優性形質）です。対の遺伝子が分かれて別々の生殖細胞に入ることを**分離の法則**といいます。',
+        hint: '「顕」は、はっきり現れるという意味だよ。',
+      }),
+      fill({
+        id: 'heredity-mp5-p2', concept: 'he-ratio',
+        prompt: '丸の遺伝子を A、しわの遺伝子を a とします。純系の丸（AA）と純系のしわ（aa）をかけ合わせました。空らんに入るものを選ぼう。',
+        text: '子の遺伝子の組み合わせは[b1]である。',
+        blanks: [word('b1', ['Aa', 'AA', 'aa'], 'Aa')],
+        explanation: 'AA の親の生殖細胞は A、aa の親の生殖細胞は a だけです。受精すると、子はすべて Aa になります。',
+        hint: 'それぞれの親から、遺伝子を 1 つずつ受けつぐよ。',
+      }),
+      choice({
+        id: 'heredity-mp5-p3', concept: 'he-ratio',
+        prompt: '子の代（Aa）どうしをかけ合わせたとき、孫の代に現れる遺伝子の組み合わせをすべて選んだものはどれ？',
+        options: ['AA・Aa・aa', 'Aa だけ', 'AA・aa', 'AA だけ'],
+        answer: 'a',
+        explanation: 'Aa の生殖細胞は A と a の 2 種類です。組み合わせると、AA・Aa・Aa・aa ができるので、孫には AA・Aa・aa の 3 種類が現れます。',
+        hint: '表をかいて、A と a の組み合わせを考えよう。',
+      }),
+      fill({
+        id: 'heredity-mp5-p4', concept: 'he-ratio',
+        prompt: '子の代（Aa）どうしをかけ合わせました。空らんに入る数を入れよう。',
+        text: '孫の代の種子の形の数の比は、丸：しわ ＝ [b1]：1 になる。',
+        blanks: [number('b1', 3, 0, '')],
+        explanation: '孫の遺伝子の組み合わせは AA：Aa：aa ＝ 1：2：1 です。A をもつ AA と Aa は丸なので、丸：しわ ＝ (1 ＋ 2)：1 ＝ 3：1 です。',
+        hint: 'AA と Aa は、どちらも丸になるよ。',
+      }),
+      choice({
+        id: 'heredity-mp5-p5', concept: 'he-ratio',
+        prompt: '丸の種子（Aa）をつくるエンドウと、しわの種子（aa）をつくるエンドウをかけ合わせました。子の種子の形はどうなる？',
+        options: ['丸としわが混ざり、丸：しわ ＝ 1：1', 'すべて丸', 'すべてしわ', '丸としわが混ざり、丸：しわ ＝ 3：1'],
+        answer: 'a',
+        explanation: 'Aa の生殖細胞は A と a、aa の生殖細胞は a だけです。子は Aa と aa が 1：1 でできるので、丸：しわ ＝ 1：1 になります。',
+        hint: '表をかくと、マスの中は Aa が 2 つ、aa が 2 つになるよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'heredity-mp5-r1', concept: 'he-ratio',
+        prompt: 'Aa（丸）と aa（しわ）をかけ合わせました。空らんに入るものを選ぼう。',
+        text: '子の遺伝子の組み合わせは[b1]と[b2]の 2 種類で、数の比は 1：1 である。',
+        blanks: [
+          word('b1', ['Aa', 'AA', 'aa'], 'Aa'),
+          word('b2', ['Aa', 'AA', 'aa'], 'aa'),
+        ],
+        explanation: 'Aa の生殖細胞の A・a と、aa の生殖細胞の a が組み合わさるので、子は Aa と aa になります。数の比は 1：1 です。',
+        hint: 'aa の親からは、a しか受けつがないね。',
+      }),
+      choice({
+        id: 'heredity-mp5-r2', concept: 'he-ratio',
+        prompt: '丸の種子（Aa）をつくるエンドウどうしをかけ合わせました。子の種子の丸としわの数の比はどれ？',
+        options: ['丸：しわ ＝ 3：1', '丸：しわ ＝ 1：3', '丸：しわ ＝ 1：1'],
+        answer: 'a',
+        explanation: 'Aa どうしをかけ合わせると、子は AA：Aa：aa ＝ 1：2：1 になります。AA と Aa は丸なので、丸：しわ ＝ 3：1 です。',
+        hint: '顕性の丸のほうが多く現れるよ。',
+      }),
+      choice({
+        id: 'heredity-mp5-r3', concept: 'he-mendel',
+        prompt: '純系の丸（AA）と純系のしわ（aa）をかけ合わせると、子はすべて丸になりました。顕性形質はどちら？',
+        options: ['丸', 'しわ', 'どちらでもない'],
+        answer: 'a',
+        explanation: '子（Aa）は丸としわの両方の遺伝子をもっていますが、現れたのは丸だけです。だから、丸が顕性形質、しわが潜性形質です。',
+        hint: '子に現れたほうが顕性形質だよ。',
+      }),
+      choice({
+        id: 'heredity-mp5-r4', concept: 'he-mendel',
+        prompt: '子の代（Aa）どうしをかけ合わせたとき、孫の代の AA・Aa・aa の数の比はどれ？',
+        options: ['1：2：1', '1：1：1', '3：0：1'],
+        answer: 'a',
+        explanation: 'Aa の生殖細胞は A と a が同じ数ずつできます（分離の法則）。組み合わせは AA・Aa・Aa・aa の 4 通りなので、AA：Aa：aa ＝ 1：2：1 です。',
+        hint: '表のマスを数えると、Aa は 2 つあるよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（確認問題 checkPool）
   // ================================================================
 
@@ -1018,6 +1821,14 @@
           answer: 'a',
           explanation: '先端に近い成長点では分裂したばかりの小さな細胞が多く、根もとに近いほど、大きくなった細胞が並んでいます。',
           hint: '分裂したばかりの細胞は、大きいかな、小さいかな。',
+        }),
+        choice({
+          id: 'he-division-k4', concept: 'he-division', term: true,
+          prompt: '次の説明に合う言葉はどれ？「細胞の核の中にあり、細胞分裂のときにひものように見えるもの。遺伝子をふくむ」',
+          options: ['染色体', '細胞膜', '葉緑体'],
+          answer: 'a',
+          explanation: '細胞分裂のときに核の中に見えるひものようなものを**染色体**といいます。染色体には、形質を決める遺伝子がふくまれています。',
+          hint: '染色液によく染まるよ。',
         }),
       ],
     },
@@ -1151,6 +1962,7 @@
     areas: [
       { id: 'he-cell', title: '細胞分裂と生殖', order: 1, stages: [life1, life2] },
       { id: 'he-gene', title: '遺伝と進化', order: 2, stages: [life3, life4] },
+      { id: 'he-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [heredityMp1, heredityMp2, heredityMp3, heredityMp4, heredityMp5] },
     ],
   };
 

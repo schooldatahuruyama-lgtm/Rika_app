@@ -7,8 +7,8 @@ const config = require('../js/config.js');
 const light = require('../content/light.js');
 const richtext = require('../js/richtext.js');
 
-// 4 領域 × 2 ステージ（Task 8 で直進・反射、Task 10 で屈折・凸レンズ）
-const STAGE_COUNT = 8;
+// 4 領域 × 2 ステージ（Task 8 で直進・反射、Task 10 で屈折・凸レンズ）＋ ミニプリントの領域の 4 ステージ（light-mp1〜mp4）
+const STAGE_COUNT = 12;
 const FIGURE_TYPES = ['figure-choice', 'ray-draw', 'drag'];
 
 const stages = light.unit.areas.flatMap(a => a.stages);
@@ -122,9 +122,9 @@ test('図の item の type はすべて figures.js が描ける種類', () => {
   });
 });
 
-test('動く図（anim）を持つカードは anim が anim.KINDS にあり、静止図（figure）も持つ。straight-2-c3 以外の 23 枚', () => {
+test('動く図（anim）を持つカードは anim が anim.KINDS にあり、静止図（figure）も持つ。straight-2-c3 以外の 23 枚（ミニプリントのカードは anim なしなので除く）', () => {
   const { KINDS } = require('../js/anim.js');
-  const lessons = stages.flatMap(s => s.lessons);
+  const lessons = stages.filter(s => !s.id.startsWith('light-mp')).flatMap(s => s.lessons);
   const cards = lessons.filter(c => c.anim !== undefined);
   assert.equal(cards.length, 23);
   assert.deepEqual(cards.map(c => c.id).sort(), lessons.map(c => c.id).filter(id => id !== 'straight-2-c3').sort());
@@ -149,6 +149,11 @@ const TERM_ALLOW = {
   'refract-2': ['全反射', '入射角', '反射角'],
   'lens-1': ['凸レンズ', '光軸', '焦点', '焦点距離'],
   'lens-2': ['実像', '虚像'],
+  // ミニプリント（実装報告 20261106-130000_ミニプリント反映_1A_result）
+  'light-mp1': ['光源', '反射', '入射光', '反射光', '入射角', '反射角'],
+  'light-mp2': ['屈折', '境界面'],
+  'light-mp3': ['凸レンズ', '光軸', '焦点', '焦点距離', '実像', '虚像'],
+  'light-mp4': ['焦点', '実像', '虚像'],
 };
 // 許可された語が文に出てこないカード（文を変えない約束なので、用語なしのままにする）
 const NO_TERM_CARDS = ['straight-2-c1', 'straight-2-c3', 'refract-2-c1', 'refract-2-c2'];

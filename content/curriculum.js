@@ -17,6 +17,7 @@
   // 形: { id, title, grade: 1|2|3, field: '物理'|'化学'|'生物'|'地学', mascot: 'A'〜'F' }
   const UNITS = [
     // 1 年
+    { id: 'basics',          title: '観察と実験の基本',         grade: 1, field: '生物', mascot: 'A' },
     { id: 'light',           title: '光の世界',                 grade: 1, field: '物理', mascot: 'E' },
     { id: 'sound',           title: '音の世界',                 grade: 1, field: '物理', mascot: 'E' },
     { id: 'force',           title: '力のはたらき',             grade: 1, field: '物理', mascot: 'E' },

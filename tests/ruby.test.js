@@ -74,6 +74,27 @@ test('parts: 辞書のすべての語が漢字の部分に読みを持つ（空�
   });
 });
 
+test('annotate: 数字（半角・全角）＋空白のあとの 月・日 は がつ・にち（辞書の つき・ひ より優先）', () => {
+  assert.deepEqual(ruby.annotate('4 月 1 日に', WORDS), [
+    { text: '4 ', reading: null },
+    { text: '月', reading: 'がつ' },
+    { text: ' 1 ', reading: null },
+    { text: '日', reading: 'にち' },
+    { text: 'に', reading: null },
+  ]);
+  assert.deepEqual(ruby.annotate('１２月３日', WORDS), [
+    { text: '１２', reading: null }, { text: '月', reading: 'がつ' },
+    { text: '３', reading: null }, { text: '日', reading: 'にち' },
+  ]);
+  assert.deepEqual(ruby.annotate('10　月', { 月: 'つき' }), [{ text: '10　', reading: null }, { text: '月', reading: 'がつ' }]);
+  // 数字のあとでない 月・日 は辞書どおり
+  assert.deepEqual(ruby.annotate('月の満ち欠け', WORDS)[0], { text: '月', reading: 'つき' });
+  assert.deepEqual(ruby.annotate('日の出', WORDS)[0], { text: '日', reading: 'ひ' });
+  // 辞書のもっと長い語（日目・月ごろ）はそちらを使う
+  assert.deepEqual(ruby.annotate('1 日目', WORDS)[1], { text: '日目', reading: 'にちめ' });
+  assert.deepEqual(ruby.annotate('3 月ごろ', WORDS)[1], { text: '月ごろ', reading: 'がつごろ' });
+});
+
 // ---- 誤読の回帰テスト（レビューで見つかった文脈で読みが変わる語） ----
 
 // 文を辞書で読んだ読み（漢字の部分は読み、ほかはそのまま）

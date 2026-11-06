@@ -968,6 +968,646 @@
   ];
 
   // ================================================================
+  // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/state-change.md）
+  // ================================================================
+
+  // 液体のロウを冷やして固めたときの表面（ビーカーの底の中央 (cx, 190)）。kind は 'dent'（中央がくぼむ）| 'flat' | 'bulge'
+  function mpWaxItems(cx, kind) {
+    const top = {
+      dent: [[cx - 33, 140], [cx - 16, 146], [cx, 154], [cx + 16, 146], [cx + 33, 140]],
+      flat: [[cx - 33, 146], [cx + 33, 146]],
+      bulge: [[cx - 33, 150], [cx - 16, 142], [cx, 136], [cx + 16, 142], [cx + 33, 150]],
+    }[kind];
+    return [
+      { type: 'polygon', points: [[cx - 33, 188]].concat(top, [[cx + 33, 188]]), fill: '#F4F0E0', stroke: 'none' },
+      { type: 'beaker', x: cx, y: 190, width: 70, height: 90, level: 0 },
+    ];
+  }
+  // ロウの固まり方を選ぶ図（ア 中央がくぼむ・イ 平ら・ウ 中央が盛り上がる）
+  const MP_WAX_Q = scene([].concat(mpWaxItems(55, 'dent'), mpWaxItems(160, 'flat'), mpWaxItems(265, 'bulge'), [
+    { type: 'text', x: 160, y: 40, text: '固まったロウの表面（横から見た図）', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 55, y: 216, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 216, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 265, y: 216, r: 22, label: 'ウ' },
+  ]));
+
+  // 物質の融点・沸点の表（℃）
+  const MP_POINTS = [['鉄', 1535, 2750], ['アルミニウム', 660, 2467], ['食塩', 801, 1413], ['水', 0, 100], ['エタノール', -115, 78], ['酸素', -218, -183]];
+  function mpPointTable() {
+    const x0 = 40, y0 = 28, w = 240, headH = 26, rowH = 30;
+    const items = [
+      { type: 'rect', x: x0, y: y0, width: w, height: headH + rowH * MP_POINTS.length, fill: 'white' },
+      { type: 'line', points: [[x0 + 110, y0], [x0 + 110, y0 + headH + rowH * MP_POINTS.length]], color: 'line', width: 1 },
+      { type: 'text', x: x0 + 8, y: y0 + 18, text: '物質', size: 12 },
+      { type: 'text', x: x0 + 145, y: y0 + 18, text: '融点〔℃〕', size: 12, anchor: 'middle' },
+      { type: 'text', x: x0 + 208, y: y0 + 18, text: '沸点〔℃〕', size: 12, anchor: 'middle' },
+    ];
+    MP_POINTS.forEach(([name, mp, bp], j) => {
+      const top = y0 + headH + rowH * j;
+      items.push({ type: 'line', points: [[x0, top], [x0 + w, top]], color: 'line', width: 1 });
+      items.push({ type: 'text', x: x0 + 8, y: top + 20, text: name, size: 13 });
+      items.push({ type: 'text', x: x0 + 145, y: top + 20, text: String(mp).replace('-', '−'), size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: x0 + 208, y: top + 20, text: String(bp).replace('-', '−'), size: 13, anchor: 'middle' });
+    });
+    return scene(items);
+  }
+
+  // 加熱した時間と温度の表（0〜8 分）。temps は 9 つの温度
+  function mpTimeTableItems(title, temps, y0) {
+    const x0 = 8, nameW = 52, colW = 28;
+    const items = [
+      { type: 'text', x: 160, y: y0 - 8, text: title, size: 13, anchor: 'middle' },
+      { type: 'rect', x: x0, y: y0, width: nameW + colW * 9, height: 56, fill: 'white' },
+      { type: 'line', points: [[x0, y0 + 28], [x0 + nameW + colW * 9, y0 + 28]], color: 'line', width: 1 },
+      { type: 'line', points: [[x0 + nameW, y0], [x0 + nameW, y0 + 56]], color: 'line', width: 1 },
+      { type: 'text', x: x0 + 4, y: y0 + 19, text: '時間〔分〕', size: 12 },
+      { type: 'text', x: x0 + 4, y: y0 + 47, text: '温度〔℃〕', size: 12 },
+    ];
+    temps.forEach((t, i) => {
+      const cx = x0 + nameW + colW * i + colW / 2;
+      items.push({ type: 'text', x: cx, y: y0 + 19, text: String(i), size: 12, anchor: 'middle' });
+      items.push({ type: 'text', x: cx, y: y0 + 47, text: String(t), size: 12, anchor: 'middle' });
+    });
+    return items;
+  }
+  const MP_ETHANOL = [26, 43, 60, 78, 78, 78, 78, 78, 78];
+  const MP_MIX = [26, 43, 60, 78, 79, 80, 82, 83, 84];
+
+  // 表の温度をかいた小さなグラフ（横 0〜8 分は x 50〜290、たて 20〜100 ℃ は y 226〜82）。sets は [[temps, color, name], ...]
+  function mpGraphItems(sets) {
+    const gx = m => 50 + 30 * m, gy = t => 226 - 1.8 * (t - 20);
+    const items = [
+      { type: 'line', points: [[50, 76], [50, 226], [298, 226]], width: 2 },
+      { type: 'text', x: 44, y: gy(100) + 4, text: '100', size: 12, anchor: 'end' },
+      { type: 'text', x: 44, y: gy(60) + 4, text: '60', size: 12, anchor: 'end' },
+      { type: 'line', points: [[50, gy(100)], [290, gy(100)]], color: 'glass', width: 1 },
+      { type: 'line', points: [[50, gy(60)], [290, gy(60)]], color: 'glass', width: 1 },
+    ];
+    sets.forEach(([temps, color, name, ty]) => {
+      items.push({ type: 'line', points: temps.map((t, i) => [gx(i), gy(t)]), color, width: 3 });
+      items.push({ type: 'text', x: 296, y: ty, text: name, size: 12, color, anchor: 'end' });
+    });
+    return items;
+  }
+
+  // 集めた順の試験管 3 本（左から 1 本目・2 本目・3 本目）
+  const MP_TUBES_Q = scene([
+    { type: 'text', x: 160, y: 30, text: '赤ワインを加熱して集めた順', size: 14, anchor: 'middle' },
+    { type: 'tube', x: 70, y: 170, height: 100, level: 0.3 },
+    { type: 'tube', x: 160, y: 170, height: 100, level: 0.3 },
+    { type: 'tube', x: 250, y: 170, height: 100, level: 0.3 },
+    { type: 'text', x: 70, y: 192, text: '1 本目', size: 13, anchor: 'middle' },
+    { type: 'text', x: 160, y: 192, text: '2 本目', size: 13, anchor: 'middle' },
+    { type: 'text', x: 250, y: 192, text: '3 本目', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 70, y: 218, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 218, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 250, y: 218, r: 22, label: 'ウ' },
+  ]);
+
+  // 加熱グラフ（heatGraphItems）の 3 か所を選ぶ図: ア 0 ℃ で平ら・イ 上がっている途中・ウ 100 ℃ で平ら
+  const MP_HEAT_Q = scene(heatGraphItems().concat([
+    { type: 'region', id: 'r1', x: 105, y: 160, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 165, y: 105, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 245, y: 50, r: 22, label: 'ウ' },
+  ]));
+
+  // ---- ステージ state-change-mp1: プリント 1（状態変化と体積・質量） ----
+  const scMp1 = {
+    id: 'state-change-mp1', areaId: 'state-change-miniprint', title: 'プリント 1: 状態変化と体積・質量', minutes: 5, concepts: ['sc-change'],
+    lessons: [
+      {
+        id: 'state-change-mp1-c1',
+        text: '物質は温度によって、固体・液体・気体とすがたを変えます。これを**状態変化**といいます。加熱すると固体 → 液体 → 気体と変わります。ドライアイスのように、固体から直接気体になる物質もあります。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 150, width: 80, height: 40, fill: 'white', label: '固体' },
+          { type: 'rect', x: 220, y: 150, width: 80, height: 40, fill: 'white', label: '液体' },
+          { type: 'rect', x: 120, y: 30, width: 80, height: 40, fill: 'white', label: '気体' },
+          { type: 'arrow', x1: 104, y1: 162, x2: 216, y2: 162, color: 'orange' },
+          { type: 'arrow', x1: 216, y1: 182, x2: 104, y2: 182, color: 'blue' },
+          { type: 'arrow', x1: 252, y1: 146, x2: 198, y2: 76, color: 'orange' },
+          { type: 'arrow', x1: 70, y1: 146, x2: 124, y2: 76, color: 'orange' },
+          { type: 'text', x: 160, y: 218, text: 'オレンジ: 加熱　青: 冷やす', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'state-change-mp1-c2',
+        text: '液体のロウを冷やして固体にすると、体積が小さくなり、表面の中央がくぼみます。質量は変わりません。多くの物質はロウと同じですが、**水**は例外で、氷になると体積が大きくなります。',
+        figure: scene(mpWaxItems(90, 'dent').concat([
+          { type: 'text', x: 90, y: 214, text: 'ロウ: 体積が減る', size: 13, anchor: 'middle' },
+          { type: 'beaker', x: 230, y: 190, width: 70, height: 90, level: 0.55 },
+          { type: 'polygon', points: [[197, 188], [197, 136], [230, 130], [263, 136], [263, 188]], fill: 'sky', stroke: 'none' },
+          { type: 'text', x: 230, y: 214, text: '水 → 氷: 体積が増える', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 40, text: '質量はどちらも変わらない', size: 14, anchor: 'middle', bold: true },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'state-change-mp1-w1', concept: 'sc-change',
+      prompt: '予想しよう。液体のロウをビーカーに入れて冷やし、固体にしました。表面はどうなると思う？',
+      options: ['中央がくぼむ', '中央が盛り上がる', '平らなまま'],
+      answer: 'a',
+      explanation: 'ロウは固体になると体積が小さくなるので、表面の中央がくぼみます。体積と質量がどう変わるか、このステージで確かめよう。',
+      hint: '固体になると、粒子どうしの間がつまるよ。',
+    }),
+    problems: [
+      fill({
+        id: 'state-change-mp1-p1', concept: 'sc-change',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '水は、温度によって、氷のような[b1]、ふつうの水のような[b2]、水蒸気のような[b3]とすがたを変える。',
+        blanks: [
+          word('b1', ['固体', '液体', '気体'], '固体'),
+          word('b2', ['固体', '液体', '気体'], '液体'),
+          word('b3', ['固体', '液体', '気体'], '気体'),
+        ],
+        explanation: '氷は固体、水は液体、水蒸気は気体です。同じ水という物質が、温度によってすがたを変えています。',
+        hint: '形が決まっているもの・流れるもの・目に見えないもの、の順だよ。',
+      }),
+      fill({
+        id: 'state-change-mp1-t1', concept: 'sc-change', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '物質が温度によって、固体・液体・気体とすがたを変えることを[b1]という。',
+        blanks: [word('b1', ['状態変化', '化学変化', '蒸留'], '状態変化')],
+        explanation: '温度によって物質の状態（すがた）が変わることを**状態変化**といいます。物質そのものは変わりません。',
+        hint: '「状態」が「変化」する、という言葉だよ。',
+      }),
+      figureChoice({
+        id: 'state-change-mp1-p2', concept: 'sc-change',
+        prompt: '液体のロウを冷やして固めました。固まったロウの表面はどうなる？ ア 中央がくぼむ、イ 平らになる、ウ 中央が盛り上がる、から選ぼう。',
+        figure: MP_WAX_Q,
+        answer: 'r1',
+        explanation: 'ロウは固体になると体積が小さくなります。まわりから先に固まり、中央が最後に固まって縮むので、中央がくぼみます。',
+        hint: '固体になると体積は小さくなるね。',
+      }),
+      choice({
+        id: 'state-change-mp1-p3', concept: 'sc-change',
+        prompt: '次の変化のうち、加熱したときに起こるものの組み合わせはどれ？',
+        options: ['固体 → 液体、液体 → 気体、固体 → 気体', '液体 → 固体、気体 → 液体、気体 → 固体', '固体 → 液体、気体 → 液体、気体 → 固体'],
+        answer: 'a',
+        explanation: '加熱すると、固体 → 液体 → 気体の向きに変わります。固体から直接気体になる変化もあります。逆の向きは、冷やしたときに起こります。',
+        hint: '温度が上がると、粒子の動きがはげしくなる向きだよ。',
+      }),
+      choice({
+        id: 'state-change-mp1-p4', concept: 'sc-change',
+        prompt: '水では、固体と気体の間で直接すがたが変わるようすは分かりにくいです。固体から直接気体に変わるようすが分かりやすい物質はどれ？',
+        options: ['ドライアイス（二酸化炭素）', '食塩', '鉄'],
+        answer: 'a',
+        explanation: 'ドライアイスは二酸化炭素の固体で、液体にならずに直接気体の二酸化炭素に変わります。',
+        hint: 'とけて液体にならずに、小さくなっていく物質だよ。',
+      }),
+      fill({
+        id: 'state-change-mp1-p5', concept: 'sc-change',
+        prompt: '液体を冷やして固体にしました。空らんに入る言葉を選ぼう。',
+        text: '水が氷になると、体積は[b1]、質量は[b2]。ロウが液体から固体になると、体積は[b3]、質量は[b4]。',
+        blanks: [
+          word('b1', ['増える', '減る', '変わらない'], '増える'),
+          word('b2', ['増える', '減る', '変わらない'], '変わらない'),
+          word('b3', ['増える', '減る', '変わらない'], '減る'),
+          word('b4', ['増える', '減る', '変わらない'], '変わらない'),
+        ],
+        explanation: '状態変化では、粒子の数は変わらないので質量は変わりません。体積は、ロウは減り、水は例外で増えます。',
+        hint: '質量は粒子の数で決まるよ。体積は水だけが例外だったね。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'state-change-mp1-r1', concept: 'sc-change',
+        prompt: 'ロウを観察しました。空らんに入る言葉を選ぼう。',
+        text: '液体のロウは[b1]で、冷えて固体になると[b2]になる。',
+        blanks: [
+          word('b1', ['無色透明', '白色', '黒色'], '無色透明'),
+          word('b2', ['無色透明', '白色', '黒色'], '白色'),
+        ],
+        explanation: 'とけた液体のロウはすきとおっていますが、固まると白くにごった固体になります。',
+        hint: 'ろうそくのしずくが固まるようすを思い出そう。',
+      }),
+      choice({
+        id: 'state-change-mp1-r2', concept: 'sc-change',
+        prompt: 'ロウが液体から固体になると、体積はどうなるといえる？',
+        options: ['小さくなる', '大きくなる', '変わらない'],
+        answer: 'a',
+        explanation: '固まったロウの表面の中央がくぼんだことから、体積が小さくなったことが分かります。',
+        hint: '表面の中央がくぼんだね。',
+      }),
+      choice({
+        id: 'state-change-mp1-r3', concept: 'sc-change',
+        prompt: '水やロウ以外の多くの物質は、液体から固体になると体積はどうなる？',
+        options: ['ロウと同じで小さくなる', '水と同じで大きくなる', '物質によらず変わらない'],
+        answer: 'a',
+        explanation: '多くの物質は、ロウと同じように固体になると体積が小さくなります。氷になると体積が大きくなる水は例外です。',
+        hint: '水は例外だったね。',
+      }),
+      choice({
+        id: 'state-change-mp1-r4', concept: 'sc-change',
+        prompt: '次の変化のうち、冷やしたときに起こるものはどれ？',
+        options: ['水蒸気が水になる', '氷が水になる', '水が水蒸気になる'],
+        answer: 'a',
+        explanation: '冷やすと、気体 → 液体 → 固体の向きに変わります。水蒸気（気体）が水（液体）になるのは冷やしたときです。',
+        hint: '冷やすと、粒子の動きがおだやかになる向きだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ state-change-mp2: プリント 2（融点・沸点、エタノールの沸騰） ----
+  const scMp2 = {
+    id: 'state-change-mp2', areaId: 'state-change-miniprint', title: 'プリント 2: 融点・沸点を読む', minutes: 5, concepts: ['sc-point'],
+    lessons: [
+      {
+        id: 'state-change-mp2-c1',
+        text: '固体がとけて液体になるときの温度を**融点**、液体が沸騰するときの温度を**沸点**といいます。水の融点は 0 ℃、沸点は 100 ℃ です。とけている間や沸騰している間は、温度が一定になります。',
+        figure: scene(heatGraphItems().concat([
+          { type: 'text', x: 105, y: 150, text: '融点', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 245, y: 42, text: '沸点', size: 13, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'state-change-mp2-c2',
+        text: '融点より低い温度では固体、融点と沸点の間では液体、沸点より高い温度では気体です。酸素の沸点は −183 ℃ なので、0 ℃ では気体です。表から状態を読み取ろう。',
+        figure: mpPointTable(),
+      },
+      {
+        id: 'state-change-mp2-c3',
+        text: 'エタノールは燃えやすいので、直接火で加熱せず、湯で温めます。急な沸騰を防ぐため**沸騰石**を入れます。沸騰では、液体の表面だけでなく内部からも気体に変わります。表面から変わることを**蒸発**といいます。',
+        figure: scene([
+          { type: 'beaker', x: 160, y: 210, width: 150, height: 110, level: 0.6 },
+          { type: 'tube', x: 160, y: 200, height: 120, level: 0.35 },
+          { type: 'circle', x: 156, y: 194, r: 3, fill: 'ink', stroke: 'none' },
+          { type: 'circle', x: 164, y: 192, r: 3, fill: 'ink', stroke: 'none' },
+          { type: 'text', x: 96, y: 236, text: '湯', size: 13 },
+          { type: 'text', x: 246, y: 140, text: 'エタノール', size: 13 },
+          { type: 'line', points: [[244, 136], [174, 176]], color: 'line', width: 1 },
+          { type: 'text', x: 20, y: 60, text: '沸騰石', size: 13 },
+          { type: 'line', points: [[60, 64], [152, 192]], color: 'line', width: 1 },
+          { type: 'text', x: 160, y: 40, text: '直接火で加熱しない', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'state-change-mp2-w1', concept: 'sc-point',
+      prompt: '予想しよう。氷を加熱し続けると、氷がとけている間の温度はどうなると思う？',
+      options: ['0 ℃ のまま変わらない', '少しずつ上がり続ける', '少しずつ下がる'],
+      answer: 'a',
+      explanation: '氷がとけている間は、加えた熱がとけるために使われるので、温度は 0 ℃ のまま変わりません。グラフと表の読み方を、このステージで練習しよう。',
+      hint: '氷水の温度を思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'state-change-mp2-p1', concept: 'sc-point',
+        prompt: '図は、氷を加熱したときの温度の変化です。氷がとけて水になっている間を表すのはどこ？ ア〜ウから選ぼう。',
+        figure: MP_HEAT_Q,
+        answer: 'r1',
+        explanation: '氷がとけている間は、0 ℃ で温度が一定になります（ア）。この温度が融点です。ウは水が沸騰している間で、100 ℃ の沸点です。',
+        hint: '0 ℃ のところで平らになっている部分だよ。',
+      }),
+      fill({
+        id: 'state-change-mp2-t1', concept: 'sc-point', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '固体がとけて液体になるときの温度を[b1]、液体が沸騰するときの温度を[b2]という。',
+        blanks: [
+          word('b1', ['融点', '沸点', '体温'], '融点'),
+          word('b2', ['融点', '沸点', '体温'], '沸点'),
+        ],
+        explanation: 'とける温度が**融点**、沸騰する温度が**沸点**です。純粋な物質では、物質ごとに決まっています。',
+        hint: '「融」はとける、「沸」はわくという意味だよ。',
+      }),
+      fill({
+        id: 'state-change-mp2-p2', concept: 'sc-point',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水の融点は[b1]、沸点は[b2]である。',
+        blanks: [number('b1', 0, 0, '℃'), number('b2', 100, 0, '℃')],
+        explanation: '水は 0 ℃ でとけ（こおり）、100 ℃ で沸騰します。',
+        hint: '氷がとける温度と、水がわく温度だよ。',
+      }),
+      choice({
+        id: 'state-change-mp2-p3', concept: 'sc-point',
+        prompt: '氷を加熱したとき、0 ℃ で温度が一定になっている間、ビーカーの中はどんな状態？',
+        options: ['氷と水が混じっている', '氷だけ', '水と水蒸気が混じっている'],
+        answer: 'a',
+        explanation: '0 ℃ で温度が一定の間は、氷がとけている途中なので、氷と水が混じっています。氷がすべてとけると、また温度が上がりはじめます。',
+        hint: 'とけている途中のようすを考えよう。',
+      }),
+      fill({
+        id: 'state-change-mp2-p4', concept: 'sc-point',
+        prompt: '表の融点・沸点を見て、空らんに入る言葉を選ぼう。',
+        figure: mpPointTable(),
+        text: '鉄を 1000 ℃ にすると[b1]、水を 200 ℃ にすると[b2]、酸素を 0 ℃ にすると[b3]である。',
+        blanks: [
+          word('b1', ['固体', '液体', '気体'], '固体'),
+          word('b2', ['固体', '液体', '気体'], '気体'),
+          word('b3', ['固体', '液体', '気体'], '気体'),
+        ],
+        explanation: '鉄の 1000 ℃ は融点 1535 ℃ より低いので固体です。水の 200 ℃ は沸点 100 ℃ より高いので気体、酸素の 0 ℃ も沸点 −183 ℃ より高いので気体です。',
+        hint: 'その温度が、融点より低いか、沸点より高いかを比べよう。',
+      }),
+      choice({
+        id: 'state-change-mp2-p5', concept: 'sc-point',
+        prompt: '表の物質のうち、20 ℃ で液体のものをすべて選んだものはどれ？',
+        figure: mpPointTable(),
+        options: ['水とエタノール', '水だけ', 'エタノールと酸素'],
+        answer: 'a',
+        explanation: '20 ℃ が融点と沸点の間にある物質は液体です。水（0〜100 ℃）とエタノール（−115〜78 ℃）があてはまります。酸素は 20 ℃ では気体、鉄・アルミニウム・食塩は固体です。',
+        hint: '融点 ＜ 20 ℃ ＜ 沸点 になる物質をさがそう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'state-change-mp2-r1', concept: 'sc-point',
+        prompt: '図は、氷を加熱したときの温度の変化です。水が沸騰している間を表すのはどこ？ ア〜ウから選ぼう。',
+        figure: MP_HEAT_Q,
+        answer: 'r3',
+        explanation: '水が沸騰している間は、100 ℃ で温度が一定になります（ウ）。この温度が沸点です。',
+        hint: '100 ℃ のところで平らになっている部分だよ。',
+      }),
+      choice({
+        id: 'state-change-mp2-r2', concept: 'sc-point',
+        prompt: 'エタノールを加熱して、1 分ごとの温度を表にしました。表から分かる、沸騰しているときの温度のようすはどれ？',
+        figure: scene(mpTimeTableItems('エタノールを加熱したときの温度', MP_ETHANOL, 70)),
+        options: ['78 ℃ で一定になる', '上がり続ける', '下がっていく'],
+        answer: 'a',
+        explanation: '3 分からあとは、ずっと 78 ℃ です。エタノールは純粋な物質なので、沸騰している間は温度が沸点の 78 ℃ で一定になります。',
+        hint: '3 分からあとの温度を見よう。',
+      }),
+      fill({
+        id: 'state-change-mp2-r3', concept: 'sc-point',
+        prompt: '表を見て、空らんに入る数を入れよう。',
+        figure: scene(mpTimeTableItems('エタノールを加熱したときの温度', MP_ETHANOL, 70)),
+        text: 'エタノールの温度が上がらなくなった（沸騰しはじめた）のは、加熱してから[b1]後で、そのときの温度は[b2]である。',
+        blanks: [number('b1', 3, 0, '分'), number('b2', 78, 0, '℃')],
+        explanation: '3 分で 78 ℃ になり、それからは 78 ℃ のままです。ここから沸騰が続いています。',
+        hint: '温度が同じ数になりはじめる時間をさがそう。',
+      }),
+      choice({
+        id: 'state-change-mp2-r4', concept: 'sc-point',
+        prompt: 'エタノールを加熱するとき、直接火で加熱しないのはなぜ？',
+        options: ['エタノールは燃えやすい（火がつきやすい）から', 'エタノールは温まりにくいから', 'エタノールはすぐにこおるから'],
+        answer: 'a',
+        explanation: 'エタノールは燃えやすく、気体になったものに火がつくと危険です。湯を入れたビーカーで温める（湯せん）ようにします。',
+        hint: 'アルコールランプの燃料にも使われる物質だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ state-change-mp3: プリント 3（混合物の沸点） ----
+  const scMp3 = {
+    id: 'state-change-mp3', areaId: 'state-change-miniprint', title: 'プリント 3: 混合物の沸点', minutes: 5, concepts: ['sc-mixture', 'sc-point'],
+    lessons: [
+      {
+        id: 'state-change-mp3-c1',
+        text: '純粋な物質は沸点が決まっていて、沸騰している間は温度が一定です。水とエタノールの**混合物**は決まった沸点を示さず、78 ℃ ごろから沸騰しはじめ、温度は少しずつ上がり続けます。',
+        figure: scene(mpGraphItems([[MP_ETHANOL, 'blue', 'エタノール', 136], [MP_MIX, 'orange', '混合物', 102]]).concat([
+          { type: 'text', x: 160, y: 22, text: 'たて: 温度　横: 加熱した時間（0〜8 分）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 44, text: '純粋な物質: 温度が一定', size: 13, anchor: 'middle', color: 'blue' },
+          { type: 'text', x: 160, y: 64, text: '混合物: 少しずつ上がる', size: 13, anchor: 'middle', color: 'orange' },
+        ])),
+      },
+      {
+        id: 'state-change-mp3-c2',
+        text: '表は、水とエタノールの混合物を加熱したときの温度です。3 分で 78 ℃ になってから、上がり方がゆるやかになります。沸騰が続いても温度は一定にならず、8 分で 84 ℃ まで上がっています。',
+        figure: scene(mpTimeTableItems('水とエタノールの混合物を加熱したときの温度', MP_MIX, 90)),
+      },
+    ],
+    warmup: choice({
+      id: 'state-change-mp3-w1', concept: 'sc-mixture',
+      prompt: '予想しよう。水とエタノールの混合物を加熱しました。沸騰がはじまったあと、温度はどうなると思う？',
+      options: ['少しずつ上がり続ける', '一定になる', '下がっていく'],
+      answer: 'a',
+      explanation: '混合物は決まった沸点を示さないので、沸騰がはじまっても温度は少しずつ上がり続けます。表とグラフで確かめよう。',
+      hint: '純粋な物質と混合物のちがいを考えよう。',
+    }),
+    problems: [
+      fill({
+        id: 'state-change-mp3-p1', concept: 'sc-point',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水の沸点は[b1]、エタノールの沸点は[b2]である。',
+        blanks: [number('b1', 100, 0, '℃'), number('b2', 78, 0, '℃')],
+        explanation: '水の沸点は 100 ℃、エタノールの沸点は 78 ℃ です。エタノールのほうが低い温度で沸騰します。',
+        hint: 'エタノールの沸点は、水より低かったね。',
+      }),
+      fill({
+        id: 'state-change-mp3-t1', concept: 'sc-mixture', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水のように 1 種類の物質でできたものを[b1]、水とエタノールのように、いくつかの物質が混じり合ったものを[b2]という。',
+        blanks: [
+          word('b1', ['純粋な物質', '混合物'], '純粋な物質'),
+          word('b2', ['純粋な物質', '混合物'], '混合物'),
+        ],
+        explanation: '1 種類の物質でできたものが**純粋な物質**、いくつかの物質が混じり合ったものが**混合物**です。',
+        hint: '「混じり合った物」だよ。',
+      }),
+      figureChoice({
+        id: 'state-change-mp3-p2', concept: 'sc-mixture',
+        prompt: '図は、3 つの液体を加熱したときの温度の変化です。水とエタノールの混合物のグラフはどれ？ ア〜ウから選ぼう。',
+        figure: threeGraphsScene(['ethanol', 'mix', 'water']),
+        answer: 'r2',
+        explanation: '混合物は決まった沸点がなく、沸騰しはじめても温度が少しずつ上がり続けます（イ）。アはエタノール、ウは水で、どちらも純粋な物質なので途中から平らになります。',
+        hint: '途中から平らにならないグラフをさがそう。',
+      }),
+      fill({
+        id: 'state-change-mp3-p3', concept: 'sc-mixture',
+        prompt: '表を見て、空らんに入る数を入れよう。',
+        figure: scene(mpTimeTableItems('水とエタノールの混合物を加熱したときの温度', MP_MIX, 90)),
+        text: '温度の上がり方がゆるやかになり沸騰しはじめたのは、加熱してから約[b1]後である。8 分後の温度は[b2]である。',
+        blanks: [number('b1', 3, 0, '分'), number('b2', 84, 0, '℃')],
+        explanation: '0〜3 分は 17〜18 ℃ ずつ上がっていますが、3 分（78 ℃）からは 1〜2 ℃ ずつしか上がらなくなります。ここで沸騰がはじまっています。8 分後は 84 ℃ です。',
+        hint: '1 分ごとの上がり方が急に小さくなる時間をさがそう。',
+      }),
+      choice({
+        id: 'state-change-mp3-p4', concept: 'sc-mixture',
+        prompt: '表から、水とエタノールの混合物は、沸騰したあと温度がどうなるといえる？',
+        figure: scene(mpTimeTableItems('水とエタノールの混合物を加熱したときの温度', MP_MIX, 90)),
+        options: ['少しずつ上がり続ける', '78 ℃ で一定になる', '急に 100 ℃ になる'],
+        answer: 'a',
+        explanation: '3 分からあとも 79、80、82、83、84 ℃ と少しずつ上がり続けています。混合物は、沸騰しても温度が一定になりません。',
+        hint: '3 分からあとの温度を順に見よう。',
+      }),
+      choice({
+        id: 'state-change-mp3-p5', concept: 'sc-mixture',
+        prompt: '純粋な物質と混合物の沸点のちがいとして正しいのはどれ？',
+        options: ['純粋な物質は沸点が決まっているが、混合物は決まった沸点を示さない', '混合物のほうが、必ず沸点が高い', 'どちらも沸騰している間は温度が一定になる'],
+        answer: 'a',
+        explanation: '純粋な物質は沸点が決まっていて、沸騰中は温度が一定です。混合物は決まった沸点がなく、沸騰しても温度が少しずつ変わります。',
+        hint: 'グラフが平らになるかどうかのちがいだよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'state-change-mp3-r1', concept: 'sc-mixture',
+        prompt: '図は、3 つの液体を加熱したときの温度の変化です。エタノール（純粋な物質）のグラフはどれ？ ア〜ウから選ぼう。',
+        figure: threeGraphsScene(['ethanol', 'mix', 'water']),
+        answer: 'r1',
+        explanation: 'エタノールは純粋な物質なので、沸点の 78 ℃ で温度が一定になります。水（ウ）より低い温度で平らになっているアがエタノールです。',
+        hint: '低い温度で平らになっているグラフだよ。',
+      }),
+      choice({
+        id: 'state-change-mp3-r2', concept: 'sc-mixture',
+        prompt: '加熱したときの温度の変化を調べると、ある液体が純粋な物質か混合物かを見分けられます。混合物だと分かるのはどんなとき？',
+        options: ['沸騰しても温度が上がり続けるとき', '沸騰すると温度が一定になるとき', '加熱してもすぐに沸騰しないとき'],
+        answer: 'a',
+        explanation: '沸騰しても温度が一定にならず上がり続けるなら、決まった沸点がないので混合物と考えられます。',
+        hint: '混合物は決まった沸点がなかったね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ state-change-mp4: プリント 4（赤ワインの蒸留、石油の分留） ----
+  const scMp4 = {
+    id: 'state-change-mp4', areaId: 'state-change-miniprint', title: 'プリント 4: 蒸留と石油の分留', minutes: 5, concepts: ['sc-distill'],
+    lessons: [
+      {
+        id: 'state-change-mp4-c1',
+        text: '液体を沸騰させ、出てくる気体を冷やして再び液体として取り出すことを**蒸留**といいます。赤ワイン（水とエタノールなど）を蒸留すると、沸点の低いエタノールを多くふくむ液が先に出てきます。',
+        figure: scene(distillItems({ thermo: 84 }).concat([
+          { type: 'text', x: 240, y: 30, text: '赤ワインの蒸留', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 300, y: 120, text: '冷やして液体に', size: 12, anchor: 'end' },
+        ])),
+      },
+      {
+        id: 'state-change-mp4-c2',
+        text: '蒸留では、急な沸騰を防ぐため**沸騰石**を入れます。火を消す前に、ガラス管の先を集めた液から出しておきます。液が逆流するのを防ぐためです。集めた液に火を近づけて燃えれば、エタノールが多いと分かります。',
+        figure: scene([
+          { type: 'tube', x: 120, y: 200, height: 110, level: 0.3 },
+          { type: 'line', points: [[60, 40], [120, 60], [120, 120]], width: 3 },
+          { type: 'arrow', x1: 150, y1: 120, x2: 150, y2: 70, color: 'blue' },
+          { type: 'text', x: 160, y: 92, text: 'ガラス管を液から出す', size: 13 },
+          { type: 'text', x: 160, y: 120, text: '→ それから火を消す', size: 13 },
+          { type: 'text', x: 160, y: 228, text: '逆流を防ぐため', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+      {
+        id: 'state-change-mp4-c3',
+        text: '石油（原油）は多くの物質の混合物です。加熱して沸点のちがいで分けることを**分留**といい、蒸留を利用しています。沸点の低い石油ガスやガソリンほど塔の上のほうで取り出され、重油は下に残ります。',
+        figure: scene([
+          { type: 'rect', x: 110, y: 30, width: 70, height: 190, fill: 'glass' },
+          ...[['石油ガス', 50], ['ガソリン', 86], ['灯油', 122], ['軽油', 158], ['重油', 200]].flatMap(([t, y]) => [
+            { type: 'line', points: [[180, y], [220, y]], width: 3 },
+            { type: 'text', x: 226, y: y + 5, text: t, size: 13 },
+          ]),
+          { type: 'text', x: 100, y: 54, text: '沸点が低い', size: 12, anchor: 'end' },
+          { type: 'text', x: 100, y: 204, text: '沸点が高い', size: 12, anchor: 'end' },
+          { type: 'line', points: [[70, 190], [70, 66]], color: 'gray', width: 2, arrow: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'state-change-mp4-w1', concept: 'sc-distill',
+      prompt: '予想しよう。赤ワインを加熱して、出てきた気体を冷やして液を集めました。はじめに集めた液はどんな液だと思う？',
+      options: ['エタノールを多くふくむ液', '水だけの液', '赤い色の濃い液'],
+      answer: 'a',
+      explanation: 'エタノールは水より沸点が低いので、はじめはエタノールを多くふくむ気体が出てきます。蒸留のしくみを、このステージで学ぼう。',
+      hint: '水とエタノールの沸点を比べよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'state-change-mp4-p1', concept: 'sc-distill',
+        prompt: '赤ワインを加熱して、出てきた液を試験管に順に 3 本集めました。マッチの火を近づけると、よく燃えるのはどれ？ ア〜ウから選ぼう。',
+        figure: MP_TUBES_Q,
+        answer: 'r1',
+        explanation: 'はじめに集めた 1 本目には、沸点の低いエタノールが多くふくまれるので、火を近づけるとよく燃えます。あとのほうになるほど水が多くなり、燃えにくくなります。',
+        hint: '沸点の低いエタノールが先に出てくるよ。',
+      }),
+      fill({
+        id: 'state-change-mp4-t1', concept: 'sc-distill', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '液体を加熱して沸騰させ、出てくる気体を冷やして再び液体として取り出すことを[b1]という。',
+        blanks: [word('b1', ['蒸留', '再結晶', 'ろ過'], '蒸留')],
+        explanation: '沸騰させた気体を冷やして再び液体にして集めることを**蒸留**といいます。沸点のちがいを利用して混合物を分けられます。',
+        hint: '「蒸」は湯気、「留」はとどめる（集める）という意味だよ。',
+      }),
+      choice({
+        id: 'state-change-mp4-p2', concept: 'sc-distill',
+        prompt: '赤ワインに、水のほかにおもにふくまれている物質はどれ？',
+        options: ['エタノール', '食塩', '酸素'],
+        answer: 'a',
+        explanation: '赤ワインは、おもに水とエタノールの混合物です（色やかおりの物質も少しふくまれます）。',
+        hint: 'お酒にふくまれるアルコールの名前だよ。',
+      }),
+      choice({
+        id: 'state-change-mp4-p3', concept: 'sc-distill',
+        prompt: '蒸留の実験を終えるとき、火を消す前にしなければならないことはどれ？',
+        options: ['ガラス管の先を、試験管の液から出しておく', '沸騰石を取り出す', '温度計をぬく'],
+        answer: 'a',
+        explanation: 'ガラス管の先が液に入ったまま火を消すと、フラスコの中の気体が冷えて縮み、集めた液がフラスコに逆流します。先にガラス管を液から出します。',
+        hint: '火を消すと、フラスコの中の気体が縮むよ。',
+      }),
+      choice({
+        id: 'state-change-mp4-p4', concept: 'sc-distill',
+        prompt: '赤ワインを蒸留すると、はじめに集めた液にエタノールが多くふくまれるのはなぜ？',
+        options: ['エタノールの沸点が水より低く、先に多く気体になるから', 'エタノールのほうが重いから', 'エタノールが水にとけないから'],
+        answer: 'a',
+        explanation: 'エタノールの沸点（78 ℃）は水（100 ℃）より低いので、温度が低いうちはエタノールが多く気体になって出てきます。',
+        hint: '沸点の低いほうから先に気体になるよ。',
+      }),
+      choice({
+        id: 'state-change-mp4-p5', concept: 'sc-distill',
+        prompt: '石油（原油）を分ける塔では、沸点の低いものほど上のほうで取り出されます。ガソリンと軽油では、上のほうで取り出されるのはどちら？（沸点はガソリンのほうが低い）',
+        options: ['ガソリン', '軽油', 'どちらも同じ高さ'],
+        answer: 'a',
+        explanation: '沸点の低いものほど、気体のまま塔の上のほうまで上がってから冷えて液体になります。ガソリンは軽油より沸点が低いので、上のほうで取り出されます。',
+        hint: '沸点が低いほど、上まで気体のまま上がるよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'state-change-mp4-r1', concept: 'sc-distill',
+        prompt: '集めた液にエタノールが多くふくまれていることを、かんたんに確かめる方法はどれ？',
+        options: ['液をひたしたろ紙にマッチの火を近づけ、燃えるか調べる', '液を冷やして、こおるか調べる', '液に食塩を入れて、とけるか調べる'],
+        answer: 'a',
+        explanation: 'エタノールは燃えやすいので、エタノールが多い液をしみこませたろ紙に火を近づけると燃えます。においをかぐ方法もあります。',
+        hint: 'エタノールは燃えやすい物質だったね。',
+      }),
+      choice({
+        id: 'state-change-mp4-r2', concept: 'sc-distill',
+        prompt: '蒸留の実験で、フラスコに沸騰石を入れるのはなぜ？',
+        options: ['急に沸騰する（突沸）のを防ぐため', '液を早く冷やすため', '液の色をうすくするため'],
+        answer: 'a',
+        explanation: '沸騰石を入れないと、液が急に激しく沸騰して、フラスコの外に飛び出すことがあります。沸騰石はそれを防ぎます。',
+        hint: '液が急に激しくわき立つのを防ぐよ。',
+      }),
+      choice({
+        id: 'state-change-mp4-r3', concept: 'sc-distill',
+        prompt: '石油を沸点のちがいで分ける「分留」は、理科の何という方法を利用したもの？',
+        options: ['蒸留', '再結晶', 'ろ過'],
+        answer: 'a',
+        explanation: '分留は、混合物を加熱して沸点のちがう物質に分けて取り出す方法で、蒸留を利用しています。',
+        hint: '沸騰させて冷やし、液体にして集める方法だよ。',
+      }),
+      choice({
+        id: 'state-change-mp4-r4', concept: 'sc-distill',
+        prompt: '石油ガスと重油では、沸点が低いのはどちら？',
+        options: ['石油ガス', '重油', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '石油ガスは塔のいちばん上で取り出されるほど沸点が低く、ふつうの温度で気体です。重油は沸点が高く、塔の下に残ります。',
+        hint: '塔のいちばん上で取り出されるのはどちらかな。',
+      }),
+    ],
+  };
+
+  // あふれた問題を、もとからある概念の確認問題（checkPool）に足す
+  function addCheck(id, problems) { concepts.find(c => c.id === id).checkPool.push(...problems); }
+  addCheck('sc-point', [
+    fill({
+      id: 'state-change-mp2-k1', concept: 'sc-point',
+      prompt: '空らんに入る言葉を選ぼう。',
+      text: '水が沸騰するときは、[b1]だけでなく[b2]からも水が水蒸気に変わる。水が[b1]から水蒸気に変わることを蒸発という。',
+      blanks: [
+        word('b1', ['表面', '内部'], '表面'),
+        word('b2', ['表面', '内部'], '内部'),
+      ],
+      explanation: '蒸発は液体の表面から気体に変わることで、沸点より低い温度でも起こります。沸騰では、液体の内部からも気体に変わり、あわが出てきます。',
+      hint: '沸騰すると、液体の中からあわが出てくるね。',
+    }),
+  ]);
+  addCheck('sc-distill', [
+    choice({
+      id: 'state-change-mp2-k2', concept: 'sc-distill',
+      prompt: 'エタノールを加熱するとき、試験管に沸騰石を入れるのはなぜ？',
+      options: ['急に沸騰するのを防ぐため', 'エタノールを燃やすため', '温度を下げるため'],
+      answer: 'a',
+      explanation: '沸騰石を入れると、液体が急に激しく沸騰する（突沸）のを防げます。加熱する実験では、沸騰石を入れてから加熱します。',
+      hint: '液が急に飛び出さないようにするためだよ。',
+    }),
+  ]);
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -979,6 +1619,7 @@
     areas: [
       { id: 'state', title: '状態変化と粒子', order: 1, stages: [state1, state2] },
       { id: 'sc-distill', title: '混合物を分ける', order: 2, stages: [state3, state4] },
+      { id: 'state-change-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [scMp1, scMp2, scMp3, scMp4] },
     ],
   };
 

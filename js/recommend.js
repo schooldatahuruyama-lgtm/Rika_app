@@ -55,6 +55,7 @@
   }
 
   // 領域の最初のステージは常に解放。それ以外は同じ領域の 1 つ前のステージがクリア済みなら解放
+  // 領域に free: true があれば（ミニプリントの領域）、その領域のステージはすべて最初から解放
   // 登録されていないステージは false
   function isUnlocked(reg, rec, stageId) {
     for (const u of reg.units()) {
@@ -63,7 +64,7 @@
         const stages = list(area.stages);
         const i = stages.findIndex(s => s && s.id === stageId);
         if (i < 0) continue;
-        if (i === 0) return true;
+        if (i === 0 || area.free === true) return true;
         return record.stageState(rec, stages[i - 1].id).status === 'cleared';
       }
     }

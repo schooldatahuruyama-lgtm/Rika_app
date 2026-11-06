@@ -956,6 +956,677 @@
   ];
 
   // ================================================================
+  // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/solution.md）
+  // ================================================================
+
+  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  function mpRegions(parts) {
+    const items = [];
+    parts.forEach(([x, y, px, py], i) => {
+      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオ'[i] });
+    });
+    return items;
+  }
+
+  // ろ過の装置（大きい図）。ろうとの足の先 (160, 196) は、ビーカー（底の中央 (196, 230)、左の壁 x=156）の内側の壁につく
+  function mpFilterItems() {
+    return [
+      { type: 'polygon', points: [[110, 60], [210, 60], [166, 118], [154, 118]], fill: 'glass' },
+      { type: 'polygon', points: [[118, 64], [202, 64], [160, 112]], fill: 'white' },
+      { type: 'line', points: [[160, 118], [160, 196]], color: 'line', width: 6 },
+      { type: 'beaker', x: 196, y: 230, width: 80, height: 90, level: 0.2 },
+      { type: 'line', points: [[196, 18], [168, 86]], color: 'gray', width: 4 },
+    ];
+  }
+  // ろ過の部分を選ぶ図: ア ガラス棒・イ ろ紙・ウ ろうと・エ ビーカー
+  const MP_FILTER_Q = scene(mpFilterItems().concat(mpRegions([
+    [262, 34, 190, 34], [40, 76, 132, 72], [40, 150, 157, 150], [284, 196, 236, 196],
+  ])));
+
+  // 水 100 g にとける質量の表（目安の値。ミョウバンは結晶の水をふくむ質量）
+  const MP_TEMPS = [10, 20, 30, 40, 50, 60, 70, 80];
+  const MP_SOL = [
+    ['硝酸カリウム', [22, 32, 46, 64, 85, 110, 138, 169]],
+    ['塩化ナトリウム', [36, 36, 36, 36, 37, 37, 38, 38]],
+    ['ミョウバン', [8, 11, 17, 24, 36, 57, 110, 321]],
+  ];
+  // 表の図。表は x 44〜316（名前の列 80、温度の列 24 ずつ）、y 36〜216。withRegions: 物質の名前の左にア・イ・ウ
+  function mpTable(withRegions) {
+    const x0 = 44, nameW = 80, colW = 24, y0 = 36, headH = 30, rowH = 50;
+    const right = x0 + nameW + colW * MP_TEMPS.length;
+    const items = [
+      { type: 'text', x: 180, y: 24, text: '水 100 g にとける質量〔g〕', size: 13, anchor: 'middle' },
+      { type: 'rect', x: x0, y: y0, width: right - x0, height: headH + rowH * 3, fill: 'white' },
+      { type: 'line', points: [[x0 + nameW, y0], [x0 + nameW, y0 + headH + rowH * 3]], color: 'line', width: 1 },
+      { type: 'text', x: x0 + 4, y: y0 + 20, text: '温度〔℃〕', size: 12 },
+    ];
+    MP_TEMPS.forEach((t, i) => items.push({ type: 'text', x: x0 + nameW + colW * i + colW / 2, y: y0 + 20, text: String(t), size: 12, anchor: 'middle' }));
+    MP_SOL.forEach(([name, vals], j) => {
+      const top = y0 + headH + rowH * j, cy = top + rowH / 2;
+      items.push({ type: 'line', points: [[x0, top], [right, top]], color: 'line', width: 1 });
+      items.push({ type: 'text', x: x0 + 3, y: cy + 5, text: name, size: 12 });
+      vals.forEach((v, i) => items.push({ type: 'text', x: x0 + nameW + colW * i + colW / 2, y: cy + 5, text: String(v), size: 12, anchor: 'middle' }));
+      if (withRegions) items.push({ type: 'region', id: 'r' + (j + 1), x: 22, y: cy, r: 22, label: 'アイウ'[j] });
+    });
+    return scene(items);
+  }
+
+  // 温度の数直線（20〜70 ℃、10 ℃ が 48px）。vals は 20・30…70 ℃ の溶解度。
+  // 結晶が出はじめる温度のはんいを選ぶ（ア 20〜30 ℃・イ 30〜40 ℃・ウ 40〜50 ℃・エ 50〜60 ℃・オ 60〜70 ℃）
+  // mark: [はじめ, 終わり] の温度の間をオレンジの帯で示す（解説用。このときは選ぶ場所を置かない）
+  function mpLineScene(title, vals, mark) {
+    const tx = t => 40 + (t - 20) * 4.8;
+    const items = [
+      { type: 'text', x: 160, y: 30, text: title, size: 13, anchor: 'middle' },
+      { type: 'text', x: 160, y: 62, text: '上の数: 水 100 g にとける質量〔g〕', size: 12, anchor: 'middle' },
+      { type: 'line', points: [[24, 120], [300, 120]], width: 2, arrow: true },
+      { type: 'text', x: 306, y: 146, text: '℃', size: 12, anchor: 'end' },
+    ];
+    [20, 30, 40, 50, 60, 70].forEach((t, i) => {
+      items.push({ type: 'line', points: [[tx(t), 112], [tx(t), 128]], width: 2 });
+      items.push({ type: 'text', x: tx(t), y: 146, text: String(t), size: 12, anchor: 'middle' });
+      items.push({ type: 'text', x: tx(t), y: 100, text: String(vals[i]), size: 13, anchor: 'middle', bold: true });
+    });
+    if (mark) {
+      items.push({ type: 'line', points: [[tx(mark[0]), 168], [tx(mark[1]), 168]], color: 'orange', width: 8 });
+      items.push({ type: 'text', x: tx((mark[0] + mark[1]) / 2), y: 196, text: 'ここで結晶が出はじめる', size: 13, anchor: 'middle', bold: true });
+    } else {
+      [25, 35, 45, 55, 65].forEach((t, i) => items.push({ type: 'region', id: 'r' + (i + 1), x: tx(t), y: 190, r: 22, label: 'アイウエオ'[i] }));
+    }
+    return scene(items);
+  }
+
+  // ---- ステージ solution-mp1: プリント 1（溶質・溶媒と混合物、ろ過） ----
+  const solMp1 = {
+    id: 'solution-mp1', areaId: 'solution-miniprint', title: 'プリント 1: 混合物とろ過', minutes: 5, concepts: ['sol-terms', 'sol-mixture', 'sol-recrystal'],
+    lessons: [
+      {
+        id: 'solution-mp1-c1',
+        text: '水のように 1 種類の物質でできているものを**純粋な物質**、砂糖水のようにいくつかの物質が混じり合ったものを**混合物**といいます。水溶液は、溶質と溶媒が混じった混合物です。',
+        // 純粋な物質（水）と混合物（砂糖水）
+        figure: scene([
+          ...particleBeaker(220, 200, 'even'),
+          { type: 'beaker', x: 90, y: 200, width: 80, height: 110, level: 0.85 },
+          { type: 'text', x: 90, y: 58, text: '純粋な物質', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 90, y: 228, text: '水', size: 13, anchor: 'middle' },
+          { type: 'text', x: 220, y: 58, text: '混合物', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 220, y: 228, text: '砂糖水（砂糖 ＋ 水）', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'solution-mp1-c2',
+        text: '**ろ過**では、ろ紙をろうとにつけ、液はガラス棒に伝わらせて入れます。ろうとの足のとがったほうは、ビーカーの内側の壁につけます。液はろ紙の 8 分目くらいまでにします。',
+        figure: scene(mpFilterItems().concat([
+          { type: 'line', points: [[214, 34], [190, 34]], color: 'line', width: 1 },
+          { type: 'text', x: 218, y: 38, text: 'ガラス棒', size: 12 },
+          { type: 'line', points: [[96, 72], [132, 72]], color: 'line', width: 1 },
+          { type: 'text', x: 92, y: 76, text: 'ろ紙', size: 12, anchor: 'end' },
+          { type: 'line', points: [[96, 150], [157, 150]], color: 'line', width: 1 },
+          { type: 'text', x: 92, y: 154, text: 'ろうと', size: 12, anchor: 'end' },
+          { type: 'line', points: [[96, 196], [157, 192]], color: 'line', width: 1 },
+          { type: 'text', x: 92, y: 200, text: '足を壁につける', size: 12, anchor: 'end' },
+        ])),
+      },
+      {
+        id: 'solution-mp1-c3',
+        text: 'ろ紙には小さな穴がたくさんあります。泥のように穴より大きい粒はろ紙の上に残り、水や水にとけた物質の粒は穴より小さいので通りぬけます。これで泥水から泥を分けられます。',
+        // ろ紙の穴と粒の大きさ
+        figure: scene([
+          { type: 'line', points: [[20, 120], [70, 120]], color: 'brown', width: 6 },
+          { type: 'line', points: [[90, 120], [150, 120]], color: 'brown', width: 6 },
+          { type: 'line', points: [[170, 120], [230, 120]], color: 'brown', width: 6 },
+          { type: 'line', points: [[250, 120], [300, 120]], color: 'brown', width: 6 },
+          { type: 'circle', x: 110, y: 96, r: 16, fill: 'brown' },
+          { type: 'circle', x: 200, y: 98, r: 14, fill: 'brown' },
+          { type: 'circle', x: 80, y: 150, r: 4, fill: 'blue', stroke: 'none' },
+          { type: 'circle', x: 160, y: 160, r: 4, fill: 'blue', stroke: 'none' },
+          { type: 'circle', x: 240, y: 146, r: 4, fill: 'blue', stroke: 'none' },
+          { type: 'text', x: 160, y: 50, text: '泥の粒は穴を通れない', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 200, text: '水の粒は穴を通りぬける', size: 13, anchor: 'middle' },
+          { type: 'text', x: 316, y: 114, text: 'ろ紙', size: 12, anchor: 'end' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'solution-mp1-w1', concept: 'sol-mixture',
+      prompt: '予想しよう。砂糖水は、何種類の物質が混じったものだと思う？',
+      options: ['1 種類（砂糖水という物質）', '2 種類（砂糖と水）', '3 種類以上'],
+      answer: 'b',
+      explanation: '砂糖水は、砂糖と水の 2 種類の物質が混じり合ったものです。このように、いくつかの物質が混じったものを何というか、このステージで学ぼう。',
+      hint: '砂糖水をつくるときに使ったものを思い出そう。',
+    }),
+    problems: [
+      fill({
+        id: 'solution-mp1-p1', concept: 'sol-terms',
+        prompt: '水に砂糖をとかしました。空らんに入る言葉を選ぼう。',
+        text: '砂糖のようにとけている物質を[b1]、水のようにとかしている液体を[b2]、砂糖水のように[b1]が[b2]にとけた液を[b3]という。',
+        blanks: [
+          word('b1', ['溶質', '溶媒', '溶液'], '溶質'),
+          word('b2', ['溶質', '溶媒', '溶液'], '溶媒'),
+          word('b3', ['溶質', '溶媒', '溶液'], '溶液'),
+        ],
+        explanation: 'とけている砂糖が溶質、とかしている水が溶媒、砂糖が水にとけた砂糖水が溶液です。溶媒が水なので、砂糖水は水溶液でもあります。',
+        hint: 'とけているもの・とかしているもの・全体の順だよ。',
+      }),
+      fill({
+        id: 'solution-mp1-t1', concept: 'sol-mixture', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水のように 1 種類の物質でできているものを[b1]、砂糖水のようにいくつかの物質が混じり合ったものを[b2]という。',
+        blanks: [
+          word('b1', ['純粋な物質', '混合物', '溶質'], '純粋な物質'),
+          word('b2', ['純粋な物質', '混合物', '溶質'], '混合物'),
+        ],
+        explanation: '1 種類の物質でできているものが**純粋な物質**、いくつかの物質が混じり合ったものが**混合物**です。',
+        hint: '「混じり合った物」という意味の言葉があるよ。',
+      }),
+      choice({
+        id: 'solution-mp1-p2', concept: 'sol-mixture',
+        prompt: '次のうち、混合物はどれ？',
+        options: ['食塩水', '水', '食塩'],
+        answer: 'a',
+        explanation: '食塩水は、食塩と水の 2 種類の物質が混じり合った混合物です。水と食塩は、それぞれ 1 種類の物質でできた純粋な物質です。',
+        hint: '2 種類以上の物質が混じっているのはどれかな。',
+      }),
+      figureChoice({
+        id: 'solution-mp1-p3', concept: 'sol-recrystal',
+        prompt: '図はろ過のようすです。ろ紙をつけて使う、ガラスの器具「ろうと」はどれ？ ア〜エから選ぼう。',
+        figure: MP_FILTER_Q,
+        answer: 'r3',
+        explanation: 'ろうとは、上が広く下が細い管（足）になったガラスの器具です。ろ紙を折ってろうとにつけ、水でぬらしてぴったりつけて使います。',
+        hint: '上が広く、下が細い足になっている器具だよ。',
+      }),
+      choice({
+        id: 'solution-mp1-p4', concept: 'sol-recrystal',
+        prompt: 'ろ過をするとき、ろうとの足はどのようにしておく？',
+        options: ['とがったほうを、ビーカーの内側の壁につける', 'ビーカーのまん中に、壁からはなしておく', 'ビーカーの外に出しておく'],
+        answer: 'a',
+        explanation: 'ろうとの足のとがったほう（長いほう）をビーカーの内側の壁につけると、ろ液が壁を伝って静かに落ち、はね返りません。',
+        hint: '液がはねないようにするには、どうすればよいかな。',
+      }),
+      choice({
+        id: 'solution-mp1-p5', concept: 'sol-recrystal',
+        prompt: '泥水をろ過すると、泥と水に分けられます。そのしくみとして正しいのはどれ？',
+        options: ['泥の粒はろ紙の穴より大きく通れないが、水の粒は小さいので通りぬけるから', 'ろ紙が泥を吸いこんでとかすから', '水だけが蒸発して、ろ紙を通るから'],
+        answer: 'a',
+        explanation: 'ろ紙には目に見えないほど小さな穴があります。穴より大きい泥の粒はろ紙の上に残り、穴より小さい水の粒は通りぬけます。',
+        hint: '粒の大きさとろ紙の穴の大きさを比べよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'solution-mp1-r1', concept: 'sol-recrystal',
+        prompt: '図はろ過のようすです。「ろ紙」はどれ？ ア〜エから選ぼう。',
+        figure: MP_FILTER_Q,
+        answer: 'r2',
+        explanation: 'ろ紙は、ろうとの内側につけた紙です。液はろ紙を通ってろ過されます。',
+        hint: 'ろうとの内側についているものだよ。',
+      }),
+      choice({
+        id: 'solution-mp1-r2', concept: 'sol-recrystal',
+        prompt: 'ろ過をするとき、ろ紙の中に入れる液は、どのくらいまでにする？',
+        options: ['ろ紙の 8 分目（8 割）くらいまで', 'ろ紙のふちからあふれるまで', 'ろ紙の 1 割くらいまで'],
+        answer: 'a',
+        explanation: '液を入れすぎると、ろ紙とろうとのすき間から、ろ過されない液が流れ出てしまいます。液はろ紙の 8 分目くらいまでにします。',
+        hint: 'ろ紙のふちをこえると、どうなるか考えよう。',
+      }),
+      choice({
+        id: 'solution-mp1-r3', concept: 'sol-mixture',
+        prompt: '次のうち、純粋な物質はどれ？',
+        options: ['水', '砂糖水', '空気'],
+        answer: 'a',
+        explanation: '水は 1 種類の物質でできた純粋な物質です。砂糖水（砂糖と水）や空気（ちっ素・酸素など）は、いくつかの物質が混じった混合物です。',
+        hint: '1 種類の物質だけでできているのはどれかな。',
+      }),
+      choice({
+        id: 'solution-mp1-r4', concept: 'sol-mixture',
+        prompt: '水溶液は、純粋な物質と混合物のどちら？',
+        options: ['混合物', '純粋な物質', 'どちらでもない'],
+        answer: 'a',
+        explanation: '水溶液は、溶質と溶媒（水）が混じり合ったものなので混合物です。',
+        hint: '水溶液には、溶質と水の 2 種類以上の物質がふくまれているね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ solution-mp2: プリント 2（質量パーセント濃度の計算） ----
+  const solMp2 = {
+    id: 'solution-mp2', areaId: 'solution-miniprint', title: 'プリント 2: 濃度の計算', minutes: 5, concepts: ['sol-concentration'],
+    lessons: [
+      {
+        id: 'solution-mp2-c1',
+        text: '**質量パーセント濃度**〔%〕＝ 溶質の質量 ÷ 溶液の質量 × 100 です。溶液の質量は、溶質の質量と溶媒の質量の和です。水 90 g に食塩 10 g なら、食塩水は 100 g です。',
+        figure: scene([
+          { type: 'text', x: 160, y: 50, text: '濃度〔%〕＝ 溶質 ÷ 溶液 × 100', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 110, text: '溶液 ＝ 溶質 ＋ 溶媒', size: 15, anchor: 'middle' },
+          { type: 'text', x: 160, y: 170, text: '食塩 10 g ＋ 水 90 g ＝ 食塩水 100 g', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 200, text: '10 ÷ 100 × 100 ＝ 10 %', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'solution-mp2-c2',
+        text: '式を変形すると、溶質の質量 ＝ 溶液の質量 × 濃度 ÷ 100、溶液の質量 ＝ 溶質の質量 ÷ 濃度 × 100 になります。何を求めるのかをはじめに確かめよう。',
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: '溶質を求める', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 70, text: '溶液 × 濃度 ÷ 100', size: 15, anchor: 'middle' },
+          { type: 'text', x: 160, y: 96, text: '例: 200 g × 12 ÷ 100 ＝ 24 g', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 146, text: '溶液を求める', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 176, text: '溶質 ÷ 濃度 × 100', size: 15, anchor: 'middle' },
+          { type: 'text', x: 160, y: 202, text: '例: 28 g ÷ 7 × 100 ＝ 400 g', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'solution-mp2-w1', concept: 'sol-concentration',
+      prompt: '予想しよう。食塩水 200 g に食塩 10 g がとけています。この食塩水の濃さはどのくらいだと思う？',
+      options: ['5 %', '10 %', '20 %'],
+      answer: 'a',
+      explanation: '10 ÷ 200 × 100 ＝ 5 % です。食塩水全体のうち、食塩がしめる割合を考えます。いろいろな計算を、このステージで練習しよう。',
+      hint: '200 g のうちの 10 g は、何 % かな。',
+    }),
+    problems: [
+      fill({
+        id: 'solution-mp2-t1', concept: 'sol-concentration', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '質量パーセント濃度〔%〕＝[b1]の質量 ÷[b2]の質量 × 100',
+        blanks: [
+          word('b1', ['溶質', '溶媒', '溶液'], '溶質'),
+          word('b2', ['溶質', '溶媒', '溶液'], '溶液'),
+        ],
+        explanation: '**質量パーセント濃度**は、溶質の質量を溶液の質量でわって 100 をかけます。わる数は溶媒（水）ではなく、溶液全体の質量です。',
+        hint: 'とけている物の質量 ÷ 全体の質量、だよ。',
+      }),
+      fill({
+        id: 'solution-mp2-p1', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '食塩水 200 g に食塩 10 g がとけているとき、質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 5, 0, '%')],
+        explanation: '溶液（食塩水）の質量が 200 g なので、10 ÷ 200 × 100 ＝ 5 % です。',
+        hint: '溶液の質量はもう分かっているよ。',
+      }),
+      fill({
+        id: 'solution-mp2-p2', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '食塩水 500 g に食塩 60 g がとけているとき、質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 12, 0, '%')],
+        explanation: '60 ÷ 500 × 100 ＝ 12 % です。',
+        hint: '溶質 ÷ 溶液 × 100 だよ。',
+      }),
+      fill({
+        id: 'solution-mp2-p3', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水 100 g に食塩 25 g をとかした食塩水の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 20, 0, '%')],
+        explanation: '食塩水の質量は 100 ＋ 25 ＝ 125 g です。25 ÷ 125 × 100 ＝ 20 % になります。水の 100 g でわって 25 % としないように注意しよう。',
+        hint: 'まず食塩水全体の質量を求めよう。',
+      }),
+      figureChoice({
+        id: 'solution-mp2-p4', concept: 'sol-concentration',
+        prompt: '質量パーセント濃度 12 % の塩化ナトリウム水溶液 200 g があります。とけている塩化ナトリウムの質量はどれ？ ア〜ウから選ぼう。',
+        figure: scene([
+          { type: 'beaker', x: 160, y: 100, width: 90, height: 80, level: 0.7 },
+          { type: 'text', x: 160, y: 122, text: '12 % の水溶液 200 g', size: 13, anchor: 'middle' },
+          ...[[60, '12 g'], [160, '24 g'], [260, '176 g']].flatMap(([x, t]) => [
+            { type: 'ellipse', x, y: 206, rx: 34, ry: 7, fill: 'glass' },
+            { type: 'polygon', points: [[x - 18, 202], [x, 190], [x + 18, 202]], fill: 'white' },
+            { type: 'text', x, y: 232, text: t, size: 14, anchor: 'middle', bold: true },
+          ]),
+          { type: 'region', id: 'r1', x: 60, y: 160, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 160, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 260, y: 160, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: '溶質の質量 ＝ 溶液の質量 × 濃度 ÷ 100 なので、200 × 12 ÷ 100 ＝ 24 g です。176 g は水（溶媒）の質量です。',
+        hint: '200 g の 12 % を求めよう。',
+      }),
+      fill({
+        id: 'solution-mp2-p5', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水 90 g に塩化ナトリウム 10 g をとかした水溶液の質量は[b1]である。',
+        blanks: [number('b1', 100, 0, 'g')],
+        explanation: '溶液の質量 ＝ 溶質の質量 ＋ 溶媒の質量 なので、10 ＋ 90 ＝ 100 g です。',
+        hint: 'とかした物と水の質量をたそう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'solution-mp2-r1', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水 90 g に塩化ナトリウム 10 g をとかした水溶液の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 10, 0, '%')],
+        explanation: '水溶液の質量は 100 g なので、10 ÷ 100 × 100 ＝ 10 % です。',
+        hint: '水溶液全体の質量は 100 g だったね。',
+      }),
+      fill({
+        id: 'solution-mp2-r2', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水 204 g に塩化ナトリウム 36 g をとかした水溶液の質量は[b1]である。',
+        blanks: [number('b1', 240, 0, 'g')],
+        explanation: '36 ＋ 204 ＝ 240 g です。',
+        hint: '溶質と溶媒の質量をたそう。',
+      }),
+      fill({
+        id: 'solution-mp2-r3', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水 204 g に塩化ナトリウム 36 g をとかした水溶液の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 15, 0, '%')],
+        explanation: '水溶液の質量は 36 ＋ 204 ＝ 240 g なので、36 ÷ 240 × 100 ＝ 15 % です。',
+        hint: 'わる数は、水溶液全体の 240 g だよ。',
+      }),
+      fill({
+        id: 'solution-mp2-r4', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '塩化ナトリウム 28 g をすべて水にとかして、質量パーセント濃度 7 % の水溶液をつくる。このとき水溶液の質量は[b1]になる。',
+        blanks: [number('b1', 400, 0, 'g')],
+        explanation: '水溶液の 7 % が 28 g なので、水溶液の質量は 28 ÷ 7 × 100 ＝ 400 g です。このとき使う水は 400 − 28 ＝ 372 g です。',
+        hint: '□ g の 7 % が 28 g になる □ を考えよう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ solution-mp3: プリント 3（溶解度と飽和水溶液、温度ととける量） ----
+  const solMp3 = {
+    id: 'solution-mp3', areaId: 'solution-miniprint', title: 'プリント 3: 溶解度の表を読む', minutes: 5, concepts: ['sol-solubility', 'sol-recrystal'],
+    lessons: [
+      {
+        id: 'solution-mp3-c1',
+        text: '表は、水 100 g にとける質量（**溶解度**）です。硝酸カリウムとミョウバンは温度が上がると大きく増えますが、塩化ナトリウム（食塩）はほとんど変わりません。',
+        figure: mpTable(false),
+      },
+      {
+        id: 'solution-mp3-c2',
+        text: '水の量が変わると、とける量も同じ割合で変わります。水 5 g は 100 g の 20 分の 1 なので、20 ℃ の水 5 g にとける食塩は 36 ÷ 20 ＝ 1.8 g です。',
+        figure: scene([
+          { type: 'beaker', x: 90, y: 190, width: 90, height: 110, level: 0.8 },
+          { type: 'tube', x: 230, y: 190, height: 90, level: 0.25 },
+          { type: 'text', x: 90, y: 216, text: '水 100 g → 36 g', size: 13, anchor: 'middle' },
+          { type: 'text', x: 230, y: 216, text: '水 5 g → 1.8 g', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 40, text: '20 ℃ でとける食塩の質量', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'solution-mp3-w1', concept: 'sol-solubility',
+      prompt: '予想しよう。食塩と硝酸カリウムを水に入れて、とけ残りが出ました。加熱すると、とけ残りが多くとけるのはどちらだと思う？',
+      options: ['食塩', '硝酸カリウム', 'どちらも変わらない'],
+      answer: 'b',
+      explanation: '硝酸カリウムは温度が上がるととける量が大きく増えます。食塩はほとんど変わりません。表を読んで確かめよう。',
+      hint: '温度でとける量が大きく変わる物質と、変わらない物質があるよ。',
+    }),
+    problems: [
+      choice({
+        id: 'solution-mp3-p1', concept: 'sol-solubility',
+        prompt: '20 ℃ の水 5.0 g を入れた試験管を 2 本用意し、食塩 3.0 g と硝酸カリウム 3.0 g をそれぞれ入れてよくふりました。表を見て答えよう。どうなる？',
+        figure: mpTable(false),
+        options: ['どちらもとけ残る', '食塩だけがとけ残る', 'どちらもすべてとける'],
+        answer: 'a',
+        explanation: '水 5 g は 100 g の 20 分の 1 です。20 ℃ でとけるのは、食塩が 36 ÷ 20 ＝ 1.8 g、硝酸カリウムが 32 ÷ 20 ＝ 1.6 g なので、3.0 g はどちらもとけ残ります。',
+        hint: '水 5 g にとける量は、表の値の 20 分の 1 だよ。',
+      }),
+      choice({
+        id: 'solution-mp3-p2', concept: 'sol-solubility',
+        prompt: '前の問題の 2 本の試験管を、80 ℃ まで加熱しました。表を見て答えよう。どうなる？',
+        figure: mpTable(false),
+        options: ['硝酸カリウムはすべてとけ、食塩はとけ残る', '食塩はすべてとけ、硝酸カリウムはとけ残る', 'どちらもとけ残ったまま'],
+        answer: 'a',
+        explanation: '80 ℃ の水 5 g にとけるのは、硝酸カリウムが 169 ÷ 20 ＝ 約 8.5 g、食塩が 38 ÷ 20 ＝ 1.9 g です。硝酸カリウム 3.0 g はすべてとけますが、食塩はとけ残ります。',
+        hint: '80 ℃ の値を 20 でわってみよう。',
+      }),
+      choice({
+        id: 'solution-mp3-p3', concept: 'sol-recrystal',
+        prompt: '80 ℃ で硝酸カリウムがすべてとけた試験管を、水で冷やしました。試験管の中はどうなる？',
+        options: ['白い結晶が出てくる', '何も変わらない', '液がこおってしまう'],
+        answer: 'a',
+        explanation: '温度が下がると硝酸カリウムのとける量が小さくなるので、とけきれなくなった分が結晶として出てきます。',
+        hint: '温度が下がると、とけられる量はどうなるかな。',
+      }),
+      fill({
+        id: 'solution-mp3-t1', concept: 'sol-solubility', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'もうそれ以上とけきれなくなった水溶液を[b1]という。水 100 g にとける物質の最大の質量を[b2]といい、これをグラフに表したものを[b3]という。',
+        blanks: [
+          word('b1', ['飽和水溶液', '溶解度', '溶解度曲線'], '飽和水溶液'),
+          word('b2', ['飽和水溶液', '溶解度', '溶解度曲線'], '溶解度'),
+          word('b3', ['飽和水溶液', '溶解度', '溶解度曲線'], '溶解度曲線'),
+        ],
+        explanation: 'とけきれなくなった水溶液が**飽和水溶液**、水 100 g にとける最大の質量が**溶解度**、温度と溶解度の関係のグラフが**溶解度曲線**です。',
+        hint: '「飽和」はいっぱい、「曲線」はグラフの線のことだよ。',
+      }),
+      figureChoice({
+        id: 'solution-mp3-p4', concept: 'sol-solubility',
+        prompt: '表を見て答えよう。10 ℃ の水 100 g に、いちばん多くとけるのはどれ？ ア〜ウから選ぼう。',
+        figure: mpTable(true),
+        answer: 'r2',
+        explanation: '10 ℃ では、硝酸カリウム 22 g、塩化ナトリウム 36 g、ミョウバン 8 g なので、塩化ナトリウムがいちばん多くとけます。',
+        hint: '10 ℃ の列の数を比べよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'solution-mp3-r1', concept: 'sol-solubility',
+        prompt: '表を見て答えよう。40 ℃ の水 100 g に、いちばん多くとけるのはどれ？ ア〜ウから選ぼう。',
+        figure: mpTable(true),
+        answer: 'r1',
+        explanation: '40 ℃ では、硝酸カリウム 64 g、塩化ナトリウム 36 g、ミョウバン 24 g なので、硝酸カリウムがいちばん多くとけます。10 ℃ のときとは順位が変わります。',
+        hint: '40 ℃ の列の数を比べよう。',
+      }),
+      choice({
+        id: 'solution-mp3-r2', concept: 'sol-solubility',
+        prompt: '「溶解度」の説明として正しいのはどれ？',
+        options: ['水 100 g にとける物質の最大の質量', '水溶液の濃さを % で表したもの', 'とけ残った物質の質量'],
+        answer: 'a',
+        explanation: '溶解度は、水 100 g にとける物質の最大の質量です。物質の種類と温度で決まります。濃さを % で表したものは質量パーセント濃度です。',
+        hint: '「水 100 g あたり」の量だったね。',
+      }),
+      choice({
+        id: 'solution-mp3-r3', concept: 'sol-solubility',
+        prompt: '20 ℃ の水 50 g には、食塩は約何 g までとける？（20 ℃ の水 100 g には約 36 g とける）',
+        options: ['約 18 g', '約 36 g', '約 72 g'],
+        answer: 'a',
+        explanation: '水の量が半分なので、とける量も半分の約 18 g です。',
+        hint: '水が半分になると、とける量はどうなるかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ solution-mp4: プリント 4（溶解度の問題: 結晶が出はじめる温度と結晶の質量） ----
+  const solMp4 = {
+    id: 'solution-mp4', areaId: 'solution-miniprint', title: 'プリント 4: 結晶の出る温度と量', minutes: 5, concepts: ['sol-recrystal', 'sol-solubility'],
+    lessons: [
+      {
+        id: 'solution-mp4-c1',
+        text: 'とかした量と、その温度の溶解度が等しくなったとき、水溶液は飽和水溶液になります。それより冷やすと**結晶**が出はじめます。硝酸カリウム 50 g なら 30 ℃ と 40 ℃ の間です。',
+        figure: mpLineScene('硝酸カリウム 50 g をとかした水溶液', [32, 46, 64, 85, 110, 138], [30, 40]),
+      },
+      {
+        id: 'solution-mp4-c2',
+        text: '冷やしたときに出てくる結晶の質量は、とかした質量 − 冷やした温度の溶解度 です。ミョウバン 50 g を 20 ℃ まで冷やすと 50 − 11 ＝ 39 g が出てきます。これを**再結晶**といいます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 46, text: '出てくる結晶 ＝ とかした量 − 溶解度', size: 15, anchor: 'middle', bold: true },
+          { type: 'beaker', x: 90, y: 190, width: 80, height: 90, level: 0.7 },
+          { type: 'arrow', x1: 142, y1: 150, x2: 178, y2: 150, color: 'blue' },
+          { type: 'text', x: 160, y: 136, text: '冷やす', size: 12, anchor: 'middle' },
+          { type: 'beaker', x: 230, y: 190, width: 80, height: 90, level: 0.7 },
+          { type: 'polygon', points: [[200, 186], [210, 176], [222, 182], [236, 174], [248, 184], [260, 186]], fill: 'white' },
+          { type: 'text', x: 90, y: 214, text: '50 g がとけている', size: 12, anchor: 'middle' },
+          { type: 'text', x: 230, y: 214, text: '20 ℃: 39 g が結晶に', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'solution-mp4-w1', concept: 'sol-recrystal',
+      prompt: '予想しよう。80 ℃ の水 100 g に硝酸カリウム 50 g をすべてとかしました。冷やしていくと、どうなると思う？',
+      options: ['ある温度から結晶が出はじめる', 'いくら冷やしても何も出てこない', '冷やしはじめたとたんに全部が結晶になる'],
+      answer: 'a',
+      explanation: '温度が下がって溶解度が 50 g より小さくなると、とけきれない分が結晶になって出てきます。その温度と量の求め方を、このステージで学ぼう。',
+      hint: '温度が下がると、とける量は減っていくね。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'solution-mp4-p1', concept: 'sol-recrystal',
+        prompt: '80 ℃ の水 100 g に硝酸カリウム 50 g をとかし、ゆっくり冷やしました。結晶が出はじめるのは何 ℃ の間？ 図の数（水 100 g にとける質量）を見て、ア〜オから選ぼう。',
+        figure: mpLineScene('硝酸カリウムの溶解度', [32, 46, 64, 85, 110, 138]),
+        answer: 'r2',
+        explanation: '30 ℃ では 46 g、40 ℃ では 64 g までとけます。50 g は 46 g と 64 g の間なので、30 ℃ と 40 ℃ の間で溶解度が 50 g になり、結晶が出はじめます。',
+        hint: '50 g が、どの 2 つの数の間に入るかを見よう。',
+      }),
+      fill({
+        id: 'solution-mp4-p2', concept: 'sol-recrystal',
+        prompt: '空らんに入る数を入れよう。硝酸カリウムは、水 100 g に 20 ℃ で 32 g、10 ℃ で 22 g までとける。',
+        text: '硝酸カリウム 50 g を高い温度の水 100 g にとかし、20 ℃ まで冷やすと結晶が[b1]出てくる。10 ℃ まで冷やすと、結晶は合わせて[b2]になる。',
+        blanks: [number('b1', 18, 0, 'g'), number('b2', 28, 0, 'g')],
+        explanation: '20 ℃ では 32 g までしかとけないので 50 − 32 ＝ 18 g、10 ℃ では 22 g までなので 50 − 22 ＝ 28 g が結晶になります。',
+        hint: 'とかした量 − その温度でとける量 だよ。',
+      }),
+      fill({
+        id: 'solution-mp4-t1', concept: 'sol-recrystal', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水にとかした固体の物質を、水溶液を冷やすなどして、再び結晶として取り出すことを[b1]という。',
+        blanks: [word('b1', ['再結晶', '蒸留', 'ろ過'], '再結晶')],
+        explanation: 'とかした物質を、冷やしたり水を蒸発させたりして、再び結晶として取り出すことを**再結晶**といいます。',
+        hint: 'もう一度（再び）結晶にする、という意味だよ。',
+      }),
+      fill({
+        id: 'solution-mp4-p3', concept: 'sol-recrystal',
+        prompt: '空らんに入る数を入れよう。ミョウバンは、水 100 g に 20 ℃ で 11 g までとける。',
+        text: '70 ℃ の水 100 g にミョウバン 50 g をとかし、20 ℃ まで冷やすと、結晶が[b1]取り出せる。',
+        blanks: [number('b1', 39, 0, 'g')],
+        explanation: '20 ℃ では 11 g までしかとけないので、50 − 11 ＝ 39 g が結晶として出てきます。',
+        hint: 'とかした量 − 20 ℃ でとける量 だよ。',
+      }),
+      fill({
+        id: 'solution-mp4-p4', concept: 'sol-solubility',
+        prompt: '50 ℃ の水 100 g に、それぞれの物質を入れてよくかき混ぜた。表を見て、空らんに入る言葉を選ぼう。',
+        figure: mpTable(false),
+        text: 'ミョウバン 50 g は[b1]。食塩 40 g は[b2]。硝酸カリウム 60 g は[b3]。',
+        blanks: [
+          word('b1', ['すべてとける', 'とけ残る'], 'とけ残る'),
+          word('b2', ['すべてとける', 'とけ残る'], 'とけ残る'),
+          word('b3', ['すべてとける', 'とけ残る'], 'すべてとける'),
+        ],
+        explanation: '50 ℃ の溶解度は、ミョウバン 36 g、塩化ナトリウム（食塩）37 g、硝酸カリウム 85 g です。入れた量が溶解度より多いミョウバンと食塩はとけ残り、硝酸カリウムはすべてとけます。',
+        hint: '入れた量と、50 ℃ の列の数を比べよう。',
+      }),
+      fill({
+        id: 'solution-mp4-p5', concept: 'sol-solubility',
+        prompt: '表を読んで、空らんに入る数を入れよう。',
+        figure: mpTable(false),
+        text: '水 100 g にとけるミョウバンの質量は、20 ℃ で[b1]、40 ℃ で[b2]、60 ℃ で[b3]である。',
+        blanks: [number('b1', 11, 0, 'g'), number('b2', 24, 0, 'g'), number('b3', 57, 0, 'g')],
+        explanation: 'ミョウバンの行を読むと、20 ℃ 11 g、40 ℃ 24 g、60 ℃ 57 g です。温度が上がるほど、とける量が大きく増えます。',
+        hint: 'ミョウバンの行で、20・40・60 の列を見よう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'solution-mp4-r1', concept: 'sol-recrystal',
+        prompt: '80 ℃ の水 100 g にミョウバン 50 g をとかし、ゆっくり冷やしました。結晶が出はじめるのは何 ℃ の間？ 図の数（水 100 g にとける質量）を見て、ア〜オから選ぼう。',
+        figure: mpLineScene('ミョウバンの溶解度', [11, 17, 24, 36, 57, 110]),
+        answer: 'r4',
+        explanation: '50 ℃ では 36 g、60 ℃ では 57 g までとけます。50 g はその間なので、50 ℃ と 60 ℃ の間で結晶が出はじめます。70 ℃ でとかした場合も同じです。',
+        hint: '50 g が、どの 2 つの数の間に入るかを見よう。',
+      }),
+      fill({
+        id: 'solution-mp4-r2', concept: 'sol-solubility',
+        prompt: '水 100 g にミョウバン 50 g を入れてよくかき混ぜた。表を見て、空らんに入る言葉を選ぼう。',
+        figure: mpTable(false),
+        text: '水の温度が 70 ℃ なら[b1]。60 ℃ なら[b2]。50 ℃ なら[b3]。',
+        blanks: [
+          word('b1', ['すべてとける', 'とけ残る'], 'すべてとける'),
+          word('b2', ['すべてとける', 'とけ残る'], 'すべてとける'),
+          word('b3', ['すべてとける', 'とけ残る'], 'とけ残る'),
+        ],
+        explanation: 'ミョウバンの溶解度は 70 ℃ で 110 g、60 ℃ で 57 g、50 ℃ で 36 g です。50 g より大きい 70 ℃・60 ℃ ではすべてとけ、50 ℃ ではとけ残ります。',
+        hint: '50 g と、それぞれの温度の溶解度を比べよう。',
+      }),
+      fill({
+        id: 'solution-mp4-r3', concept: 'sol-solubility',
+        prompt: '表を読んで、空らんに入る数を入れよう。',
+        figure: mpTable(false),
+        text: '水 100 g にとける硝酸カリウムの質量は、50 ℃ で[b1]、60 ℃ で[b2]である。',
+        blanks: [number('b1', 85, 0, 'g'), number('b2', 110, 0, 'g')],
+        explanation: '硝酸カリウムの行を読むと、50 ℃ 85 g、60 ℃ 110 g です。',
+        hint: '硝酸カリウムの行で、50・60 の列を見よう。',
+      }),
+      fill({
+        id: 'solution-mp4-r4', concept: 'sol-recrystal',
+        prompt: '空らんに入る数を入れよう。硝酸カリウムは、水 100 g に 20 ℃ で 32 g までとける。',
+        text: '70 ℃ の水 100 g に硝酸カリウム 50 g をとかし、20 ℃ まで冷やすと、結晶が[b1]出てくる。',
+        blanks: [number('b1', 18, 0, 'g')],
+        explanation: '50 − 32 ＝ 18 g が結晶として出てきます。何 ℃ でとかしたかに関係なく、とかした量と冷やした温度の溶解度で決まります。',
+        hint: 'とかした量 − 20 ℃ でとける量 だよ。',
+      }),
+    ],
+  };
+
+  // ミニプリントで足した概念（純粋な物質と混合物）
+  const mpConcepts = [
+    {
+      id: 'sol-mixture', title: '純粋な物質と混合物', basic: 'sol-terms', lessonStageId: 'solution-mp1',
+      checkPool: [
+        choice({
+          id: 'sol-mixture-k1', concept: 'sol-mixture',
+          prompt: '「混合物」の説明として正しいのはどれ？',
+          options: ['いくつかの物質が混じり合ったもの', '1 種類の物質だけでできたもの', '水にとけない物質'],
+          answer: 'a',
+          explanation: '混合物は、いくつかの物質が混じり合ったものです。1 種類の物質でできたものは純粋な物質といいます。',
+          hint: '「混じり合った物」だよ。',
+        }),
+        choice({
+          id: 'sol-mixture-k2', concept: 'sol-mixture',
+          prompt: '次のうち、混合物でないもの（純粋な物質）はどれ？',
+          options: ['塩化ナトリウム', '海水', '砂糖水'],
+          answer: 'a',
+          explanation: '塩化ナトリウムは 1 種類の物質です。海水には水や塩化ナトリウムなど、砂糖水には水と砂糖がふくまれるので、どちらも混合物です。',
+          hint: '1 種類の物質だけでできているのはどれかな。',
+        }),
+        choice({
+          id: 'sol-mixture-k3', concept: 'sol-mixture',
+          prompt: '硫酸銅の水溶液は、純粋な物質と混合物のどちら？',
+          options: ['混合物', '純粋な物質', '色によって変わる'],
+          answer: 'a',
+          explanation: '硫酸銅の水溶液は、硫酸銅（溶質）と水（溶媒）が混じったものなので混合物です。色があってもなくても、水溶液は混合物です。',
+          hint: '水溶液は溶質と溶媒が混じったものだったね。',
+        }),
+      ],
+    },
+  ];
+
+  // あふれた問題を、もとからある概念の確認問題（checkPool）に足す
+  function addCheck(id, problems) { concepts.find(c => c.id === id).checkPool.push(...problems); }
+  addCheck('sol-solubility', [
+    fill({
+      id: 'solution-mp4-k1', concept: 'sol-solubility',
+      prompt: '空らんに入る数を入れよう。（表の値: 硝酸カリウムは 40 ℃ の水 100 g に 64 g とける）',
+      text: '40 ℃ の水 100 g には、硝酸カリウムが[b1]までとける。',
+      blanks: [number('b1', 64, 0, 'g')],
+      explanation: '40 ℃ の水 100 g には、硝酸カリウムが 64 g までとけます。これが 40 ℃ での硝酸カリウムの溶解度です。',
+      hint: '表の 40 ℃ の値だよ。',
+    }),
+    choice({
+      id: 'solution-mp4-k2', concept: 'sol-solubility',
+      prompt: '20 ℃ の水 100 g にとける質量は、硝酸カリウム 32 g、塩化ナトリウム 36 g、ミョウバン 11 g です。20 ℃ でいちばん多くとけるのはどれ？',
+      options: ['塩化ナトリウム', '硝酸カリウム', 'ミョウバン'],
+      answer: 'a',
+      explanation: '20 ℃ では、塩化ナトリウムの 36 g がいちばん多いです。温度が高くなると、硝酸カリウムのほうが多くとけるようになります。',
+      hint: '3 つの数を比べよう。',
+    }),
+    fill({
+      id: 'solution-mp4-k3', concept: 'sol-solubility',
+      prompt: '表を見て、空らんに入る物質を選ぼう。',
+      figure: mpTable(false),
+      text: '水 100 g にいちばん多くとけるのは、10 ℃ では[b1]、40 ℃ では[b2]、60 ℃ では[b3]である。',
+      blanks: [
+        word('b1', ['硝酸カリウム', '塩化ナトリウム', 'ミョウバン'], '塩化ナトリウム'),
+        word('b2', ['硝酸カリウム', '塩化ナトリウム', 'ミョウバン'], '硝酸カリウム'),
+        word('b3', ['硝酸カリウム', '塩化ナトリウム', 'ミョウバン'], '硝酸カリウム'),
+      ],
+      explanation: '10 ℃ は塩化ナトリウム 36 g、40 ℃ は硝酸カリウム 64 g、60 ℃ は硝酸カリウム 110 g がいちばん多いです。',
+      hint: 'それぞれの温度の列で、いちばん大きい数をさがそう。',
+    }),
+  ]);
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -963,10 +1634,11 @@
     id: 'solution',
     title: '水溶液',
     mascot: 'B',   // 担当の先生（しずく博士。js/mascot.js の MASCOTS）
-    concepts,
+    concepts: concepts.concat(mpConcepts),
     areas: [
       { id: 'dissolve', title: '水にとける', order: 1, stages: [sol1, sol2] },
       { id: 'sol-solubility', title: '溶解度', order: 2, stages: [sol3, sol4] },
+      { id: 'solution-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [solMp1, solMp2, solMp3, solMp4] },
     ],
   };
 

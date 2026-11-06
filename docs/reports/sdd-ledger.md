@@ -179,3 +179,8 @@ implemented (opus ×2: A ロジック js/author.js + js/author-api.js、B 画面
 ## 追加作業 2026-11-06: 単元の組みこみ道具（tools/add-unit.js。ユーザー決定「1」）
 Ruling: 書き出した content/<id>.js（か下書き JSON）を 1 コマンドで組みこむ: content/ へ写す、index.html・sw.js（PRECACHE と VERSION）、curriculum の表、docs/reports/content/<id>.md（先生の確認用）、ふりがなの未登録語の一覧、npm test。AI 教材（unit.source === "author"）はカードの図の検査を免除（図はあとから足せる）。ふりがなの網羅率は免除しない（組みこむ人が readings.js に足す）。
 implemented (opus). Codex round1 High 1（--force で VERSION が上がらない）/Medium 1（テストが本番辞書に依存）→ fix → round2 指摘なし → complete（tests 601）。controller: 偽の下書き（磁石）で --dry-run を JS と JSON の両方で確認。
+
+## 追加作業 2026-11-06: ミニプリントの問題を各単元に反映（ユーザー指示「ドライブのミニプリントの問題を反映してほしい」）
+Ruling: 各単元に領域「<接頭辞>-miniprint」（free: true で順不同に開く）を足し、プリント 2〜4 枚ごとに 1 ステージ。小問は落とさず problems → retryPool → checkPool に。図が核の問題は簡略図か文で成立する形に、作図は見送り。新単元 basics（観察と実験の基本、1 年）。正解は答え未記入のプリントではこちらで付け、先生の確認シートに「自信のない点」を集約。単元マスターのバッジは free の領域を数えない。 — コスト: 正解の誤りが残る可能性（確認シートで先生が見る）。
+implemented (opus ×6 並行: 1A/1B/2A/2B/3A/3B。129 ステージ・約 1,650 問、プリント約 390 枚、見送り 7 枚). ふりがな辞書 +255 語（opus）、光のテスト更新。レビュー: Codex が利用上限で失敗 → Claude 代行 round1 High 1（motion-mp1-p3 の正解）/Medium 1（単元マスターの数え方）/Low 9 → fix（opus）→ round2 Low 3 → controller fix → 3 サイクル目 round1（sonnet）。tests 617。VERSION 2026-11-06-25。
+合計: 20 単元・209 ステージ・2,848 問（前: 19 単元・80 ステージ・約 1,200 問）。

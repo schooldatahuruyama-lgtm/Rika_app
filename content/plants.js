@@ -1010,6 +1010,671 @@
   ];
 
   // ================================================================
+  // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/plants.md）
+  // ================================================================
+
+  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  function mpRegions(parts) {
+    const items = [];
+    parts.forEach(([x, y, px, py], i) => {
+      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオカキ'[i] });
+    });
+    return items;
+  }
+
+  // 花の断面（flower()）の部分を選ぶ図: ア 柱頭・イ やく・ウ 花弁・エ がく・オ 花柱・カ 子房・キ 胚珠
+  const MP_FLOWER_Q = scene(flower().concat(mpRegions([
+    [40, 50, 154, 88], [40, 104, 118, 100], [34, 164, 90, 150], [40, 220, 116, 200],
+    [284, 110, 162, 128], [284, 162, 182, 178], [284, 214, 170, 186],
+  ])));
+
+  // 種子植物の分け方（SEED_TREE）に、なかまの名前を書いたもの（解説用）
+  const SEED_TREE_NAMES = scene(SEED_TREE.items.filter(it => it.type !== 'region').concat(
+    [['裸子植物', 36], ['単子葉類', 92], ['合弁花類', 148], ['離弁花類', 204]].map(([t, y]) => ({ type: 'text', x: 266, y: y + 5, text: t, size: 12 })),
+  ));
+
+  // マツの枝（pineBranch()）を選ぶ図: ア 雌花・イ 雄花・ウ 1 年前の雌花（まつかさになりかけ）
+  const MP_PINE_Q = scene(pineBranch().concat(mpRegions([
+    [272, 44, 213, 44], [272, 140, 172, 140], [40, 150, 86, 188],
+  ])));
+
+  // イヌワラビ（fern()）の部分を選ぶ図: ア 葉・イ 茎（地下茎）・ウ 根
+  const MP_FERN_Q = scene(fern().concat(mpRegions([
+    [270, 60, 222, 64], [284, 160, 250, 160], [40, 200, 70, 196],
+  ])));
+
+  // 葉・茎の断面・根の小さな図（中心の x が cx。y は 50〜170 に収まる）
+  function mpPart(kind, cx) {
+    const items = [];
+    if (kind === 'netLeaf') {
+      items.push({ type: 'ellipse', x: cx, y: 110, rx: 30, ry: 58, fill: 'lightgreen' });
+      items.push({ type: 'line', points: [[cx, 176], [cx, 56]], color: 'green', width: 3 });
+      [76, 100, 124, 148].forEach(y => {
+        items.push({ type: 'line', points: [[cx, y + 10], [cx - 22, y]], color: 'green', width: 2 });
+        items.push({ type: 'line', points: [[cx, y + 10], [cx + 22, y]], color: 'green', width: 2 });
+        items.push({ type: 'line', points: [[cx - 12, y + 5], [cx - 18, y + 16]], color: 'green', width: 1 });
+        items.push({ type: 'line', points: [[cx + 12, y + 5], [cx + 18, y + 16]], color: 'green', width: 1 });
+      });
+    } else if (kind === 'parLeaf') {
+      items.push({ type: 'polygon', points: [[cx, 50], [cx + 14, 84], [cx + 16, 140], [cx, 176], [cx - 16, 140], [cx - 14, 84]], fill: 'lightgreen' });
+      [-8, 0, 8].forEach(dx => items.push({ type: 'line', points: [[cx, 56], [cx + dx, 110], [cx, 170]], color: 'green', width: 2 }));
+    } else if (kind === 'ringStem' || kind === 'scatterStem') {
+      items.push({ type: 'circle', x: cx, y: 110, r: 34, fill: 'lightgreen' });
+      const dots = kind === 'ringStem'
+        ? [0, 45, 90, 135, 180, 225, 270, 315].map(a => [cx + Math.round(22 * Math.cos(a * Math.PI / 180)), 110 + Math.round(22 * Math.sin(a * Math.PI / 180))])
+        : [[-18, -14], [4, -22], [20, -8], [-6, -4], [12, 10], [-20, 8], [2, 20], [-8, 12], [22, 16], [8, -6]].map(([dx, dy]) => [cx + dx, 110 + dy]);
+      dots.forEach(([x, y]) => items.push({ type: 'circle', x, y, r: 4, fill: 'green', stroke: 'none' }));
+    } else if (kind === 'tapRoot') {
+      items.push({ type: 'line', points: [[cx, 50], [cx, 176]], color: 'brown', width: 6 });
+      [[74, -1], [92, 1], [110, -1], [128, 1], [146, -1]].forEach(([y, s]) => {
+        items.push({ type: 'line', points: [[cx, y], [cx + s * 24, y + 14]], color: 'brown', width: 2 });
+        items.push({ type: 'line', points: [[cx, y + 8], [cx - s * 22, y + 22]], color: 'brown', width: 2 });
+      });
+    } else {
+      [-26, -16, -6, 4, 14, 24].forEach((dx, i) => {
+        items.push({ type: 'line', points: [[cx, 50], [cx + dx * 0.6, 110], [cx + dx, 160 + (i % 2) * 12]], color: 'brown', width: 2 });
+      });
+    }
+    return items;
+  }
+  const MP_PART_NAME = { netLeaf: '網状脈', parLeaf: '平行脈', ringStem: '輪のように並ぶ', scatterStem: '散らばる', tapRoot: '主根と側根', fibrousRoot: 'ひげ根' };
+  // 小さな図を横に並べる。names: 名前を書く（解説用）。書かないときは下にア・イ…の選ぶ場所
+  function mpPartsScene(title, kinds, names) {
+    const step = 320 / kinds.length;
+    const items = [{ type: 'text', x: 160, y: 28, text: title, size: 13, anchor: 'middle' }];
+    kinds.forEach((kind, i) => {
+      const cx = Math.round(step * (i + 0.5));
+      items.push(...mpPart(kind, cx));
+      if (names) items.push({ type: 'text', x: cx, y: 204, text: MP_PART_NAME[kind], size: 12, anchor: 'middle' });
+      else items.push({ type: 'region', id: 'r' + (i + 1), x: cx, y: 210, r: 22, label: 'アイウエ'[i] });
+    });
+    return scene(items);
+  }
+
+  // ゼニゴケの雄株（傘が円ばんの形）と雌株（傘が切れこみのある形で、下に胞子のう）。ア 雄株・イ 雌株 のように左右を kinds で決める
+  function mpMossItems(cx, kind) {
+    const items = [
+      { type: 'polygon', points: [[cx - 50, 190], [cx - 30, 176], [cx, 182], [cx + 30, 174], [cx + 50, 190], [cx, 196]], fill: 'green' },
+      { type: 'line', points: [[cx - 20, 194], [cx - 26, 214]], color: 'line', width: 1 },
+      { type: 'line', points: [[cx, 196], [cx, 218]], color: 'line', width: 1 },
+      { type: 'line', points: [[cx + 20, 194], [cx + 26, 214]], color: 'line', width: 1 },
+      { type: 'line', points: [[cx, 180], [cx, 100]], color: 'green', width: 3 },
+    ];
+    if (kind === 'male') {
+      items.push({ type: 'ellipse', x: cx, y: 96, rx: 26, ry: 8, fill: 'green' });
+    } else {
+      [-24, -12, 0, 12, 24].forEach(dx => items.push({ type: 'line', points: [[cx, 98], [cx + dx, 86 + Math.abs(dx) / 2]], color: 'green', width: 5 }));
+      [-14, 0, 14].forEach(dx => items.push({ type: 'circle', x: cx + dx, y: 108, r: 4, fill: 'yellow' }));
+    }
+    return items;
+  }
+  const MP_MOSS_Q = scene([].concat(mpMossItems(90, 'female'), mpMossItems(230, 'male'), [
+    { type: 'text', x: 160, y: 24, text: 'ゼニゴケ（2 つの株）', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 90, y: 58, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 230, y: 58, r: 22, label: 'イ' },
+  ]));
+
+  // ---- ステージ plants-mp1: プリント 1（花のつくり、果実と種子） ----
+  const plMp1 = {
+    id: 'plants-mp1', areaId: 'plants-miniprint', title: 'プリント 1: 花のつくりと果実', minutes: 5, concepts: ['pl-flower'],
+    lessons: [
+      {
+        id: 'plants-mp1-c1',
+        text: '花は外側から、**がく**・**花弁**・おしべ・めしべの順についています。めしべの先は**柱頭**、その下の細い部分は**花柱**、根もとのふくらみは**子房**で、子房の中に**胚珠**があります。おしべの先は**やく**です。',
+        figure: scene(flower().concat([
+          [12, 54, '柱頭', 154, 88], [12, 104, 'やく', 118, 100], [12, 160, '花弁', 90, 150], [12, 222, 'がく', 116, 200],
+          [264, 114, '花柱', 162, 128], [264, 166, '子房', 182, 178], [264, 218, '胚珠', 170, 186],
+        ].flatMap(([x, y, t, px, py]) => [
+          { type: 'line', points: [[x < px ? x + 28 : x - 4, y - 5], [px, py]], color: 'line', width: 1 },
+          { type: 'text', x, y, text: t, size: 13 },
+        ]))),
+      },
+      {
+        id: 'plants-mp1-c2',
+        text: 'めしべの柱頭に花粉がつくことを**受粉**といいます。受粉すると、子房は育って**果実**になり、子房の中の胚珠は**種子**になります。サクランボは、サクラの子房が育った果実です。',
+        figure: scene([
+          { type: 'ellipse', x: 70, y: 130, rx: 30, ry: 26, fill: 'lightgreen' },
+          { type: 'circle', x: 70, y: 132, r: 9, fill: 'white' },
+          { type: 'line', points: [[70, 104], [70, 60]], color: 'green', width: 4 },
+          { type: 'text', x: 70, y: 186, text: '子房と胚珠', size: 13, anchor: 'middle' },
+          { type: 'arrow', x1: 118, y1: 130, x2: 190, y2: 130, color: 'gray' },
+          { type: 'text', x: 154, y: 118, text: '受粉後', size: 13, anchor: 'middle' },
+          { type: 'circle', x: 250, y: 130, r: 38, fill: 'red' },
+          { type: 'circle', x: 250, y: 132, r: 13, fill: 'white' },
+          { type: 'line', points: [[250, 92], [256, 52]], color: 'green', width: 4 },
+          { type: 'text', x: 250, y: 196, text: '果実と種子', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-mp1-w1', concept: 'pl-flower',
+      prompt: '予想しよう。サクランボ（サクラの実）は、サクラの花のどの部分が育ったものだと思う？',
+      options: ['めしべの根もとのふくらみ', '花弁', 'おしべの先'],
+      answer: 'a',
+      explanation: 'サクランボは、めしべの根もとのふくらみ（子房）が育ったものです。花のつくりと、実ができるしくみを、このステージで学ぼう。',
+      hint: '花がちったあと、どこがふくらんでいくかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-mp1-p1', concept: 'pl-flower',
+        prompt: '図は花をたてに切ったようすです。花粉がつく、めしべの先の部分「柱頭」はどれ？ ア〜キから選ぼう。',
+        figure: MP_FLOWER_Q,
+        answer: 'r1',
+        explanation: '柱頭はめしべのいちばん先で、花粉がつきやすいように、べたべたしていることが多いです。',
+        hint: 'めしべのいちばん上だよ。',
+      }),
+      fill({
+        id: 'plants-mp1-t1', concept: 'pl-flower', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'めしべの柱頭に花粉がつくことを[b1]という。',
+        blanks: [word('b1', ['受粉', '受精', '発芽'], '受粉')],
+        explanation: '花粉がめしべの柱頭につくことを**受粉**といいます。受粉すると、子房が果実に、胚珠が種子に育ちます。',
+        hint: '花粉を「受ける」ことだよ。',
+      }),
+      figureChoice({
+        id: 'plants-mp1-p2', concept: 'pl-flower',
+        prompt: '図は花をたてに切ったようすです。受粉したあと果実になる「子房」はどれ？ ア〜キから選ぼう。',
+        figure: MP_FLOWER_Q,
+        answer: 'r6',
+        explanation: '子房はめしべの根もとのふくらんだ部分です。受粉すると育って果実になります。中にある胚珠は種子になります。',
+        hint: 'めしべの根もとのふくらみだよ。',
+      }),
+      fill({
+        id: 'plants-mp1-p3', concept: 'pl-flower',
+        prompt: 'サクラの花が受粉したあとのようすです。空らんに入る言葉を選ぼう。',
+        text: '受粉したあと、子房は[b1]になり、子房の中の胚珠は[b2]になる。',
+        blanks: [
+          word('b1', ['果実', '種子', '花粉'], '果実'),
+          word('b2', ['果実', '種子', '花粉'], '種子'),
+        ],
+        explanation: '子房が育って果実に、胚珠が育って種子になります。サクランボでは、食べる部分が果実、中のかたい粒の中が種子です。',
+        hint: '外側のふくらみと、中の小さな粒がそれぞれ何になるか考えよう。',
+      }),
+      choice({
+        id: 'plants-mp1-p4', concept: 'pl-flower',
+        prompt: 'ツツジの花を外側から順に分解しました。取れる順として正しいのはどれ？',
+        options: ['がく → 花弁 → おしべ → めしべ', '花弁 → がく → めしべ → おしべ', 'めしべ → おしべ → 花弁 → がく'],
+        answer: 'a',
+        explanation: '花は外側から、がく・花弁・おしべ・めしべの順についています。ツツジやアブラナなど、多くの花で同じ順です。',
+        hint: 'いちばん外側で花をささえているのはがくだよ。',
+      }),
+      fill({
+        id: 'plants-mp1-p5', concept: 'pl-flower',
+        prompt: '説明に合う言葉を選ぼう。',
+        text: 'めしべの柱頭の下の細くなった部分を[b1]、子房の中にある小さな粒を[b2]という。',
+        blanks: [
+          word('b1', ['花柱', '花糸', 'やく'], '花柱'),
+          word('b2', ['胚珠', '花粉', '子房'], '胚珠'),
+        ],
+        explanation: '柱頭と子房をつなぐ細い部分が**花柱**、子房の中の小さな粒が**胚珠**です。胚珠は受粉後に種子になります。',
+        hint: '「柱」頭の下の柱のような部分だよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'plants-mp1-r1', concept: 'pl-flower',
+        prompt: '図は花をたてに切ったようすです。花粉が入っている、おしべの先の「やく」はどれ？ ア〜キから選ぼう。',
+        figure: MP_FLOWER_Q,
+        answer: 'r2',
+        explanation: 'やくはおしべの先にある袋で、中に花粉が入っています。',
+        hint: 'おしべの先の黄色い部分だよ。',
+      }),
+      figureChoice({
+        id: 'plants-mp1-r2', concept: 'pl-flower',
+        prompt: '図は花をたてに切ったようすです。受粉したあと種子になる「胚珠」はどれ？ ア〜キから選ぼう。',
+        figure: MP_FLOWER_Q,
+        answer: 'r7',
+        explanation: '胚珠は子房の中にある小さな粒で、受粉すると種子になります。',
+        hint: '子房の中の小さな粒だよ。',
+      }),
+      choice({
+        id: 'plants-mp1-r3', concept: 'pl-flower',
+        prompt: 'サクランボの中にあるかたい粒（の中身）は、花のどの部分が育ったもの？',
+        options: ['胚珠', '子房', 'やく'],
+        answer: 'a',
+        explanation: '子房が育ったものが果実（食べる部分）、胚珠が育ったものが種子（中のかたい粒の中身）です。',
+        hint: '種子になるのはどの部分だったかな。',
+      }),
+      figureChoice({
+        id: 'plants-mp1-r4', concept: 'pl-flower',
+        prompt: '図は花をたてに切ったようすです。花のいちばん外側で、花弁の外にある「がく」はどれ？ ア〜キから選ぼう。',
+        figure: MP_FLOWER_Q,
+        answer: 'r4',
+        explanation: 'がくは花のいちばん外側にあり、つぼみのときに花を包んで守っています。',
+        hint: '花弁の根もとの外側にある、緑色の部分だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-mp2: プリント 2（マツの花、被子植物と裸子植物） ----
+  const plMp2 = {
+    id: 'plants-mp2', areaId: 'plants-miniprint', title: 'プリント 2: マツの花と裸子植物', minutes: 5, concepts: ['pl-seed', 'pl-classify'],
+    lessons: [
+      {
+        id: 'plants-mp2-c1',
+        text: 'マツの花は、たくさんの**りん片**が集まってできています。新しい枝の先に雌花、根もとに雄花がつきます。雌花のりん片には**胚珠**がむき出しでつき、雄花のりん片には花粉の入った**花粉のう**がつきます。',
+        figure: scene(pineBranch().concat([
+          [236, 40, '雌花', 213, 44], [236, 144, '雄花', 172, 140], [12, 150, '1 年前の雌花', 86, 188],
+        ].flatMap(([x, y, t, px, py]) => [
+          { type: 'line', points: [[x < px ? x + 64 : x - 4, y - 5], [px, py]], color: 'line', width: 1 },
+          { type: 'text', x, y, text: t, size: 13 },
+        ]))),
+      },
+      {
+        id: 'plants-mp2-c2',
+        text: '子房がなく、胚珠がむき出しの植物を**裸子植物**、胚珠が子房の中にある植物を**被子植物**といいます。裸子植物には子房がないので、種子はできても果実はできません。マツ・スギ・イチョウ・ソテツは裸子植物です。',
+        figure: scene([
+          { type: 'ellipse', x: 80, y: 120, rx: 40, ry: 34, fill: 'lightgreen' },
+          { type: 'circle', x: 70, y: 124, r: 9, fill: 'white' },
+          { type: 'circle', x: 92, y: 124, r: 9, fill: 'white' },
+          { type: 'text', x: 80, y: 60, text: '被子植物', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 80, y: 180, text: '胚珠は子房の中', size: 13, anchor: 'middle' },
+          { type: 'polygon', points: [[200, 150], [240, 90], [280, 150]], fill: 'brown' },
+          { type: 'circle', x: 226, y: 132, r: 9, fill: 'white' },
+          { type: 'circle', x: 254, y: 132, r: 9, fill: 'white' },
+          { type: 'text', x: 240, y: 60, text: '裸子植物', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 240, y: 180, text: '胚珠がむき出し', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 222, text: '白い丸が胚珠', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'plants-mp2-c3',
+        text: '花をさかせ、種子をつくってなかまをふやす植物を**種子植物**といいます。種子植物は裸子植物と被子植物に分かれ、被子植物は子葉の数で単子葉類と双子葉類に、双子葉類は花弁のようすで合弁花類と離弁花類に分かれます。',
+        figure: SEED_TREE_NAMES,
+      },
+    ],
+    warmup: choice({
+      id: 'plants-mp2-w1', concept: 'pl-seed',
+      prompt: '予想しよう。マツには、サクラのような花弁のある花はありません。マツは種子をつくると思う？',
+      options: ['つくる', 'つくらない', '年によってちがう'],
+      answer: 'a',
+      explanation: 'マツは花弁のない花をさかせ、種子をつくります。まつかさの中に種子ができます。マツの花のつくりを、このステージで学ぼう。',
+      hint: 'まつかさの中を見たことはあるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-mp2-p1', concept: 'pl-seed',
+        prompt: '図はマツの枝です。新しい枝の先につく「雌花」はどれ？ ア〜ウから選ぼう。',
+        figure: MP_PINE_Q,
+        answer: 'r1',
+        explanation: '雌花は新しい枝の先につきます。雄花は新しい枝の根もとにたくさん集まってつきます。ウは 1 年前の雌花で、まつかさになりかけています。',
+        hint: '新しい枝のいちばん先を見よう。',
+      }),
+      fill({
+        id: 'plants-mp2-t1', concept: 'pl-seed', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '子房がなく胚珠がむき出しになっている植物を[b1]、胚珠が子房の中にある植物を[b2]という。',
+        blanks: [
+          word('b1', ['裸子植物', '被子植物', '種子植物'], '裸子植物'),
+          word('b2', ['裸子植物', '被子植物', '種子植物'], '被子植物'),
+        ],
+        explanation: '胚珠がむき出し（裸）なのが**裸子植物**、子房に包まれている（被われている）のが**被子植物**です。',
+        hint: '「裸」はむき出し、「被」はおおわれているという意味だよ。',
+      }),
+      choice({
+        id: 'plants-mp2-p2', concept: 'pl-seed',
+        prompt: 'マツの雌花のりん片についているものはどれ？',
+        options: ['むき出しの胚珠', '子房に包まれた胚珠', '花粉のう'],
+        answer: 'a',
+        explanation: 'マツの雌花のりん片には、胚珠がむき出しでついています。花粉のうは雄花のりん片についています。',
+        hint: 'マツは裸子植物だったね。',
+      }),
+      choice({
+        id: 'plants-mp2-p3', concept: 'pl-seed',
+        prompt: '花のつくりで、マツと同じなかま（裸子植物）をすべて選んだものはどれ？ スギ・ツツジ・サクラ・イチョウ・ソテツ',
+        options: ['スギ・イチョウ・ソテツ', 'ツツジ・サクラ', 'スギ・ツツジ・イチョウ'],
+        answer: 'a',
+        explanation: 'スギ・イチョウ・ソテツは、マツと同じく胚珠がむき出しの裸子植物です。ツツジとサクラは、胚珠が子房に包まれた被子植物です。',
+        hint: '花弁のある花をさかせるのは被子植物だよ。',
+      }),
+      choice({
+        id: 'plants-mp2-p4', concept: 'pl-seed',
+        prompt: 'マツやイチョウは、種子はできますが果実はできません。その理由として正しいのはどれ？',
+        options: ['子房がないから', '胚珠がないから', '花粉をつくらないから'],
+        answer: 'a',
+        explanation: '果実は子房が育ってできます。裸子植物には子房がないので果実はできません。胚珠はあるので、種子はできます。',
+        hint: '果実は花のどの部分が育ったものだったかな。',
+      }),
+      fill({
+        id: 'plants-mp2-p5', concept: 'pl-classify',
+        prompt: '種子植物の分け方です。空らんに入る言葉を選ぼう。',
+        text: '被子植物は、子葉の数によって[b1]と[b2]に分けられる。[b2]は、花弁のつき方によって合弁花類と離弁花類に分けられる。',
+        blanks: [
+          word('b1', ['単子葉類', '双子葉類', '裸子植物'], '単子葉類'),
+          word('b2', ['単子葉類', '双子葉類', '裸子植物'], '双子葉類'),
+        ],
+        explanation: '子葉が 1 枚の単子葉類と、2 枚の双子葉類に分けます。双子葉類は、花弁がくっついている合弁花類と、離れている離弁花類に分けます。',
+        hint: '子葉が 1 枚か 2 枚かで分けるよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'plants-mp2-r1', concept: 'pl-seed',
+        prompt: '図はマツの枝です。新しい枝の根もとにたくさん集まってつく「雄花」はどれ？ ア〜ウから選ぼう。',
+        figure: MP_PINE_Q,
+        answer: 'r2',
+        explanation: '雄花は新しい枝の根もとに集まってつき、りん片の花粉のうから花粉を出します。',
+        hint: '新しい枝の根もとを見よう。',
+      }),
+      choice({
+        id: 'plants-mp2-r2', concept: 'pl-seed',
+        prompt: 'マツの花は、何がたくさん集まってできている？',
+        options: ['りん片', '花弁', 'がく'],
+        answer: 'a',
+        explanation: 'マツの花には花弁やがくがなく、うろこのようなりん片がたくさん集まってできています。',
+        hint: 'うろこのような小さな部分だよ。',
+      }),
+      choice({
+        id: 'plants-mp2-r3', concept: 'pl-seed',
+        prompt: '花をさかせ、種子をつくってなかまをふやす植物を何という？',
+        options: ['種子植物', 'シダ植物', 'コケ植物'],
+        answer: 'a',
+        explanation: '花をさかせて種子をつくる植物を種子植物といいます。裸子植物と被子植物に分かれます。',
+        hint: '「種子」をつくる植物だよ。',
+      }),
+      choice({
+        id: 'plants-mp2-r4', concept: 'pl-seed',
+        prompt: 'マツの雄花のりん片についていて、花粉が入っているものはどれ？',
+        options: ['花粉のう', '胚珠', '子房'],
+        answer: 'a',
+        explanation: '雄花のりん片には花粉のうがあり、中に花粉が入っています。花粉は風で運ばれて雌花の胚珠につきます。',
+        hint: '花粉を入れておく「ふくろ」だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-mp3: プリント 3（単子葉類と双子葉類の葉・茎・根） ----
+  const plMp3 = {
+    id: 'plants-mp3', areaId: 'plants-miniprint', title: 'プリント 3: 単子葉類と双子葉類', minutes: 5, concepts: ['pl-monodi'],
+    lessons: [
+      {
+        id: 'plants-mp3-c1',
+        text: '子葉が 2 枚の**双子葉類**は、葉脈が網の目のような**網状脈**で、根は太い**主根**と細い**側根**からなります。茎の断面では、維管束が輪のように並んでいます。',
+        figure: mpPartsScene('双子葉類（アブラナ・サクラなど）', ['netLeaf', 'ringStem', 'tapRoot'], true),
+      },
+      {
+        id: 'plants-mp3-c2',
+        text: '子葉が 1 枚の**単子葉類**は、葉脈が平行に並ぶ**平行脈**で、根は同じくらいの太さの根がたくさん出る**ひげ根**です。茎の断面では、維管束が散らばっています。イネ・トウモロコシ・ツユクサ・ユリがこのなかまです。',
+        figure: mpPartsScene('単子葉類（イネ・ツユクサなど）', ['parLeaf', 'scatterStem', 'fibrousRoot'], true),
+      },
+      {
+        id: 'plants-mp3-c3',
+        text: '葉にあるすじを**葉脈**といいます。根の先近くには、細い毛のような**根毛**がたくさんあります。根毛があると、根が土とふれる面積が広くなり、水や養分を吸収しやすくなります。',
+        figure: scene([
+          { type: 'line', points: [[160, 30], [160, 200]], color: 'brown', width: 8 },
+          ...[50, 70, 90, 110, 130, 150, 170].flatMap(y => [
+            { type: 'line', points: [[156, y], [130, y - 8]], color: 'brown', width: 1 },
+            { type: 'line', points: [[164, y], [190, y - 8]], color: 'brown', width: 1 },
+          ]),
+          { type: 'line', points: [[200, 100], [236, 100]], color: 'line', width: 1 },
+          { type: 'text', x: 240, y: 104, text: '根毛', size: 14 },
+          { type: 'text', x: 160, y: 228, text: '根の先近く（拡大）', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-mp3-w1', concept: 'pl-monodi',
+      prompt: '予想しよう。イネの葉のすじ（葉脈）は、どんな形に並んでいると思う？',
+      options: ['平行に並んでいる', '網の目のように広がっている', 'すじは見えない'],
+      answer: 'a',
+      explanation: 'イネのような単子葉類の葉脈は、平行に並んでいます。葉・茎・根のちがいを、このステージで学ぼう。',
+      hint: 'イネやススキの細長い葉を思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-mp3-p1', concept: 'pl-monodi',
+        prompt: '被子植物の葉のようすです。双子葉類の葉はどちら？ ア・イから選ぼう。',
+        figure: mpPartsScene('2 種類の葉', ['parLeaf', 'netLeaf'], false),
+        answer: 'r2',
+        explanation: '双子葉類の葉脈は、網の目のように広がる網状脈です（イ）。アのように平行に並ぶ平行脈は、単子葉類の葉です。',
+        hint: '網の目のようなすじの葉をさがそう。',
+      }),
+      fill({
+        id: 'plants-mp3-t1', concept: 'pl-monodi', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '葉にあるすじのことを[b1]という。',
+        blanks: [word('b1', ['葉脈', '維管束', '根毛'], '葉脈')],
+        explanation: '葉にあるすじを**葉脈**といいます。双子葉類は網状脈、単子葉類は平行脈です。',
+        hint: '葉の「脈」と書くよ。',
+      }),
+      fill({
+        id: 'plants-mp3-p2', concept: 'pl-monodi',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '子葉が 2 枚のなかまを[b1]、1 枚のなかまを[b2]という。[b1]の葉脈は[b3]になっている。',
+        blanks: [
+          word('b1', ['双子葉類', '単子葉類'], '双子葉類'),
+          word('b2', ['双子葉類', '単子葉類'], '単子葉類'),
+          word('b3', ['網状脈', '平行脈'], '網状脈'),
+        ],
+        explanation: '子葉が 2 枚の双子葉類は網状脈、子葉が 1 枚の単子葉類は平行脈です。',
+        hint: '「双」は 2 つ、「単」は 1 つという意味だよ。',
+      }),
+      figureChoice({
+        id: 'plants-mp3-p3', concept: 'pl-monodi',
+        prompt: '被子植物の茎を横に切った断面です（緑の点は維管束）。双子葉類の茎の断面はどちら？ ア・イから選ぼう。',
+        figure: mpPartsScene('2 種類の茎の断面', ['ringStem', 'scatterStem'], false),
+        answer: 'r1',
+        explanation: '双子葉類の茎では、維管束が輪のように並んでいます（ア）。単子葉類の茎では、維管束が全体に散らばっています（イ）。',
+        hint: '維管束が輪のように並んでいるのはどちらかな。',
+      }),
+      figureChoice({
+        id: 'plants-mp3-p4', concept: 'pl-monodi',
+        prompt: '被子植物の根のようすです。双子葉類の根はどちら？ ア・イから選ぼう。',
+        figure: mpPartsScene('2 種類の根', ['fibrousRoot', 'tapRoot'], false),
+        answer: 'r2',
+        explanation: '双子葉類の根は、太い主根と、そこから出る細い側根からなります（イ）。アのひげ根は単子葉類の根です。',
+        hint: '太い根が 1 本あるのはどちらかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'plants-mp3-r1', concept: 'pl-monodi',
+        prompt: 'ツユクサ（単子葉類）の葉の葉脈はどれ？',
+        options: ['平行脈', '網状脈', '葉脈はない'],
+        answer: 'a',
+        explanation: 'ツユクサは単子葉類なので、葉脈は平行に並ぶ平行脈です。',
+        hint: '単子葉類の葉脈を思い出そう。',
+      }),
+      fill({
+        id: 'plants-mp3-r2', concept: 'pl-monodi',
+        prompt: '根のつくりです。空らんに入る言葉を選ぼう。',
+        text: '双子葉類の根で、中心の太い根を[b1]、そこから出る細い根を[b2]という。単子葉類の、同じくらいの太さの根がたくさん出ている根を[b3]という。',
+        blanks: [
+          word('b1', ['主根', '側根', 'ひげ根'], '主根'),
+          word('b2', ['主根', '側根', 'ひげ根'], '側根'),
+          word('b3', ['主根', '側根', 'ひげ根'], 'ひげ根'),
+        ],
+        explanation: '双子葉類の根は主根と側根、単子葉類の根はひげ根です。',
+        hint: '「主」はおもな、「側」はわきの、という意味だよ。',
+      }),
+      choice({
+        id: 'plants-mp3-r3', concept: 'pl-monodi',
+        prompt: '根の先近くにある、綿毛のような細い根を何という？',
+        options: ['根毛', '側根', 'ひげ根'],
+        answer: 'a',
+        explanation: '根の先近くにある細い毛のようなものを根毛といいます。土とふれる面積を広くし、水や養分を吸収しやすくしています。',
+        hint: '根の「毛」だよ。',
+      }),
+      choice({
+        id: 'plants-mp3-r4', concept: 'pl-monodi',
+        prompt: 'イネやトウモロコシのように、主根がなく、同じくらいの太さの根がたくさん出ている根を何という？',
+        options: ['ひげ根', '主根', '根毛'],
+        answer: 'a',
+        explanation: 'イネやトウモロコシは単子葉類で、根はひげ根です。',
+        hint: 'ひげのように見える根だよ。',
+      }),
+      figureChoice({
+        id: 'plants-mp3-r5', concept: 'pl-monodi',
+        prompt: '子葉が 1 枚の植物（単子葉類）の葉と根の組み合わせを考えます。ア〜エのうち、単子葉類の根はどれ？',
+        figure: mpPartsScene('葉と根', ['netLeaf', 'parLeaf', 'tapRoot', 'fibrousRoot'], false),
+        answer: 'r4',
+        explanation: '単子葉類の根はひげ根（エ）で、葉は平行脈（イ）です。双子葉類は、網状脈の葉（ア）と主根・側根（ウ）です。',
+        hint: '同じくらいの太さの根がたくさん出ているものだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-mp4: プリント 4（シダ植物・コケ植物と植物の分類） ----
+  const plMp4 = {
+    id: 'plants-mp4', areaId: 'plants-miniprint', title: 'プリント 4: シダ・コケと植物の分類', minutes: 5, concepts: ['pl-spore', 'pl-classify'],
+    lessons: [
+      {
+        id: 'plants-mp4-c1',
+        text: 'ワラビ・ゼンマイ・スギナなどの**シダ植物**は、根・茎・葉の区別があり、茎は地下にあります。ゼニゴケなどの**コケ植物**は根・茎・葉の区別がなく、根のように見える**仮根**はからだを固定します。どちらも**胞子**でふえ、光合成をします。',
+        figure: scene(fern().concat([
+          { type: 'text', x: 226, y: 56, text: '葉', size: 13 },
+          { type: 'text', x: 316, y: 152, text: '茎（地下茎）', size: 12, anchor: 'end' },
+          { type: 'text', x: 40, y: 222, text: '根', size: 13 },
+        ])),
+      },
+      {
+        id: 'plants-mp4-c2',
+        text: '植物は、種子でふえる**種子植物**と、胞子でふえるシダ植物・コケ植物に分けられます。種子植物は裸子植物と被子植物、被子植物は単子葉類と双子葉類、双子葉類は合弁花類と離弁花類に分けられます。',
+        figure: SEED_TREE_NAMES,
+      },
+    ],
+    warmup: choice({
+      id: 'plants-mp4-w1', concept: 'pl-spore',
+      prompt: '予想しよう。ワラビやゼニゴケは花をさかせません。何でなかまをふやすと思う？',
+      options: ['胞子', '種子', '球根'],
+      answer: 'a',
+      explanation: 'シダ植物やコケ植物は、花をさかせず、胞子でなかまをふやします。からだのつくりと分類を、このステージで学ぼう。',
+      hint: '種子をつくらない植物だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-mp4-p1', concept: 'pl-spore',
+        prompt: '図はイヌワラビ（シダ植物）のからだです。茎はどれ？ ア〜ウから選ぼう。',
+        figure: MP_FERN_Q,
+        answer: 'r2',
+        explanation: 'シダ植物の茎は地面の下にあり、地下茎といいます。地面の上に出ているのは、すべて葉です。',
+        hint: 'シダ植物の茎は地面の上には出ていないよ。',
+      }),
+      fill({
+        id: 'plants-mp4-t1', concept: 'pl-spore', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'シダ植物やコケ植物は[b1]でなかまをふやす。コケ植物の、根のように見えてからだを地面に固定する部分を[b2]という。',
+        blanks: [
+          word('b1', ['胞子', '種子', '花粉'], '胞子'),
+          word('b2', ['仮根', '根毛', '地下茎'], '仮根'),
+        ],
+        explanation: 'シダ植物・コケ植物は**胞子**でふえます。コケ植物の**仮根**は、根のように水を吸うはたらきはほとんどなく、からだを固定します。',
+        hint: '「仮」の根と書くよ。',
+      }),
+      fill({
+        id: 'plants-mp4-p2', concept: 'pl-spore',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'シダ植物は、根・茎・葉の区別が[b1]。コケ植物は、根・茎・葉の区別が[b2]。シダ植物もコケ植物も、光合成を[b3]。',
+        blanks: [
+          word('b1', ['ある', 'ない'], 'ある'),
+          word('b2', ['ある', 'ない'], 'ない'),
+          word('b3', ['する', 'しない'], 'する'),
+        ],
+        explanation: 'シダ植物には根・茎・葉の区別がありますが、コケ植物にはありません。どちらも緑色で、葉緑体があり光合成をします。',
+        hint: 'どちらも緑色をしているね。',
+      }),
+      figureChoice({
+        id: 'plants-mp4-p3', concept: 'pl-classify',
+        prompt: '図は種子植物の分け方です。ユリはどのなかま？ ア〜エから選ぼう。',
+        figure: SEED_TREE,
+        answer: 'r2',
+        explanation: 'ユリは子房のある被子植物で、子葉が 1 枚の単子葉類です（イ）。葉脈は平行脈、根はひげ根です。',
+        hint: 'ユリの葉脈は平行に並んでいるよ。',
+      }),
+      figureChoice({
+        id: 'plants-mp4-p4', concept: 'pl-classify',
+        prompt: '図は種子植物の分け方です。アサガオはどのなかま？ ア〜エから選ぼう。',
+        figure: SEED_TREE,
+        answer: 'r3',
+        explanation: 'アサガオは子葉が 2 枚の双子葉類で、花弁が 1 つにくっついている合弁花類です（ウ）。',
+        hint: 'アサガオの花弁は、ラッパのように 1 つにつながっているね。',
+      }),
+      choice({
+        id: 'plants-mp4-p5', concept: 'pl-classify',
+        prompt: '種子をつくらない植物のうち、根・茎・葉の区別があるなかまはどれ？',
+        options: ['シダ植物', 'コケ植物', '裸子植物'],
+        answer: 'a',
+        explanation: '種子をつくらないのはシダ植物とコケ植物です。そのうち、根・茎・葉の区別があるのはシダ植物です。裸子植物は種子をつくります。',
+        hint: 'ワラビには葉や茎があるね。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'plants-mp4-r1', concept: 'pl-spore',
+        prompt: 'ゼニゴケには雄株と雌株があります。胞子のう（黄色の粒）をつける雌株に対して、雄株はどちら？ ア・イから選ぼう。',
+        figure: MP_MOSS_Q,
+        answer: 'r2',
+        explanation: '雌株の傘は切れこみのある形で、その下に胞子のうができます（ア）。雄株の傘は円ばんのような形です（イ）。胞子は雌株でつくられます。',
+        hint: '胞子のうがないほうをさがそう。',
+      }),
+      choice({
+        id: 'plants-mp4-r2', concept: 'pl-classify',
+        prompt: 'イヌワラビとゼニゴケは、それぞれ何植物？',
+        options: ['イヌワラビはシダ植物、ゼニゴケはコケ植物', 'イヌワラビはコケ植物、ゼニゴケはシダ植物', 'どちらも裸子植物'],
+        answer: 'a',
+        explanation: 'イヌワラビは根・茎・葉の区別があるシダ植物、ゼニゴケは区別のないコケ植物です。どちらも胞子でふえます。',
+        hint: '根・茎・葉の区別があるのはどちらかな。',
+      }),
+      figureChoice({
+        id: 'plants-mp4-r3', concept: 'pl-classify',
+        prompt: '図は種子植物の分け方です。サクラはどのなかま？ ア〜エから選ぼう。',
+        figure: SEED_TREE,
+        answer: 'r4',
+        explanation: 'サクラは双子葉類で、花弁が 1 枚ずつ離れている離弁花類です（エ）。',
+        hint: 'サクラの花弁は 1 枚ずつ散るね。',
+      }),
+      figureChoice({
+        id: 'plants-mp4-r4', concept: 'pl-classify',
+        prompt: '図は種子植物の分け方です。イチョウはどのなかま？ ア〜エから選ぼう。',
+        figure: SEED_TREE,
+        answer: 'r1',
+        explanation: 'イチョウは子房がなく、胚珠がむき出しの裸子植物です（ア）。',
+        hint: 'イチョウはマツと同じなかまだよ。',
+      }),
+      choice({
+        id: 'plants-mp4-r5', concept: 'pl-spore',
+        prompt: 'ワラビ・ゼンマイ・スギナなどをまとめて何という？',
+        options: ['シダ植物', 'コケ植物', '裸子植物'],
+        answer: 'a',
+        explanation: 'ワラビ・ゼンマイ・スギナは、根・茎・葉の区別があり胞子でふえるシダ植物です。',
+        hint: '春に芽を食べることもある植物だよ。',
+      }),
+    ],
+  };
+
+  // あふれた問題を、もとからある概念の確認問題（checkPool）に足す
+  function addCheck(id, problems) { concepts.find(c => c.id === id).checkPool.push(...problems); }
+  addCheck('pl-spore', [
+    choice({
+      id: 'plants-mp4-k1', concept: 'pl-spore',
+      prompt: 'シダ植物やコケ植物が、なかまをふやすためにつくるものはどれ？',
+      options: ['胞子', '種子', '果実'],
+      answer: 'a',
+      explanation: 'シダ植物やコケ植物は、種子ではなく胞子をつくってなかまをふやします。',
+      hint: '種子植物ではない植物だよ。',
+    }),
+    choice({
+      id: 'plants-mp4-k2', concept: 'pl-spore',
+      prompt: 'コケ植物は光合成をする？',
+      options: ['する', 'しない', '夜だけする'],
+      answer: 'a',
+      explanation: 'コケ植物は緑色で葉緑体をもち、光合成をして養分をつくります。',
+      hint: 'コケは何色をしているかな。',
+    }),
+  ]);
+  addCheck('pl-classify', [
+    choice({
+      id: 'plants-mp4-k3', concept: 'pl-classify',
+      prompt: '双子葉類は、さらに何と何に分けられる？',
+      options: ['合弁花類と離弁花類', '裸子植物と被子植物', 'シダ植物とコケ植物'],
+      answer: 'a',
+      explanation: '双子葉類は、花弁がくっついている合弁花類と、離れている離弁花類に分けられます。',
+      hint: '花弁のつき方で分けるよ。',
+    }),
+  ]);
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1021,6 +1686,7 @@
     areas: [
       { id: 'pl-flower', title: '花と種子', order: 1, stages: [plants1, plants2] },
       { id: 'body', title: 'からだのつくりと分類', order: 2, stages: [plants3, plants4] },
+      { id: 'plants-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [plMp1, plMp2, plMp3, plMp4] },
     ],
   };
 

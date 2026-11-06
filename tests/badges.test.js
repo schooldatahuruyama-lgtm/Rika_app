@@ -36,6 +36,30 @@ test('stats: クリア 2 回（星 3 と 2）→ clearedStages 2、perfectStages
   assert.equal(badges.stats(r, reg, config).clearedStages, 3);
 });
 
+test('stats: free: true の領域（ミニプリント）は clearedUnits に数えない。clearedStages・星には数える', () => {
+  const u = JSON.parse(JSON.stringify(unit));
+  u.areas[1].free = true;   // 領域 b（s-b1）をミニプリント扱いに
+  const reg2 = cr.createRegistry(); reg2.register(u);
+  let r = record.createRecord();
+  r = record.finishStage(r, { stageId: 's-a1', stars: 3, cleared: true }, at(3));
+  r = record.finishStage(r, { stageId: 's-a2', stars: 2, cleared: true }, at(3));
+  assert.equal(badges.stats(r, reg2, config).clearedUnits, 1);   // s-b1 が未クリアでも 1
+  r = record.finishStage(r, { stageId: 's-b1', stars: 3, cleared: true }, at(3));
+  const s = badges.stats(r, reg2, config);
+  assert.equal(s.clearedUnits, 1); assert.equal(s.clearedStages, 3);
+  assert.equal(s.totalStars, 8); assert.equal(s.perfectStages, 2);
+  // 基本のステージが未クリアなら free をクリアしても 0
+  let r2 = record.createRecord();
+  r2 = record.finishStage(r2, { stageId: 's-b1', stars: 3, cleared: true }, at(3));
+  assert.equal(badges.stats(r2, reg2, config).clearedUnits, 0);
+  // free: 'true'（文字列）は free と見なさない
+  const u3 = JSON.parse(JSON.stringify(unit)); u3.areas[1].free = 'true';
+  const reg3 = cr.createRegistry(); reg3.register(u3);
+  assert.equal(badges.stats(r, reg3, config).clearedUnits, 1);
+  const r3 = record.finishStage(record.finishStage(record.createRecord(), { stageId: 's-a1', stars: 1, cleared: true }, at(3)), { stageId: 's-a2', stars: 1, cleared: true }, at(3));
+  assert.equal(badges.stats(r3, reg3, config).clearedUnits, 0);
+});
+
 test('stats: ステージ 0 の単元は clearedUnits に数えない', () => {
   const reg2 = cr.createRegistry(); reg2.register({ id: 'empty', title: '空', concepts: [], areas: [] });
   assert.equal(badges.stats(record.createRecord(), reg2, config).clearedUnits, 0);
