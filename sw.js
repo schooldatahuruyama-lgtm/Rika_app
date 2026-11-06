@@ -180,6 +180,7 @@ const PRECACHE = [
   'js/anim-chem.js',
   'js/anim-bio.js',
   'js/anim-earth.js',
+  'js/sfx.js',
   'js/mascot.js',
   'js/richtext.js',
   'js/ruby.js',

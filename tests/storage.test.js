@@ -83,3 +83,22 @@ test('importJson: version が違えば error', () => {
   const bad = storage.importJson('{not json');
   assert.equal(bad.store, null); assert.match(bad.error, /読み込めません/);
 });
+
+// app.js の normalizeStore（見た目の設定）。app.js はブラウザ用なので、document のない vm の中で読み込む（start は呼ばれない）
+test('normalizeStore: profile.theme・ruby・sound の知らない値は消し、正しい値は残す', () => {
+  const vm = require('node:vm'); const fs = require('node:fs'); const path = require('node:path');
+  const context = { RikaQuest: { record, config }, console };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8'), context);
+  const store = record.createStore();
+  store.profiles = [
+    { id: 'a', nickname: 'A', theme: 'teal', ruby: 'on', sound: false },
+    { id: 'b', nickname: 'B', theme: 'red', ruby: 1, sound: 'off' },
+    { id: 'c', nickname: 'C', sound: true },
+  ];
+  const out = context.RikaQuest.app.normalizeStore(store);
+  assert.equal(out.profiles[0].theme, 'teal');
+  assert.equal(out.profiles[0].ruby, 'on');
+  assert.equal(out.profiles[0].sound, false);
+  ['theme', 'ruby', 'sound'].forEach((k) => assert.equal(k in out.profiles[1], false, k + ' が残っている'));
+  assert.equal(out.profiles[2].sound, true);
+});

@@ -184,3 +184,7 @@ implemented (opus). Codex round1 High 1（--force で VERSION が上がらない
 Ruling: 各単元に領域「<接頭辞>-miniprint」（free: true で順不同に開く）を足し、プリント 2〜4 枚ごとに 1 ステージ。小問は落とさず problems → retryPool → checkPool に。図が核の問題は簡略図か文で成立する形に、作図は見送り。新単元 basics（観察と実験の基本、1 年）。正解は答え未記入のプリントではこちらで付け、先生の確認シートに「自信のない点」を集約。単元マスターのバッジは free の領域を数えない。 — コスト: 正解の誤りが残る可能性（確認シートで先生が見る）。
 implemented (opus ×6 並行: 1A/1B/2A/2B/3A/3B。129 ステージ・約 1,650 問、プリント約 390 枚、見送り 7 枚). ふりがな辞書 +255 語（opus）、光のテスト更新。レビュー: Codex が利用上限で失敗 → Claude 代行 round1 High 1（motion-mp1-p3 の正解）/Medium 1（単元マスターの数え方）/Low 9 → fix（opus）→ round2 Low 3 → controller fix → 3 サイクル目 round1（sonnet）。tests 617。VERSION 2026-11-06-25。
 合計: 20 単元・209 ステージ・2,848 問（前: 19 単元・80 ステージ・約 1,200 問）。
+
+## 追加作業 2026-11-06: 効果音（ユーザー指示「正解・不正解・レベルアップ時の効果音」）
+Ruling: 音声ファイルを置かず Web Audio で合成（オフライン・容量ゼロ・ライセンス不要）。生徒ごとに設定でオン・オフ（profile.sound、既定オン）。新しいバッジはレベルアップと同じ音（両方なら 1 回）。 — コスト: 音色は合成音なので好みが分かれる（設定で切れる）。
+implemented (opus, js/sfx.js). Codex round1 High 1（iOS の interrupted からの復帰）→ controller fix → round2 指摘なし → complete（tests 628）。

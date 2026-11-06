@@ -6,7 +6,7 @@
 //   （message(text, kind, options) と confirm(text, okLabel, options) は options.noRuby で、その文にふりがなを付けない）
 //   （store・record・unitId は getter で、いつも最新の値を返す。unitId はいま選んでいる単元の id か null。
 //     curriculum は content/curriculum.js の単元一覧か null。setUnit(id) は単元を変えて保存し、できなければ false。
-//     prefs は今の生徒の見た目の設定 { theme, ruby }（getter）。setPrefs({ theme?, ruby? }) は変えてすぐ反映・保存し、できなければ false）
+//     prefs は今の生徒の見た目の設定 { theme, ruby, sound }（getter）。setPrefs({ theme?, ruby?, sound? }) は変えてすぐ反映・保存し、できなければ false）
 // 描画関数が関数を返すと、次に別の画面へ移るときに app がそれを呼ぶ（後片付け用）。
 // 利用者の文字はすべて textContent で入れる。innerHTML は figures・mascot が返す SVG 文字列だけに使う。
 // ニックネームを出す要素には data-no-ruby を付ける（名前の読みは辞書では決められないので、ふりがなを付けない。js/ruby.js）。
@@ -671,20 +671,37 @@
     { id: 'off', label: 'なし' },
     { id: 'on', label: 'つける' },
   ];
+  // 効果音（profile.sound は true / false）
+  const SOUND_CHOICES = [
+    { value: false, label: 'なし' },
+    { value: true, label: '鳴らす' },
+  ];
 
-  // 「見た目と読みやすさ」: アクセントカラーとふりがな。押すとすぐ反映して保存する（生徒ごとの設定）
+  // 効果音を鳴らす（js/sfx.js が読み込めなかったときや失敗しても、画面は止めない）
+  function playSfx(kind) {
+    if (!RQ.sfx || typeof RQ.sfx.play !== 'function') return;
+    try {
+      RQ.sfx.play(kind);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // 「見た目と読みやすさ」: アクセントカラー・ふりがな・効果音。押すとすぐ反映して保存する（生徒ごとの設定）
   function prefsCard(ctx) {
     const hasProfile = !!currentProfile(ctx.store);
-    const prefs = ctx.prefs || { theme: 'blue', ruby: 'off' };
+    const prefs = ctx.prefs || { theme: 'blue', ruby: 'off', sound: true };
     // 押したボタンだけ aria-pressed を true にする（画面は描き直さない）
     const press = (buttons, chosen) => buttons.forEach((b) => b.setAttribute('aria-pressed', b === chosen ? 'true' : 'false'));
     const change = (patch, buttons, chosen, okText) => {
       if (ctx.setPrefs(patch)) {
         press(buttons, chosen);
         ctx.message(okText, 'ok');
+        return true;
       } else {
         ctx.message('保存できなかったため、元の設定に戻しました。' + (ctx.state.protectedStorage
           ? '読み込めない記録が残っているため、「読み込めない記録を上書きして新しく始める」で対処してください。' : ''), 'warn');
+        return false;
       }
     };
 
@@ -700,6 +717,15 @@
     rubyButtons.forEach((b, i) => b.addEventListener('click', () => change({ ruby: RUBY_CHOICES[i].id }, rubyButtons, b,
       RUBY_CHOICES[i].id === 'on' ? 'ふりがなをつけました。' : 'ふりがなを消しました。')));
 
+    const soundButtons = SOUND_CHOICES.map((c) => el('button', {
+      type: 'button', class: 'btn sound-choice', 'aria-pressed': prefs.sound === c.value ? 'true' : 'false', disabled: !hasProfile,
+    }, c.label));
+    soundButtons.forEach((b, i) => b.addEventListener('click', () => {
+      const on = SOUND_CHOICES[i].value;
+      // 鳴らすにしたら、押した操作の中で試しに鳴らす（なしのときは sfx.js が鳴らさない）
+      if (change({ sound: on }, soundButtons, b, on ? '効果音を鳴らします。' : '効果音を消しました。')) playSfx('correct');
+    }));
+
     return card([
       cardTitle('見た目と読みやすさ'),
       hasProfile ? null : el('p', { class: 'muted', text: 'プロフィールを選ぶと色を変えられます。' }),
@@ -708,6 +734,9 @@
       el('h3', { class: 'prefs-label', text: 'ふりがな' }),
       el('p', { class: 'muted', text: '漢字に読みがなをつけます。' }),
       el('div', { class: 'btn-row', role: 'group', 'aria-label': 'ふりがな' }, rubyButtons),
+      el('h3', { class: 'prefs-label', text: '効果音' }),
+      el('p', { class: 'muted', text: '正解・不正解・レベルアップのときに短い音を鳴らします。' }),
+      el('div', { class: 'btn-row', role: 'group', 'aria-label': '効果音' }, soundButtons),
     ], 'prefs-card');
   }
 
@@ -1218,6 +1247,13 @@
         ]))),
       ], 'badge-new'));
       if (!ctx.markBadgesSeen(newBadges.map((d) => d.id))) reportSave(ctx, false, null);
+    }
+
+    // 効果音: レベルが上がったら levelup、上がらず新しいバッジがあれば badge（両方でも 1 回。同じ結果では描き直しても鳴らさない）
+    if (!result.sfxPlayed) {
+      result.sfxPlayed = true;
+      if (levelAfter > levelBefore) playSfx('levelup');
+      else if (newBadges.length > 0) playSfx('badge');
     }
 
     // 復習で伸びたこと
