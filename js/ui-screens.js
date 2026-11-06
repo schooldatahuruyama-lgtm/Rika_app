@@ -395,12 +395,24 @@
       button('記録を見る', () => ctx.go('record'), 'btn-block'),
     ]));
 
+    section.append(liveJoinCard(ctx));
+
     section.append(card([
       cardTitle('班の協力チャレンジ（準備中）'),
       el('p', { text: '班のみんなで力を合わせるチャレンジです。今はまだ使えません。' }),
     ], 'is-disabled'));
 
     section.append(button('設定', () => ctx.go('settings'), 'btn-block'));
+  }
+
+  // ライブクイズに参加（js/ui-live.js）。通信が必要なので、オフラインなら押せない
+  function liveJoinCard(ctx) {
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    return card([
+      cardTitle('ライブクイズに参加'),
+      el('p', { text: offline ? '通信が必要です（インターネットにつながると参加できます）。' : '先生から部屋コードをもらったら押そう。' }),
+      button('ライブクイズに参加', () => ctx.go('live'), 'btn-primary btn-block', { disabled: offline }),
+    ], offline ? 'is-disabled' : '');
   }
 
   function questCard(ctx, rec, now) {
@@ -1455,7 +1467,7 @@
     return s ? s.title : '（見つからないステージ）';
   }
 
-  const HISTORY_PHASE_LABEL = { retry: '類題', check: '確認問題' };
+  const HISTORY_PHASE_LABEL = { retry: '類題', check: '確認問題', live: 'ライブクイズ' };
 
   // 取り組み履歴: 新しい順に HISTORY_LIMIT 件。日付ごとに見出しをつける
   function historyCard(ctx, rec, now) {

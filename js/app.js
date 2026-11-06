@@ -23,6 +23,13 @@
 //                               setPreview(id, on) → { ok, errors }（下書きを教材として登録する／外す。教材の決まりに合わなければ入れない）、
 //                               apiKey() / setApiKey(key|null)（localStorage の rika-quest:author-key。学習記録には入れない）、
 //                               builtinIds()（起動時に登録されていた公開版の教材の id）
+//   ctx.live                  … ライブクイズ（js/ui-live-host.js・js/ui-live.js。設計書 14 章）:
+//                               dbUrl() / setDbUrl(url|null)（Firebase のデータベースの URL。localStorage の rika-quest:live-db）、
+//                               sessionId()（学習記録の履歴に入れる id。呼ぶたびに新しい id）、
+//                               record(events, profileId)（今の生徒の記録に record.applyEvents で入れ、バッジも判定して保存。
+//                               戻り値 { applied: 記録に入れた, saved: 保存に成功 }。profileId が今の生徒とちがえば入れずに applied: false）、
+//                               onSaved(fn)（store 全体の保存が成功するたびに fn() を呼ぶ。setRecord・replaceStore・バッジの既読など
+//                               app.save を通るすべての経路。解除の関数を返す）
 //   app.offline               … オフライン教材の状態 { state: 'ready'|'pending'|'failed'|'unsupported-file'|'unsupported-insecure', version, at }（app.state.offline と同じ値）
 //                               書きかえると document に 'rika-quest:offline' を送る（設定画面が表示を更新する）
 //   学習の進行: app.startSession(params) / app.renderSession() / app.answer(value) / app.next() /
@@ -43,11 +50,13 @@
   const OFFLINE_KEY = 'rika-quest:offline';
 
   // プロフィールがなくても開ける画面
-  const NO_PROFILE_SCREENS = ['profile', 'settings', 'teacher', 'author'];
+  const NO_PROFILE_SCREENS = ['profile', 'settings', 'teacher', 'author', 'live-host'];
   // 先生画面の解錠を保つ画面（このあいだの行き来ではパスコードを聞き直さない）
-  const TEACHER_SCREENS = ['teacher', 'author'];
+  const TEACHER_SCREENS = ['teacher', 'author', 'live-host'];
   // AI 教材作成の API キー（この端末だけ。学習記録 rika-quest:v1 とは別のキー）
   const AUTHOR_KEY = 'rika-quest:author-key';
+  // ライブクイズの Firebase のデータベースの URL（この端末だけ。学習記録とは別のキー）
+  const LIVE_DB_KEY = 'rika-quest:live-db';
 
   // アクセントカラー（profile.theme）。値は css/style.css の :root[data-theme] と同じ --blue（theme-color に使う）
   const THEME_COLORS = { blue: '#1A5CFF', teal: '#0E9AA7', green: '#178A4C', purple: '#7A4FD6', pink: '#E0508A' };
@@ -153,6 +162,25 @@
     status.classList.toggle('is-error', !ok);
   }
 
+  // 保存が成功したときに呼ぶ関数（ctx.live.onSaved。ライブクイズの生徒の画面が、保存できた分の処理済みを書くのに使う）
+  const savedListeners = [];
+
+  function onSaved(fn) {
+    if (typeof fn !== 'function') return function () {};
+    savedListeners.push(fn);
+    return function off() {
+      const i = savedListeners.indexOf(fn);
+      if (i !== -1) savedListeners.splice(i, 1);
+    };
+  }
+
+  function notifySaved() {
+    // 呼んでいるあいだに解除されてもよいように写しで回す
+    savedListeners.slice().forEach((fn) => {
+      try { fn(); } catch (e) { console.error(e); }
+    });
+  }
+
   function save(options) {
     let ok = false;
     try {
@@ -163,6 +191,7 @@
     }
     if (ok && options && options.allowOverwrite) state.protectedStorage = false;
     setSaveStatus(ok);
+    if (ok) notifySaved();
     return ok;
   }
 
@@ -590,6 +619,54 @@
     builtinIds: () => Array.from(builtinUnitIds),
   };
 
+  // ---- ライブクイズ（データベースの URL・学習記録） ----
+
+  function liveDbUrl() {
+    try {
+      return state.storageObj.getItem(LIVE_DB_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // url が空・null なら消す。保存できなければ false
+  function setLiveDbUrl(url) {
+    try {
+      if (typeof url === 'string' && url.trim() !== '') state.storageObj.setItem(LIVE_DB_KEY, url.trim());
+      else state.storageObj.removeItem(LIVE_DB_KEY);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function liveSessionId() {
+    return 'live-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6).padEnd(4, '0');
+  }
+
+  // ライブクイズで答えた出来事を今の生徒の記録に入れる（学習の進行と同じく、バッジの判定も通す）。
+  // profileId を渡したときは、今の生徒がその生徒のときだけ入れる（参加した生徒と記録先を取りちがえない）。
+  // 戻り値 { applied, saved }: applied は記録（メモリ）に入れたか、saved は保存に成功したか（setRecord の戻り値。
+  // 保存に失敗してもメモリの記録は書きかわっていて、あとでほかの保存が成功すればいっしょに保存される）
+  function liveRecord(events, profileId) {
+    const profile = currentProfile();
+    if (!profile || !Array.isArray(events) || events.length === 0) return { applied: false, saved: false };
+    if (profileId !== undefined && profileId !== profile.id) return { applied: false, saved: false };
+    const now = new Date();
+    let rec = RQ.record.applyEvents(currentRecord(), events, { now, multiplier: 1, stageId: null }, state.config);
+    rec = awardBadges(rec, now);
+    const saved = setRecord(rec);
+    return { applied: true, saved };
+  }
+
+  const liveCtx = {
+    dbUrl: liveDbUrl,
+    setDbUrl: setLiveDbUrl,
+    sessionId: liveSessionId,
+    record: liveRecord,
+    onSaved,
+  };
+
   // ---- 画面の切り替え ----
 
   function makeCtx() {
@@ -613,6 +690,7 @@
       clearAll,
       confirm: (text, okLabel, options) => RQ.ui.helpers.confirm(text, okLabel, options),
       author: authorCtx,
+      live: liveCtx,
       state,
       app,
     };
@@ -621,8 +699,8 @@
   function go(name, params) {
     // 先生画面（と教材を作る画面）を離れたら、次はパスコードの入り口から
     if (TEACHER_SCREENS.indexOf(name) === -1) state.teacherUnlocked = false;
-    // 教材を作る画面はパスコードの先。解錠していなければ先生画面の入り口へ
-    if (name === 'author' && !state.teacherUnlocked) {
+    // 教材を作る画面・ライブクイズの出題はパスコードの先。解錠していなければ先生画面の入り口へ
+    if ((name === 'author' || name === 'live-host') && !state.teacherUnlocked) {
       go('teacher');
       return;
     }
