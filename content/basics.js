@@ -34,96 +34,54 @@
 
   const KANA = 'アイウエオカキク';
 
-  // 引き出し線（細い実線）
-  function leader(x1, y1, x2, y2) {
-    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'line', width: 1 };
+  // ---- 写真ふうの画像に重ねる部品（content/plants.js と同じ。docs/figures-guide.md「写真の上に文字を置くときの決まり」） ----
+  // 画像は assets/images/basics/<カードid>.jpg（640×480。場面 320×240 いっぱいに縮めて描く。座標は画像の位置 × 0.5）
+
+  // 画像（場面いっぱい。items のいちばん先に置く）
+  function photo(name) { return { type: 'image', src: 'assets/images/basics/' + name + '.jpg' }; }
+
+  // 写真の上の引き出し線（濃い実線）
+  function pointer(x1, y1, x2, y2) {
+    return { type: 'line', points: [[x1, y1], [x2, y2]], color: 'ink', width: 2 };
   }
 
-  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
-  function partRegions(parts) {
+  // 写真の上の文字（白い下地つき・中央寄せ・14px）。o で size・bold・anchor を変える
+  function tag(x, y, text, o) {
+    return Object.assign({ type: 'text', x, y, text, size: 14, anchor: 'middle', bg: true }, o);
+  }
+
+  // 写真の上の選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（ア・イ…の順）
+  function photoRegions(parts) {
     const items = [];
     parts.forEach(([x, y, px, py], i) => {
-      items.push(leader(x < px ? x + 22 : x - 22, y, px, py));
+      items.push(pointer(x < px ? x + 22 : x - 22, y, px, py));
       items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KANA[i] });
     });
     return items;
   }
 
-  // 部品の名前と引き出し線（解説の図用）。names は [[文字の x, y, 名前, 部品の点の x, y, anchor], ...]
-  function partNames(names) {
-    const items = [];
-    names.forEach(([x, y, text, px, py, anchor]) => {
-      // 線は文字の終わり（部品の側）から引く。文字の幅は 1 字 12px で見積もる
-      const w = Array.from(text).length * 12;
-      const start = anchor === 'end' ? x + 4 : (px > x ? x + w + 4 : x - 4);
-      items.push(leader(start, y - 5, px, py));
-      items.push({ type: 'text', x, y, text, size: 12, anchor: anchor || 'start' });
-    });
-    return items;
-  }
-
-  // 顕微鏡（横から見た図。鏡筒の中心の x は 150）
-  // 接眼レンズ (150, 26)、鏡筒 (164, 60)、レボルバー (128, 104)、対物レンズ (144, 122)、ステージ (208, 142)、
-  // しぼり (162, 149)、反射鏡 (132, 184)、調節ねじ (220, 112)
-  function microscope() {
-    return [
-      { type: 'rect', x: 100, y: 208, width: 124, height: 16, fill: 'gray', rx: 4 },
-      { type: 'line', points: [[200, 208], [206, 150], [198, 100], [166, 70]], color: 'line', width: 12 },
-      { type: 'line', points: [[150, 190], [150, 208]], color: 'line', width: 3 },
-      { type: 'rect', x: 136, y: 36, width: 28, height: 62, fill: 'white' },
-      { type: 'rect', x: 140, y: 16, width: 20, height: 20, fill: 'glass' },
-      { type: 'polygon', points: [[126, 98], [174, 98], [166, 112], [134, 112]], fill: 'gray' },
-      { type: 'rect', x: 144, y: 112, width: 12, height: 20, fill: 'glass' },
-      { type: 'rect', x: 92, y: 138, width: 116, height: 8, fill: 'white' },
-      { type: 'line', points: [[100, 136], [124, 134]], color: 'ink', width: 2 },
-      { type: 'rect', x: 138, y: 146, width: 24, height: 6, fill: 'gray' },
-      { type: 'ellipse', x: 150, y: 184, rx: 18, ry: 6, fill: 'sky' },
-      { type: 'circle', x: 210, y: 112, r: 10, fill: 'gray' },
-    ];
-  }
+  // 顕微鏡の写真（bas-2-c1。反射鏡のついた光学顕微鏡を真横から）
+  // 接眼レンズ (142, 22)、鏡筒 (158, 48)、レボルバー (122, 96)、対物レンズ (115, 116)、反射鏡 (134, 188)、
+  // 調節ねじ（大きいほう）(184, 76)、ステージの右はし (182, 144)、しぼり (162, 162)
   // 顕微鏡の部分を選ぶ図: ア 接眼レンズ・イ レボルバー・ウ 対物レンズ・エ 反射鏡・オ 鏡筒・カ 調節ねじ・キ ステージ・ク しぼり
-  const SCOPE_Q = scene(microscope().concat(partRegions([
-    [40, 26, 140, 26], [40, 76, 128, 104], [40, 126, 144, 122], [40, 184, 132, 184],
-    [282, 50, 164, 56], [282, 104, 220, 112], [282, 154, 208, 142], [282, 206, 162, 150],
+  const SCOPE_Q = scene([photo('bas-2-c1')].concat(photoRegions([
+    [40, 26, 142, 22], [40, 80, 122, 96], [40, 130, 115, 116], [40, 190, 134, 188],
+    [282, 34, 158, 48], [282, 84, 184, 76], [282, 136, 182, 144], [282, 190, 162, 162],
   ])));
 
-  // 双眼実体顕微鏡（横から見た図）
-  // 接眼レンズ (118, 40)、視度調節リング (173, 48)、微動ねじ (224, 96)、粗動ねじ (227, 160)、対物レンズ (132, 121)
-  function stereoScope() {
-    return [
-      { type: 'rect', x: 80, y: 204, width: 150, height: 18, fill: 'gray', rx: 4 },
-      { type: 'rect', x: 96, y: 196, width: 90, height: 8, fill: 'white' },
-      { type: 'rect', x: 196, y: 70, width: 14, height: 134, fill: 'line' },
-      { type: 'rect', x: 106, y: 70, width: 90, height: 40, fill: 'white', rx: 6 },
-      { type: 'rect', x: 118, y: 24, width: 20, height: 46, fill: 'glass' },
-      { type: 'rect', x: 150, y: 24, width: 20, height: 46, fill: 'glass' },
-      { type: 'rect', x: 147, y: 44, width: 26, height: 8, fill: 'gray' },
-      { type: 'rect', x: 132, y: 110, width: 36, height: 22, fill: 'glass' },
-      { type: 'circle', x: 216, y: 96, r: 9, fill: 'gray' },
-      { type: 'circle', x: 218, y: 160, r: 9, fill: 'gray' },
-    ];
-  }
+  // 双眼実体顕微鏡の写真（bas-1-c3。斜め前から。視度調節リングが左の接眼レンズに来るよう左右反転した画像）
+  // 接眼レンズ（右）(216, 28)、視度調節リング（左の接眼レンズ）(158, 38)、微動ねじ（大きいねじ）(92, 96)、
+  // 粗動ねじ（その下の小さいねじ）(108, 129)、対物レンズ (196, 124)
   // 双眼実体顕微鏡の部分を選ぶ図: ア 接眼レンズ・イ 視度調節リング・ウ 微動ねじ・エ 粗動ねじ・オ 対物レンズ
-  const STEREO_Q = scene(stereoScope().concat(partRegions([
-    [40, 40, 118, 40], [284, 40, 173, 48], [284, 96, 225, 96], [284, 160, 227, 160], [40, 121, 132, 121],
+  const STEREO_Q = scene([photo('bas-1-c3')].concat(photoRegions([
+    [280, 28, 216, 28], [36, 30, 158, 38], [36, 92, 92, 96], [36, 140, 108, 129], [280, 124, 196, 124],
   ])));
 
-  // ガスバーナー。上のねじ（空気調節ねじ）(136, 127)、下のねじ（ガス調節ねじ）(132, 167)、元栓 (262, 190)
-  function burner(withFlame) {
-    const items = [
-      { type: 'rect', x: 108, y: 200, width: 104, height: 16, fill: 'gray', rx: 4 },
-      { type: 'line', points: [[180, 192], [262, 192]], color: 'brown', width: 6 },
-      { type: 'rect', x: 256, y: 176, width: 14, height: 24, fill: 'yellow' },
-      { type: 'rect', x: 146, y: 64, width: 28, height: 136, fill: 'glass' },
-      { type: 'rect', x: 136, y: 120, width: 48, height: 14, fill: 'gray' },
-      { type: 'rect', x: 132, y: 160, width: 56, height: 14, fill: 'line' },
-    ];
-    if (withFlame) items.push({ type: 'flame', x: 160, y: 64 });
-    return items;
-  }
+  // ガスバーナーの写真（bas-4-c1。火はついていない。ねじのつまみは右向き）
+  // 上のねじ（空気調節ねじ）のつまみ (162, 120)、下のねじ（ガス調節ねじ）のつまみ (162, 161)、元栓の黒いつまみ (272, 160)・弁 (272, 196)
   // ガスバーナーの部分を選ぶ図: ア 上のねじ・イ 下のねじ・ウ 元栓
-  const BURNER_Q = scene(burner(false).concat(partRegions([
-    [56, 127, 136, 127], [56, 180, 132, 167], [286, 130, 262, 176],
+  const BURNER_Q = scene([photo('bas-4-c1')].concat(photoRegions([
+    [220, 104, 162, 120], [220, 156, 162, 161], [292, 120, 272, 160],
   ])));
 
   // 小学校で使った器具（左から ア ビーカー・イ 試験管・ウ メスシリンダー・エ アルコールランプ）
@@ -144,6 +102,12 @@
     [44, 120, 199, 275].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 210, r: 22, label: KANA[i] }));
     return scene(items);
   }
+
+  // 小学校で使った器具の写真（bas-4-r4。左から ア ビーカー・イ 試験管・ウ メスシリンダー（目盛りなし）・エ 火のついたアルコールランプ）
+  const TOOLS_PHOTO_Q = scene([
+    photo('bas-4-r4'),
+    tag(160, 24, '小学校で使った器具'),
+  ].concat([45, 120, 190, 274].map((x, i) => ({ type: 'region', id: 'r' + (i + 1), x, y: 214, r: 22, label: KANA[i] }))));
 
   // 集気びんの中のろうそく。kind は 'lid'（ふたをする）| 'open'（ふたをしない）| 'gap'（ふたをせず、下にすき間をあける）
   function jarItems(cx, kind) {
@@ -170,45 +134,19 @@
     ]));
   }
 
-  // 水中の小さな生物（スケッチふう。大きさは実際の比ではない）
-  function closterium(cx, cy) {
-    return [{ type: 'polygon', points: [[cx - 32, cy - 10], [cx - 20, cy + 4], [cx, cy + 10], [cx + 20, cy + 4], [cx + 32, cy - 10],
-      [cx + 16, cy - 2], [cx, cy + 1], [cx - 16, cy - 2]], fill: 'green' }];
-  }
-  function paramecium(cx, cy) {
-    const items = [{ type: 'ellipse', x: cx, y: cy, rx: 28, ry: 12, fill: 'white' }];
-    [[-20, -10, -24, -16], [0, -12, 0, -19], [20, -10, 24, -16], [-20, 10, -24, 16], [0, 12, 0, 19], [20, 10, 24, 16]]
-      .forEach(([x1, y1, x2, y2]) => items.push({ type: 'line', points: [[cx + x1, cy + y1], [cx + x2, cy + y2]], color: 'line', width: 1 }));
-    items.push({ type: 'circle', x: cx + 4, y: cy, r: 4, fill: 'gray', stroke: 'none' });
-    return items;
-  }
-  function daphnia(cx, cy) {
-    return [
-      { type: 'line', points: [[cx - 14, cy - 18], [cx - 32, cy - 30], [cx - 40, cy - 22]], color: 'line', width: 2 },
-      { type: 'line', points: [[cx - 32, cy - 30], [cx - 36, cy - 40]], color: 'line', width: 2 },
-      { type: 'ellipse', x: cx + 4, y: cy + 4, rx: 22, ry: 20, fill: 'sky' },
-      { type: 'circle', x: cx - 14, y: cy - 12, r: 10, fill: 'sky' },
-      { type: 'circle', x: cx - 18, y: cy - 14, r: 3, fill: 'ink', stroke: 'none' },
-      { type: 'line', points: [[cx + 22, cy + 18], [cx + 32, cy + 30]], color: 'line', width: 2 },
-    ];
-  }
-  function volvox(cx, cy) {
-    const items = [{ type: 'circle', x: cx, y: cy, r: 24, fill: 'lightgreen' }];
-    [[-10, -8], [8, -10], [12, 6], [-6, 10], [0, -1], [-14, 4]].forEach(([dx, dy]) => {
-      items.push({ type: 'circle', x: cx + dx, y: cy + dy, r: 4, fill: 'green', stroke: 'none' });
-    });
-    return items;
-  }
-  // 4 つの生物（左から ア ミカヅキモ・イ ゾウリムシ・ウ ミジンコ・エ ボルボックス）。names: 名前を書く
+  // 水中の小さな生物の写真（bas-3-c3。丸い視野 4 つ。大きさは実際の比ではない）
+  // 視野の中心 x 40・120・200・278、y 98（半径 40）。左から ア ミカヅキモ・イ ゾウリムシ・ウ ミジンコ・エ ボルボックス。names: 名前を書く
   function microbesScene(names) {
-    const items = [{ type: 'text', x: 160, y: 24, text: '池の水の中の小さな生物（大きさの比は実際とちがう）', size: 12, anchor: 'middle' }]
-      .concat(closterium(44, 110), paramecium(120, 110), daphnia(200, 110), volvox(276, 110));
+    const items = [
+      photo('bas-3-c3'),
+      tag(160, 30, '池の水の中の小さな生物（大きさの比は実際とちがう）', { size: 13 }),
+    ];
     if (names) {
       ['ミカヅキモ', 'ゾウリムシ', 'ミジンコ', 'ボルボックス'].forEach((t, i) => {
-        items.push({ type: 'text', x: [44, 120, 200, 276][i], y: 180, text: t, size: 13, anchor: 'middle' });
+        items.push(tag([40, 120, 200, 278][i], 162, t, { size: 13 }));
       });
     } else {
-      [44, 120, 200, 276].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 196, r: 22, label: KANA[i] }));
+      [40, 120, 200, 278].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 172, r: 22, label: KANA[i] }));
     }
     return scene(items);
   }
@@ -239,17 +177,14 @@
       {
         id: 'bas-1-c1',
         text: '**ルーペ**は目に近づけて持ちます。手に持てるものは、観察するものを前後に動かしてピントを合わせます。動かせないものは、ルーペを目に近づけたまま顔を前後に動かします。ルーペで太陽を見てはいけません。',
-        // 目・ルーペ・花。動かすのは花
+        // 写真（plants-1-c4 の画像）: ルーペを目のすぐ近くに持ち、手に持った花を前後に動かして見る
         figure: scene([
-          { type: 'eye', x: 60, y: 120 },
-          { type: 'ellipse', x: 92, y: 120, rx: 6, ry: 30, fill: 'lensFill' },
-          { type: 'line', points: [[92, 150], [92, 196]], color: 'brown', width: 6 },
-          { type: 'circle', x: 210, y: 112, r: 18, fill: 'yellow' },
-          { type: 'line', points: [[210, 130], [210, 200]], color: 'green', width: 4 },
-          { type: 'arrow', x1: 180, y1: 70, x2: 240, y2: 70, color: 'blue' },
-          { type: 'arrow', x1: 240, y1: 70, x2: 180, y2: 70, color: 'blue' },
-          { type: 'text', x: 210, y: 52, text: '花を前後に動かす', size: 13, anchor: 'middle' },
-          { type: 'text', x: 76, y: 222, text: 'ルーペは目に近づける', size: 13, anchor: 'middle' },
+          { type: 'image', src: 'assets/images/plants/plants-1-c4.jpg' },
+          pointer(188, 46, 137, 84),
+          tag(250, 42, 'ルーペは目に近づける', { size: 13 }),
+          { type: 'arrow', x1: 207, y1: 104, x2: 184, y2: 104, color: 'blue', width: 2 },
+          { type: 'arrow', x1: 207, y1: 104, x2: 234, y2: 104, color: 'blue', width: 2 },
+          tag(262, 136, '花を前後に動かす', { size: 13 }),
         ]),
       },
       {
@@ -271,10 +206,15 @@
       {
         id: 'bas-1-c3',
         text: '**双眼実体顕微鏡**は両目でのぞくので、ものを**立体的**に観察できます。倍率は 20〜40 倍くらいで、プレパラートをつくらずに、そのままのせて観察できます。',
-        figure: scene(stereoScope().concat(partNames([
-          [12, 44, '接眼レンズ', 118, 40], [236, 40, '視度調節リング', 173, 48], [236, 100, '微動ねじ', 225, 96],
-          [236, 164, '粗動ねじ', 227, 160], [12, 125, '対物レンズ', 132, 121],
-        ]))),
+        // 写真: 双眼実体顕微鏡（斜め前から。接眼レンズが 2 本、下にステージ）。部品の位置は STEREO_Q の上のコメント
+        figure: scene([
+          photo('bas-1-c3'),
+          pointer(236, 28, 216, 28), tag(274, 32, '接眼レンズ'),
+          pointer(110, 30, 158, 38), tag(58, 34, '視度調節リング'),
+          pointer(74, 96, 92, 96), tag(42, 100, '微動ねじ'),
+          pointer(74, 138, 108, 129), tag(42, 142, '粗動ねじ'),
+          pointer(236, 124, 196, 124), tag(274, 128, '対物レンズ'),
+        ]),
       },
     ],
     warmup: choice({
@@ -378,31 +318,36 @@
       {
         id: 'bas-2-c1',
         text: '顕微鏡は、目でのぞく**接眼レンズ**と、観察するものに近い**対物レンズ**で拡大します。対物レンズは**レボルバー**を回してかえます。**反射鏡**で光を集め、ステージの下の**しぼり**で明るさを調節します。',
-        figure: scene(microscope().concat(partNames([
-          [10, 30, '接眼レンズ', 140, 26], [10, 92, 'レボルバー', 128, 104], [10, 132, '対物レンズ', 144, 122],
-          [10, 188, '反射鏡', 132, 184], [234, 54, '鏡筒', 164, 56], [234, 116, '調節ねじ', 220, 112],
-          [234, 160, 'ステージ', 208, 142], [234, 196, 'しぼり', 162, 150],
-        ]))),
+        // 写真: 反射鏡のついた光学顕微鏡（真横から）。部品の位置は SCOPE_Q の上のコメント
+        figure: scene([
+          photo('bas-2-c1'),
+          pointer(84, 22, 142, 22), tag(46, 26, '接眼レンズ'),
+          pointer(84, 80, 122, 96), tag(46, 84, 'レボルバー'),
+          pointer(84, 126, 115, 116), tag(46, 130, '対物レンズ'),
+          pointer(70, 186, 134, 188), tag(46, 190, '反射鏡'),
+          pointer(254, 34, 158, 48), tag(274, 38, '鏡筒'),
+          pointer(240, 82, 184, 76), tag(274, 86, '調節ねじ'),
+          pointer(240, 134, 182, 144), tag(274, 138, 'ステージ'),
+          pointer(250, 186, 162, 162), tag(274, 190, 'しぼり'),
+        ]),
       },
       {
         id: 'bas-2-c2',
         text: 'スライドガラスに観察するものをのせ、水を 1 滴落として、カバーガラスをかけたものを**プレパラート**といいます。カバーガラスは、空気の泡が入らないように、はしから静かにおろします。',
-        // スライドガラス・観察するもの・カバーガラスを斜めにおろす
+        // 写真: スライドガラスの水 1 滴の上に、ピンセットでカバーガラスを片はしからななめにおろしている（斜め上から）
+        // スライドガラス (60, 166)、カバーガラス (185, 118)、水 1 滴 (182, 162)、カバーガラスの上がったはし (205, 90)
         figure: scene([
-          { type: 'rect', x: 40, y: 150, width: 240, height: 14, fill: 'glass' },
-          { type: 'ellipse', x: 160, y: 146, rx: 30, ry: 5, fill: 'water' },
-          { type: 'circle', x: 160, y: 144, r: 4, fill: 'green', stroke: 'none' },
-          { type: 'line', points: [[124, 144], [196, 104]], color: 'line', width: 4 },
-          { type: 'line', points: [[200, 98], [206, 78]], color: 'gray', width: 2 },
-          { type: 'arrow', x1: 214, y1: 92, x2: 196, y2: 132, color: 'blue', width: 2 },
-          { type: 'text', x: 40, y: 192, text: 'スライドガラス', size: 13 },
-          { type: 'text', x: 214, y: 70, text: 'カバーガラス', size: 13 },
-          { type: 'text', x: 60, y: 120, text: '水 1 滴', size: 13 },
-          { type: 'text', x: 160, y: 228, text: 'はしから静かにおろす', size: 14, anchor: 'middle' },
+          photo('bas-2-c2'),
+          pointer(66, 116, 60, 166), tag(66, 110, 'スライドガラス'),
+          pointer(150, 46, 185, 118), tag(140, 40, 'カバーガラス'),
+          pointer(244, 190, 186, 162), tag(270, 196, '水 1 滴'),
+          { type: 'arrow', x1: 236, y1: 98, x2: 224, y2: 128, color: 'blue', width: 3 },
+          tag(244, 230, 'はしから静かにおろす'),
         ]),
       },
       {
         id: 'bas-2-c3',
+        anim: 'ba-focus-steps',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '観察は**低倍率**から始めます。① 反射鏡で視野を明るくする ② プレパラートをステージにのせる ③ 横から見ながら対物レンズとプレパラートを近づける ④ のぞきながら遠ざけてピントを合わせる、の順です。',
         figure: scene([
           { type: 'text', x: 20, y: 40, text: '① 反射鏡で明るくする', size: 14 },
@@ -516,19 +461,18 @@
       {
         id: 'bas-3-c1',
         text: '顕微鏡の**倍率**は、接眼レンズの倍率 × 対物レンズの倍率です。10 倍と 40 倍なら 400 倍です。倍率を高くすると、見える範囲（**視野**）はせまくなり、暗くなります。',
-        // 低倍率の視野（広く明るい。小さな生物がたくさん見える）と高倍率の視野（せまく暗い。1 つが大きく見える）
+        // 写真: タマネギの表皮の視野 2 つ。左は低倍率（細胞が小さくたくさん・明るい）、右は高倍率（細胞が大きく数個・少し暗い）
+        // 左の視野の中心 (78, 120)・右の視野の中心 (240, 120)、半径 72
         figure: scene([
-          { type: 'text', x: 160, y: 30, text: '倍率 ＝ 接眼レンズ × 対物レンズ', size: 14, anchor: 'middle', bold: true },
-          { type: 'circle', x: 82, y: 124, r: 54, fill: 'white' },
-          { type: 'circle', x: 238, y: 124, r: 54, fill: 'gray' },
-          ...[[62, 104], [96, 112], [76, 140], [104, 146], [58, 134]].map(([x, y]) => ({ type: 'ellipse', x, y, rx: 8, ry: 5, fill: 'lightgreen' })),
-          { type: 'ellipse', x: 238, y: 124, rx: 30, ry: 18, fill: 'lightgreen' },
-          { type: 'text', x: 82, y: 204, text: '低倍率: 広く明るい', size: 13, anchor: 'middle' },
-          { type: 'text', x: 238, y: 204, text: '高倍率: せまく暗い', size: 13, anchor: 'middle' },
+          photo('bas-3-c1'),
+          tag(160, 26, '倍率 ＝ 接眼レンズ × 対物レンズ', { bold: true }),
+          tag(78, 222, '低倍率: 広く明るい', { size: 13 }),
+          tag(240, 222, '高倍率: せまく暗い', { size: 13 }),
         ]),
       },
       {
         id: 'bas-3-c2',
+        anim: 'ba-image-reverse',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '顕微鏡で見える像は、上下左右が逆になっています。そのため、プレパラートを動かすと、像は**反対の向き**に動いて見えます。右上へ動かすと、像は左下へ動きます。',
         figure: scene([
           { type: 'rect', x: 20, y: 80, width: 120, height: 40, fill: 'glass' },
@@ -542,6 +486,7 @@
       {
         id: 'bas-3-c3',
         text: '池の水には、緑色の**ミカヅキモ**や**ボルボックス**、動き回る**ゾウリムシ**や**ミジンコ**などの小さな生物がいます。ミジンコは 1〜2 mm ほどで、この中ではいちばん大きく、肉眼でも見えます。',
+        // 写真: 池の水の小さな生物 4 種の視野（左から ミカヅキモ・ゾウリムシ・ミジンコ・ボルボックス）
         figure: microbesScene(true),
       },
     ],
@@ -596,7 +541,7 @@
       }),
       figureChoice({
         id: 'bas-3-p5', concept: 'bas-microbe',
-        prompt: '図は池の水で見つけた生物のスケッチです（大きさの比は実際とちがう）。実際の大きさがいちばん大きいのはどれ？ ア〜エから選ぼう。',
+        prompt: '図は池の水で見つけた生物の写真です（大きさの比は実際とちがう）。実際の大きさがいちばん大きいのはどれ？ ア〜エから選ぼう。',
         figure: microbesScene(false),
         answer: 'r3',
         explanation: 'ウはミジンコで、大きさは 1〜2 mm ほどあり、肉眼でも見えます。ア ミカヅキモ、イ ゾウリムシ、エ ボルボックスは、どれもミジンコより小さく、顕微鏡でないとよく見えません。',
@@ -622,7 +567,7 @@
       }),
       figureChoice({
         id: 'bas-3-r3', concept: 'bas-microbe',
-        prompt: '図は池の水で見つけた生物のスケッチです。三日月の形をした緑色の生物「ミカヅキモ」はどれ？ ア〜エから選ぼう。',
+        prompt: '図は池の水で見つけた生物の写真です。三日月の形をした緑色の生物「ミカヅキモ」はどれ？ ア〜エから選ぼう。',
         figure: microbesScene(false),
         answer: 'r1',
         explanation: 'アがミカヅキモです。三日月の形をした緑色の生物で、光合成をします。イはゾウリムシ、ウはミジンコ、エはボルボックスです。',
@@ -650,25 +595,32 @@
       {
         id: 'bas-4-c1',
         text: '**ガスバーナー**には、上に**空気調節ねじ**、下に**ガス調節ねじ**があります。どちらのねじも、上から見て反時計回り（左回り）に回すと開き、時計回りに回すと閉まります。',
-        figure: scene(burner(true).concat(partNames([
-          [8, 124, '空気調節ねじ', 136, 127], [8, 172, 'ガス調節ねじ', 132, 167], [236, 160, '元栓', 262, 176],
-        ]))),
+        // 写真: ガスバーナー（真横から。火はついていない）。ねじのつまみは右向き。部品の位置は BURNER_Q の上のコメント
+        figure: scene([
+          photo('bas-4-c1'),
+          pointer(192, 116, 162, 120), tag(240, 120, '空気調節ねじ'),
+          pointer(184, 146, 162, 160), tag(228, 150, 'ガス調節ねじ'),
+          pointer(282, 212, 274, 198), tag(288, 228, '元栓'),
+        ]),
       },
       {
         id: 'bas-4-c2',
         text: '火をつけるときは、2 つのねじが閉まっていることを確かめてから元栓を開き、マッチの火を近づけてガス調節ねじを開きます。空気調節ねじで**青い炎**にします。消すときは、空気・ガス・元栓の順に閉めます。',
+        // 写真: ガスバーナー 2 台。左は空気が足りないオレンジ色の炎、右は空気を調節した青い炎
+        // 左の炎 (84, 30〜100)、右の炎 (228, 50〜95)。文字は炎にかからないよう、筒と台の上に下地つきで置く
         figure: scene([
-          { type: 'text', x: 16, y: 34, text: 'つけるとき', size: 14, bold: true },
-          { type: 'text', x: 16, y: 58, text: 'ねじの確認 → 元栓 → マッチの火', size: 13 },
-          { type: 'text', x: 16, y: 80, text: '→ ガス調節ねじ → 空気調節ねじ', size: 13 },
-          { type: 'text', x: 16, y: 128, text: '消すとき', size: 14, bold: true },
-          { type: 'text', x: 16, y: 152, text: '空気調節ねじ → ガス調節ねじ → 元栓', size: 13 },
-          { type: 'flame', x: 270, y: 210 },
-          { type: 'text', x: 270, y: 166, text: '青い炎', size: 13, anchor: 'middle' },
+          photo('bas-4-c2'),
+          pointer(266, 72, 236, 76), tag(290, 76, '青い炎'),
+          tag(160, 126, 'つけるとき', { bold: true }),
+          tag(160, 146, 'ねじの確認 → 元栓 → マッチの火', { size: 13 }),
+          tag(160, 166, '→ ガス調節ねじ → 空気調節ねじ', { size: 13 }),
+          tag(160, 196, '消すとき', { bold: true }),
+          tag(160, 216, '空気調節ねじ → ガス調節ねじ → 元栓', { size: 13 }),
         ]),
       },
       {
         id: 'bas-4-c3',
+        anim: 'ba-candle-air',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '小学校の復習です。ものが燃えると、空気中の**酸素**が使われて減り、**二酸化炭素**が増えます。ろうそくが燃え続けるには、集気びんの中の空気が入れかわり、新しい空気が入ってくることが必要です。',
         figure: scene(jarItems(90, 'lid').concat(jarItems(230, 'gap'), [
           { type: 'text', x: 90, y: 228, text: 'ふたをする', size: 13, anchor: 'middle' },
@@ -768,7 +720,7 @@
       figureChoice({
         id: 'bas-4-r4', concept: 'bas-review',
         prompt: '小学校で使った器具です。アルコールランプはどれ？ ア〜エから選ぼう。',
-        figure: toolsScene('小学校で使った器具'),
+        figure: TOOLS_PHOTO_Q,
         answer: 'r4',
         explanation: 'エがアルコールランプです。アはビーカー、イは試験管、ウはメスシリンダーです。',
         hint: '炎が出ている器具だよ。',
@@ -910,7 +862,7 @@
       checkPool: [
         figureChoice({
           id: 'bas-microbe-k1', concept: 'bas-microbe',
-          prompt: '図は池の水で見つけた生物のスケッチです。細かい毛を動かして泳ぐ、ぞうりのような形の「ゾウリムシ」はどれ？ ア〜エから選ぼう。',
+          prompt: '図は池の水で見つけた生物の写真です。細かい毛を動かして泳ぐ、ぞうりのような形の「ゾウリムシ」はどれ？ ア〜エから選ぼう。',
           figure: microbesScene(false),
           answer: 'r2',
           explanation: 'イがゾウリムシです。体のまわりの細かい毛を動かして泳ぎます。',

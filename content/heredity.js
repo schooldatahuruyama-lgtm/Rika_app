@@ -1011,24 +1011,6 @@
     ];
   }
 
-  // カエルの発生（受精卵 → 2 細胞 → 4 細胞 → 胚 → おたまじゃくし）。中心 x 30・92・154・216・280、y 90
-  function devItems() {
-    const items = [
-      { type: 'circle', x: 30, y: 90, r: 20, fill: 'sand', stroke: 'brown' },
-      { type: 'circle', x: 92, y: 90, r: 20, fill: 'sand', stroke: 'brown' },
-      { type: 'line', points: [[92, 70], [92, 110]], color: 'brown', width: 2 },
-      { type: 'circle', x: 154, y: 90, r: 20, fill: 'sand', stroke: 'brown' },
-      { type: 'line', points: [[154, 70], [154, 110]], color: 'brown', width: 2 },
-      { type: 'line', points: [[134, 90], [174, 90]], color: 'brown', width: 2 },
-      { type: 'ellipse', x: 216, y: 90, rx: 22, ry: 16, fill: 'sand', stroke: 'brown' },
-      { type: 'line', points: [[200, 92], [232, 92]], color: 'brown', width: 2 },
-      { type: 'ellipse', x: 270, y: 90, rx: 14, ry: 11, fill: 'brown', stroke: 'ink' },
-      { type: 'line', points: [[284, 90], [298, 84], [312, 94]], color: 'brown', width: 4 },
-    ];
-    [[52, 70], [114, 132], [176, 192], [240, 254]].forEach(([a, b]) => items.push({ type: 'arrow', x1: a, y1: 90, x2: b, y2: 90, color: 'gray', width: 2 }));
-    return items;
-  }
-
   // 無性生殖（左: 1 つの親が 2 つに分かれる）と有性生殖（右: 2 つの生殖細胞が受精する）を並べた図
   function twoWaysItems() {
     return [
@@ -1102,6 +1084,7 @@
     lessons: [
       {
         id: 'heredity-mp1-c1',
+        anim: 'he-mitosis-steps',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: 'からだをつくる細胞が分かれることを**体細胞分裂**といいます。核の中にひものような**染色体**が現れ、細胞の中央に並び、両端に分かれて、しきりができて 2 つの細胞になります。染色体には、形質を決める**遺伝子**がふくまれています。',
         // 体細胞分裂の順番（左から右へ）
         figure: scene([
@@ -1116,12 +1099,16 @@
       {
         id: 'heredity-mp1-c2',
         text: '細胞分裂の観察では、分裂がさかんな**根の先端**を使います。うすい塩酸に入れてあたためると、細胞どうしが離れやすくなります。染色液（**酢酸オルセイン液**など）をたらして 3 分ほど置き、カバーガラスをかけて、ろ紙の上からおしつぶします。',
-        // 観察の手順
+        // 写真: 観察の手順 4 つ（2 段 × 2 列。顔は写さず手だけ）。左上 (7〜157, 30〜107) カッターで根の先端を切る、右上 (190〜315, 20〜117) 湯の入ったビーカーで試験管をあたためる、
+        // 左下 (12〜157, 135〜222) スライドガラスの根にスポイトで染色液をたらす、右下 (172〜312, 135〜222) ろ紙の上から親指で真上からおしつぶす。上と段のあいだは少し白い余白
         figure: scene([
-          ...['① 根の先端を 2〜3 mm 切りとる', '② うすい塩酸に入れてあたためる', '③ 染色液をたらして 3 分ほど置く', '④ カバーガラスをかけ、おしつぶす'].flatMap((t, i) => [
-            { type: 'rect', x: 16, y: 18 + 54 * i, width: 288, height: 40, rx: 8, fill: i === 1 ? '#FFF3C4' : 'white', stroke: 'line' },
-            { type: 'text', x: 30, y: 44 + 54 * i, text: t, size: 14 },
-          ]),
+          photo('heredity-mp1-c2'),
+          tag(6, 18, '① 根の先端を切りとる', { size: 13 }),
+          tag(166, 18, '② 塩酸であたためる', { size: 13 }),
+          tag(6, 130, '③ 染色液をたらす', { size: 13 }),
+          tag(6, 152, '3 分ほど置く', { size: 13 }),
+          tag(166, 130, '④ 上からおしつぶす', { size: 13 }),
+          pin(200, 174, 218, 196), tag(194, 170, 'ろ紙', { size: 13, anchor: 'middle' }),
         ]),
       },
     ],
@@ -1226,16 +1213,23 @@
       {
         id: 'heredity-mp2-c1',
         text: '雌雄が関わらずに子をつくるふえ方を**無性生殖**といいます。ゾウリムシやミカヅキモはからだが 2 つに分かれる**分裂**で、サツマイモはいもから芽が出る**栄養生殖**でふえます。子は親と同じ染色体を受けつぐので、親と同じ形質になります。',
-        // 無性生殖（分裂）と有性生殖（受精）
-        figure: scene(twoWaysItems().concat([
-          { type: 'text', x: 81, y: 192, text: '無性生殖', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 81, y: 212, text: '（分裂など）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 239, y: 192, text: '有性生殖', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 239, y: 212, text: '（受精する）', size: 12, anchor: 'middle' },
-        ])),
+        // 写真（life-2-c1 の使い回し）: 左 分裂するゾウリムシ（顕微鏡の視野 (2〜110, 27〜137)）、中 出芽するヒドラ (110〜210, 12〜145)、
+        // 右 芽の出たジャガイモ (213〜317, 25〜140)。下は白い余白
+        figure: scene([
+          photo('life-2-c1'),
+          tag(54, 166, '分裂', { size: 15, anchor: 'middle', bold: true }),
+          tag(54, 184, '（ゾウリムシ）', { size: 13, anchor: 'middle' }),
+          tag(160, 166, '出芽', { size: 15, anchor: 'middle', bold: true }),
+          tag(160, 184, '（ヒドラ）', { size: 13, anchor: 'middle' }),
+          tag(267, 166, '栄養生殖', { size: 15, anchor: 'middle', bold: true }),
+          tag(267, 184, '（いも）', { size: 13, anchor: 'middle' }),
+          tag(160, 210, '無性生殖: 雌雄が関わらずに子をつくる', { size: 13, anchor: 'middle', bold: true }),
+          tag(160, 230, '子は親と同じ染色体 → 親と同じ形質', { size: 13, anchor: 'middle' }),
+        ]),
       },
       {
         id: 'heredity-mp2-c2',
+        anim: 'he-meiosis-fertilize',   // 動く図（js/anim-bio.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '生殖細胞（卵・精子など）がつくられるときは、染色体の数がもとの半分になる**減数分裂**が起こります。受精すると、両親から半分ずつ受けついで、もとの数にもどります。有性生殖では、子に両親とちがういろいろな形質が現れます。',
         // 減数分裂と受精で、染色体の数がどう変わるか（4 本 → 2 本 → 4 本）
         figure: scene([
@@ -1360,6 +1354,7 @@
     lessons: [
       {
         id: 'heredity-mp3-c1',
+        anim: 'he-pollen-tube',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '花粉がめしべの柱頭につくと、花粉から**花粉管**がのびます。花粉管の中を**精細胞**が移動して胚珠に届き、精細胞の核と胚珠の中の**卵細胞**の核が合体します。これを**受精**といい、胚珠は種子になります。',
         // 受粉したあとのめしべ（模式図）
         figure: scene(pistilItems().concat([
@@ -1378,14 +1373,22 @@
       {
         id: 'heredity-mp3-c2',
         text: 'カエルは、雄の精巣でつくられた**精子**と、雌の卵巣でつくられた**卵**が受精して**受精卵**になります。受精卵は細胞分裂をくり返して**胚**になり、おたまじゃくしをへて親と同じ形になります。この過程を**発生**といいます。',
-        // カエルの発生
-        figure: scene(devItems().concat([
-          { type: 'text', x: 160, y: 34, text: 'カエルの発生', size: 14, anchor: 'middle', bold: true },
-          ...[['受精卵', 30], ['2 細胞', 92], ['4 細胞', 154], ['胚', 216], ['おたま', 276]].map(([t, x]) => ({ type: 'text', x, y: 136, text: t, size: 12, anchor: 'middle' })),
-          { type: 'text', x: 276, y: 152, text: 'じゃくし', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 196, text: '細胞分裂をくり返して、細胞の数がふえる', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 222, text: '→ やがて親（カエル）と同じ形になる', size: 13, anchor: 'middle' },
-        ])),
+        // 写真（life-2-c3 の使い回し）: カエルの発生（上の段 受精卵 → 2 細胞 → 4 細胞、下の段 多くの細胞 → おたまじゃくし）。
+        // 上の段は y 10〜95、下の段は y 130〜215。上のふちの余白はないので、上の文字は下地つきで卵のふちに重ねる
+        figure: scene([
+          photo('life-2-c3'),
+          tag(160, 14, '精子＋卵 → 受精卵 → 胚 → 親の形（発生）', { size: 13, anchor: 'middle' }),
+          tag(52, 112, '受精卵', { size: 13, anchor: 'middle' }),
+          tag(158, 112, '2 細胞', { size: 13, anchor: 'middle' }),
+          tag(267, 112, '4 細胞', { size: 13, anchor: 'middle' }),
+          { type: 'arrow', x1: 95, y1: 52, x2: 116, y2: 52, width: 2 },
+          { type: 'arrow', x1: 201, y1: 52, x2: 224, y2: 52, width: 2 },
+          { type: 'line', points: [[226, 122], [110, 122], [94, 131]], color: 'ink', width: 2, arrow: true },
+          { type: 'arrow', x1: 133, y1: 174, x2: 182, y2: 174, width: 2 },
+          tag(84, 232, '多くの細胞', { size: 13, anchor: 'middle' }),
+          tag(231, 232, 'おたまじゃくし', { size: 13, anchor: 'middle' }),
+          tag(154, 206, '2細胞〜は胚', { size: 13, anchor: 'middle' }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1501,14 +1504,14 @@
       {
         id: 'heredity-mp4-c1',
         text: '親の形質が子に伝わることを**遺伝**といいます。種子の丸としわのように、どちらか一方しか現れない形質どうしを**対立形質**といいます。代々同じ形質が現れる個体の集まりを**純系**といい、エンドウはつぼみのうちに**自家受粉**するので純系ができやすい植物です。',
-        // 対立形質（丸としわ）
+        // 写真（life-3-c1 の使い回し）: 左 丸い種子の山 (10〜150, 25〜142)、右 しわのある種子の山 (170〜308, 25〜142)。下は白い余白
         figure: scene([
-          roundPea(100, 100, 34), wrinkled(220, 100, 36),
-          { type: 'text', x: 100, y: 162, text: '丸い種子', size: 14, anchor: 'middle' },
-          { type: 'text', x: 220, y: 162, text: 'しわのある種子', size: 14, anchor: 'middle' },
-          { type: 'text', x: 160, y: 106, text: '⇔', size: 20, anchor: 'middle' },
-          { type: 'text', x: 160, y: 204, text: '対立形質（どちらか一方が現れる）', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 30, text: 'エンドウの種子の形', size: 13, anchor: 'middle' },
+          photo('life-3-c1'),
+          tag(160, 16, 'エンドウの種子の形', { size: 13, anchor: 'middle' }),
+          tag(79, 166, '丸い種子', { size: 15, anchor: 'middle', bold: true }),
+          tag(240, 166, 'しわのある種子', { size: 15, anchor: 'middle', bold: true }),
+          tag(160, 202, '丸 と しわ は 対立形質', { size: 15, anchor: 'middle', bold: true }),
+          tag(160, 228, 'エンドウは自家受粉 → 純系ができやすい', { size: 13, anchor: 'middle' }),
         ]),
       },
       {
@@ -1527,6 +1530,7 @@
       },
       {
         id: 'heredity-mp4-c3',
+        anim: 'he-dna-helix',   // 動く図（js/anim-bio.js）。figure は静止図として残す
         text: '遺伝子の本体は**DNA**（**デオキシリボ核酸**）という物質です。DNA は、2 本の鎖がねじれた**二重らせん**の形をしていて、1953 年にワトソンとクリックが、この形のモデルを発表しました。',
         // DNA の二重らせんのモデル
         figure: scene(helixItems().concat([
@@ -1547,10 +1551,11 @@
       figureChoice({
         id: 'heredity-mp4-p1', concept: 'he-mendel',
         prompt: '純系の丸い種子（ア）をつくるエンドウと、純系のしわのある種子（イ）をつくるエンドウをかけ合わせると、子はすべて丸い種子になりました。顕性形質はア・イのどちら？',
+        // 写真（life-3-c1 の使い回し）: 左 丸い種子の山 (10〜150, 25〜142)、右 しわのある種子の山 (170〜308, 25〜142)。名前は問題文にあるので重ねない
         figure: scene([
-          roundPea(90, 100, 34), wrinkled(230, 100, 36),
-          { type: 'region', id: 'r1', x: 90, y: 180, r: 22, label: 'ア' },
-          { type: 'region', id: 'r2', x: 230, y: 180, r: 22, label: 'イ' },
+          photo('life-3-c1'),
+          { type: 'region', id: 'r1', x: 79, y: 186, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 240, y: 186, r: 22, label: 'イ' },
         ]),
         answer: 'r1',
         explanation: '対立形質をもつ純系どうしをかけ合わせたとき、子に現れる形質が顕性形質（優性形質）です。子はすべて丸だったので、丸（ア）が顕性形質、しわ（イ）が潜性形質です。',

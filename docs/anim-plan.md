@@ -744,3 +744,208 @@ anim.register(kind, frameFn, opts)
 - 天体の 1 周（自転・公転・月・季節）は周期 8000 ms にした（4 秒では速すぎて季節や月の形が追えない）。
 - 箱の位置が力の大きさで決まるように見える動き（2 力のつり合い）や、根拠のない数値（化学変化で出ていく二酸化炭素の質量）は避けるか「例」と書いた。ch-open-container の 80.0 → 79.6 g は説明のための例の値。
 - 本数の目安（40〜70 本）に合わせ、B は「動くと分かりやすくなる」ものにしぼった（音の波形の読み方、溶解度のグラフの読み、器具の使い方などは静止図のまま）。
+
+---
+
+## 11. ミニプリント（1nen）
+
+計画: `docs/plans/mp-figures-1nen.md` の「動く図（新規）」「動く図（使い回し）」。指示書: `.ai-tasks/20261106-183000_ミニプリント_動く図_1nen.md`。
+
+### 足した kind（26 本）
+
+| kind | カード | ファイル | restT | つながる |
+|---|---|---|---|---|
+| `ba-focus-steps` | bas-2-c3 | anim-bio | 0.99 | |
+| `ba-image-reverse` | bas-3-c2 | anim-bio | 0.99 | |
+| `ba-candle-air` | bas-4-c3 | anim-bio | 0 | ○ |
+| `li-lens-cover` | light-mp4-c3 | anim-physics | 0.99 | |
+| `so-fork-stop` | sound-mp1-c1 | anim-physics | 0 | ○ |
+| `so-resonance` | sound-mp1-c2 | anim-physics | 0 | |
+| `so-amp-freq` | sound-mp3-c1 | anim-physics | 0 | ○ |
+| `fo-three-effects` | force-mp1-c1 | anim-physics | 0.99 | |
+| `fo-normal-friction` | force-mp1-c2 | anim-physics | 0.99 | |
+| `su-three-methods` | substance-mp4-c1 | anim-chem | 0 | |
+| `su-discard-first` | substance-mp4-c3 | anim-chem | 0 | |
+| `su-ammonia-fountain` | substance-mp5-c2 | anim-chem | 0.99 | |
+| `sl-filter-pass` | solution-mp1-c3 | anim-chem | 0 | ○ |
+| `sl-crystal-start` | solution-mp4-c1 | anim-chem | 0.99 | |
+| `st-state-arrows` | state-change-mp1-c1 | anim-chem | 0 | ○ |
+| `st-melt-boil` | state-change-mp2-c1 | anim-chem | 0.99 | |
+| `st-mixture-curve` | state-change-mp3-c1 | anim-chem | 0.99 | |
+| `st-tube-out-first` | state-change-mp4-c2 | anim-chem | 0.99 | |
+| `st-fractional-tower` | state-change-mp4-c3 | anim-chem | 0 | ○ |
+| `pl-ovary-to-fruit` | plants-mp1-c2 | anim-bio | 0.99 | |
+| `vo-focus-epicenter` | volcano-mp3-c1 | anim-earth | 0 | ○ |
+| `vo-tremor-record` | volcano-mp3-c2 | anim-earth | 0.99 | |
+| `vo-ps-80km` | volcano-mp3-c3 | anim-earth | 0.99 | |
+| `vo-fault-uplift` | volcano-mp4-c2 | anim-earth | 0.99 | |
+| `sr-sort-deposit` | strata-mp1-c2 | anim-earth | 0.99 | |
+| `sr-continent-drift` | strata-mp2-c4 | anim-earth | 0.99 | |
+
+周期はどれも 4000 ms。
+
+### 使い回し（15 枚。カードに `anim` を足しただけ。静止図はそのまま）
+
+light-mp1-c1 `rays-spread`・light-mp1-c2 `bounce-to-eye`・light-mp1-c3 `reflect-names`・light-mp2-c1 `vertical-vs-oblique`・light-mp2-c2 `refract-in`・light-mp2-c3 `coin-lift`・light-mp3-c1 `lens-parallel-rays`・light-mp3-c2 `real-image-forms`・light-mp3-c3 `virtual-image`・light-mp4-c1 `lens-special-rays`・light-mp4-c2 `image-size-by-distance`・sound-mp2-c1 `so-light-vs-sound`・force-mp2-c1 `fo-hooke-graph`・force-mp2-c2 `fo-balance`（静止図の「同じ一直線上」を「一直線上にある」に直した）・volcano-mp4-c1 `vo-plate-rebound`。
+
+### テストの決まりの変更（`tests/content-all.test.js`）
+
+- 「1 kind ＝ 1 カード」は、ミニプリントのステージ（id に `-mp` を含む）以外のカードだけで見る。
+- 登録した kind は 1 枚以上のカードが使う（ミニプリント以外のカードは 1 枚まで）。
+- 静止図との文字の整合は、ミニプリントの使い回し（ミニプリント以外のカードも使っている kind）には見ない。光の単元は 23 種だけ見ない（`li-lens-cover` は見る）。
+- `ANIM_PREFIX` に `basics: 'ba-'`。
+
+### 静止図に合わせて計画から変えた所
+
+- `fo-three-effects`: 計画はスポンジの ry 12 → 6 だが、止まった絵を静止図（ry 12）にするため 18 → 12 にした。ボールはスポンジにかからないよう x 118 から転がす。
+- `st-tube-out-first`: 静止図に火の印がないので、左上に flame（x 30）を足し、ガラス管を液から出したあと（0.6）で消す。止まった絵は火なし（静止図と同じ）。
+- `li-lens-cover`: figures.js の object は色を変えられないので、実像は object と同じ形の line と polygon で描き、通る光線の数に合わせて色をうすくする。
+- `ba-candle-air`: flame は大きさを変えられないので、小さくなる間は同じ色の楕円 2 つで描く。1 周がつながるよう、最後にふたを少し上げて火をつけ直す。
+- `ba-image-reverse`: 像は視野の中心だと橙の矢印に重なるので、中心より右下で動かす。
+
+## 12. ミニプリント（2nen）
+
+計画: `docs/plans/mp-figures-2nen.md` の「動く図（新規）」と「もとにする kind」。指示書: `.ai-tasks/20261106-190000_ミニプリント_動く図_2nen.md`。
+
+### 足した kind（31 本）
+
+| kind | カード | ファイル | restT | つながる |
+|---|---|---|---|---|
+| `we-dew-point-graph` | weather-mp4-c2 | anim-earth | 0.99 | |
+| `we-rising-air` | weather-mp7-c1 | anim-earth | 0 | ○ |
+| `we-water-cycle` | weather-mp7-c2 | anim-earth | 0 | ○ |
+| `we-isobar-wind` | weather-mp8-c1 | anim-earth | 0 | |
+| `we-pressure-section` | weather-mp8-c2 | anim-earth | 0 | ○ |
+| `we-ocean-current` | weather-mp9-c2 | anim-earth | 0 | ○ |
+| `we-cold-front-section` | weather-mp10-c1 | anim-earth | 0.99 | |
+| `we-warm-front-section` | weather-mp10-c2 | anim-earth | 0.99 | |
+| `we-tank-density` | weather-mp10-c3 | anim-earth | 0.99 | |
+| `we-front-passage-graph` | weather-mp11-c1 | anim-earth | 0.99 | |
+| `we-cyclone-move` | weather-mp11-c2 | anim-earth | 0.99 | |
+| `we-winter-monsoon` | weather-mp12-c1 | anim-earth | 0 | ○ |
+| `we-spring-3days` | weather-mp13-c1 | anim-earth | 0.99 | |
+| `we-typhoon-path` | weather-mp13-c3 | anim-earth | 0 | |
+| `we-sea-land-breeze` | weather-mp14-c1 | anim-earth | 0 | ○ |
+| `we-global-wind` | weather-mp14-c2 | anim-earth | 0 | ○ |
+| `el-cathode-bend` | electricity-mp12-c2 | anim-physics | 0 | ○ |
+| `el-compass-around` | electricity-mp13-c1 | anim-physics | 0 | ○ |
+| `el-wire-field` | electricity-mp14-c1 | anim-physics | 0 | ○ |
+| `el-coil-field` | electricity-mp14-c2 | anim-physics | 0 | ○ |
+| `el-wire-force` | electricity-mp15-c1 | anim-physics | 0 | |
+| `el-motor-rotate` | electricity-mp15-c2 | anim-physics | 0 | ○ |
+| `el-dc-ac` | electricity-mp16-c2 | anim-physics | 0.99 | |
+| `bo-photosynthesis-flow` | body-mp3-c1 | anim-bio | 0 | |
+| `bo-day-night-gas` | body-mp3-c2 | anim-bio | 0 | ○ |
+| `bo-heart-flow` | body-mp7-c2 | anim-bio | 0 | |
+| `bo-breath-path` | body-mp8-c1 | anim-bio | 0 | ○ |
+| `bo-arm-bend` | body-mp11-c1 | anim-bio | 0.5 | ○ |
+| `ch-reduction-model` | chemical-change-mp8-c2 | anim-chem | 0.99 | |
+| `ch-heat-thermometer` | chemical-change-mp8-c3 | anim-chem | 0.99 | |
+| `ch-precipitate-mass` | chemical-change-mp9-c1 | anim-chem | 0.99 | |
+
+周期はどれも 4000 ms。
+
+### 使い回し（7 枚。カードに `anim` を足しただけ。静止図はそのまま）
+
+計画で「もとにする kind の関数を写して新しい kind にする」としたものは、指示書の決まりにより写さずに既存の kind を使い回した（kind を増やさない）。
+
+electricity-mp4-c1 `el-series-parallel`・electricity-mp10-c2 `el-heat-rise`・electricity-mp12-c1 `el-static-charge`・electricity-mp16-c1 `el-induction`・body-mp10-c1 `bo-reflex`・chemical-change-mp5-c1 `ch-water-formation`・chemical-change-mp9-c2 `ch-open-container`。
+
+- 動く図は静止図と数値・例がちがうものがある（el-heat-rise は 6 W・3 W、ch-water-formation は水の化学反応式。カードの文の「電力が大きいほど上昇温度が大きい」「係数で原子の数をそろえる」は同じ）。
+
+### テスト
+
+- `tests/content-all.test.js` は 1nen の決まりのまま（変えていない）。
+- 分野ごとのテストに「ミニプリント（2nen）」の検査を足した: カードがその kind を使う・静止図の text/label が restT の絵に同じ text・x・y である・文字が重ならず場面の中・矢印のはしが場面の中・使い回しのカードが既存の kind を使う、と kind ごとの値。文字の重なりは、静止図にある文字どうし（静止図のまま）は見ない（weather-mp11-c1 の「寒冷前線が通過」と「北西」「北」は静止図でも少し重なる）。
+
+### 静止図に合わせて計画から変えた所
+
+- `we-cyclone-move`: 計画は「静止図から東へ 40 動かし restT 0」だが、A（x 304）が場面の右から出るので、静止図より 24 西から静止図の位置まで動かし、restT 0.99 にした。
+- `we-spring-3days`: 3 日目の「低」は 2 日目の低気圧とは別（西から来た新しい低気圧）なので、2 日目の位置からではなく、こまの左はしの近く (224,92) からすべらせる。
+- `we-tank-density`: 静止図は 5 分後のようすなので、題の文字は「しきりをとる前」→「しきりをとると…」→ 静止図の「しきりをとって 5 分後」と変え、静止図の「ぬるま湯（赤）」「冷水（青）」は 2 層になってから出す。
+- `we-ocean-current`: 赤・青の線の上で同じ色の点は見えないので、点は白で、ふちを線の色（暖流 赤・寒流 青）にした。
+- `el-coil-field`: 計画の「外は点線にそって右から左へ」は、点線（コイルの軸）の外の部分でも磁界は右向きなので、コイルの上をまわる灰色の点線の道（文字にかからない）を足して、そこを右から左へもどす。
+- `el-wire-force`: 状態の文字は (230,214) だと S 極の磁石にかかるので (262,214) にした。電流を切ってもどるあいだは力の矢印と「力」を描かない。
+- `el-motor-rotate`: 下の「AB（・）」「CD（×）」は位置を変えず、いま左側・右側にある導線の名前に変える（左がいつも・、右がいつも ×）。力の矢印は題・下の文にかからないよう先を止める。
+- `el-wire-field`: 右ねじの頭は中央 (160,104) に 1 つ（× の側と同じ時計回り）。
+- `el-dc-ac`: 「＋の向き」「−の向き」は線を伸ばしているあいだだけ出す（止まった絵は静止図と同じ）。
+- `bo-photosynthesis-flow`: 粒が左の箱 → 右の箱へ移って変わるので、1 周はつながらない（計画の「つながる」から外した）。光の点だけは流れ続ける。
+- `bo-heart-flow`: 部屋の外の道すじ（大静脈・肺動脈・肺・肺静脈・大動脈）と、その名前・肺の楕円を足した。題の文字にかからないよう、肺へ行く道は左右のはし（x 46・274）と上（y 20）を通す。
+- `bo-breath-path`: 凡例は気管にかからないよう 2 行（「白: 空気　青: 酸素」「灰: 二酸化炭素」、(6,20)・(6,36)）にした。
+- `bo-arm-bend`: 静止図は内側・外側の筋肉が同じ大きさ（rx 50・ry 13）なので、曲げた位置をその大きさにし、まっすぐのときに内側を長く細く（56・9.5）、外側を短く太く（44・16）した。「手」の文字は手といっしょに動く。
+- `ch-precipitate-mass`: 計画は「左の 2 つのビーカーから注ぐ」だが、静止図の右の小さいビーカー（液 0、空になったほう）から大きいビーカーへ注ぐ形にした（左は「混ぜる前」の絵なので動かさない）。
+- `ch-reduction-model`: 右の Cu の上の「還元」と CO₂ の上の「酸化」は、動き終わったあと（0.85〜）も残す。
+
+## 13. ミニプリント（3nen）
+
+計画: `docs/plans/mp-figures-3nen.md` の「動く図（新規）」と「動く図（使い回し）」。指示書: `.ai-tasks/20261106-190000_ミニプリント_動く図_3nen.md`。
+
+### 足した kind（30 本）
+
+| kind | カード | ファイル | restT | 周期 | つながる |
+|---|---|---|---|---|---|
+| `mo-water-pressure` | motion-mp1-c1 | anim-physics | 0.99 | 4000 | |
+| `mo-buoyancy-depth` | motion-mp1-c2 | anim-physics | 0.55 | 4000 | |
+| `mo-angle-resultant` | motion-mp2-c1 | anim-physics | 0.25 | 4000 | ○ |
+| `mo-compose-steps` | motion-mp2-c2 | anim-physics | 0.99 | 4000 | |
+| `mo-split-steps` | motion-mp3-c1 | anim-physics | 0.99 | 4000 | |
+| `mo-timer-tape` | motion-mp5-c2 | anim-physics | 0.99 | 4000 | |
+| `mo-friction-slow` | motion-mp6-c1 | anim-physics | 0.8·(1 − 1/√2) ≈ 0.234 | 4000 | |
+| `mo-uniform-graph` | motion-mp6-c2 | anim-physics | 0.99 | 4000 | |
+| `mo-inertia-start` | motion-mp6-c3 | anim-physics | 0.5 | 4000 | |
+| `mo-pulley-compare` | motion-mp8-c1 | anim-physics | 0 | 4000 | ○ |
+| `mo-lever` | motion-mp9-c1 | anim-physics | 0 | 4000 | ○ |
+| `mo-ball-block` | motion-mp10-c1 | anim-physics | 0 | 4000 | |
+| `sp-earth-spin` | space-mp2-c2 | anim-earth | 0 | 8000 | ○ |
+| `sp-ecliptic` | space-mp3-c3 | anim-earth | 0 | 8000 | ○ |
+| `sp-four-sky` | space-mp5-c1 | anim-earth | 0 | 4000 | |
+| `sp-local-direction` | space-mp6-c1 | anim-earth | 0 | 8000 | ○ |
+| `sp-night-at-a` | space-mp6-c2 | anim-earth | 0.4 | 4000 | |
+| `sp-star-hour` | space-mp7-c1 | anim-earth | 0 | 4000 | |
+| `sp-geo-helio` | space-mp8-c1 | anim-earth | 0 | 8000 | ○ |
+| `sp-inner-outer` | space-mp9-c1 | anim-earth | 0 | 8000 | ○ |
+| `sp-eclipse-line` | space-mp10-c2 | anim-earth | 0.99 | 4000 | |
+| `io-cucl2-ions` | ion-mp3-c2 | anim-chem | 0 | 4000 | |
+| `io-hcl-cell` | ion-mp4-c2 | anim-chem | 0 | 4000 | ○ |
+| `io-fuel-cell` | ion-mp6-c3 | anim-chem | 0 | 4000 | |
+| `io-oh-migration` | ion-mp7-c2 | anim-chem | 0.85·56/96（io-migration と同じ） | 4000 | |
+| `io-btb-neutral` | ion-mp8-c1 | anim-chem | 0 | 4000 | |
+| `io-neutral-model` | ion-mp9-c1 | anim-chem | 0.99 | 4000 | |
+| `he-mitosis-steps` | heredity-mp1-c1 | anim-bio | 0.99 | 4000 | |
+| `he-pollen-tube` | heredity-mp3-c1 | anim-bio | 0.5 | 4000 | |
+| `he-dna-helix` | heredity-mp4-c3 | anim-bio | 0 | 4000 | ○ |
+
+### 使い回し（12 枚。カードに `anim` を足しただけ。静止図はそのまま）
+
+指示書の決まりにより、計画の「動く図（使い回し）」は別名で登録せず（計画の「別名で登録する案」は採らない）、既存の kind をそのまま使った（kind を増やさない）。
+
+motion-mp3-c2 `mo-slope-split`・motion-mp4-c1 `mo-action-reaction`・motion-mp11-c2 `mo-pendulum`・space-mp2-c3 `sp-rotation`・space-mp4-c1 `sp-noon-altitude`・space-mp4-c2 `sp-seasons`・space-mp5-c2 `sp-orbit-midnight`・space-mp10-c1 `sp-moon-phase`・ion-mp6-c1 `io-daniell`・heredity-mp2-c2 `he-meiosis-fertilize`・nature-mp1-c2 `na-balance`・nature-mp2-c1 `na-carbon-cycle`。
+
+- 計画の表の「静止図（元のカードの図にそろえる）」は、別名で登録する案（静止図の文字をそろえてテストを通す）のための作業なので、行っていない（使い回しのカードは文字の整合の検査の対象外。静止図を変えると印刷の図も変わるため）。
+
+### テスト
+
+- `tests/content-all.test.js` は 1nen の決まりのまま（変えていない）。
+- 分野ごとのテストに「ミニプリント（3nen）」の検査を足した: カードがその kind を使う・静止図の text/label が restT の絵に同じ text・x・y である・文字が重ならず場面の中・矢印のはしが場面の中・使い回しのカードが既存の kind を使う、と kind ごとの値（2 : 1 で減る気体、てこの × 4、動滑車の × 2、打点の間隔、金星の角が 34° 以下 など）。`anim-chem.test.js` の `anim.KINDS.length` を 23 + 19 + 10 + 3 + 6 にした。
+- 静止図にある文字のうち、文字の箱の概算で場面の右から出るもの（motion-mp10-c1 の「高い・重い → 木片を遠くまで動かす」、space-mp7-c1 の「1 時間で 15° 西へ」）は、静止図の問題なので場面の中の検査から外した（静止図はそのまま）。
+
+### 静止図に合わせて計画から変えた所
+
+- `mo-water-pressure`: 計画の「深いほど長い矢印」は、深いパイプの右の矢印が水そうの右はし（x 300）に収まるよう、長さ (6 + へこみ × 2)·k（12・20・28）にした（深さの比例ではない）。
+- `mo-buoyancy-depth`: 「全体が水中なら」「深さで浮力は変わらない」の 2 行は水の中の左（(14,164)・(14,182)）、C が下がっているあいだ（0.6〜0.95）だけ出す。
+- `mo-angle-resultant`: 2 力の図は右上の空き（O (214,104)、1 N ＝ 16px）。角の文字は (316,30)、合力の文字は (316,128)。
+- `mo-timer-tape`: 静止図は上 9 打点・下 17 打点なので、同じ時間ごとに打つ形にするため、下のテープは 0〜0.9 のあいだずっと、上のテープは後半（0.45〜0.9）だけ引く（上 x 270・下 x 254 に記録タイマーの印）。
+- `mo-friction-slow`: 木片は x 50 → 210。静止図の木片の位置（x 130）にある t を restT にした。「運動の向き」の矢印と文字は動かさない。
+- `mo-pulley-compare`: 計画の「d = 20·u(t) で引き上げる」だと動滑車の手が天井に当たるので、mo-pulley と同じく、静止図から 10 下げてから引き上げる形（0.08〜0.3 下げる、0.36〜0.66 引き上げる）にした。
+- `mo-lever`: 動いた距離は両向き矢印ではなく、両はしの青い線（はしに短い横線）で見せ、下に「押し下げた距離 ＝ 上がった距離 × 4」を出す（物体側が上がる距離は 7px ほどで、矢じりが入らないため）。
+- `mo-ball-block`: 静止図は球が高い所・木片が当たる前なので restT 0。
+- `sp-local-direction`: 観測者の近く（70° 以内）にある時刻の文字は矢印と重なるので描かない。いまの時刻は下の文「○○の地点での方位」で出す（静止図の文字の位置で、夕方のとき静止図と同じ文）。
+- `sp-night-at-a`: 夕方・真夜中・明け方で止まり、そのあいだに 90° ずつ回す。「南」「東」「西」は止まっているあいだだけ出す（回るあいだは「オリオン座」と重なる）。夕方・明け方の文字の位置は表で決めた（真夜中は静止図と同じ）。
+- `sp-star-hour`: 前半は今夜（20 時に P → 21 時 → 22 時）、後半は 1 か月後（18 時に P → 19 時 → 20 時で 30° 西）。時刻は左上 (8,24) に出す。
+- `sp-inner-outer`: 星の名前の文字は静止図の位置のまま（動かすとたがいに重なる）。左下に地球から見た太陽と金星・火星のあいだの角を出し、火星の角が 150° 以上のとき「火星は真夜中にも見える」。
+- `sp-eclipse-line`: 月食・食が起こらない段に地球の影（右へのびるうすい灰色）を足した。月食の段の月は、影に入るほど黄 → 暗い灰色。
+- `io-cucl2-ions`・`io-hcl-cell`: 液の中にイオンを 2 つずつ置くと重なるので、Cu2+・Cl-・Zn2+ は 1 つずつ、H+ は 2 つを 1 組で動かす。
+- `io-btb-neutral`: 8 滴（4 滴で緑、8 滴で黄）。左下 (8,208) に「加えた塩酸 ○ 滴」。
+- `io-neutral-model`: どの箱も「加える前」の絵（左の箱は H+ が 2 個、中の箱は H+ が 1 個、右の箱は Na+・Cl- が 2 組）から始め、下の段に Na+ と OH- が現れる形にした。
+- `he-mitosis-steps`: 強調が始まる前の細胞は枠だけにし、左から順に絵ができていく形にした。止まった絵は静止図とまったく同じ item。
+- `he-pollen-tube`: 計画は restT 0.99 だが、受精のあとの絵（卵細胞の色が変わり、精細胞がない）は静止図とちがうので、花粉管が伸びきって精細胞が静止図の位置にいる 0.5 を restT にした（0.45〜0.55 は止めて見せる）。

@@ -12,6 +12,13 @@ const EXPECTED = [
   'su-upward-displacement', 'su-downward-displacement', 'su-co2-limewater', 'st-distill-order', 'sl-saturate',
   'ch-mass-conservation', 'io-ion-count',
 ];
+// ミニプリント（1nen）の 10 本（docs/plans/mp-figures-1nen.md）
+const EXPECTED_MP = ['su-three-methods', 'su-discard-first', 'su-ammonia-fountain', 'sl-filter-pass', 'sl-crystal-start',
+  'st-state-arrows', 'st-melt-boil', 'st-mixture-curve', 'st-tube-out-first', 'st-fractional-tower'];
+// ミニプリント（2nen）の 3 本（docs/plans/mp-figures-2nen.md）
+const EXPECTED_MP2 = ['ch-reduction-model', 'ch-heat-thermometer', 'ch-precipitate-mass'];
+// ミニプリント（3nen）の 6 本（docs/plans/mp-figures-3nen.md）
+const EXPECTED_MP3 = ['io-cucl2-ions', 'io-hcl-cell', 'io-fuel-cell', 'io-oh-migration', 'io-btb-neutral', 'io-neutral-model'];
 const PREFIXES = ['su-', 'st-', 'sl-', 'ch-', 'io-'];
 const X_KEYS = ['x', 'x1', 'x2', 'cx'], Y_KEYS = ['y', 'y1', 'y2', 'cy'];
 const SIZE_KEYS = ['r', 'rx', 'ry', 'width', 'height'];
@@ -40,14 +47,14 @@ function sameWithin1px(a, b, label) {
   });
 }
 
-test('KINDS は計画の 19 本（化学の優先度 A 12 本・B 7 本）で、名前は単元の接頭辞で始まり、anim.KINDS の後ろに入っている', () => {
-  assert.deepEqual(chem.KINDS, EXPECTED);
+test('KINDS は計画の 19 本（化学の優先度 A 12 本・B 7 本）とミニプリントの 10 本（1nen）・3 本（2nen）・6 本（3nen）で、名前は単元の接頭辞で始まり、anim.KINDS の後ろに入っている', () => {
+  assert.deepEqual(chem.KINDS, EXPECTED.concat(EXPECTED_MP, EXPECTED_MP2, EXPECTED_MP3));
   chem.KINDS.forEach(kind => {
     assert.ok(PREFIXES.some(p => kind.startsWith(p)), kind + ' の接頭辞');
     assert.ok(anim.KINDS.includes(kind), kind + ' が anim.KINDS にない');
     assert.equal(anim.periodOf(kind), 4000);
   });
-  assert.equal(anim.KINDS.length, 23 + 19);
+  assert.equal(anim.KINDS.length, 23 + 19 + 10 + 3 + 6);
 });
 
 test('restT は計画どおり', () => {
@@ -57,6 +64,10 @@ test('restT は計画どおり', () => {
     'io-daniell': 0, 'io-migration': 0.85 * 56 / 96, 'io-neutralize': 0.99,
     'su-upward-displacement': 0.99, 'su-downward-displacement': 0.99, 'su-co2-limewater': 0.99, 'st-distill-order': 0.99,
     'sl-saturate': 0.99, 'ch-mass-conservation': 0.99, 'io-ion-count': 0.99,
+    'su-three-methods': 0, 'su-discard-first': 0, 'su-ammonia-fountain': 0.99, 'sl-filter-pass': 0, 'sl-crystal-start': 0.99,
+    'st-state-arrows': 0, 'st-melt-boil': 0.99, 'st-mixture-curve': 0.99, 'st-tube-out-first': 0.99, 'st-fractional-tower': 0,
+    'ch-reduction-model': 0.99, 'ch-heat-thermometer': 0.99, 'ch-precipitate-mass': 0.99,
+    'io-cucl2-ions': 0, 'io-hcl-cell': 0, 'io-fuel-cell': 0, 'io-oh-migration': 0.85 * 56 / 96, 'io-btb-neutral': 0, 'io-neutral-model': 0.99,
   };
   chem.KINDS.forEach(kind => assert.ok(near(anim.restT(kind), rest[kind]), kind + ' の restT = ' + anim.restT(kind)));
 });
@@ -589,4 +600,438 @@ test('B の kind: 矢印（arrow）の両はしが場面（320×240）の中に�
         assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + i / 100 + ' の矢印のはし ' + x + ',' + y)));
     }
   });
+});
+
+// ================================================================
+// ミニプリント（1nen）。docs/plans/mp-figures-1nen.md の「動く図（新規）」
+// ================================================================
+
+const MP_KINDS = EXPECTED_MP;
+const MP_CARDS = {
+  'su-three-methods': ['substance.js', 'substance-mp4-c1'], 'su-discard-first': ['substance.js', 'substance-mp4-c3'],
+  'su-ammonia-fountain': ['substance.js', 'substance-mp5-c2'], 'sl-filter-pass': ['solution.js', 'solution-mp1-c3'],
+  'sl-crystal-start': ['solution.js', 'solution-mp4-c1'], 'st-state-arrows': ['state-change.js', 'state-change-mp1-c1'],
+  'st-melt-boil': ['state-change.js', 'state-change-mp2-c1'], 'st-mixture-curve': ['state-change.js', 'state-change-mp3-c1'],
+  'st-tube-out-first': ['state-change.js', 'state-change-mp4-c2'], 'st-fractional-tower': ['state-change.js', 'state-change-mp4-c3'],
+};
+
+// kind → [単元のファイル, カード id]
+const mpLesson = (file, id) => require('../content/' + file).unit.areas.flatMap(a => a.stages).flatMap(s => s.lessons).find(c => c.id === id);
+
+test('ミニプリント: カードがその kind を使い、静止図の text・label が frame(kind, restT) に同じ text・x・y で入っている', () => {
+  assert.deepEqual(Object.keys(MP_CARDS), MP_KINDS);
+  MP_KINDS.forEach(kind => {
+    const [file, id] = MP_CARDS[kind];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    const rest = items(kind, anim.restT(kind));
+    card.figure.items.filter(it => it.type === 'text' || it.type === 'label').forEach(st => {
+      assert.ok(rest.some(it => (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y),
+        kind + ' の止まった絵に静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') がない');
+    });
+  });
+});
+
+test('ミニプリント: 各 t で文字（text）どうしが重ならず場面の中にあり、矢印（arrow）の両はしが場面の中にある', () => {
+  MP_KINDS.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const list = items(kind, t);
+      const boxes = list.filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+      list.filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + t + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
+});
+
+test('ミニプリント: つながる kind（sl-filter-pass・st-state-arrows・st-fractional-tower）は t = 0 と t = 0.99999 の座標の差が 1px 以内', () => {
+  ['sl-filter-pass', 'st-state-arrows', 'st-fractional-tower'].forEach(kind => sameWithin1px(items(kind, 0), items(kind, 0.99999), kind));
+});
+
+test('su-three-methods: t = 0 は気体の粒がない。気体がたまると、イは試験管の上から、ウは底から粒が増え、アの水面が下がる', () => {
+  const dots = (t, x0, x1) => circles(items('su-three-methods', t), c => c.r === 3 && c.x >= x0 && c.x <= x1 && c.y < (x0 > 200 ? 186 : 120));
+  assert.equal(circles(items('su-three-methods', 0)).length, 0);
+  // イ（x 149〜171）: 先にたまるのは上（y の小さい所）
+  const up = dots(0.3, 150, 170).filter(c => c.x !== 160);
+  assert.ok(up.length >= 2 && Math.min(...up.map(c => c.y)) === 37);
+  // ウ（x 254〜276）: 先にたまるのは底（y の大きい所）
+  const down = dots(0.3, 255, 275).filter(c => c.x !== 265);
+  assert.ok(down.length >= 2 && Math.max(...down.map(c => c.y)) === 183);
+  const waterTop = (t) => Math.min(...items('su-three-methods', t).find(it => it.type === 'polygon').points.map(p => p[1]));
+  assert.ok(waterTop(0.5) > waterTop(0.1));
+});
+
+test('su-discard-first: t = 0 は試験管がガラス管の上（x 180）で水に満たされている。はじめの泡のときは試験管が横にある', () => {
+  const tube = (t) => items('su-discard-first', t).find(it => it.type === 'tube');
+  assert.equal(tube(0).x, 180);
+  assert.equal(tube(0.2).x, 230);
+  assert.equal(tube(0.6).x, 180);
+  // ゴム栓は最後だけ
+  assert.ok(!items('su-discard-first', 0.6).some(it => it.type === 'rect' && it.fill === 'gray'));
+  assert.ok(items('su-discard-first', 0.99).some(it => it.type === 'rect' && it.fill === 'gray' && near(it.y, 154)));
+});
+
+test('su-ammonia-fountain: はじめはアンモニアの粒があり噴水がない。止まった絵は粒がなく、静止図と同じ赤い噴水', () => {
+  const nh3 = (t) => circles(items('su-ammonia-fountain', t), c => c.fill === 'lightgreen').length;
+  assert.equal(nh3(0), 10);
+  assert.equal(nh3(0.99), 0);
+  const red = (t) => items('su-ammonia-fountain', t).filter(it => it.type === 'line' && it.color === 'red');
+  assert.equal(red(0.3).length, 0);
+  assert.deepEqual(red(0.99).map(l => l.points), [[[160, 76], [140, 50]], [[160, 76], [180, 50]], [[160, 76], [160, 42]]]);
+  assert.equal(circles(items('su-ammonia-fountain', 0.99), c => c.fill === 'red').length, 3);
+});
+
+test('sl-filter-pass: t = 0 の水の粒は静止図と同じ位置。水の粒は穴の真上・真下（x 80・160・240）を通り、泥の粒は y が変わらない', () => {
+  const water = (t) => circles(items('sl-filter-pass', t), c => c.fill === 'blue');
+  assert.deepEqual(water(0).map(c => [c.x, c.y]), [[80, 150], [160, 160], [240, 146]]);
+  for (let t = 0; t < 1; t += 0.05) {
+    water(t).forEach(c => assert.ok([80, 160, 240].includes(c.x) && c.y >= 58 && c.y < 184));
+    circles(items('sl-filter-pass', t), c => c.fill === 'brown').forEach(c => assert.ok(c.y === 96 || c.y === 98));
+  }
+});
+
+test('sl-crystal-start: カーソルは 70 ℃ から 20 ℃ へ動き、溶解度が 50 g を下回ると「ここで結晶が出はじめる」。止まった絵の帯は静止図と同じ 88〜136', () => {
+  const band = (t) => items('sl-crystal-start', t).find(it => it.type === 'line' && it.color === 'orange');
+  const msg = (t) => items('sl-crystal-start', t).some(it => it.text === 'ここで結晶が出はじめる');
+  assert.equal(band(0), undefined);
+  assert.ok(!msg(0));
+  assert.deepEqual(band(0.99).points, [[88, 168], [136, 168]]);
+  assert.ok(msg(0.99));
+  // 40 ℃（x 136）より左に来たら帯が伸び始めるが、50 g を下回る（約 32 ℃）までは文字が出ない
+  let sawBandWithoutMsg = false;
+  for (let t = 0; t < 0.8; t += 0.005) if (band(t) && !msg(t)) sawBandWithoutMsg = true;
+  assert.ok(sawBandWithoutMsg);
+  // 止まった絵の点線は、数の行（溶解度 y 100・温度 y 146）の文字の高さでとぎれる
+  [0.5, 0.99].forEach(t => {
+    const dashes = items('sl-crystal-start', t).filter(it => it.type === 'line' && it.dashed && it.color === 'blue');
+    assert.ok(dashes.length >= 2, 't = ' + t);
+    dashes.forEach(d => [[87, 101], [135, 148]].forEach(([top, bottom]) => {
+      const y1 = Math.min(d.points[0][1], d.points[1][1]), y2 = Math.max(d.points[0][1], d.points[1][1]);
+      assert.ok(y2 < top || y1 > bottom, 't = ' + t + ' の点線 ' + y1 + '〜' + y2);
+    }));
+  });
+});
+
+test('st-state-arrows: t = 0 はどの箱も囲まない。印が着くと着いた箱を矢印の色で囲む（固体 → 液体 → 気体 → 固体 → 気体）', () => {
+  const frames = (t) => items('st-state-arrows', t).filter(it => it.type === 'rect' && it.fill === 'none');
+  assert.equal(frames(0).length, 0);
+  assert.deepEqual(frames(0.2).map(f => [f.x, f.y, f.stroke]), [[216, 146, 'orange']]);
+  assert.deepEqual(frames(0.44).map(f => [f.x, f.y, f.stroke]), [[116, 26, 'orange']]);
+  assert.deepEqual(frames(0.68).map(f => [f.x, f.y, f.stroke]), [[16, 146, 'blue']]);
+  assert.deepEqual(frames(0.92).map(f => [f.x, f.y, f.stroke]), [[116, 26, 'orange']]);
+  assert.ok(items('st-state-arrows', 0.85).some(it => it.text === 'ドライアイス'));
+});
+
+test('st-melt-boil: 線が伸び、1 つ目の横ばいに入ると「融点」、2 つ目の横ばいに入ると「沸点」が出る。止まった絵は静止図と同じ線', () => {
+  const has = (t, s) => items('st-melt-boil', t).some(it => it.text === s);
+  const tipAt = (t) => items('st-melt-boil', t).find(it => it.type === 'circle');
+  for (let t = 0; t < 0.85; t += 0.01) {
+    const tip = tipAt(t);
+    if (has(t, '融点')) assert.ok(tip.x > 80, 't = ' + t);
+    if (has(t, '沸点')) assert.ok(tip.x > 200, 't = ' + t);
+  }
+  assert.ok(!has(0, '融点') && has(0.99, '融点') && has(0.99, '沸点'));
+  assert.deepEqual(items('st-melt-boil', 0.99).find(it => it.type === 'line' && it.color === 'blue').points,
+    [[50, 182], [80, 160], [130, 160], [200, 50], [290, 50]]);
+});
+
+test('st-mixture-curve: 2 本の線は同じ加熱時間（x）まで伸び、止まった絵は静止図と同じ線', () => {
+  const lines = (t) => items('st-mixture-curve', t).filter(it => it.type === 'line' && (it.color === 'blue' || it.color === 'orange'));
+  [0.2, 0.5, 0.7].forEach(t => {
+    const [a, b] = lines(t);
+    assert.ok(near(a.points[a.points.length - 1][0], b.points[b.points.length - 1][0]), 't = ' + t);
+  });
+  const card = mpLesson('state-change.js', 'state-change-mp3-c1');
+  const st = card.figure.items.filter(it => it.type === 'line' && (it.color === 'blue' || it.color === 'orange'));
+  lines(0.99).forEach((l, i) => l.points.forEach((p, j) => assert.ok(near(p[0], st[i].points[j][0]) && near(p[1], st[i].points[j][1]))));
+});
+
+test('st-tube-out-first: ガラス管を液から出してから火を消す（ガラス管の先が液面 y 167 より上に出たあとで火が消える）', () => {
+  const tip = (t) => items('st-tube-out-first', t).find(it => it.type === 'line' && it.points.length === 3).points[2][1];
+  const flame = (t) => items('st-tube-out-first', t).some(it => it.type === 'flame');
+  assert.ok(tip(0) > 167 && flame(0));
+  for (let t = 0; t < 1; t += 0.01) if (!flame(t)) assert.ok(tip(t) < 167, 't = ' + t);
+  assert.equal(tip(0.99), 120);
+  assert.ok(!flame(0.99));
+});
+
+test('st-fractional-tower: t = 0 は粒がない。粒は色ごとに決まった取り出し口の高さで右へ出る', () => {
+  assert.equal(circles(items('st-fractional-tower', 0)).length, 0);
+  const OUT = { sky: 50, yellow: 86, orange: 122, brown: 158 };
+  for (let t = 0; t < 1; t += 0.01) {
+    circles(items('st-fractional-tower', t), c => c.fill !== 'ink').forEach(c => {
+      if (c.x > 180) assert.ok(near(c.y, OUT[c.fill]), 't = ' + t + ' の ' + c.fill);
+      else assert.ok(c.y >= OUT[c.fill] - 1e-9, 't = ' + t + ' の ' + c.fill + ' が取り出し口より上');
+    });
+  }
+});
+
+// ================================================================
+// ミニプリント（2nen）。docs/plans/mp-figures-2nen.md の「動く図（新規）」と「もとにする kind」
+// ================================================================
+
+const MP2_KINDS = EXPECTED_MP2;
+const MP2_CARDS = {
+  'ch-reduction-model': ['chemical-change.js', 'chemical-change-mp8-c2'],
+  'ch-heat-thermometer': ['chemical-change.js', 'chemical-change-mp8-c3'],
+  'ch-precipitate-mass': ['chemical-change.js', 'chemical-change-mp9-c1'],
+};
+// カード id → [単元のファイル, 使い回す kind]
+const MP2_SHARED = {
+  'chemical-change-mp5-c1': ['chemical-change.js', 'ch-water-formation'],
+  'chemical-change-mp9-c2': ['chemical-change.js', 'ch-open-container'],
+};
+
+test('ミニプリント（2nen）: カードがその kind を使い、静止図の text・label が frame(kind, restT) に同じ text・x・y で入っている', () => {
+  assert.deepEqual(Object.keys(MP2_CARDS), MP2_KINDS);
+  MP2_KINDS.forEach(kind => {
+    const [file, id] = MP2_CARDS[kind];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    const rest = items(kind, anim.restT(kind));
+    card.figure.items.filter(it => it.type === 'text' || it.type === 'label').forEach(st => {
+      assert.ok(rest.some(it => (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y),
+        kind + ' の止まった絵に静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') がない');
+    });
+  });
+});
+
+test('ミニプリント（2nen）: 各 t で文字（text）どうしが重ならず場面の中にあり、矢印（arrow）の両はしが場面の中にある（静止図にある文字どうしは静止図のまま見ない）', () => {
+  MP2_KINDS.forEach(kind => {
+    const [file, id] = MP2_CARDS[kind];
+    const fig = mpLesson(file, id).figure.items;
+    const inFigure = it => fig.some(st => st.type === 'text' && st.text === it.text && st.x === it.x && st.y === it.y);
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const list = items(kind, t);
+      const boxes = list.filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b) || (inFigure(p.it) && inFigure(q.it)),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+      list.filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + t + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
+});
+
+test('ミニプリント（2nen）: 内容が同じカードは、既存の kind を使い回す（計画の「もとにする kind」）', () => {
+  Object.keys(MP2_SHARED).forEach(id => {
+    const [file, kind] = MP2_SHARED[id];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    assert.ok(anim.KINDS.includes(kind), kind);
+  });
+});
+
+test('ch-reduction-model: 左の 2CuO ＋ C は各 t で静止図のまま。止まった絵の原子の複製は右の位置（Cu 2・O–C–O）にある', () => {
+  const card = mpLesson('chemical-change.js', 'chemical-change-mp8-c2');
+  const key = c => [c.label, c.x, c.y, c.r].join(',');
+  const left = card.figure.items.filter(it => it.type === 'circle' && it.x < 140).map(key);
+  const right = card.figure.items.filter(it => it.type === 'circle' && it.x > 150).map(key).sort();
+  [0, 0.2, 0.5, 0.99].forEach(t => {
+    const got = circles(items('ch-reduction-model', t), c => c.stroke === 'ink').map(key);
+    left.forEach(k => assert.ok(got.includes(k), 't = ' + t + ' に左の ' + k + ' がない'));
+  });
+  const moved = circles(items('ch-reduction-model', 0.99), c => c.stroke === 'ink').slice(5).map(key).sort();
+  assert.deepEqual(moved, right);
+  // O は 0.1 から Cu を離れ、「還元」はそのときから出る
+  assert.ok(!texts(items('ch-reduction-model', 0.05)).some(it => it.text === '還元'));
+  assert.ok(texts(items('ch-reduction-model', 0.3)).some(it => it.text === '還元'));
+  assert.ok(texts(items('ch-reduction-model', 0.99)).some(it => it.text === '酸化' && it.x === 262));
+});
+
+test('ch-heat-thermometer: 左の液の先は 150 → 100 へ上がり、右は 110 → 160 へ下がる。止まった絵の矢印は静止図と同じ', () => {
+  const marks = t => circles(items('ch-heat-thermometer', t), c => c.r === 3).map(c => [c.x, c.y]);
+  assert.deepEqual(marks(0), [[110, 150], [250, 110]]);
+  let prev = marks(0);
+  for (let i = 1; i <= 80; i++) {
+    const m = marks(i / 100);
+    assert.ok(m[0][1] <= prev[0][1] + 1e-9 && m[1][1] >= prev[1][1] - 1e-9, 't = ' + i / 100);
+    prev = m;
+  }
+  assert.ok(near(marks(0.99)[0][1], 100) && near(marks(0.99)[1][1], 160));
+  const card = mpLesson('chemical-change.js', 'chemical-change-mp8-c3');
+  const arrows = list => list.filter(it => it.type === 'arrow').map(a => [a.x1, a.y1, a.x2, a.y2, a.color]);
+  assert.deepEqual(arrows(items('ch-heat-thermometer', 0.99)), arrows(card.figure.items));
+  assert.equal(arrows(items('ch-heat-thermometer', 0)).length, 0);
+});
+
+test('ch-precipitate-mass: はかりは各 t で左右とも 100.0 g。注いでから沈殿ができ、止まった絵は静止図と同じ沈殿・ビーカー', () => {
+  for (let i = 0; i < 100; i++) {
+    assert.equal(texts(items('ch-precipitate-mass', i / 100)).filter(it => it.text === '100.0 g').length, 2);
+  }
+  const precip = t => items('ch-precipitate-mass', t).find(it => it.type === 'ellipse');
+  assert.equal(precip(0.3), undefined);
+  const card = mpLesson('chemical-change.js', 'chemical-change-mp9-c1');
+  const st = card.figure.items.find(it => it.type === 'ellipse');
+  const rest = precip(0.99);
+  assert.deepEqual([rest.x, rest.y, rest.rx, rest.ry], [st.x, st.y, st.rx, st.ry]);
+  const beakers = list => list.filter(it => it.type === 'beaker').map(b => [b.x, b.y, b.width, b.height, b.level]);
+  assert.deepEqual(beakers(items('ch-precipitate-mass', 0.99)), beakers(card.figure.items));
+  // 注ぐあいだは大きいビーカーの液がふえ、小さいビーカーの液がへる
+  const level = (t, x) => items('ch-precipitate-mass', t).find(it => it.type === 'beaker' && it.x === x).level;
+  assert.ok(level(0.2, 230) > level(0, 230) && level(0.2, 292) < level(0, 292));
+});
+
+// ================================================================
+// ミニプリント（3nen）。docs/plans/mp-figures-3nen.md の「動く図（新規）」と「動く図（使い回し）」
+// ================================================================
+
+const MP3_CARDS = {
+  'io-cucl2-ions': ['ion.js', 'ion-mp3-c2'], 'io-hcl-cell': ['ion.js', 'ion-mp4-c2'], 'io-fuel-cell': ['ion.js', 'ion-mp6-c3'],
+  'io-oh-migration': ['ion.js', 'ion-mp7-c2'], 'io-btb-neutral': ['ion.js', 'ion-mp8-c1'], 'io-neutral-model': ['ion.js', 'ion-mp9-c1'],
+};
+// カード id → [単元のファイル, 使い回す kind]（計画の「動く図（使い回し）」。kind を増やさず既存の kind をそのまま使う）
+const MP3_SHARED = { 'ion-mp6-c1': ['ion.js', 'io-daniell'] };
+const ionCircles = list => list.filter(it => it.type === 'circle' && it.label).map(it => JSON.stringify([it.x, it.y, it.r, it.fill, it.label])).sort();
+
+test('ミニプリント（3nen）: カードがその kind を使い、静止図の text・label が frame(kind, restT) に同じ text・x・y で入っている', () => {
+  assert.deepEqual(Object.keys(MP3_CARDS), EXPECTED_MP3);
+  EXPECTED_MP3.forEach(kind => {
+    const [file, id] = MP3_CARDS[kind];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    const rest = items(kind, anim.restT(kind));
+    card.figure.items.filter(it => it.type === 'text' || it.type === 'label').forEach(st => {
+      assert.ok(rest.some(it => (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y),
+        kind + ' の止まった絵に静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') がない');
+    });
+  });
+});
+
+test('ミニプリント（3nen）: 各 t で文字（text）どうしが重ならず場面の中にあり、矢印（arrow）の両はしが場面の中にある', () => {
+  EXPECTED_MP3.forEach(kind => {
+    const [file, id] = MP3_CARDS[kind];
+    const fig = mpLesson(file, id).figure.items;
+    const inFigure = it => fig.some(st => st.type === 'text' && st.text === it.text && st.x === it.x && st.y === it.y);
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const list = items(kind, t);
+      const boxes = list.filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b) || (inFigure(p.it) && inFigure(q.it)),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+      list.filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + t + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
+});
+
+test('ミニプリント（3nen）: 内容が同じカードは、既存の kind を使い回す（新しい kind を足さない）', () => {
+  Object.keys(MP3_SHARED).forEach(id => {
+    const [file, kind] = MP3_SHARED[id];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    assert.ok(chem.KINDS.includes(kind) && !EXPECTED_MP3.includes(kind), kind);
+  });
+});
+
+test('ミニプリント（3nen）: つながる kind（io-hcl-cell）は t = 0 と t = 0.99999 の座標の差が 1px 以内', () => {
+  sameWithin1px(items('io-hcl-cell', 0), items('io-hcl-cell', 0.99999), 'io-hcl-cell');
+});
+
+test('io-cucl2-ions: t = 0 のイオンは静止図と同じ。Cu2+ は陰極（右）へ、Cl- は陽極（左）へ動き、陰極の銅の層はだんだん厚くなる', () => {
+  const card = mpLesson('ion.js', 'ion-mp3-c2');
+  assert.deepEqual(ionCircles(items('io-cucl2-ions', 0)), ionCircles(card.figure.items));
+  const at = (t, label) => items('io-cucl2-ions', t).find(it => it.type === 'circle' && it.label === label);
+  assert.ok(at(0.1, 'Cu2+').x > at(0, 'Cu2+').x && at(0.1, 'Cl-').x < at(0, 'Cl-').x);
+  const layer = t => (items('io-cucl2-ions', t).find(it => it.type === 'rect' && it.x < 204 && it.x > 200) || { width: 0 }).width;
+  assert.equal(layer(0), 0);
+  assert.ok(layer(0.3) < layer(0.6) && layer(0.6) < layer(0.9));
+  // 陽極に着いた 1 個目の Cl- は塩素原子になって待ち、2 個目が着くと 2 個そろって泡（Cl₂）になって上がる
+  const ph = 0.5 * 30 / 65;
+  const at0 = u => ((u - ph) % 1 + 1) % 1;   // 1 周の中の位置 u になる t
+  const cls = t => items('io-cucl2-ions', t).filter(it => it.type === 'circle' && it.label === 'Cl-');
+  const green = t => items('io-cucl2-ions', t).filter(it => it.type === 'circle' && it.stroke === 'green' && it.x === 122);
+  const cl2 = t => items('io-cucl2-ions', t).some(it => it.type === 'text' && it.text === 'Cl₂');
+  assert.equal(cls(0).length, 1);
+  assert.equal(cls(at0(0.4)).length, 2);                                    // 2 個とも陽極へ向かう
+  assert.ok(green(at0(0.6)).length === 1 && !cl2(at0(0.6)) && cls(at0(0.6)).length === 1);   // 1 個目は原子で待ち、2 個目が向かう
+  assert.ok(green(at0(0.85)).length === 1 && cl2(at0(0.85)) && cls(at0(0.85)).length === 0);   // そろって Cl₂ の泡
+  assert.ok(green(at0(0.95))[0].y < green(at0(0.85))[0].y);
+  for (let i = 0; i < 200; i++) {   // 2 個の Cl- は重ならない
+    const c = cls(i / 200);
+    if (c.length === 2) assert.ok(Math.abs(c[0].x - c[1].x) >= 38, 't = ' + i / 200);
+  }
+});
+
+test('io-hcl-cell: 電子は導線（亜鉛板 → 電圧計 → 銅板）の上だけにあり、H+ は銅板へ近づいて、銅板の横で H₂ の泡が上がる', () => {
+  const wire = [[102, 80], [102, 40], [140, 40], [180, 40], [218, 40], [218, 80]];
+  const onWire = (x, y) => wire.slice(1).some(([bx, by], i) => {
+    const [ax, ay] = wire[i];
+    return Math.abs((bx - ax) * (y - ay) - (by - ay) * (x - ax)) < 1e-6 && x >= Math.min(ax, bx) - 1e-6 && x <= Math.max(ax, bx) + 1e-6 && y >= Math.min(ay, by) - 1e-6 && y <= Math.max(ay, by) + 1e-6;
+  });
+  for (let i = 0; i < 40; i++) {
+    const es = items('io-hcl-cell', i / 40).filter(it => it.type === 'circle' && it.fill === 'sky' && it.r === 4);
+    assert.ok(es.length >= 3);
+    es.forEach(e => assert.ok(onWire(e.x, e.y), 't = ' + i / 40));
+  }
+  const h = t => items('io-hcl-cell', t).filter(it => it.type === 'circle' && it.label === 'H+').map(it => it.x);
+  assert.ok(h(0.05)[0] < h(0.15)[0]);
+  const b = t => items('io-hcl-cell', t).find(it => it.type === 'circle' && it.x === 205);
+  assert.ok(b(0.35) && b(0.45) && b(0.45).y < b(0.35).y);
+});
+
+test('io-fuel-cell: 水素と酸素は 2 : 1 の割合で減り（水面が上がる）、そのあいだ電子が導線を流れる。t = 0 は静止図の気体の量', () => {
+  const gas = (t, x) => items('io-fuel-cell', t).find(it => it.type === 'rect' && it.x === x && it.fill === 'white').height;
+  assert.equal(gas(0, 80), 70);
+  assert.equal(gas(0, 204), 35);
+  for (let i = 0; i <= 50; i++) {
+    const t = i / 50;
+    assert.ok(near(70 - gas(t, 80), 2 * (35 - gas(t, 204)), 1e-9), 't = ' + t);
+  }
+  assert.ok(gas(0.9, 80) < 70 && gas(0.9, 204) > 0);
+  const electrons = t => items('io-fuel-cell', t).filter(it => it.type === 'circle' && it.fill === 'sky').length;
+  assert.ok(electrons(0.4) > 0 && electrons(0.9) === 0);
+});
+
+test('io-oh-migration: 青い部分の右はしは中央から陽極へ広がり（io-migration の左右逆）、止まった絵で静止図の 224。OH- は青い部分の中', () => {
+  assert.ok(near(chem.ohMigrationRight(anim.restT('io-oh-migration')), 224, 1e-9));
+  for (let i = 0; i < 40; i++) {
+    const t = i / 40, right = chem.ohMigrationRight(t);
+    if (i > 0) assert.ok(right >= chem.ohMigrationRight((i - 1) / 40));
+    items('io-oh-migration', t).filter(it => it.type === 'circle').forEach(c => assert.ok(c.x >= 160 && c.x <= Math.max(right, 172) + 1e-9));
+  }
+  for (let i = 0; i < 40; i++) assert.ok(near(chem.ohMigrationRight(i / 40) - 168, 152 - chem.migrationLeft(i / 40), 1e-9));
+});
+
+test('io-btb-neutral: 1 滴ずつ加えるたびに色が変わり、0 滴で青・4 滴で緑・8 滴で黄。いまの色に合う文字が blue', () => {
+  assert.equal(chem.btbCount(0), 0);
+  assert.equal(chem.btbCount(0.99), 8);
+  assert.equal(chem.btbColor(4), '#2E9E5B');
+  assert.equal(chem.btbColor(8), '#FFD34D');
+  [[0, 'アルカリ性', 'blue'], [0.45, '中性', '#2E9E5B'], [0.99, '酸性', '#FFD34D']].forEach(([t, state, color]) => {
+    const list = items('io-btb-neutral', t);
+    assert.equal(list[0].liquid, color, 't = ' + t);
+    assert.deepEqual(list.filter(it => it.type === 'text' && it.color === 'blue' && it.y === 194).map(it => it.text), [state], 't = ' + t);
+  });
+  let prev = -1;
+  for (let i = 0; i <= 100; i++) { const n = chem.btbCount(i / 100); assert.ok(n >= prev); prev = n; }
+});
+
+test('io-neutral-model: 止まった絵（0.99）のイオンは静止図と同じ。箱を順に強調し、H+ と OH- が結びついて H₂O になる。右の箱では OH- が残る', () => {
+  const card = mpLesson('ion.js', 'ion-mp9-c1');
+  assert.deepEqual(ionCircles(items('io-neutral-model', 0.99)), ionCircles(card.figure.items));
+  const count = (t, label, x0) => items('io-neutral-model', t).filter(it => it.type === 'circle' && it.label === label && it.x >= x0 && it.x <= x0 + 96).length;
+  assert.equal(count(0, 'H+', 8), 2);       // 左の箱: はじめは H+ が 2 個
+  assert.equal(count(0.99, 'H+', 8), 1);    // 1 個が OH- と結びついて水になった
+  assert.equal(count(0.2, 'H+', 112), 1);   // 中の箱: はじめは H+ が 1 個
+  assert.equal(count(0.99, 'H+', 112), 0);
+  assert.equal(count(0.99, 'OH-', 216), 1); // 右の箱: OH- が残る
+  const strokeBlue = t => items('io-neutral-model', t).filter(it => it.type === 'rect' && it.stroke === 'blue').map(it => it.x);
+  assert.deepEqual(strokeBlue(0.1), [8]);
+  assert.deepEqual(strokeBlue(0.4), [112]);
+  assert.deepEqual(strokeBlue(0.7), [216]);
+  assert.ok(texts(items('io-neutral-model', 0.18)).some(it => it.text === 'H₂O'));
 });

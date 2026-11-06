@@ -55,6 +55,9 @@ anim.register(kind, frameFn, opts)
 | motion | `mo-` | chemical-change | `ch-` | nature | `na-` |
 | volcano | `vo-` | ion | `io-` | plants | `pl-` |
 | strata | `sr-` | weather | `we-` | space | `sp-` |
+| basics | `ba-`（ファイルは `anim-bio.js`） | | | | |
+
+- 光（light）の新しい kind は `li-` で始め、`anim-physics.js` の `register` で足す（`anim.js` の `BUILD` は変えない。光は接頭辞の検査の対象外）。
 
 ## 2. 道具（`anim.helpers`）
 
@@ -97,4 +100,5 @@ anim.register(kind, frameFn, opts)
   - 各 kind で t = 0, 0.25, 0.5, 0.75, 0.999 と `restT(kind)` の `frame` が、items が空でない・`type` がすべて `figures.ITEM_TYPES` にある・`x, y, x1, y1, x2, y2, cx, cy, r, rx, ry, width, height` と `points` がすべて有限で x −20〜340・y −20〜260 に収まる・`figures.sceneSvg` が `<svg` で始まる文字列を返す。
   - 「つながる」kind は `frame(kind, 0)` と `frame(kind, 0.99999)` の座標の差が 1px 以内。
   - 各 kind の欄の「テスト」に書いた値。
-- `tests/content-all.test.js`（済み。分野ごとのファイルは、あれば自動で読む）: `anim` を持つカードの kind が `KINDS` にある・全単元で重ならない・接頭辞が単元に合う・静止図がある・静止図に `image` がない・静止図の `text`/`label` が例外を除いて `frame(kind, restT(kind))` に同じ `text`・`x`・`y` で入っている。光は接頭辞と文字の整合を見ない（登録口より前に作ったため）。
+- `tests/content-all.test.js`（済み。分野ごとのファイルは、あれば自動で読む）: `anim` を持つカードの kind が `KINDS` にある・全単元で重ならない・接頭辞が単元に合う・静止図がある・静止図に `image` がない・静止図の `text`/`label` が例外を除いて `frame(kind, restT(kind))` に同じ `text`・`x`・`y` で入っている。光は接頭辞を見ず、光の 23 種は文字の整合を見ない（登録口より前に作ったため。あとから足した `li-` の kind は見る）。
+- ミニプリントのステージ（id に `-mp` を含む）のカードは、登録済みのどの kind でも使ってよい（使い回し）。「重ならない」はミニプリント以外のカードだけで見る。登録した kind は 1 枚以上のカードが使い、ミニプリント以外のカードは 1 枚まで。ミニプリント以外のカードも使っている kind をミニプリントのカードが使うとき（使い回し）は、文字の整合を見ない（静止図の要点を変えて描いてあるため）。ミニプリントだけが使う新しい kind は見る。

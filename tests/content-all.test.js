@@ -159,6 +159,7 @@ const ANIM_PREFIX = {
   substance: 'su-', 'state-change': 'st-', solution: 'sl-', 'chemical-change': 'ch-', ion: 'io-',
   plants: 'pl-', animals: 'an-', body: 'bo-', heredity: 'he-', nature: 'na-',
   volcano: 'vo-', strata: 'sr-', weather: 'we-', space: 'sp-',
+  basics: 'ba-',   // 観察・実験の基礎（ファイルは anim-bio.js）
 };
 // 静止図との整合を見ない単元: 光は静止図と動く図の文字がちがう所がある（この決まりより前に作った。tests/anim.test.js で見ている）
 const ANIM_LEGACY_UNITS = ['light'];
@@ -166,19 +167,28 @@ const ANIM_LEGACY_UNITS = ['light'];
 // 形: { 'kind': ['静止図の文字', ...] }
 const ANIM_TEXT_EXCEPTIONS = {};
 
-// 全単元の anim を持つカード [{ unitId, card }]
+// 光の 23 種（anim.js の BUILD。登録口より前に作ったもの）
+const LIGHT_COUNT = 23;
+const LIGHT_KINDS = anim.KINDS.slice(0, LIGHT_COUNT);
+
+// 全単元の anim を持つカード [{ unitId, card, mp }]。mp: ミニプリントのステージ（id に -mp を含む）のカード
 const animCards = files.flatMap(file => {
   const unit = require(path.join(CONTENT_DIR, file)).unit;
-  return (unit.areas || []).flatMap(a => (a.stages || []).flatMap(s => (s.lessons || [])))
-    .filter(c => c.anim !== undefined)
-    .map(card => ({ unitId: unit.id, card }));
+  return (unit.areas || []).flatMap(a => (a.stages || []).flatMap(s => (s.lessons || []).map(card => ({ card, mp: s.id.includes('-mp') }))))
+    .filter(({ card }) => card.anim !== undefined)
+    .map(({ card, mp }) => ({ unitId: unit.id, card, mp }));
 });
+// ミニプリントのカードは、ほかのカードの kind を使い回してよい（docs/plans/mp-figures-1nen.md）。
+// 使い回し: ミニプリント以外のカードも使っている kind をミニプリントのカードが使うこと
+const usedOutsideMp = new Set(animCards.filter(c => !c.mp).map(c => c.card.anim));
+const isShared = ({ card, mp }) => mp && usedOutsideMp.has(card.anim);
 
-test('anim: カードの kind は文字列で KINDS にあり、全単元で重ならない（1 kind ＝ 1 カード）', () => {
+test('anim: カードの kind は文字列で KINDS にあり、ミニプリント以外のカードでは全単元で重ならない（1 kind ＝ 1 カード）', () => {
   const seen = new Map();   // kind → カード id
-  animCards.forEach(({ card }) => {
+  animCards.forEach(({ card, mp }) => {
     assert.equal(typeof card.anim, 'string', card.id + ' の anim が文字列でない');
     assert.ok(anim.KINDS.includes(card.anim), card.id + ' の anim ' + card.anim + ' は KINDS にない');
+    if (mp) return;   // ミニプリントのカードは、どの kind を使ってもよい
     assert.ok(!seen.has(card.anim), card.anim + ' が ' + seen.get(card.anim) + ' と ' + card.id + ' で重なる');
     seen.set(card.anim, card.id);
   });
@@ -200,10 +210,14 @@ test('anim: カードは静止図（figure）を持ち、静止図に image の�
   });
 });
 
-test('anim: 静止図の text・label が、例外を除き frame(kind, restT(kind)) に同じ text・x・y で入っている（光を除く）', () => {
+test('anim: 静止図の text・label が、例外を除き frame(kind, restT(kind)) に同じ text・x・y で入っている（光の 23 種と、ミニプリントの使い回しを除く）', () => {
   Object.keys(ANIM_TEXT_EXCEPTIONS).forEach(kind => assert.ok(anim.KINDS.includes(kind), 'ANIM_TEXT_EXCEPTIONS の ' + kind + ' は KINDS にない'));
-  animCards.forEach(({ unitId, card }) => {
-    if (ANIM_LEGACY_UNITS.includes(unitId)) return;
+  animCards.forEach((c) => {
+    const { unitId, card } = c;
+    // 光の 23 種は見ない。光の単元でも、あとから登録口で足した kind（li-lens-cover など）は見る
+    if (ANIM_LEGACY_UNITS.includes(unitId) && LIGHT_KINDS.includes(card.anim)) return;
+    // ミニプリントの使い回しは、静止図の要点を変えて描いてあるので見ない（新しい kind はミニプリントのカードでも見る）
+    if (isShared(c)) return;
     const kind = card.anim;
     const except = ANIM_TEXT_EXCEPTIONS[kind] || [];
     const items = anim.frame(kind, anim.restT(kind)).items;
@@ -215,12 +229,15 @@ test('anim: 静止図の text・label が、例外を除き frame(kind, restT(ki
   });
 });
 
-test('anim: 登録した kind（光の 23 種以外）はどれかのカードが 1 枚ちょうど使い、分野ごとのファイルは index.html と sw.js に入っている', () => {
-  const LIGHT_COUNT = 23;
-  const used = new Map();
-  animCards.forEach(({ card }) => used.set(card.anim, (used.get(card.anim) || 0) + 1));
+test('anim: 登録した kind（光の 23 種以外）はどれかのカードが 1 枚以上使い（ミニプリント以外のカードは 1 枚まで）、分野ごとのファイルは index.html と sw.js に入っている', () => {
+  const used = new Map(), usedNonMp = new Map();
+  animCards.forEach(({ card, mp }) => {
+    used.set(card.anim, (used.get(card.anim) || 0) + 1);
+    if (!mp) usedNonMp.set(card.anim, (usedNonMp.get(card.anim) || 0) + 1);
+  });
   anim.KINDS.slice(LIGHT_COUNT).forEach(kind => {
-    assert.equal(used.get(kind) || 0, 1, '動く図 ' + kind + ' を使うカードが ' + (used.get(kind) || 0) + ' 枚（1 枚でなければならない）');
+    assert.ok((used.get(kind) || 0) >= 1, '動く図 ' + kind + ' を使うカードがない');
+    assert.ok((usedNonMp.get(kind) || 0) <= 1, '動く図 ' + kind + ' をミニプリント以外のカード ' + usedNonMp.get(kind) + ' 枚が使っている（1 枚まで）');
   });
   ANIM_FIELD_FILES.forEach(f => {
     if (!fs.existsSync(path.join(ROOT, 'js', f))) return;

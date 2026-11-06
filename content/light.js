@@ -1744,6 +1744,7 @@
     lessons: [
       {
         id: 'light-mp1-c1',
+        anim: 'rays-spread',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '太陽や電球のように、自ら光を出しているものを**光源**といいます。光源から出た光は、四方八方にまっすぐ進みます。光源が見えるのは、光源からの光が直接目に入るからです。',
         figure: scene([
           { type: 'lamp', x: 70, y: 120 },
@@ -1759,6 +1760,7 @@
       },
       {
         id: 'light-mp1-c2',
+        anim: 'bounce-to-eye',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '本やりんごのように光を出さないものが見えるのは、光源からの光がものの表面で**反射**して、その光が目に入るからです。反射した光も、まっすぐに進みます。',
         figure: scene([
           { type: 'lamp', x: 50, y: 50 },
@@ -1772,6 +1774,7 @@
       },
       {
         id: 'light-mp1-c3',
+        anim: 'reflect-names',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '鏡に当たる光を**入射光**、はね返った光を**反射光**といいます。法線と入射光のなす角が**入射角**、法線と反射光のなす角が**反射角**で、2 つの角はいつも等しくなります。',
         figure: scene([
           { type: 'mirror', x1: 30, y1: 180, x2: 290, y2: 180 },
@@ -1916,6 +1919,7 @@
     lessons: [
       {
         id: 'light-mp2-c1',
+        anim: 'vertical-vs-oblique',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '空気中からガラスへ、光をななめに当てると、光は境目で折れ曲がって進みます。これを光の**屈折**といいます。入射光と法線のなす角が入射角、屈折した光と法線のなす角が屈折角です。',
         figure: scene([
           { type: 'boundary', y: 120, upper: 'air', lower: 'glass' },
@@ -1928,6 +1932,7 @@
       },
       {
         id: 'light-mp2-c2',
+        anim: 'refract-in',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '空気からガラスや水へ進む光は、**境界面**で法線に近づくように曲がるので、屈折角は入射角より小さくなります。水やガラスから空気へ進むときは、屈折角のほうが大きくなります。',
         figure: scene([
           { type: 'boundary', y: 120, upper: 'air', lower: 'water' },
@@ -1940,6 +1945,7 @@
       },
       {
         id: 'light-mp2-c3',
+        anim: 'coin-lift',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: 'カップの底のコインが見えない位置でも、水を入れると見えるようになります。コインからの光が水面で**屈折**して目に届くからです。コインは実際より浮き上がって見えます。',
         figure: scene([
           { type: 'line', points: [[60, 80], [60, 200], [200, 200], [200, 80]], width: 3 },
@@ -2068,6 +2074,7 @@
     lessons: [
       {
         id: 'light-mp3-c1',
+        anim: 'lens-parallel-rays',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '**凸レンズ**（とつレンズ）に、**光軸**に平行な光を当てると、光は 1 点に集まります。この点が**焦点**で、レンズの中心から焦点までの距離が**焦点距離**です。',
         figure: scene([
           { type: 'axis', y: 120 },
@@ -2083,6 +2090,7 @@
       },
       {
         id: 'light-mp3-c2',
+        anim: 'real-image-forms',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '物体を焦点より外側に置くと、スクリーンに上下左右が逆向きの**実像**が映ります。物体を焦点距離の 2 倍の位置に置くと、反対側の 2 倍の位置に、同じ大きさの実像ができます。',
         figure: scene([
           { type: 'axis', y: 110 },
@@ -2096,6 +2104,7 @@
       },
       {
         id: 'light-mp3-c3',
+        anim: 'virtual-image',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '物体を焦点より内側に置き、レンズを通して見ると、物体と同じ向きで、物体より大きい**虚像**が見えます。虚像はスクリーンには映りません。虫めがねで見るのがこの像です。',
         figure: scene([
           { type: 'axis', y: 130 },
@@ -2240,6 +2249,7 @@
     lessons: [
       {
         id: 'light-mp4-c1',
+        anim: 'lens-special-rays',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '凸レンズの作図では、2 本の光を使います。レンズの中心を通る光はそのまま直進し、光軸に平行な光は屈折して反対側の**焦点**を通ります。2 本が交わる点に像の先がきます。',
         figure: scene(lensDrawScene('both').concat([
           { type: 'object', x: 260, y: 120, height: -50 },
@@ -2248,6 +2258,7 @@
       },
       {
         id: 'light-mp4-c2',
+        anim: 'image-size-by-distance',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
         text: '物体を焦点に近づけるほど、**実像**ができる位置はレンズから遠くなり、像は大きくなります。物体を焦点の上に置くと、レンズを通った光は平行に進むので、像はできません。',
         figure: scene([
           { type: 'axis', y: 110 },
@@ -2260,6 +2271,7 @@
       },
       {
         id: 'light-mp4-c3',
+        anim: 'li-lens-cover',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: 'レンズの下半分を紙でおおっても、上半分を通った光が集まるので、像は全体が映ります。ただし届く光が減るので暗くなります。焦点より内側では**虚像**が見えます。',
         figure: scene([
           { type: 'axis', y: 110 },

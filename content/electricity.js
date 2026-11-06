@@ -978,18 +978,6 @@
     return items;
   }
 
-  // 電流計の端子（左から−端子 5 A・500 mA・50 mA、右はしが＋端子）。選ぶ場所は端子の下
-  function terminalsFigure() {
-    const items = [{ type: 'rect', x: 30, y: 50, width: 260, height: 110, fill: 'white', rx: 10 }];
-    [['5 A', 80], ['500 mA', 140], ['50 mA', 200], ['＋', 260]].forEach(([t, x], i) => {
-      items.push({ type: 'circle', x, y: 130, r: 12, fill: i === 3 ? 'red' : 'ink', stroke: 'ink' });
-      items.push(note(x, 104, t, 14));
-      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 196, r: 22, label: 'アイウエ'[i] });
-    });
-    items.push(note(160, 36, '電流計の端子（−端子は 3 つ）', 13));
-    return scene(items);
-  }
-
   // 並列回路（豆電球 2 個）。A 分かれる前、B 上の枝、C 下の枝、D 合流したあと
   function parallelABCDItems(values) {
     const v = values || {};
@@ -1035,27 +1023,33 @@
       {
         id: 'electricity-mp1-c1',
         text: '電流が流れる道すじを**回路**といいます。乾電池 1 個の電圧は約 1.5 V、家庭のコンセントの電圧は 100 V です。豆電球は＋極と−極を入れかえても光りますが、モーターは回る向きが逆になります。',
-        // 乾電池と豆電球の回路
+        // 写真: 電池ボックスの乾電池（x 110〜200, y 50〜80。右が＋極で赤い導線、左が−極で黒い導線）と、ソケットの豆電球
+        // (155, 135〜170)。導線は左 x 15・右 x 302 を通って輪になる。輪の内側と上下は白い余白
         figure: scene([
-          sym('battery', 160, 190), sym('bulb', 160, 60),
-          wire([[140, 190], [60, 190], [60, 60], [140, 60]]),
-          wire([[180, 60], [260, 60], [260, 190], [180, 190]]),
-          note(160, 30, '豆電球'), note(160, 226, '乾電池 約 1.5 V'),
-          { type: 'arrow', x1: 80, y1: 160, x2: 80, y2: 96, color: 'orange' },
-          { type: 'text', x: 90, y: 134, text: '電流', size: 13 },
+          photo('electricity-mp1-c1'),
+          tag(155, 104, '乾電池 約 1.5 V', { size: 13 }),
+          pointer(190, 136, 166, 146), tag(216, 136, '豆電球', { size: 13 }),
+          { type: 'arrow', x1: 314, y1: 96, x2: 314, y2: 150, color: 'orange' },
+          { type: 'arrow', x1: 32, y1: 160, x2: 32, y2: 106, color: 'orange' },
+          tag(272, 124, '電流', { size: 13, bold: true }),
+          tag(160, 228, '電流の通り道 ＝ 回路', { bold: true }),
         ]),
       },
       {
         id: 'electricity-mp1-c2',
         text: '電子オルゴールや**発光ダイオード**（LED）は、電流が決まった向きに流れたときだけはたらきます。＋極と−極を逆につなぐと、鳴らなかったり光らなかったりします。乾電池 2 個を直列につなぐと、豆電球は 1 個のときより明るくなります。',
-        // 乾電池 2 個の直列
+        // 写真: 左から LED (46, 30〜70。長い足 x 39 は y 178 まで、短い足 x 53 は y 147 まで)、電子オルゴール（基板とスピーカー、
+        // x 95〜210, y 50〜160）、乾電池 2 個を直列に入れた電池ボックス (250〜295, 28〜182)。下は白い余白
         figure: scene([
-          sym('battery', 120, 190), sym('battery', 200, 190), sym('bulb', 160, 60),
-          wire([[100, 190], [60, 190], [60, 60], [140, 60]]),
-          wire([[140, 190], [180, 190]]),
-          wire([[180, 60], [260, 60], [260, 190], [220, 190]]),
-          note(160, 226, '乾電池 2 個の直列 → 明るくなる'),
-          note(160, 30, '豆電球'),
+          photo('electricity-mp1-c2'),
+          pointer(24, 172, 37, 172), tag(14, 177, '長', { size: 13, bold: true }),
+          tag(50, 198, '発光ダイオード', { size: 13 }),
+          tag(50, 216, '長い足を＋極に', { size: 13 }),
+          tag(156, 198, '電子オルゴール', { size: 13 }),
+          tag(156, 216, '赤い導線を＋極に', { size: 13 }),
+          tag(272, 198, '乾電池 2 個', { size: 13 }),
+          tag(270, 216, '直列で明るく', { size: 13 }),
+          tag(160, 236, '＋と−を逆につなぐとはたらかない', { size: 13 }),
         ]),
       },
     ],
@@ -1280,10 +1274,21 @@
       {
         id: 'electricity-mp3-c1',
         text: '電流計の目盛りは、つないだ−端子で読み方が変わります。5 A の端子なら目盛りの数をそのまま A で、500 mA なら 100 倍して mA で、50 mA なら 10 倍して mA で読みます。はじめは、いちばん大きい 5 A の端子につなぎます。',
-        figure: scene(meterFace(5, 50, ['0', '1', '2', '3', '4', '5'], 3.5, '').concat([
-          note(160, 30, '針は 3.5 の目盛り', 13),
-          note(160, 228, '5 A → 3.5 A　500 mA → 350 mA　50 mA → 35 mA', 12),
-        ])),
+        // 写真（elec-1-c3 の画像）: 電流計の正面。目盛り板 (75〜245, 8〜130)、下の端子は左から黒い−端子 3 つ (85, 162)・(136, 162)・(186, 162)
+        // と赤い＋端子 (236, 162)。写真の針の位置は決められないので、読みの例は文字だけで示す
+        figure: scene([
+          photo('elec-1-c3'),
+          tag(160, 62, '針が 3.5 の目盛りをさすとき', { size: 13 }),
+          tag(160, 82, '5 A → 3.5 A', { size: 13 }),
+          tag(160, 100, '500 mA → 350 mA', { size: 13 }),
+          tag(160, 118, '50 mA → 35 mA', { size: 13 }),
+          { type: 'circle', x: 85, y: 162, r: 22, fill: 'none', stroke: 'orange' },
+          tag(85, 199, '5 A', { size: 13 }),
+          pointer(136, 184, 136, 206), tag(136, 218, '500 mA', { size: 13 }),
+          tag(186, 199, '50 mA', { size: 13 }),
+          tag(236, 199, '＋', { size: 13, bold: true }),
+          tag(160, 236, 'はじめは 5 A の端子につなぐ', { size: 13 }),
+        ]),
       },
       {
         id: 'electricity-mp3-c2',
@@ -1324,7 +1329,16 @@
       figureChoice({
         id: 'electricity-mp3-p1', concept: 'el-circuit',
         prompt: '回路に流れる電流の大きさが分かりません。電流計の端子のうち、はじめに導線をつなぐ−端子は、ア〜ウのどれ？（エは＋端子）',
-        figure: terminalsFigure(),
+        // 写真（elec-1-c3 の画像）: 端子は左から (85, 162)・(136, 162)・(186, 162)・＋端子 (236, 162)。選ぶ場所は各端子の真上の目盛り板
+        figure: scene([
+          photo('elec-1-c3'),
+          tag(160, 22, '電流計の端子（−端子は 3 つ）', { size: 13 }),
+          ...[85, 136, 186, 236].map((x, i) => ({ type: 'region', id: 'r' + (i + 1), x, y: 112, r: 22, label: 'アイウエ'[i] })),
+          tag(85, 199, '5 A', { size: 13 }),
+          pointer(136, 184, 136, 206), tag(136, 218, '500 mA', { size: 13 }),
+          tag(186, 199, '50 mA', { size: 13 }),
+          tag(236, 199, '＋', { size: 13, bold: true }),
+        ]),
         answer: 'r1',
         explanation: 'いちばん大きい値を測れる 5 A の−端子（ア）につなぎます。針のふれが小さいときは、500 mA、50 mA の順につなぎかえます。',
         hint: '針がふり切れないようにするには、いちばん大きい値の端子だよ。',
@@ -1417,6 +1431,7 @@
     lessons: [
       {
         id: 'electricity-mp4-c1',
+        anim: 'el-series-parallel',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: '電流は、水の流れにたとえると考えやすくなります。直列回路は 1 本の水路なので、電流の大きさはどこでも同じです。並列回路は水路が枝分かれするので、枝の電流の和が、分かれる前や合流したあとの電流になります。',
         figure: scene(parallelABCDItems({ A: '0.5 A', B: '0.2 A', C: '0.3 A', D: '0.5 A' })),
       },
@@ -2213,16 +2228,27 @@
   };
 
   // ---- ステージ electricity-mp9: 電力 ----
-  // 電気器具 3 つの表示（ア トースター 600 W、イ ドライヤー 1200 W、ウ 電球 40 W）
-  function appliancesItems(withRegions) {
-    const items = [];
-    [['トースター', '100 V−600 W'], ['ドライヤー', '100 V−1200 W'], ['電球', '100 V−40 W']].forEach(([n, t], i) => {
-      const x = 10 + 103 * i;
-      items.push({ type: 'rect', x, y: 50, width: 94, height: 110, fill: 'white', rx: 8 });
-      items.push(note(x + 47, 96, n, 14), note(x + 47, 128, t, 12));
-      if (withRegions) items.push({ type: 'region', id: 'r' + (i + 1), x: x + 47, y: 196, r: 22, label: 'アイウ'[i] });
-    });
-    return items;
+  // 電気器具の写真（electricity-mp9-c2）: 左から 電子レンジ (8〜90, 65〜125)・トースター (105〜175, 65〜130。中心 (140, 98))・
+  // ドライヤー (190〜258, 55〜138。頭 (222, 72))・電球 (270〜312, 58〜132。中心 (290, 92))。上と下は白い余白
+  // hideTo: この x より左を白い四角で隠す（選ばない器具を見せない。写真の背景は白）
+  function appliancePhoto(hideTo) {
+    return [
+      photo('electricity-mp9-c2'),
+      { type: 'rect', x: 0, y: 30, width: hideTo, height: 125, fill: 'white', stroke: 'none' },
+    ];
+  }
+  // 電気器具 3 つの表示（ア トースター 600 W、イ ドライヤー 1200 W、ウ 電球 40 W）。電子レンジは隠す
+  // 写真の下の白い余白の文字は下地なし（半角の多い文字は下地が文字より広くなり、となりの文字にかかるため）
+  function appliancesItems() {
+    const plain = { size: 13, bg: false };
+    return appliancePhoto(100).concat([
+      tag(140, 156, 'トースター', plain), tag(222, 156, 'ドライヤー', plain), tag(292, 156, '電球', plain),
+      tag(140, 176, '100 V−600 W', plain), tag(316, 176, '100 V−40 W', Object.assign({ anchor: 'end' }, plain)),
+      tag(222, 196, '100 V−1200 W', plain),
+      { type: 'region', id: 'r1', x: 140, y: 98, r: 22, label: 'ア' },
+      { type: 'region', id: 'r2', x: 222, y: 76, r: 22, label: 'イ' },
+      { type: 'region', id: 'r3', x: 290, y: 92, r: 22, label: 'ウ' },
+    ]);
   }
 
   const elecMp9 = {
@@ -2231,24 +2257,28 @@
       {
         id: 'electricity-mp9-c1',
         text: '1 秒間に使われる電気エネルギーの量を**電力**といい、単位は**ワット**（W）です。電力〔W〕＝電圧〔V〕×電流〔A〕です。電力は、仕事にたとえると「仕事の能率（1 秒あたりにする仕事の量）」にあたります。',
-        // 40 W と 100 W の電球（電力が大きいほど明るい）
+        // 写真: 光っている同じ形の白熱電球 2 個。左 (95, 15〜150) は 40 W でやや暗く、右 (220, 15〜150) は 100 W でまぶしい。下は白い余白
         figure: scene([
-          { type: 'circle', x: 90, y: 100, r: 26, fill: 'yellow', stroke: 'orange' },
-          { type: 'circle', x: 230, y: 100, r: 42, fill: 'yellow', stroke: 'orange' },
-          note(90, 160, '40 W', 15), note(230, 170, '100 W', 15),
-          note(160, 210, '電力〔W〕＝ 電圧〔V〕× 電流〔A〕', 14),
+          photo('electricity-mp9-c1'),
+          tag(95, 174, '40 W', { size: 16, bold: true }),
+          tag(222, 174, '100 W', { size: 16, bold: true }),
+          tag(160, 198, '同じ 100 V で使うと、電力が大きいほど明るい', { size: 13 }),
+          tag(160, 228, '電力〔W〕＝電圧〔V〕×電流〔A〕', { bold: true }),
         ]),
       },
       {
         id: 'electricity-mp9-c2',
         text: '電気器具の「100 V−1500 W」という表示は、100 V の電圧で使うと 1500 W の電力を使うという意味です。このとき流れる電流は 1500 ÷ 100 ＝ 15 A です。電力が大きい器具ほど、同じ時間で多くの熱や光を出します。',
+        // 写真: 家庭の電気器具。左から 電子レンジ (8〜90, 65〜125)・トースター (140, 98)・ドライヤー (222, 88)・電球 (290, 95)。上下は白い余白
         figure: scene([
-          { type: 'rect', x: 70, y: 40, width: 180, height: 120, fill: 'white', rx: 10 },
-          { type: 'rect', x: 90, y: 60, width: 110, height: 80, fill: 'glass' },
-          note(160, 30, '電子レンジ', 14),
-          { type: 'rect', x: 206, y: 120, width: 40, height: 30, fill: '#EEF2F8', stroke: 'line' },
-          note(160, 196, '表示「100 V−1500 W」', 14),
-          note(160, 222, '電流 ＝ 1500 ÷ 100 ＝ 15 A', 14),
+          photo('electricity-mp9-c2'),
+          tag(48, 150, '電子レンジ', { size: 13 }),
+          tag(140, 150, 'トースター', { size: 13 }),
+          tag(222, 150, 'ドライヤー', { size: 13 }),
+          tag(292, 150, '電球', { size: 13 }),
+          tag(8, 172, '表示「100 V−1500 W」', { size: 13, bold: true, anchor: 'start', bg: false }),
+          tag(160, 204, '100 V で使うと 1500 W の電力を使う', { size: 13 }),
+          tag(160, 228, '電流 ＝ 1500 ÷ 100 ＝ 15 A', { bold: true }),
         ]),
       },
     ],
@@ -2275,7 +2305,7 @@
       figureChoice({
         id: 'electricity-mp9-p1', concept: 'el-power',
         prompt: 'ア〜ウは、100 V で使う電気器具の表示です。1 秒間に使う電気エネルギーがいちばん大きいのはどれ？',
-        figure: scene(appliancesItems(true)),
+        figure: scene(appliancesItems()),
         answer: 'r2',
         explanation: '1 秒間に使う電気エネルギーが電力です。表示の W の数がいちばん大きいドライヤー（1200 W、イ）です。',
         hint: 'W の数をくらべよう。',
@@ -2394,17 +2424,15 @@
   }
 
   // 水を入れる容器 3 つ（ア ガラス、イ 鉄、ウ 発泡ポリスチレン）
+  // 写真（electricity-mp10-p1）: 左 ガラスのビーカー (8〜97, 48〜158)・中央 ステンレスのカップ (115〜205, 50〜155)・
+  // 右 発泡ポリスチレンのカップ (218〜315, 48〜158)。どれも同じ量の水。下は白い余白
   function containersItems() {
     return [
-      { type: 'beaker', x: 60, y: 170, width: 70, height: 90, level: 0.6 },
-      { type: 'rect', x: 125, y: 80, width: 70, height: 90, fill: '#B8BEC8' },
-      { type: 'rect', x: 132, y: 110, width: 56, height: 56, fill: 'water', stroke: 'none' },
-      { type: 'rect', x: 225, y: 80, width: 70, height: 90, fill: 'white', stroke: 'gray' },
-      { type: 'rect', x: 235, y: 110, width: 50, height: 52, fill: 'water', stroke: 'none' },
-      note(60, 196, 'ガラス', 13), note(160, 196, '鉄', 13), note(260, 196, '発泡ポリスチレン', 12),
-      { type: 'region', id: 'r1', x: 60, y: 40, r: 22, label: 'ア' },
-      { type: 'region', id: 'r2', x: 160, y: 40, r: 22, label: 'イ' },
-      { type: 'region', id: 'r3', x: 260, y: 40, r: 22, label: 'ウ' },
+      photo('electricity-mp10-p1'),
+      tag(52, 180, 'ガラス', { size: 13 }), tag(160, 180, '鉄', { size: 13 }), tag(266, 180, '発泡ポリスチレン', { size: 13 }),
+      { type: 'region', id: 'r1', x: 52, y: 214, r: 22, label: 'ア' },
+      { type: 'region', id: 'r2', x: 160, y: 214, r: 22, label: 'イ' },
+      { type: 'region', id: 'r3', x: 266, y: 214, r: 22, label: 'ウ' },
     ];
   }
 
@@ -2414,18 +2442,22 @@
       {
         id: 'electricity-mp10-c1',
         text: '電流によって発生する熱の量を**熱量**といい、単位は**ジュール**（J）です。熱量〔J〕＝電力〔W〕×時間〔s〕です。昔は熱量の単位に**カロリー**（cal）も使われました。1 g の水の温度を 1 ℃ 上げるのに必要な熱量は約 4.2 J です。',
-        // 発泡ポリスチレンの容器の水に電熱線を入れ、温度計ではかる
+        // 写真: 水を入れた発泡ポリスチレンのカップ (35〜185, 30〜215)。水の中にコイル状の電熱線 (80〜145, 130〜150) と温度計
+        // （x 113、液だめ (113, 120)）。赤と黒の導線が上へのび、右にガラス棒（(250, 103)〜(178, 228)）。右は白い余白
         figure: scene([
-          { type: 'rect', x: 100, y: 80, width: 120, height: 120, fill: 'white', stroke: 'gray' },
-          { type: 'rect', x: 110, y: 110, width: 100, height: 82, fill: 'water', stroke: 'none' },
-          { type: 'line', points: [[140, 40], [140, 150], [150, 170], [160, 150], [170, 170], [180, 150], [180, 40]], color: 'orange', width: 3 },
-          { type: 'line', points: [[200, 30], [200, 180]], color: 'red', width: 4 },
-          note(140, 30, '電熱線', 12), { type: 'text', x: 206, y: 40, text: '温度計', size: 12 },
-          note(160, 222, '熱量〔J〕＝ 電力〔W〕× 時間〔s〕', 14),
+          photo('electricity-mp10-c1'),
+          pointer(232, 44, 118, 52), tag(262, 44, '温度計', { size: 13 }),
+          pointer(232, 120, 146, 138), tag(262, 120, '電熱線', { size: 13 }),
+          pointer(198, 170, 166, 180),
+          tag(258, 170, '発泡ポリスチレン', { size: 13 }),
+          tag(258, 188, 'のカップ', { size: 13 }),
+          tag(258, 206, '（熱がにげにくい）', { size: 13 }),
+          tag(160, 232, '熱量〔J〕＝電力〔W〕×時間〔s〕', { bold: true }),
         ]),
       },
       {
         id: 'electricity-mp10-c2',
+        anim: 'el-heat-rise',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: '電熱線で水をあたためる実験では、熱がにげにくい発泡ポリスチレンの容器を使います。水の上昇温度は電流を流した時間に比例し、電力が大きいほど大きくなります。電圧を 2 倍にすると電流も 2 倍になるので、電力は 4 倍になります。',
         figure: scene(heatLinesItems(true)),
       },
@@ -2597,14 +2629,14 @@
       figureChoice({
         id: 'electricity-mp11-p1', concept: 'el-power',
         prompt: 'ア: 1200 W のドライヤーを 10 分、イ: 40 W の電灯を 8 時間使いました。使った電力量が大きいのはどちら？',
-        figure: scene([
-          { type: 'rect', x: 15, y: 50, width: 135, height: 110, fill: 'white', rx: 8 },
-          { type: 'rect', x: 170, y: 50, width: 135, height: 110, fill: 'white', rx: 8 },
-          note(82, 92, 'ドライヤー', 14), note(82, 124, '1200 W・10 分', 13),
-          note(237, 92, '電灯', 14), note(237, 124, '40 W・8 時間', 13),
-          { type: 'region', id: 'r1', x: 82, y: 196, r: 22, label: 'ア' },
-          { type: 'region', id: 'r2', x: 237, y: 196, r: 22, label: 'イ' },
-        ]),
+        // 写真（electricity-mp9-c2）のドライヤーと電球だけを見せる（電子レンジ・トースターは白い四角で隠し、空いた所に条件を書く）
+        figure: scene(appliancePhoto(182).concat([
+          tag(12, 84, 'ア　1200 W・10 分', { size: 14, anchor: 'start', bg: false }),
+          tag(12, 114, 'イ　40 W・8 時間', { size: 14, anchor: 'start', bg: false }),
+          tag(222, 160, 'ドライヤー', { size: 13, bg: false }), tag(292, 160, '電灯', { size: 13, bg: false }),
+          { type: 'region', id: 'r1', x: 222, y: 76, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 290, y: 92, r: 22, label: 'イ' },
+        ])),
         answer: 'r2',
         explanation: 'アは 1200 W × 1/6 時間 ＝ 200 Wh、イは 40 W × 8 時間 ＝ 320 Wh です。電力が小さくても、長い時間使ったイのほうが電力量は大きくなります。',
         hint: 'どちらも Wh になおしてくらべよう（10 分 ＝ 1/6 時間）。',
@@ -2736,6 +2768,7 @@
     lessons: [
       {
         id: 'electricity-mp12-c1',
+        anim: 'el-static-charge',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: 'ストローをティッシュでこすると、ストローは−、ティッシュは＋の電気を帯びます。電気には＋と−の 2 種類があり、ちがう種類は引き合い、同じ種類はしりぞけ合います。物体にたまった電気を**静電気**といいます。',
         figure: scene([
           { type: 'rect', x: 30, y: 60, width: 120, height: 14, fill: 'sky', rx: 7 },
@@ -2754,6 +2787,7 @@
       },
       {
         id: 'electricity-mp12-c2',
+        anim: 'el-cathode-bend',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '**誘導コイル**で高い電圧を加えると、空気をぬいた放電管の中を電流が流れます（真空放電）。−極から出る光のすじを**陰極線**（電子線）といい、正体は−の電気をもつ**電子**の流れです。電極板に電圧を加えると、＋極のほうへ曲がります。',
         figure: scene(tubeItems(false).concat([note(160, 222, '光のすじは C（＋）のほうへ曲がる', 13)])),
       },
@@ -2954,6 +2988,7 @@
     lessons: [
       {
         id: 'electricity-mp13-c1',
+        anim: 'el-compass-around',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '磁石が鉄を引きつけたり、磁石どうしが引き合ったりしりぞけ合ったりする力を**磁力**といい、磁力がはたらく空間を**磁界**といいます。磁界の向きは、その場所に置いた方位磁針の N 極がさす向きです。',
         figure: scene(barMagnetItems().concat(needle(160, 60, 0), needle(56, 120, 180), needle(264, 120, 180), needle(160, 180, 0), [
           note(160, 228, '方位磁針の赤い側が N 極', 13),
@@ -2962,7 +2997,18 @@
       {
         id: 'electricity-mp13-c2',
         text: '磁界のようすを表した線を**磁力線**といいます。磁力線は N 極から出て S 極に入り、矢印の向きが磁界の向きを表します。磁力線の間隔がせまい（混んでいる）ところほど、磁界は強くなります。',
-        figure: scene(fieldLineItems().concat(barMagnetItems(), [note(160, 236, '磁石の近くほど線が混む → 磁界が強い', 12)])),
+        // 写真: 棒磁石（x 85〜232, y 113〜133。左半分が赤、右半分が青）のまわりの砂鉄のもよう（y 40〜200）。
+        // 線は両はしの極に集まり、極と極を弧で結ぶ。上下は白い余白
+        figure: scene([
+          photo('electricity-mp13-c2'),
+          tag(122, 129, 'N', { size: 16, bold: true }), tag(196, 129, 'S', { size: 16, bold: true }),
+          { type: 'arrow', x1: 146, y1: 58, x2: 174, y2: 58, color: 'orange' },
+          { type: 'arrow', x1: 146, y1: 188, x2: 174, y2: 188, color: 'orange' },
+          { type: 'arrow', x1: 72, y1: 123, x2: 44, y2: 123, color: 'orange' },
+          { type: 'arrow', x1: 276, y1: 123, x2: 248, y2: 123, color: 'orange' },
+          tag(160, 22, '磁力線は N 極から出て S 極に入る', { size: 13 }),
+          tag(160, 228, '磁石の近くほど線が混む → 磁界が強い', { size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -3125,6 +3171,7 @@
     lessons: [
       {
         id: 'electricity-mp14-c1',
+        anim: 'el-wire-field',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: 'まっすぐな導線に電流を流すと、導線を中心とした同心円状の磁界ができます。電流の向きに**右ねじ**が進むとき、ねじを回す向きが磁界の向きです。電流を逆にすると磁界も逆になり、電流が大きいほど磁界は強くなります。',
         figure: scene([
           ...circleField(80, 110, true), ...wireIn(80, 110),
@@ -3136,6 +3183,7 @@
       },
       {
         id: 'electricity-mp14-c2',
+        anim: 'el-coil-field',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '導線をくり返し巻いたものを**コイル**といいます。コイルに電流を流すと、内部に軸にそった磁界ができます。右手の 4 本の指を電流の向きに合わせてコイルをにぎると、親指の向きがコイルの内部の磁界の向きです。',
         figure: scene(coilItems(true, false).concat([
           { type: 'arrow', x1: 130, y1: 120, x2: 230, y2: 120, color: 'blue', width: 4 },
@@ -3292,6 +3340,7 @@
     lessons: [
       {
         id: 'electricity-mp15-c1',
+        anim: 'el-wire-force',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '磁界の中の導線に電流を流すと、導線は力を受けます。力の向きは電流の向きと磁界の向きで決まり、どちらか一方を逆にすると力も逆向きになります。電流を大きくしたり、磁石を強くしたりすると、力は大きくなります。',
         figure: scene(forceItems(true, true, false).concat([
           { type: 'arrow', x1: 144, y1: 120, x2: 90, y2: 120, color: 'orange', width: 4 },
@@ -3300,6 +3349,7 @@
       },
       {
         id: 'electricity-mp15-c2',
+        anim: 'el-motor-rotate',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '**フレミングの左手の法則**では、左手の中指を電流、人さし指を磁界の向きに合わせると、親指が力の向きになります。**モーター**は磁界の中のコイルが受ける力で回り、**整流子**が半回転ごとに電流の向きを切りかえるので、同じ向きに回り続けます。',
         figure: scene(motorItems(false).concat([
           { type: 'arrow', x1: 98, y1: 104, x2: 98, y2: 66, color: 'orange', width: 3 },
@@ -3454,11 +3504,13 @@
     lessons: [
       {
         id: 'electricity-mp16-c1',
+        anim: 'el-induction',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: 'コイルの中の磁界が変化すると、コイルに電流が流れます。この現象を**電磁誘導**、流れる電流を**誘導電流**といいます。磁石を近づけるときと遠ざけるとき、N 極と S 極では、電流の向きが逆になります。磁石を止めると電流は流れません。',
         figure: scene(inductionItems('N', true).concat([note(268, 140, '針がふれる', 12)])),
       },
       {
         id: 'electricity-mp16-c2',
+        anim: 'el-dc-ac',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '**発電機**は電磁誘導で電流をとり出す装置です。乾電池の電流のように向きが変わらない電流を**直流**、コンセントの電流のように向きが周期的に変わる電流を**交流**といいます。交流が 1 秒間にくり返す変化の回数を**周波数**（Hz）といいます。',
         figure: scene(wavesItems(false).concat([
           { type: 'text', x: 66, y: 32, text: '直流（乾電池）', size: 12 },

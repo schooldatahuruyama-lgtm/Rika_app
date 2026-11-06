@@ -862,6 +862,7 @@
     lessons: [
       {
         id: 'sound-mp1-c1',
+        anim: 'so-fork-stop',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '**おんさ**は、たたくと決まった高さの音を出す器具です。鳴っているおんさにふれると、細かくふるえて（**振動**して）いるのが分かります。うでを強くにぎると振動が止まり、音も止まります。',
         figure: scene([
           ...fork(100, 40, true),
@@ -873,6 +874,7 @@
       },
       {
         id: 'sound-mp1-c2',
+        anim: 'so-resonance',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '同じ高さの音を出す 2 つのおんさを並べ、一方を鳴らすと、もう一方も鳴りだします。これを**共鳴**といいます。振動が空気を伝わって届くからで、間に板を置くと、もう一方はほとんど鳴りません。',
         figure: scene([
           ...twoForks(),
@@ -882,16 +884,15 @@
       {
         id: 'sound-mp1-c3',
         text: 'ブザーを入れた容器から空気をぬいていくと、ブザーの音はしだいに小さくなります。音を伝えていたのは空気です。物質がない**真空**では、音は伝わりません。水の中では音は伝わります。',
-        // 容器（左）の中のブザーと、管でつないだポンプ（右）
+        // 写真（sound-2-c1 の画像）: 透明な容器（10〜122, 107〜220）の中のブザー (52, 190)。ゴム管で右の手動の真空ポンプ（197〜315, 122〜215）につなぐ。上は白い余白
         figure: scene([
-          { type: 'rect', x: 20, y: 90, width: 130, height: 120, fill: 'glass', rx: 10 },
-          { type: 'circle', x: 70, y: 170, r: 16, fill: 'yellow' },
-          { type: 'text', x: 70, y: 232, text: 'ブザー', anchor: 'middle', size: 14 },
-          { type: 'line', points: [[150, 150], [220, 150]], width: 4, color: 'line' },
-          { type: 'rect', x: 220, y: 110, width: 70, height: 90, fill: 'gray' },
-          { type: 'text', x: 255, y: 232, text: 'ポンプ', anchor: 'middle', size: 14 },
-          { type: 'arrow', x1: 160, y1: 132, x2: 210, y2: 132, color: 'blue', width: 2 },
-          { type: 'text', x: 160, y: 40, text: '空気をぬくと音が小さくなる', anchor: 'middle', size: 14 },
+          photo('sound-2-c1'),
+          tag(160, 40, '空気をぬくと音が小さくなる', { size: 15, bold: true }),
+          tag(160, 66, '真空では伝わらない・水の中は伝わる', { size: 13 }),
+          pointer(60, 156, 54, 180), tag(62, 150, 'ブザー'),
+          { type: 'arrow', x1: 132, y1: 164, x2: 186, y2: 170, color: 'blue', width: 2 },
+          tag(158, 152, '空気', { size: 13 }),
+          tag(256, 234, 'ポンプ'),
         ]),
       },
     ],
@@ -1011,6 +1012,7 @@
     lessons: [
       {
         id: 'sound-mp2-c1',
+        anim: 'so-light-vs-sound',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: '花火は、光が見えてから少しおくれて音が聞こえます。光の速さは秒速約 30 万 km、空気中の**音の速さ**は秒速約 340 m で、音のほうがずっとおそいからです。',
         figure: scene(fireworks('光が先、音があと').concat([
           { type: 'text', x: 110, y: 100, text: '光: 秒速 約30万km', size: 13 },
@@ -1138,6 +1140,7 @@
     lessons: [
       {
         id: 'sound-mp3-c1',
+        anim: 'so-amp-freq',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '音の波形で、中心から山のいちばん高い所までの高さ（図の X）を**振幅**といいます。振幅が大きいほど大きい音です。1 秒間に振動する回数を**振動数**といい、多いほど高い音です。',
         figure: scene([
           { type: 'line', points: [[30, 120], [300, 120]], color: 'gray', width: 1 },
@@ -1150,13 +1153,13 @@
       {
         id: 'sound-mp3-c2',
         text: 'モノコードの弦を強くはじくと**振幅**が大きくなり、大きい音が出ます。はじく部分を短くする、弦を強く張る、細い弦にすると**振動数**が多くなり、高い音が出ます。振動数の単位はヘルツ（Hz）です。',
+        // 写真（sound-3-c3 の画像）: ななめ上から見たモノコード。弦は左の留め具 (37, 67) から右の滑車 (295, 120) へ。ことじ (148, 96)、おもり (305, 185)
         figure: scene([
-          ...monochord(70),
-          bridge(220, 70),
-          { type: 'text', x: 110, y: 58, text: 'はじく部分', size: 13 },
-          { type: 'text', x: 296, y: 160, text: 'おもり', anchor: 'end', size: 13 },
-          { type: 'text', x: 20, y: 190, text: '強くはじく → 大きい音', size: 14 },
-          { type: 'text', x: 20, y: 214, text: '短く・強く張る・細く → 高い音', size: 14 },
+          photo('sound-3-c3'),
+          pointer(84, 46, 92, 79), tag(80, 40, 'はじく部分', { size: 13 }),
+          pointer(278, 196, 296, 190), tag(256, 200, 'おもり', { size: 13 }),
+          tag(10, 196, '強くはじく → 大きい音', { anchor: 'start' }),
+          tag(10, 222, '短く・強く張る・細く → 高い音', { anchor: 'start' }),
         ]),
       },
     ],

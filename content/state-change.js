@@ -1077,6 +1077,7 @@
     lessons: [
       {
         id: 'state-change-mp1-c1',
+        anim: 'st-state-arrows',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '物質は温度によって、固体・液体・気体とすがたを変えます。これを**状態変化**といいます。加熱すると固体 → 液体 → 気体と変わります。ドライアイスのように、固体から直接気体になる物質もあります。',
         figure: scene([
           { type: 'rect', x: 20, y: 150, width: 80, height: 40, fill: 'white', label: '固体' },
@@ -1092,13 +1093,16 @@
       {
         id: 'state-change-mp1-c2',
         text: '液体のロウを冷やして固体にすると、体積が小さくなり、表面の中央がくぼみます。質量は変わりません。多くの物質はロウと同じですが、**水**は例外で、氷になると体積が大きくなります。',
-        figure: scene(mpWaxItems(90, 'dent').concat([
-          { type: 'text', x: 90, y: 214, text: 'ロウ: 体積が減る', size: 13, anchor: 'middle' },
-          { type: 'beaker', x: 230, y: 190, width: 70, height: 90, level: 0.55 },
-          { type: 'polygon', points: [[197, 188], [197, 136], [230, 130], [263, 136], [263, 188]], fill: 'sky', stroke: 'none' },
-          { type: 'text', x: 230, y: 214, text: '水 → 氷: 体積が増える', size: 13, anchor: 'middle' },
-          { type: 'text', x: 160, y: 40, text: '質量はどちらも変わらない', size: 14, anchor: 'middle', bold: true },
-        ])),
+        // 写真: 左は固まったロウのビーカー（x 10〜142。表面の中央 (78, 105) がくぼむ）、右は水を凍らせたカップ（x 175〜310。氷の表面の中央 (243, 68) が盛り上がる）。
+        // 上下は白い余白
+        figure: scene([
+          photo('state-change-mp1-c2'),
+          pointer(78, 32, 78, 100), tag(78, 26, '中央がくぼむ', { size: 13 }),
+          pointer(243, 32, 243, 64), tag(243, 26, '盛り上がる', { size: 13 }),
+          tag(78, 214, 'ロウ: 体積が減る', { size: 13 }),
+          tag(243, 214, '水 → 氷: 体積が増える', { size: 13 }),
+          tag(160, 236, '質量はどちらも変わらない', { bold: true }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1213,6 +1217,7 @@
     lessons: [
       {
         id: 'state-change-mp2-c1',
+        anim: 'st-melt-boil',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '固体がとけて液体になるときの温度を**融点**、液体が沸騰するときの温度を**沸点**といいます。水の融点は 0 ℃、沸点は 100 ℃ です。とけている間や沸騰している間は、温度が一定になります。',
         figure: scene(heatGraphItems().concat([
           { type: 'text', x: 105, y: 150, text: '融点', size: 13, anchor: 'middle', bold: true },
@@ -1227,17 +1232,15 @@
       {
         id: 'state-change-mp2-c3',
         text: 'エタノールは燃えやすいので、直接火で加熱せず、湯で温めます。急な沸騰を防ぐため**沸騰石**を入れます。沸騰では、液体の表面だけでなく内部からも気体に変わります。表面から変わることを**蒸発**といいます。',
+        // 写真: 湯の入ったビーカー（x 80〜235、水面 y 112）に、エタノールと沸騰石 (160, 205) を入れた試験管 (145〜175, 5〜210) を立てる。泡が出ている。火は写っていない。
+        // 左右に白い余白（x 0〜78・238〜320）
         figure: scene([
-          { type: 'beaker', x: 160, y: 210, width: 150, height: 110, level: 0.6 },
-          { type: 'tube', x: 160, y: 200, height: 120, level: 0.35 },
-          { type: 'circle', x: 156, y: 194, r: 3, fill: 'ink', stroke: 'none' },
-          { type: 'circle', x: 164, y: 192, r: 3, fill: 'ink', stroke: 'none' },
-          { type: 'text', x: 96, y: 236, text: '湯', size: 13 },
-          { type: 'text', x: 246, y: 140, text: 'エタノール', size: 13 },
-          { type: 'line', points: [[244, 136], [174, 176]], color: 'line', width: 1 },
-          { type: 'text', x: 20, y: 60, text: '沸騰石', size: 13 },
-          { type: 'line', points: [[60, 64], [152, 192]], color: 'line', width: 1 },
-          { type: 'text', x: 160, y: 40, text: '直接火で加熱しない', size: 14, anchor: 'middle', bold: true },
+          photo('state-change-mp2-c3'),
+          tag(68, 24, '直接火で加熱しない', { bold: true }),
+          tag(46, 44, '湯で温める', { size: 13 }),
+          pointer(52, 156, 104, 164), tag(36, 160, '湯'),
+          pointer(246, 126, 168, 150), tag(280, 130, 'エタノール', { size: 13 }),
+          pointer(256, 196, 166, 204), tag(282, 200, '沸騰石', { size: 13 }),
         ]),
       },
     ],
@@ -1352,6 +1355,7 @@
     lessons: [
       {
         id: 'state-change-mp3-c1',
+        anim: 'st-mixture-curve',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '純粋な物質は沸点が決まっていて、沸騰している間は温度が一定です。水とエタノールの**混合物**は決まった沸点を示さず、78 ℃ ごろから沸騰しはじめ、温度は少しずつ上がり続けます。',
         figure: scene(mpGraphItems([[MP_ETHANOL, 'blue', 'エタノール', 136], [MP_MIX, 'orange', '混合物', 102]]).concat([
           { type: 'text', x: 160, y: 22, text: 'たて: 温度　横: 加熱した時間（0〜8 分）', size: 12, anchor: 'middle' },
@@ -1455,13 +1459,19 @@
       {
         id: 'state-change-mp4-c1',
         text: '液体を沸騰させ、出てくる気体を冷やして再び液体として取り出すことを**蒸留**といいます。赤ワイン（水とエタノールなど）を蒸留すると、沸点の低いエタノールを多くふくむ液が先に出てきます。',
-        figure: scene(distillItems({ thermo: 84 }).concat([
-          { type: 'text', x: 240, y: 30, text: '赤ワインの蒸留', size: 14, anchor: 'middle', bold: true },
-          { type: 'text', x: 300, y: 120, text: '冷やして液体に', size: 12, anchor: 'end' },
-        ])),
+        // 写真: 赤ワイン (82, 140) を入れたフラスコをガスバーナーで熱し、ガラス管 (90, 93)〜(245, 135) の先の試験管を氷水のビーカー (222〜290, 155〜225) で冷やす。
+        // 試験管の底 (258, 205) にほぼ無色の液がたまる。温度計の球は栓のすぐ下。右上は白い余白
+        figure: scene([
+          photo('state-change-mp4-c1'),
+          tag(240, 30, '赤ワインの蒸留', { bold: true }),
+          pointer(286, 116, 262, 198), tag(268, 108, '冷やして液体に', { size: 13 }),
+          pointer(128, 140, 100, 140), tag(150, 144, '赤ワイン', { size: 13 }),
+          tag(150, 164, '（＋沸騰石）', { size: 13 }),
+        ]),
       },
       {
         id: 'state-change-mp4-c2',
+        anim: 'st-tube-out-first',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '蒸留では、急な沸騰を防ぐため**沸騰石**を入れます。火を消す前に、ガラス管の先を集めた液から出しておきます。液が逆流するのを防ぐためです。集めた液に火を近づけて燃えれば、エタノールが多いと分かります。',
         figure: scene([
           { type: 'tube', x: 120, y: 200, height: 110, level: 0.3 },
@@ -1474,6 +1484,7 @@
       },
       {
         id: 'state-change-mp4-c3',
+        anim: 'st-fractional-tower',   // 動く図（js/anim-chem.js）。figure は静止図として残す
         text: '石油（原油）は多くの物質の混合物です。加熱して沸点のちがいで分けることを**分留**といい、蒸留を利用しています。沸点の低い石油ガスやガソリンほど塔の上のほうで取り出され、重油は下に残ります。',
         figure: scene([
           { type: 'rect', x: 110, y: 30, width: 70, height: 190, fill: 'glass' },

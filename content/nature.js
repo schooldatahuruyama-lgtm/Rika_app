@@ -938,19 +938,6 @@
     ...RIVER4_X.map((x, i) => ({ type: 'region', id: 'r' + (i + 1), x, y: 40, r: 22, label: 'アイウエ'[i] })),
   ]);
 
-  // 落ち葉の下の土の実験（左: 土のしみ出し液 ＋ デンプン、右: 沸騰させたしみ出し液 ＋ デンプン。数日後にヨウ素液を加えた）
-  function soilTestItems() {
-    return [
-      { type: 'beaker', x: 80, y: 150, width: 90, height: 90, level: 0.6, liquid: '#E3B27A' },
-      { type: 'beaker', x: 240, y: 150, width: 90, height: 90, level: 0.6, liquid: 'purple' },
-      { type: 'text', x: 80, y: 30, text: '土のしみ出し液', size: 12, anchor: 'middle' },
-      { type: 'text', x: 80, y: 46, text: '＋ デンプン', size: 12, anchor: 'middle' },
-      { type: 'text', x: 240, y: 30, text: '沸騰させた液', size: 12, anchor: 'middle' },
-      { type: 'text', x: 240, y: 46, text: '＋ デンプン', size: 12, anchor: 'middle' },
-      { type: 'text', x: 160, y: 196, text: '数日後にヨウ素液を加える', size: 13, anchor: 'middle' },
-    ];
-  }
-
   // ---- ステージ nature-mp1: プリント 1 食物連鎖と生物のつり合い（食物連鎖／つりあい／生産者消費者分解者） ----
   const natureMp1 = {
     id: 'nature-mp1', areaId: 'na-miniprint', title: 'プリント 1: 食物連鎖とつり合い', minutes: 5, concepts: ['na-foodchain', 'na-decomposer'],
@@ -958,16 +945,25 @@
       {
         id: 'nature-mp1-c1',
         text: '生物どうしの「食べる・食べられる」のつながりを**食物連鎖**といいます。イネや木の実のように、光合成で無機物から有機物をつくる植物を**生産者**、バッタやカエルのように、ほかの生物を食べて有機物をとり入れる動物を**消費者**といいます。',
-        // イネ → バッタ → カエル → ヘビ の食物連鎖
-        figure: scene(chainRow().concat([
-          { type: 'text', x: 160, y: 30, text: '矢印は「食べられる → 食べる」', size: 13, anchor: 'middle' },
-          { type: 'text', x: 40, y: 196, text: '生産者', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 200, y: 196, text: '消費者', size: 13, anchor: 'middle', bold: true },
-          { type: 'line', points: [[96, 204], [304, 204]], color: 'gray', width: 2 },
-        ])),
+        // 写真（nature-1-c1 の使い回し）: イネ → バッタ → カエル → ヘビ（生物の中心は x = 40・122・202・280、y = 108〜120）。上と下は白い余白
+        figure: scene([
+          photo('nature-1-c1'),
+          tag(160, 36, '矢印は「食べられる → 食べる」', { anchor: 'middle', bold: true }),
+          tag(42, 174, 'イネ', { anchor: 'middle' }),
+          tag(122, 174, 'バッタ', { anchor: 'middle' }),
+          tag(202, 174, 'カエル', { anchor: 'middle' }),
+          tag(280, 174, 'ヘビ', { anchor: 'middle' }),
+          eat(62, 169, 96, 169),
+          eat(148, 169, 176, 169),
+          eat(228, 169, 260, 169),
+          tag(42, 208, '生産者', { anchor: 'middle', bold: true }),
+          { type: 'line', points: [[98, 184], [98, 190], [304, 190], [304, 184]], color: 'ink', width: 2 },
+          tag(201, 208, '消費者', { anchor: 'middle', bold: true }),
+        ]),
       },
       {
         id: 'nature-mp1-c2',
+        anim: 'na-balance',   // 動く図（js/anim-bio.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '草食動物が急にふえると、食べられる植物は減り、えさがふえた肉食動物はふえます。すると草食動物は減り、植物はふえ、肉食動物は減ります。生物の数量は、ふえたり減ったりしながら、ほぼ一定の**つり合い**が保たれています。',
         // 数量のピラミッドと、つり合いの変化
         figure: scene(pyramid().concat([
@@ -982,22 +978,15 @@
       {
         id: 'nature-mp1-c3',
         text: '生物の死がいやふん（排出物）にふくまれる有機物を、二酸化炭素や水などの無機物に分解する生物を**分解者**といいます。ミミズなどの土の中の小動物や、目に見えない小さな生物の**菌類**（カビ・キノコ）・**細菌類**がそのなかまです。',
-        // 落ち葉・死がいが分解者によって無機物になる
+        // 写真（nature-2-c1 の使い回し）: 左上 アオカビの生えたパン、右上 落ち葉のキノコ（上の段は y 3〜97）、左下 ミミズ、右下 ダンゴムシ（下の段は y 133〜215）
         figure: scene([
-          { type: 'ellipse', x: 60, y: 90, rx: 34, ry: 16, fill: 'brown', stroke: 'ink' },
-          { type: 'text', x: 60, y: 128, text: '落ち葉・死がい', size: 12, anchor: 'middle' },
-          { type: 'arrow', x1: 104, y1: 90, x2: 140, y2: 90, color: 'gray', width: 2 },
-          { type: 'ellipse', x: 180, y: 76, rx: 26, ry: 14, fill: 'sand', stroke: 'brown' },
-          { type: 'rect', x: 174, y: 88, width: 12, height: 22, fill: 'white', stroke: 'brown' },
-          { type: 'circle', x: 156, y: 116, r: 3, fill: 'purple', stroke: 'none' },
-          { type: 'circle', x: 206, y: 112, r: 3, fill: 'purple', stroke: 'none' },
-          { type: 'text', x: 180, y: 140, text: '分解者', size: 13, anchor: 'middle', bold: true },
-          { type: 'text', x: 180, y: 158, text: '（菌類・細菌類）', size: 12, anchor: 'middle' },
-          { type: 'arrow', x1: 220, y1: 90, x2: 252, y2: 90, color: 'gray', width: 2 },
-          { type: 'text', x: 288, y: 84, text: '無機物', size: 13, anchor: 'middle' },
-          { type: 'text', x: 288, y: 104, text: '（二酸化', size: 12, anchor: 'middle' },
-          { type: 'text', x: 288, y: 120, text: '炭素・水）', size: 12, anchor: 'middle' },
-          { type: 'text', x: 160, y: 210, text: '有機物 → 無機物 に分解する', size: 14, anchor: 'middle' },
+          photo('nature-2-c1'),
+          tag(78, 110, 'カビ（菌類）', { anchor: 'middle', size: 13 }),
+          tag(239, 110, 'キノコ（菌類）', { anchor: 'middle', size: 13 }),
+          tag(160, 129, '分解者: 有機物 → 無機物（二酸化炭素・水）', { anchor: 'middle', size: 13, bold: true }),
+          tag(38, 234, 'ミミズ', { anchor: 'middle', size: 13 }),
+          tag(157, 234, '目に見えない細菌類も分解者', { anchor: 'middle', size: 13 }),
+          tag(283, 234, 'ダンゴムシ', { anchor: 'middle', size: 13 }),
         ]),
       },
     ],
@@ -1013,9 +1002,18 @@
       figureChoice({
         id: 'nature-mp1-p1', concept: 'na-foodchain',
         prompt: '田んぼの生物の食物連鎖の図です（矢印は「食べられる → 食べる」の向き）。バッタを食べる生物はア〜エのどれ？',
-        figure: scene(chainRow().concat([
-          ...CHAIN_X.map((x, i) => ({ type: 'region', id: 'r' + (i + 1), x, y: 204, r: 22, label: 'アイウエ'[i] })),
-        ])),
+        // 写真（nature-1-c1 の使い回し）: 名前と矢印は nature-1-c1 と同じ位置。ア〜エは各生物の名前の下
+        figure: scene([
+          photo('nature-1-c1'),
+          tag(42, 174, 'イネ', { anchor: 'middle' }),
+          tag(122, 174, 'バッタ', { anchor: 'middle' }),
+          tag(202, 174, 'カエル', { anchor: 'middle' }),
+          tag(280, 174, 'ヘビ', { anchor: 'middle' }),
+          eat(62, 169, 96, 169),
+          eat(148, 169, 176, 169),
+          eat(228, 169, 260, 169),
+          ...[42, 122, 202, 280].map((x, i) => ({ type: 'region', id: 'r' + (i + 1), x, y: 206, r: 22, label: 'アイウエ'[i] })),
+        ]),
         answer: 'r3',
         explanation: '矢印は「食べられる生物 → 食べる生物」の向きです。バッタからの矢印はカエル（ウ）に向かっているので、バッタを食べるのはカエルです。',
         hint: 'バッタから出ている矢印の先をたどろう。',
@@ -1109,6 +1107,7 @@
     lessons: [
       {
         id: 'nature-mp2-c1',
+        anim: 'na-carbon-cycle',   // 動く図（js/anim-bio.js。ミニプリントの使い回し）。figure は静止図として残す
         text: '炭素は、大気中では**二酸化炭素**、生物のからだの中では**有機物**として存在します。植物は光合成で二酸化炭素をとり入れて有機物をつくり、生物は呼吸で有機物を分解して二酸化炭素を出します。こうして炭素は循環しています。',
         // 炭素の循環
         figure: scene(carbonCycle().concat([
@@ -1121,11 +1120,17 @@
       {
         id: 'nature-mp2-c2',
         text: '落ち葉の下の土を水でかき混ぜ、こした液にデンプンを加えて数日置くと、ヨウ素液を加えても色が変わりません。土の中の**菌類・細菌類**がデンプンを分解したからです。液を沸騰させてから同じことをすると、青紫色になります。',
-        // 落ち葉の下の土の実験の結果
-        figure: scene(soilTestItems().concat([
-          { type: 'text', x: 80, y: 222, text: '色が変わらない', size: 12, anchor: 'middle' },
-          { type: 'text', x: 240, y: 222, text: '青紫色になる', size: 12, anchor: 'middle' },
-        ])),
+        // 写真（nature-2-c3 の使い回し）: 左 色が変わらない液のビーカー (27〜145)、右 青紫色の液のビーカー (173〜290)。どちらも y 54〜194。上と下は白い余白
+        figure: scene([
+          photo('nature-2-c3'),
+          tag(160, 18, 'デンプンを加えて数日後、ヨウ素液を加える', { anchor: 'middle', size: 13 }),
+          tag(86, 42, '土のしみ出し液', { anchor: 'middle', size: 13, bold: true }),
+          tag(231, 42, '沸騰させた液', { anchor: 'middle', size: 13, bold: true }),
+          tag(86, 212, '色が変わらない', { anchor: 'middle', size: 13 }),
+          tag(231, 212, '青紫色になる', { anchor: 'middle', size: 13 }),
+          tag(86, 232, 'デンプンが分解された', { anchor: 'middle', size: 13 }),
+          tag(231, 232, 'デンプンが残った', { anchor: 'middle', size: 13 }),
+        ]),
       },
     ],
     warmup: choice({
@@ -1224,38 +1229,60 @@
       {
         id: 'nature-mp3-c1',
         text: '川にすむ水生生物を調べると、水のよごれの程度が分かります。このような生物を**指標生物**といいます。カワゲラ・ヘビトンボは**きれいな水**、カワニナ・ゲンジボタルは**少しきたない水**、タニシ・ミズカマキリは**きたない水**、アメリカザリガニ・エラミミズは**大変きたない水**にすみます。',
-        // 水のよごれの程度と指標生物
+        // 写真: 指標生物 8 種（生成したイメージ）を 4 段 × 2 列に並べる。1 段目（中心 y 33）カワゲラの幼虫 (165)・ヘビトンボの幼虫 (266)、
+        // 2 段目（y 92）カワニナ (165)・ゲンジボタルの幼虫 (268)、3 段目（y 148）タニシ (160)・ミズカマキリ (265)、4 段目（y 208）アメリカザリガニ (155)・エラミミズ (270)。
+        // 左 3 分の 1 は白い余白。4 段目は下のふちに近いので、エラミミズの名前は下のふちに寄せ、アメリカザリガニの名前は左に置く
         figure: scene([
-          ...[['きれいな水', 'カワゲラ・ヘビトンボ', 'sky'], ['少しきたない水', 'カワニナ・ゲンジボタル', 'lightgreen'], ['きたない水', 'タニシ・ミズカマキリ', 'sand'], ['大変きたない水', 'アメリカザリガニ・エラミミズ', 'rock']].flatMap(([a, b, fill], i) => [
-            { type: 'rect', x: 8, y: 16 + 54 * i, width: 304, height: 46, rx: 6, fill, stroke: 'line' },
-            { type: 'text', x: 18, y: 44 + 54 * i, text: a, size: 13, bold: true },
-            { type: 'text', x: 304, y: 44 + 54 * i, text: b, size: 12, anchor: 'end' },
-          ]),
+          photo('nature-mp3-c1'),
+          ...[['きれいな水', 38], ['少しきたない水', 96], ['きたない水', 152], ['大変きたない水', 200]].map(([t, y]) => tag(4, y, t, { bold: true })),
+          tag(165, 66, 'カワゲラ', { anchor: 'middle', size: 13 }),
+          tag(266, 66, 'ヘビトンボ', { anchor: 'middle', size: 13 }),
+          tag(165, 124, 'カワニナ', { anchor: 'middle', size: 13 }),
+          tag(268, 124, 'ゲンジボタル', { anchor: 'middle', size: 13 }),
+          tag(160, 183, 'タニシ', { anchor: 'middle', size: 13 }),
+          tag(265, 183, 'ミズカマキリ', { anchor: 'middle', size: 13 }),
+          tag(56, 226, 'アメリカザリガニ', { anchor: 'middle', size: 13 }),
+          tag(270, 236, 'エラミミズ', { anchor: 'middle', size: 13 }),
         ]),
       },
       {
         id: 'nature-mp3-c2',
         text: '**火力発電**は石油・石炭・天然ガスを燃やすので二酸化炭素を出し、資源にも限りがあります。**原子力発電**はウランを使い、放射性廃棄物の処理が問題です。**水力発電**はダムの水を使いますが、ダムをつくれる場所が限られ、自然環境を変えてしまいます。',
-        // 3 つの発電の燃料・材料と短所
+        // 写真: 3 種類の発電所（生成したイメージ）。左 (5〜103) 海沿いの火力発電所（高い煙突）、中 (111〜209) ドーム形の原子炉建屋の原子力発電所、
+        // 右 (216〜315) ダムから放流している水力発電所。どれも y 56〜153 の青空の写真で、上と下は白い余白（上に短所、下に名前と使うもの）
         figure: scene([
-          ...[['火力発電', '石油・石炭・天然ガス', '二酸化炭素を出す'], ['原子力発電', 'ウラン', '放射性廃棄物の処理'], ['水力発電', 'ダムにためた水', '場所が限られ、環境を変える']].flatMap(([a, b, c], i) => [
-            { type: 'rect', x: 8, y: 14 + 74 * i, width: 304, height: 66, rx: 6, fill: ['#FFF3C4', 'glass', 'sky'][i], stroke: 'line' },
-            { type: 'text', x: 18, y: 40 + 74 * i, text: a, size: 14, bold: true },
-            { type: 'text', x: 120, y: 40 + 74 * i, text: b, size: 12 },
-            { type: 'text', x: 120, y: 64 + 74 * i, text: '短所: ' + c, size: 12 },
-          ]),
+          photo('nature-mp3-c2'),
+          tag(160, 14, '短所', { anchor: 'middle', size: 13, bold: true }),
+          tag(54, 32, '二酸化炭素を', { anchor: 'middle', size: 13 }),
+          tag(54, 50, '出す', { anchor: 'middle', size: 13 }),
+          tag(160, 32, '放射性廃棄物', { anchor: 'middle', size: 13 }),
+          tag(160, 50, 'の処理', { anchor: 'middle', size: 13 }),
+          tag(266, 32, '場所が限られ、', { anchor: 'middle', size: 13 }),
+          tag(266, 50, '環境を変える', { anchor: 'middle', size: 13 }),
+          tag(54, 174, '火力発電', { anchor: 'middle', bold: true }),
+          tag(54, 194, '石油・石炭・', { anchor: 'middle', size: 13 }),
+          tag(54, 212, '天然ガス', { anchor: 'middle', size: 13 }),
+          tag(160, 174, '原子力発電', { anchor: 'middle', bold: true }),
+          tag(160, 194, 'ウラン', { anchor: 'middle', size: 13 }),
+          tag(266, 174, '水力発電', { anchor: 'middle', bold: true }),
+          tag(266, 194, 'ダムの水', { anchor: 'middle', size: 13 }),
         ]),
       },
       {
         id: 'nature-mp3-c3',
         text: 'ワットが改良した**蒸気機関**は、工業の発展を支えました。今は、ガソリンエンジンとモーターで走る**ハイブリッドカー**や電気自動車などの低公害車、温めるともとの形にもどる**形状記憶合金**、とても低い温度で電気抵抗が 0 になる**超伝導**の物質などが使われています。',
-        // 科学技術の例
+        // 写真: 科学技術の例 4 つ（2 段 × 2 列）。左上 (4〜156, 4〜100) 博物館の蒸気機関、右上 (170〜312, 17〜90) 乗用車（ハイブリッドカー。文字なし）、
+        // 左下 (4〜157, 122〜217) 湯の中で曲げたワイヤーがまっすぐにもどる形状記憶合金、右下 (163〜316, 122〜217) 冷えた円板の上に磁石が浮く超伝導。
+        // 下の段の下の余白は少ないので、名前は写真の下のふちに下地つきで重ねる
         figure: scene([
-          ...[['蒸気機関', 'ワットが改良。工業が発展'], ['ハイブリッドカー', 'エンジン ＋ モーターで走る'], ['形状記憶合金', '温めると、もとの形にもどる'], ['超伝導の物質', 'とても低温で電気抵抗が 0']].flatMap(([a, b], i) => [
-            { type: 'rect', x: 8, y: 14 + 54 * i, width: 304, height: 46, rx: 6, fill: 'white', stroke: 'line' },
-            { type: 'text', x: 18, y: 42 + 54 * i, text: a, size: 13, bold: true },
-            { type: 'text', x: 304, y: 42 + 54 * i, text: b, size: 12, anchor: 'end' },
-          ]),
+          photo('nature-mp3-c3'),
+          tag(80, 115, '蒸気機関（ワットが改良）', { anchor: 'middle', size: 13, bold: true }),
+          tag(240, 102, 'ハイブリッドカー', { anchor: 'middle', size: 13, bold: true }),
+          tag(240, 119, 'エンジン＋モーター', { anchor: 'middle', size: 13 }),
+          tag(80, 218, '形状記憶合金', { anchor: 'middle', size: 13, bold: true }),
+          tag(80, 235, '温めるともとの形', { anchor: 'middle', size: 13 }),
+          tag(240, 218, '超伝導', { anchor: 'middle', size: 13, bold: true }),
+          tag(240, 235, '低温で電気抵抗が 0', { anchor: 'middle', size: 13 }),
         ]),
       },
     ],

@@ -796,6 +796,7 @@
     lessons: [
       {
         id: 'force-mp1-c1',
+        anim: 'fo-three-effects',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '物体に力を加えると、物体の**形を変える**、物体の**運動のようす**（速さや向き）を変える、物体を**支える**、のどれかのはたらきが見られます。1 つの場面で 2 つのはたらきが同時に見られることもあります。',
         figure: scene(EFFECT_3.items.filter(it => it.type !== 'region').concat([
           { type: 'text', x: 55, y: 214, text: '形を変える', size: 13, anchor: 'middle' },
@@ -805,6 +806,7 @@
       },
       {
         id: 'force-mp1-c2',
+        anim: 'fo-normal-friction',   // 動く図（js/anim-physics.js）。figure は静止図として残す
         text: '地球が物体を中心に向かって引く力が**重力**、面が押されたときに押し返す力が**垂直抗力**、ふれ合う 2 つの物体の一方が動こうとするとき、その動きをさまたげる向きにはたらく力が**摩擦力**です。',
         figure: scene([
           { type: 'line', points: [[20, 170], [300, 170]], color: 'line', width: 3 },
@@ -971,11 +973,13 @@
     lessons: [
       {
         id: 'force-mp2-c1',
+        anim: 'fo-hooke-graph',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: 'ばねの伸びは、ばねを引く力の大きさに**比例**します。これを**フックの法則**といいます。測った値をグラフにするときは、点のなるべく近くを通る直線を引きます。直線は原点を通ります。',
         figure: scene(hookeGraph()),
       },
       {
         id: 'force-mp2-c2',
+        anim: 'fo-balance',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
         text: '1 つの物体に 2 つの力がはたらいて物体が動かないとき、2 力は**つり合っている**といいます。2 力の大きさが等しく、向きが反対で、同じ**一直線上**にあるとき、つり合います。',
         figure: scene([
           { type: 'line', points: [[30, 120], [290, 120]], color: 'gray', width: 1, dashed: true },
@@ -983,7 +987,7 @@
           ...force(130, 120, 60, 120, '3 N'),
           ...force(190, 120, 260, 120, '3 N'),
           { type: 'text', x: 160, y: 190, text: '大きさが等しい・向きが反対', size: 14, anchor: 'middle' },
-          { type: 'text', x: 160, y: 214, text: '同じ一直線上', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 214, text: '一直線上にある', size: 14, anchor: 'middle' },
         ]),
       },
     ],

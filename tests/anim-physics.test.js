@@ -9,12 +9,22 @@ const KINDS_A = ['so-air-wave', 'so-light-vs-sound', 'so-amplitude', 'so-frequen
   'el-series-parallel', 'el-induction', 'mo-resultant', 'mo-slope-accel', 'mo-inertia', 'mo-pendulum'];
 const KINDS_B = ['so-string-phone', 'fo-friction', 'fo-hooke-graph', 'fo-balance', 'el-heat-rise', 'el-static-charge',
   'mo-slope-split', 'mo-buoyancy', 'mo-action-reaction', 'mo-pulley'];
-const KINDS = KINDS_A.concat(KINDS_B);
+// ミニプリント（1nen）の 6 本（docs/plans/mp-figures-1nen.md。光の li-lens-cover もこのファイルで足す）
+const KINDS_MP = ['li-lens-cover', 'so-fork-stop', 'so-resonance', 'so-amp-freq', 'fo-three-effects', 'fo-normal-friction'];
+// ミニプリント（2nen）の 7 本（docs/plans/mp-figures-2nen.md）
+const KINDS_MP2 = ['el-cathode-bend', 'el-compass-around', 'el-wire-field', 'el-coil-field', 'el-wire-force', 'el-motor-rotate', 'el-dc-ac'];
+// ミニプリント（3nen）の 12 本（docs/plans/mp-figures-3nen.md）
+const KINDS_MP3 = ['mo-water-pressure', 'mo-buoyancy-depth', 'mo-angle-resultant', 'mo-compose-steps', 'mo-split-steps', 'mo-timer-tape',
+  'mo-friction-slow', 'mo-uniform-graph', 'mo-inertia-start', 'mo-pulley-compare', 'mo-lever', 'mo-ball-block'];
+const KINDS = KINDS_A.concat(KINDS_B, KINDS_MP, KINDS_MP2, KINDS_MP3);
 // 振動・回転・流れの kind（frame(kind, 0) と frame(kind, 0.99999) がつながる）
 const LOOPS = ['so-air-wave', 'so-amplitude', 'so-frequency', 'el-series-parallel', 'el-induction',
   'mo-resultant', 'mo-inertia', 'mo-pendulum',
-  'so-string-phone', 'fo-balance', 'mo-slope-split', 'mo-pulley'];
-const PREFIX = ['so-', 'fo-', 'el-', 'mo-'];
+  'so-string-phone', 'fo-balance', 'mo-slope-split', 'mo-pulley',
+  'so-fork-stop', 'so-amp-freq',
+  'el-cathode-bend', 'el-compass-around', 'el-wire-field', 'el-coil-field', 'el-motor-rotate',
+  'mo-angle-resultant', 'mo-pulley-compare', 'mo-lever'];
+const PREFIX = ['so-', 'fo-', 'el-', 'mo-', 'li-'];
 
 const near = (a, b, eps) => Math.abs(a - b) <= (eps === undefined ? 1e-9 : eps);
 const items = (kind, t) => anim.frame(kind, t).items;
@@ -22,7 +32,7 @@ const byType = (list, type) => list.filter(it => it.type === type);
 const textOf = (list, s) => list.find(it => it.type === 'text' && it.text === s);
 const textStarting = (list, s) => list.find(it => it.type === 'text' && typeof it.text === 'string' && it.text.startsWith(s));
 
-test('anim-physics: KINDS は計画の 21 本（A 11・B 10）で、単元の接頭辞で始まり、anim.KINDS に登録されている', () => {
+test('anim-physics: KINDS は計画の 21 本（A 11・B 10）とミニプリントの 6 本（1nen）・7 本（2nen）・12 本（3nen）で、単元の接頭辞で始まり、anim.KINDS に登録されている', () => {
   assert.deepEqual(physics.KINDS, KINDS);
   KINDS.forEach(kind => {
     assert.ok(PREFIX.some(p => kind.startsWith(p)), kind + ' の接頭辞');
@@ -72,6 +82,14 @@ test('anim-physics: restT は計画どおり（線が伸びる・量が行き来
   ['so-string-phone', 'fo-friction', 'fo-balance', 'mo-action-reaction', 'mo-pulley'].forEach(k => assert.equal(anim.restT(k), 0, k));
   ['fo-hooke-graph', 'el-heat-rise', 'el-static-charge', 'mo-buoyancy'].forEach(k => assert.equal(anim.restT(k), 0.99, k));
   assert.ok(near(anim.restT('mo-slope-split'), 0.24, 1e-3));
+  ['so-fork-stop', 'so-resonance', 'so-amp-freq'].forEach(k => assert.equal(anim.restT(k), 0, k));
+  ['li-lens-cover', 'fo-three-effects', 'fo-normal-friction'].forEach(k => assert.equal(anim.restT(k), 0.99, k));
+  ['mo-water-pressure', 'mo-compose-steps', 'mo-split-steps', 'mo-timer-tape', 'mo-uniform-graph'].forEach(k => assert.equal(anim.restT(k), 0.99, k));
+  ['mo-pulley-compare', 'mo-lever', 'mo-ball-block'].forEach(k => assert.equal(anim.restT(k), 0, k));
+  assert.equal(anim.restT('mo-buoyancy-depth'), 0.55);
+  assert.equal(anim.restT('mo-angle-resultant'), 0.25);
+  assert.equal(anim.restT('mo-inertia-start'), 0.5);
+  assert.ok(near(physics.frictionSlowX(anim.restT('mo-friction-slow')), 130, 1e-9));   // 木片が静止図の位置
 });
 
 // 2 つの場面の item が同じ並びで、数の値（座標・大きさ）の差が 1px 以内、文字と種類が同じ
@@ -564,4 +582,510 @@ test('mo-pulley: 手の動き ＝ おもりの動き × 2、手は天井に当�
   assert.ok(near(physics.pulleyLow(0.3), physics.PULLEY_D));
   assert.equal(byType(items('mo-pulley', 0), 'ellipse')[0].y, 44);
   assert.ok(textOf(items('mo-pulley', 0.8), '引いた長さ') && textOf(items('mo-pulley', 0.8), '上がった高さ'));
+});
+
+// ================================================================
+// ミニプリント（1nen）。docs/plans/mp-figures-1nen.md の「動く図（新規）」
+// ================================================================
+
+const MP_KINDS = KINDS_MP;
+const MP_CARDS = {
+  'li-lens-cover': ['light.js', 'light-mp4-c3'], 'so-fork-stop': ['sound.js', 'sound-mp1-c1'], 'so-resonance': ['sound.js', 'sound-mp1-c2'],
+  'so-amp-freq': ['sound.js', 'sound-mp3-c1'], 'fo-three-effects': ['force.js', 'force-mp1-c1'], 'fo-normal-friction': ['force.js', 'force-mp1-c2'],
+};
+
+// kind → [単元のファイル, カード id]
+const mpLesson = (file, id) => require('../content/' + file).unit.areas.flatMap(a => a.stages).flatMap(s => s.lessons).find(c => c.id === id);
+
+test('ミニプリント: カードがその kind を使い、静止図の text・label が frame(kind, restT) に同じ text・x・y で入っている', () => {
+  assert.deepEqual(Object.keys(MP_CARDS), MP_KINDS);
+  MP_KINDS.forEach(kind => {
+    const [file, id] = MP_CARDS[kind];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    const rest = items(kind, anim.restT(kind));
+    card.figure.items.filter(it => it.type === 'text' || it.type === 'label').forEach(st => {
+      assert.ok(rest.some(it => (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y),
+        kind + ' の止まった絵に静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') がない');
+    });
+  });
+});
+
+test('ミニプリント: 各 t で文字（text）どうしが重ならず場面の中にあり、矢印（arrow）の両はしが場面の中にある', () => {
+  MP_KINDS.forEach(kind => {
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const list = items(kind, t);
+      const boxes = list.filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+      list.filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + t + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
+});
+
+test('li-lens-cover: 止まった絵は紙がレンズの下半分をおおい、光線は上半分の 2 本だけ。像は全体（高さ 44）で、おおう前より色がうすい', () => {
+  const rest = items('li-lens-cover', 0.99);
+  const paper = rest.find(it => it.type === 'rect');
+  assert.deepEqual([paper.x, paper.y, paper.width, paper.height], [148, 112, 24, 72]);
+  const rays = byType(rest, 'ray');
+  assert.equal(rays.filter(r => r.x1 === 160).length, 2);
+  rays.filter(r => r.x1 === 160).forEach(r => assert.ok(r.y1 < 110 && r.x2 === 260 && r.y2 === 154));
+  const imageColor = (t) => items('li-lens-cover', t).find(it => it.type === 'polygon').fill;
+  assert.equal(imageColor(0.35), '#2E9E5B');                 // おおう前（4 本とも通る）
+  assert.notEqual(imageColor(0.99), imageColor(0.35));       // おおったあと（2 本）
+  assert.equal(byType(items('li-lens-cover', 0.35), 'ray').filter(r => r.x1 === 160).length, 4);
+});
+
+test('so-fork-stop: t = 0 はうでが静止図の位置（x 80・110）。にぎっている間（0.6〜0.9）はうでが止まり、点線と手が出る', () => {
+  const arms = (t) => byType(items('so-fork-stop', t), 'rect').slice(0, 2).map(r => r.x);
+  assert.deepEqual(arms(0), [80, 110]);
+  assert.ok(!near(arms(0.025)[0], 80, 1));                    // 振動している
+  [0.6, 0.7, 0.8].forEach(t => {
+    assert.deepEqual(arms(t), [80, 110], 't = ' + t);
+    assert.ok(byType(items('so-fork-stop', t), 'ellipse').length === 1, 't = ' + t + ' の手');
+    assert.equal(byType(items('so-fork-stop', t), 'line').length, 0, 't = ' + t + ' の点線');
+  });
+});
+
+test('so-resonance: t = 0 の弧は静止図と同じ（x 112・140・168）で B は止まっている。弧が B に着いたあと B がふるえる', () => {
+  const arcs = (t) => byType(items('so-resonance', t), 'line').filter(it => !it.dashed);
+  assert.deepEqual(arcs(0).map(a => a.points), [
+    [[168, 80], [178, 115], [168, 150]], [[140, 74], [150, 115], [140, 156]], [[112, 80], [120, 115], [112, 150]],
+  ]);
+  const bArm = (t) => byType(items('so-resonance', t), 'rect')[4].x;   // B の左のうで（静止図 x 230）
+  for (let t = 0; t <= 0.2; t += 0.01) assert.equal(bArm(t), 230, 't = ' + t);
+  assert.ok([0.5, 0.525, 0.55].some(t => !near(bArm(t), 230, 1)));
+  arcs(0.5).forEach(a => assert.ok(a.points[0][0] >= 84 && a.points[0][0] <= 224));
+});
+
+test('so-amp-freq: t = 0 の波形は静止図と同じ点。X の矢印の先は t = 0 で静止図の (72,62)', () => {
+  const card = mpLesson('sound.js', 'sound-mp3-c1');
+  const stWave = card.figure.items.find(it => it.type === 'line' && it.color === 'blue');
+  const wave0 = items('so-amp-freq', 0).find(it => it.type === 'line' && it.color === 'blue');
+  assert.deepEqual(wave0.points, stWave.points);
+  const arrow = byType(items('so-amp-freq', 0), 'arrow')[0];
+  assert.ok(near(arrow.x2, 72) && near(arrow.y2, 62, 1e-9));
+  // 数える丸は 0.2 で 1 つ、0.45 で 2 つ点く
+  const lit = (t) => byType(items('so-amp-freq', t), 'circle').filter(c => c.r === 10 && c.fill === 'orange').length;
+  assert.equal(lit(0), 0); assert.equal(lit(0.3), 1); assert.equal(lit(0.6), 2);
+});
+
+test('fo-three-effects: 止まった絵はスポンジ ry 12・中心 y 140、ボール x 150、手の矢印 (55,70)→(55,124)。はじめはつぶれていない', () => {
+  const rest = items('fo-three-effects', 0.99);
+  const sponge = rest.find(it => it.type === 'ellipse' && it.fill === 'yellow');
+  assert.ok(near(sponge.ry, 12) && near(sponge.y, 140));
+  assert.equal(items('fo-three-effects', 0).find(it => it.type === 'ellipse' && it.fill === 'yellow').ry, 18);
+  assert.equal(rest.find(it => it.type === 'circle' && it.r === 14).x, 150);
+  const hand = byType(rest, 'arrow')[0];
+  assert.ok(near(hand.y1, 70) && near(hand.y2, 124));
+  // ボールが手に当たる前は、手の力の矢印（196 → 166）がない
+  assert.ok(!byType(items('fo-three-effects', 0.3), 'arrow').some(a => a.x1 === 196));
+  assert.ok(byType(rest, 'arrow').some(a => a.x1 === 196 && a.x2 === 166));
+});
+
+test('fo-normal-friction: 動かす向きの印（灰色）は伸ばさず静止図の長さのまま、摩擦力が伸びる。止まった絵は静止図の長さ。箱は動かない', () => {
+  [0, 0.45, 0.6, 0.99].forEach(t => {
+    const push = byType(items('fo-normal-friction', t), 'arrow').find(a => a.color === 'gray');
+    assert.ok(push && push.x1 === 200 && push.x2 === 260, 't = ' + t);
+  });
+  let prev = 0;
+  [0.45, 0.6, 0.99].forEach(t => {
+    const fric = byType(items('fo-normal-friction', t), 'arrow').find(a => a.color === 'green');
+    assert.ok(fric, 't = ' + t);
+    assert.ok(fric.x1 - fric.x2 >= prev - 1e-9, 't = ' + t);
+    prev = fric.x1 - fric.x2;
+    assert.equal(items('fo-normal-friction', t).find(it => it.type === 'rect').x, 120);
+  });
+  const rest = byType(items('fo-normal-friction', 0.99), 'arrow');
+  assert.equal(rest.find(a => a.color === 'gray').x2, 260);
+  assert.equal(rest.find(a => a.color === 'green').x2, 72);
+});
+
+// ================================================================
+// ミニプリント（2nen）。docs/plans/mp-figures-2nen.md の「動く図（新規）」と「もとにする kind」
+// ================================================================
+
+const MP2_KINDS = KINDS_MP2;
+const MP2_CARDS = {
+  'el-cathode-bend': ['electricity.js', 'electricity-mp12-c2'], 'el-compass-around': ['electricity.js', 'electricity-mp13-c1'],
+  'el-wire-field': ['electricity.js', 'electricity-mp14-c1'], 'el-coil-field': ['electricity.js', 'electricity-mp14-c2'],
+  'el-wire-force': ['electricity.js', 'electricity-mp15-c1'], 'el-motor-rotate': ['electricity.js', 'electricity-mp15-c2'],
+  'el-dc-ac': ['electricity.js', 'electricity-mp16-c2'],
+};
+// カード id → [単元のファイル, 使い回す kind]
+const MP2_SHARED = {
+  'electricity-mp4-c1': ['electricity.js', 'el-series-parallel'], 'electricity-mp10-c2': ['electricity.js', 'el-heat-rise'],
+  'electricity-mp12-c1': ['electricity.js', 'el-static-charge'], 'electricity-mp16-c1': ['electricity.js', 'el-induction'],
+};
+
+test('ミニプリント（2nen）: カードがその kind を使い、静止図の text・label が frame(kind, restT) に同じ text・x・y で入っている', () => {
+  assert.deepEqual(Object.keys(MP2_CARDS), MP2_KINDS);
+  MP2_KINDS.forEach(kind => {
+    const [file, id] = MP2_CARDS[kind];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    const rest = items(kind, anim.restT(kind));
+    card.figure.items.filter(it => it.type === 'text' || it.type === 'label').forEach(st => {
+      assert.ok(rest.some(it => (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y),
+        kind + ' の止まった絵に静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') がない');
+    });
+  });
+});
+
+test('ミニプリント（2nen）: 各 t で文字（text）どうしが重ならず場面の中にあり、矢印（arrow）の両はしが場面の中にある（静止図にある文字どうしは静止図のまま見ない）', () => {
+  MP2_KINDS.forEach(kind => {
+    const [file, id] = MP2_CARDS[kind];
+    const fig = mpLesson(file, id).figure.items;
+    const inFigure = it => fig.some(st => st.type === 'text' && st.text === it.text && st.x === it.x && st.y === it.y);
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const list = items(kind, t);
+      const boxes = list.filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b) || (inFigure(p.it) && inFigure(q.it)),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+      list.filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + t + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
+});
+
+test('ミニプリント（2nen）: 内容が同じカードは、既存の kind を使い回す（計画の「もとにする kind」）', () => {
+  Object.keys(MP2_SHARED).forEach(id => {
+    const [file, kind] = MP2_SHARED[id];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    assert.ok(anim.KINDS.includes(kind), kind);
+  });
+});
+
+// 点 (x, y) から折れ線 pts までのいちばん近い距離
+function distToPath(x, y, pts) {
+  let best = Infinity;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+    const L2 = (bx - ax) ** 2 + (by - ay) ** 2;
+    const k = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / L2));
+    best = Math.min(best, Math.hypot(x - ax - k * (bx - ax), y - ay - k * (by - ay)));
+  }
+  return best;
+}
+
+test('el-cathode-bend: 電子の点 6 つはいつも静止図の光のすじの上にあり、A から B の向きへ進む', () => {
+  const ray = [[30, 120], [120, 120], [200, 108], [288, 88]];
+  const electrons = t => items('el-cathode-bend', t).filter(it => it.type === 'circle' && it.fill === 'sky');
+  for (let i = 0; i < 50; i++) {
+    const es = electrons(i / 50);
+    assert.equal(es.length, 6);
+    es.forEach(e => assert.ok(distToPath(e.x, e.y, ray) < 1e-6, 't = ' + i / 50));
+  }
+  // 少し進むと右（B の側）へ動く（はしでもどる点を除く）
+  const a = electrons(0.3), b = electrons(0.31);
+  a.forEach((e, k) => { if (b[k].x > 40) assert.ok(b[k].x > e.x, k + ' 番目の電子'); });
+});
+
+test('el-compass-around: 動く方位磁針は楕円（横 104・たて 60）の上。t = 0 は上 (160,60) で右向き、0.25 は左 (56,120) で左向き、0.5 は下で右向き、0.75 は右で左向き', () => {
+  const moving = t => {
+    const list = items('el-compass-around', t);
+    const i = list.findIndex(it => it.type === 'circle' && it.stroke === 'blue');
+    return { c: list[i], red: list[i + 1] };
+  };
+  for (let i = 0; i < 40; i++) {
+    const { c } = moving(i / 40);
+    assert.ok(near(((c.x - 160) / 104) ** 2 + ((c.y - 120) / 60) ** 2, 1, 1e-9));
+  }
+  const top = moving(0), left = moving(0.25), bottom = moving(0.5), right = moving(0.75);
+  assert.ok(near(top.c.x, 160) && near(top.c.y, 60) && near(top.red.points[0][0], 174, 1e-6) && near(top.red.points[0][1], 60, 1e-6));
+  assert.ok(near(left.c.x, 56) && near(left.red.points[0][0], 42, 1e-6));
+  assert.ok(bottom.red.points[0][0] > bottom.c.x + 13);
+  assert.ok(right.red.points[0][0] < right.c.x - 13);   // S 極に入る向き（左）
+});
+
+test('el-wire-field: 左（×）の点は時計回り、右（・）の点は反時計回りに、半径 36 の円の上を回る', () => {
+  const dots = t => items('el-wire-field', t).filter(it => it.type === 'circle' && it.fill === 'blue');
+  const a = dots(0.2), b = dots(0.21);
+  assert.equal(a.length, 8);
+  a.forEach((d, i) => {
+    const cx = d.x < 160 ? 80 : 240;
+    assert.ok(near(Math.hypot(d.x - cx, d.y - 110), 36, 1e-9));
+    const cross = (d.x - cx) * (b[i].y - 110) - (d.y - 110) * (b[i].x - cx);   // 画面の座標で正なら時計回り
+    if (cx === 80) assert.ok(cross > 0, '左の点 ' + i + ' が時計回りでない');
+    else assert.ok(cross < 0, '右の点 ' + i + ' が反時計回りでない');
+  });
+});
+
+test('el-coil-field: だいだいの点は輪の右半分（手前側）を下向きに、青いふちの点はコイルの内部を右向きに進む', () => {
+  const orange = t => items('el-coil-field', t).filter(it => it.type === 'circle' && it.fill === 'orange');
+  const inner = t => items('el-coil-field', t).filter(it => it.type === 'circle' && it.stroke === 'blue' && it.y === 120);
+  const xs = [120, 132, 144, 156, 168, 180, 192];
+  const a = orange(0.4), b = orange(0.41);
+  assert.equal(a.length, 7);
+  a.forEach((d, i) => {
+    assert.ok(d.x >= xs[i] - 1e-9 && near(((d.x - xs[i]) / 7) ** 2 + ((d.y - 120) / 32) ** 2, 1, 1e-9), i + ' 番目の点が輪の右半分にない');
+    if (b[i].y > d.y - 30) assert.ok(b[i].y > d.y, i + ' 番目の点が下へ進まない');
+  });
+  const p = inner(0.4), q = inner(0.41);
+  assert.equal(p.length, 4);
+  p.forEach((d, i) => { assert.ok(d.x >= 118 && d.x <= 198); if (q[i].x > d.x - 40) assert.ok(q[i].x > d.x); });
+});
+
+test('el-wire-force: 導線は t = 0 で静止図の (160,120)、0.5 で 30 左。力の矢印と「力」は電流を流すあいだ導線といっしょに動き、切ると消える', () => {
+  const wire = t => items('el-wire-force', t).find(it => it.type === 'circle' && it.r === 10);
+  assert.equal(wire(0).x, 160);
+  assert.ok(near(wire(0.5).x, 130));
+  [0, 0.2, 0.4].forEach(t => {
+    const arrow = items('el-wire-force', t).find(it => it.type === 'arrow' && it.color === 'orange');
+    assert.ok(near(arrow.x1 - wire(t).x, -16) && near(arrow.x2 - wire(t).x, -70));
+    assert.ok(near(textOf(items('el-wire-force', t), '力').x - wire(t).x, -70));
+  });
+  assert.ok(textOf(items('el-wire-force', 0.25), '電流を流す'));
+  assert.ok(textOf(items('el-wire-force', 0.75), '電流を切る'));
+  assert.equal(items('el-wire-force', 0.75).filter(it => it.type === 'arrow' && it.color === 'orange').length, 0);
+});
+
+test('el-motor-rotate: コイルのはしは半径 62 の円の上を時計回り。左側の導線はいつも「・」で上向きの力、右側は「×」で下向きの力（矢印は題と下の文にかからない）', () => {
+  for (let i = 0; i < 40; i++) {
+    const t = i / 40, list = items('el-motor-rotate', t);
+    const coil = list.find(it => it.type === 'line' && it.color === 'brown');
+    coil.points.forEach(p => assert.ok(near(Math.hypot(p[0] - 160, p[1] - 120), 62, 1e-9)));
+    const [l, r] = coil.points[0][0] <= coil.points[1][0] ? coil.points : [coil.points[1], coil.points[0]];
+    if (Math.abs(l[0] - r[0]) < 1) continue;   // コイルがたての所（入れかわる瞬間）は見ない
+    // 左の導線の中に・（半径 3 の丸）、右の導線の中に ×（2 本の線）
+    assert.ok(list.some(it => it.type === 'circle' && it.r === 3 && near(it.x, l[0]) && near(it.y, l[1])), 't = ' + t + ' の左が・でない');
+    assert.equal(list.filter(it => it.type === 'line' && it.width === 2 && near((it.points[0][0] + it.points[1][0]) / 2, r[0])).length, 2, 't = ' + t + ' の右が×でない');
+    const arrows = list.filter(it => it.type === 'arrow');
+    const up = arrows.find(a => near(a.x1, l[0])), down = arrows.find(a => near(a.x1, r[0]));
+    assert.ok(up && up.y2 < up.y1 && up.y2 >= 26, 't = ' + t + ' の左の力');
+    if (down) assert.ok(down.y2 > down.y1 && down.y2 <= 200, 't = ' + t + ' の右の力');
+    else assert.ok(r[1] > 174, 't = ' + t + ' で右の力の矢印がない');
+  }
+  // 時計回り: AB（t = 0 で左 (98,120)）は少しあとで左上へ
+  const ab = t => items('el-motor-rotate', t).find(it => it.type === 'line' && it.color === 'brown').points[0];
+  assert.ok(ab(0.05)[1] < 120 && ab(0.05)[0] > 98);
+  assert.ok(textOf(items('el-motor-rotate', 0), 'AB（・）') && textOf(items('el-motor-rotate', 0.5), 'CD（・）') && textOf(items('el-motor-rotate', 0.5), 'AB（×）'));
+});
+
+test('el-dc-ac: 2 本の線は同じ x まで伸び、交流の線の先が軸より上なら「＋の向き」、下なら「−の向き」。止まった絵の線は静止図と同じ', () => {
+  const lines = t => items('el-dc-ac', t).filter(it => it.type === 'line' && it.color === 'blue');
+  [0.1, 0.3, 0.5].forEach(t => {
+    const [dc, ac] = lines(t);
+    assert.ok(near(dc.points[1][0], ac.points[ac.points.length - 1][0]));
+  });
+  const sign = t => items('el-dc-ac', t).find(it => it.type === 'text' && it.x === 306 && it.y === 140).text;
+  assert.equal(sign(0.1), '＋の向き');    // x 90: 軸より上
+  assert.equal(sign(0.2), '−の向き');    // x 120: 軸より下
+  const card = mpLesson('electricity.js', 'electricity-mp16-c2');
+  const want = card.figure.items.filter(it => it.type === 'line' && it.color === 'blue').map(it => it.points);
+  assert.deepEqual(lines(0.99).map(it => it.points), want);
+});
+
+// ================================================================
+// ミニプリント（3nen）。docs/plans/mp-figures-3nen.md の「動く図（新規）」と「動く図（使い回し）」
+// ================================================================
+
+const MP3_CARDS = {
+  'mo-water-pressure': ['motion.js', 'motion-mp1-c1'], 'mo-buoyancy-depth': ['motion.js', 'motion-mp1-c2'],
+  'mo-angle-resultant': ['motion.js', 'motion-mp2-c1'], 'mo-compose-steps': ['motion.js', 'motion-mp2-c2'],
+  'mo-split-steps': ['motion.js', 'motion-mp3-c1'], 'mo-timer-tape': ['motion.js', 'motion-mp5-c2'],
+  'mo-friction-slow': ['motion.js', 'motion-mp6-c1'], 'mo-uniform-graph': ['motion.js', 'motion-mp6-c2'],
+  'mo-inertia-start': ['motion.js', 'motion-mp6-c3'], 'mo-pulley-compare': ['motion.js', 'motion-mp8-c1'],
+  'mo-lever': ['motion.js', 'motion-mp9-c1'], 'mo-ball-block': ['motion.js', 'motion-mp10-c1'],
+};
+// カード id → [単元のファイル, 使い回す kind]（計画の「動く図（使い回し）」。kind を増やさず既存の kind をそのまま使う）
+const MP3_SHARED = {
+  'motion-mp3-c2': ['motion.js', 'mo-slope-split'], 'motion-mp4-c1': ['motion.js', 'mo-action-reaction'],
+  'motion-mp11-c2': ['motion.js', 'mo-pendulum'],
+};
+
+test('ミニプリント（3nen）: カードがその kind を使い、静止図の text・label が frame(kind, restT) に同じ text・x・y で入っている', () => {
+  assert.deepEqual(Object.keys(MP3_CARDS), KINDS_MP3);
+  KINDS_MP3.forEach(kind => {
+    const [file, id] = MP3_CARDS[kind];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    const rest = items(kind, anim.restT(kind));
+    card.figure.items.filter(it => it.type === 'text' || it.type === 'label').forEach(st => {
+      assert.ok(rest.some(it => (it.type === 'text' || it.type === 'label') && it.text === st.text && it.x === st.x && it.y === st.y),
+        kind + ' の止まった絵に静止図の文字「' + st.text + '」(' + st.x + ',' + st.y + ') がない');
+    });
+  });
+});
+
+test('ミニプリント（3nen）: 各 t で文字（text）が場面の中にあり、文字どうしが重ならず（静止図にある文字どうしの重なりは静止図のまま見ない）、矢印（arrow）の両はしが場面の中にある', () => {
+  KINDS_MP3.forEach(kind => {
+    const [file, id] = MP3_CARDS[kind];
+    const fig = mpLesson(file, id).figure.items;
+    const inFigure = it => fig.some(st => st.type === 'text' && st.text === it.text && st.x === it.x && st.y === it.y);
+    for (let i = 0; i < 100; i++) {
+      const t = i / 100;
+      const list = items(kind, t);
+      const boxes = list.filter(it => it.type === 'text').map(it => ({ it, b: textBox(it) }));
+      boxes.forEach(({ it, b }) => assert.ok(b.left >= 0 && b.right <= 320 && b.top >= 0 && b.bottom <= 240,
+        kind + ' t = ' + t + ' の「' + it.text + '」が場面から出る'));
+      boxes.forEach((p, j) => boxes.slice(j + 1).forEach(q => assert.ok(!overlap(p.b, q.b) || (inFigure(p.it) && inFigure(q.it)),
+        kind + ' t = ' + t + ' の「' + p.it.text + '」と「' + q.it.text + '」が重なる')));
+      list.filter(it => it.type === 'arrow').forEach(a => [[a.x1, a.y1], [a.x2, a.y2]].forEach(([x, y]) =>
+        assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 240, kind + ' t = ' + t + ' の矢印のはし ' + x + ',' + y)));
+    }
+  });
+});
+
+test('ミニプリント（3nen）: 内容が同じカードは、既存の kind を使い回す（新しい kind を足さない）', () => {
+  Object.keys(MP3_SHARED).forEach(id => {
+    const [file, kind] = MP3_SHARED[id];
+    const card = mpLesson(file, id);
+    assert.ok(card, id + ' がない');
+    assert.equal(card.anim, kind, id + ' の anim');
+    assert.ok(physics.KINDS.includes(kind) && !KINDS_MP3.includes(kind), kind);
+  });
+});
+
+test('mo-water-pressure: t = 0 は膜が平らで矢印がない。止まった絵の膜は静止図と同じへこみ（3・7・11）、矢印は深いほど長く、同じ深さの左右で同じ長さ', () => {
+  const membranes = t => byType(items('mo-water-pressure', t), 'line').filter(it => it.color === 'blue');
+  membranes(0).forEach(m => assert.equal(m.points[1][0], m.points[0][0]));
+  assert.equal(byType(items('mo-water-pressure', 0), 'arrow').length, 0);
+  const card = mpLesson('motion.js', 'motion-mp1-c1');
+  assert.deepEqual(membranes(0.99).map(m => m.points), card.figure.items.filter(it => it.type === 'line' && it.color === 'blue').map(m => m.points));
+  [0.6, 0.99].forEach(t => {
+    const arrows = byType(items('mo-water-pressure', t), 'arrow');
+    assert.equal(arrows.length, 6, 't = ' + t);
+    const lens = arrows.map(a => Math.abs(a.x2 - a.x1));
+    [0, 2, 4].forEach(i => assert.ok(near(lens[i], lens[i + 1]), 't = ' + t + ' の左右'));
+    assert.ok(lens[0] < lens[2] && lens[2] < lens[4], 't = ' + t + ' で深いほど長くない');
+    arrows.forEach(a => assert.ok(a.x1 >= 20 && a.x1 <= 300, 't = ' + t + ' の矢印が水の外から出る'));
+  });
+});
+
+test('mo-buoyancy-depth: A → B → C の順に読みを強調し、C だけが 0.6〜0.85 で 30 下がってもどる。読みは 1.4 N のまま、物体は底につかない', () => {
+  const blue = t => byType(items('mo-buoyancy-depth', t), 'text').filter(it => it.color === 'blue' && it.y === 26).map(it => it.text);
+  assert.deepEqual(blue(0.1), ['2.0 N']);
+  assert.deepEqual(blue(0.3), ['1.7 N']);
+  assert.deepEqual(blue(0.5), ['1.4 N']);
+  assert.deepEqual(blue(0.7), ['1.4 N']);
+  const objC = t => items('mo-buoyancy-depth', t).find(it => it.type === 'rect' && it.x === 240);
+  assert.equal(objC(anim.restT('mo-buoyancy-depth')).y, 150);
+  assert.ok(near(objC(0.725).y, 180));
+  for (let i = 0; i <= 100; i++) assert.ok(objC(i / 100).y + 44 <= 230 - 4, 't = ' + i / 100 + ' で底につく');
+  assert.ok(textOf(items('mo-buoyancy-depth', 0.7), '深さで浮力は変わらない'));
+  assert.ok(!textOf(items('mo-buoyancy-depth', 0.5), '深さで浮力は変わらない'));
+});
+
+test('mo-angle-resultant: あいだの角は 0°〜180°。合力の先 ＝ 3 N の先 ＋ 2 N のベクトル、0° で 5 N・90° で 3.6 N・180° で 1 N、文字は計算と同じ', () => {
+  [[0, 5], [0.25, Math.sqrt(13)], [0.5, 1]].forEach(([t, n]) => assert.ok(near(physics.angleResultant(t).newton, n, 1e-9), 't = ' + t));
+  for (let i = 0; i < 40; i++) {
+    const t = i / 40, g = physics.angleResultant(t), list = items('mo-angle-resultant', t);
+    assert.ok(near(g.r[0] - g.a[0], g.b[0] - 214) && near(g.r[1] - g.a[1], g.b[1] - 104), 't = ' + t);
+    assert.ok(g.newton >= 1 - 1e-9 && g.newton <= 5 + 1e-9);
+    assert.ok(textOf(list, '合力 ' + g.newton.toFixed(1) + ' N'), 't = ' + t + ' の合力の文字');
+  }
+});
+
+test('mo-compose-steps / mo-split-steps: 点線 → 合力（分力）の順に伸び、止まった絵の矢印と点線は静止図と同じ', () => {
+  [['mo-compose-steps', 'motion-mp2-c2'], ['mo-split-steps', 'motion-mp3-c1']].forEach(([kind, id]) => {
+    const green = t => items(kind, t).filter(it => it.color === 'green');
+    assert.equal(green(0.2).length, 0, kind + ' で点線より先に緑の矢印が出る');
+    assert.equal(green(0.5).length, 0, kind);
+    assert.ok(green(0.7).length > 0, kind + ' で緑の矢印が伸びない');
+    const card = mpLesson('motion.js', id);
+    const key = list => list.filter(it => it.type !== 'text').map(it => JSON.stringify(it)).sort();
+    assert.deepEqual(key(items(kind, 0.99)), key(card.figure.items), kind);
+  });
+});
+
+test('mo-timer-tape: 打点の間隔は上のテープ 30・下のテープ 14（同じ時間ごとに打つ）。止まった絵の打点は静止図の 26 個と同じ', () => {
+  const dots = t => items('mo-timer-tape', t).filter(it => it.type === 'circle' && it.r === 3);
+  [0.6, 0.7, 0.85].forEach(t => {
+    [[80, 30], [160, 14]].forEach(([y, gap]) => {
+      const xs = dots(t).filter(d => d.y === y).map(d => d.x).sort((a, b) => a - b);
+      assert.ok(xs.length >= 2, 't = ' + t);
+      xs.slice(1).forEach((x, i) => assert.ok(near(x - xs[i], gap, 1e-6), 't = ' + t + ' の間隔 ' + (x - xs[i])));
+    });
+  });
+  assert.equal(dots(0.3).filter(d => d.y === 80).length, 0);   // 上のテープは後半だけ動く
+  const card = mpLesson('motion.js', 'motion-mp5-c2');
+  const want = card.figure.items.filter(it => it.type === 'circle').map(d => [d.x, d.y]);
+  assert.deepEqual(dots(0.99).map(d => [d.x, d.y]).sort(), want.sort());
+});
+
+test('mo-friction-slow: 木片はだんだんおそくなって x 210 で止まる。摩擦力の矢印（長さ 60）は動いているあいだ木片についていき、止まると「止まった」', () => {
+  let prevV = Infinity;
+  for (let i = 1; i <= 80; i++) {
+    const v = physics.frictionSlowX(i / 100) - physics.frictionSlowX((i - 1) / 100);
+    assert.ok(v > 0 && v < prevV + 1e-9, 't = ' + i / 100);
+    prevV = v;
+  }
+  assert.equal(physics.frictionSlowX(0.9), 210);
+  const fric = t => byType(items('mo-friction-slow', t), 'arrow').find(a => a.color === 'blue');
+  [0.1, 0.5].forEach(t => {
+    const f = fric(t), x = physics.frictionSlowX(t);
+    assert.ok(near(f.x1, x + 10) && near(f.x1 - f.x2, 60), 't = ' + t);
+  });
+  assert.equal(fric(0.9), undefined);
+  assert.ok(textOf(items('mo-friction-slow', 0.9), '止まった'));
+});
+
+test('mo-uniform-graph: 右のグラフの点はいつも原点を通る直線の上、左の点は速さ一定の線の上。0.99 で線の右はし', () => {
+  for (let i = 1; i <= 50; i++) {
+    const { left, right } = physics.uniformPoints(i / 50);
+    assert.equal(left[1], 110);
+    assert.ok(near((170 - right[1]) / (right[0] - 190), 108 / 88, 1e-9), 't = ' + i / 50);
+    assert.ok(near(left[0] - 40, right[0] - 190));   // 同じ時刻
+  }
+  assert.deepEqual(physics.uniformPoints(0.99), { left: [128, 110], right: [278, 62] });
+});
+
+test('mo-inertia-start: 0.2 までは枕木が止まっている。止まった絵（0.5）はいちばん後ろへかたむいた静止図の形、0.8 でまっすぐ', () => {
+  const sleepers = t => items('mo-inertia-start', t).filter(it => it.type === 'line' && it.color === 'gray').map(it => it.points[0][0]);
+  assert.deepEqual(sleepers(0.1), sleepers(0));
+  assert.notDeepEqual(sleepers(0.4), sleepers(0));
+  const body = t => items('mo-inertia-start', t).find(it => it.type === 'line' && it.width === 4).points;
+  assert.deepEqual(body(0.5), [[168, 178], [152, 122]]);
+  assert.deepEqual(body(0.85), [[164, 178], [164, 122]]);
+  assert.equal(physics.startLean(0.5), 1);
+  assert.ok(textOf(items('mo-inertia-start', 0.5), '後ろへ'));
+});
+
+test('mo-pulley-compare: 定滑車は手の動き ＝ おもりの動き、動滑車は手の動き ＝ おもりの動き × 2。手は天井に当たらず、おもりは下の文字にかからない', () => {
+  for (let i = 0; i <= 100; i++) {
+    const t = i / 100, list = items('mo-pulley-compare', t), d = physics.pulleyCompareLow(t);
+    const rect = x => list.find(it => it.type === 'rect' && it.x === x), hand = x => list.find(it => it.type === 'ellipse' && it.x === x);
+    assert.ok(near(rect(42).y - 150, d) && near(128 - hand(98).y, d), 't = ' + t + ' の定滑車');
+    assert.ok(near(rect(210).y - 166, d) && near(hand(248).y - 54, 2 * d), 't = ' + t + ' の動滑車');
+    assert.ok(hand(248).y - 11 >= 18, 't = ' + t + ' で手が天井に当たる');
+    assert.ok(rect(210).y + 30 <= 220 - 14 * 0.85 + 1e-9, 't = ' + t + ' でおもりが「動滑車」にかかる');
+  }
+  assert.equal(physics.pulleyCompareLow(0), 0);
+  assert.ok(textOf(items('mo-pulley-compare', 0.6), '引いた長さ') && !textOf(items('mo-pulley-compare', 0.2), '引いた長さ'));
+});
+
+test('mo-lever: 手の側が押し下げた距離 ＝ 物体が上がった距離 × 4。t = 0 は棒が水平で静止図と同じ、棒の右はしは床に当たらない', () => {
+  for (let i = 1; i < 40; i++) {
+    const list = items('mo-lever', i / 40);
+    const box = list.find(it => it.type === 'rect'), push = byType(list, 'arrow')[0];
+    const rise = 116 - box.y, drop = push.y2 - 146;
+    assert.ok(rise > 0 && near(drop, 4 * rise, 1e-9), 't = ' + i / 40);
+  }
+  const bar = t => items('mo-lever', t).find(it => it.type === 'line' && it.width === 6);
+  assert.deepEqual(bar(0).points, [[30, 150], [300, 150]]);
+  for (let i = 0; i <= 40; i++) assert.ok(bar(i / 40).points[1][1] + 3 < 190, '棒の右はしが床に当たる');
+});
+
+test('mo-ball-block: 球はレールを下って 0.45 で木片に当たり、木片は 0.45〜0.75 で 50 すべって止まる。t = 0 は静止図の位置', () => {
+  assert.deepEqual(physics.ballBlock(0), { ball: [30, 62], blockX: 200 });
+  [0.1, 0.3, 0.44].forEach(t => assert.equal(physics.ballBlock(t).blockX, 200, 't = ' + t));
+  const hit = physics.ballBlock(0.45).ball;
+  assert.ok(near(hit[0], 188, 1e-9) && near(hit[1], 178, 1e-9));
+  assert.equal(physics.ballBlock(0.8).blockX, 250);
+  // 球はだんだん速くなる（同じ時間に進む長さがふえる）
+  const step = t => Math.hypot(physics.ballBlock(t + 0.05).ball[0] - physics.ballBlock(t).ball[0], physics.ballBlock(t + 0.05).ball[1] - physics.ballBlock(t).ball[1]);
+  assert.ok(step(0.05) < step(0.2) && step(0.2) < step(0.35));
 });
