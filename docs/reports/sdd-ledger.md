@@ -175,3 +175,7 @@ Ruling: サーバーなしで先生の端末だけで動く形。生成は Claud
 Ruling: SDK は使わず fetch（アプリに依存ライブラリを入れない方針。設計書 9）。構造化出力 output_config.format {type: json_schema, schema} と fallbacks: "default"。モデル既定 claude-opus-5-5。実 API での生成は未確認（先生のキーが要る）。
 implemented (opus ×2: A ロジック js/author.js + js/author-api.js、B 画面 js/ui-author.js + app/teacher/index/sw/css/README). Codex サイクル 1: round1 High 3/Medium 2 → fix（opus）→ round2 High 1/Medium 1 → サイクル 2: fix（opus）→ round1 指摘なし → complete（tests 588）。VERSION 2026-11-06-24。controller のブラウザ確認: 先生画面 → 教材を作る → 貼り付けで計画と 2 ステージ → 照合 OK → ためす → 単元一覧「その他」に出て生徒画面で解ける（枠選びの図の重なりを修正）。
 貼り付けの道の実地確認（controller、2026-11-06 10:30）: 浮力（2 ステージ）の計画の指示文を ChatGPT（ブラウザ）に貼ると、形どおりの JSON が返り、アプリに貼ると計画が通った。ステージ 1 の指示文（約 4,000 字）でも、カード 3 枚・問題 6 問（用語の fill 1、figure-choice 2（枠版と items 版）、choice 3）・類題 4・確認問題 6 の JSON が返り、照合の指摘は残りステージの分だけ。items 版の図（水そう・石・4 方向の矢印・region 4 つ）も描けた。ChatGPT 側は ID を自分で付けてくるが、normalize が付け直すので問題なし。
+
+## 追加作業 2026-11-06: 単元の組みこみ道具（tools/add-unit.js。ユーザー決定「1」）
+Ruling: 書き出した content/<id>.js（か下書き JSON）を 1 コマンドで組みこむ: content/ へ写す、index.html・sw.js（PRECACHE と VERSION）、curriculum の表、docs/reports/content/<id>.md（先生の確認用）、ふりがなの未登録語の一覧、npm test。AI 教材（unit.source === "author"）はカードの図の検査を免除（図はあとから足せる）。ふりがなの網羅率は免除しない（組みこむ人が readings.js に足す）。
+implemented (opus). Codex round1 High 1（--force で VERSION が上がらない）/Medium 1（テストが本番辞書に依存）→ fix → round2 指摘なし → complete（tests 601）。controller: 偽の下書き（磁石）で --dry-run を JS と JSON の両方で確認。

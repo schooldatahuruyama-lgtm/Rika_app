@@ -118,7 +118,10 @@ files.forEach(file => {
     assert.doesNotMatch(JSON.stringify(unit), BOOK_NAMES);
   });
 
-  test(name + ': 全問題に prompt・explanation・hint、レッスンカードは 2〜4 枚で文は 40〜160 字、図がある', () => {
+  // AI 教材作成で作った単元（unit.source === 'author'）はカードに図が無いので、図の有無だけは見ない（ほかは同じ）
+  const fromAuthor = unit && unit.source === 'author';
+
+  test(name + ': 全問題に prompt・explanation・hint、レッスンカードは 2〜4 枚で文は 40〜160 字、図がある' + (fromAuthor ? '（AI 教材作成の単元なので図は見ない）' : ''), () => {
     allProblems().forEach(p => {
       ['prompt', 'explanation', 'hint'].forEach(f => assert.ok(typeof p[f] === 'string' && p[f].trim() !== '', p.id + ' の ' + f + ' が空'));
     });
@@ -129,7 +132,7 @@ files.forEach(file => {
         assert.equal(typeof c.text, 'string', c.id + ' の文がない');
         const len = richtext.plain(c.text).length;
         assert.ok(len >= 40 && len <= 160, c.id + ' の文が ' + len + ' 字');
-        assert.ok(c.figure && Array.isArray(c.figure.items), c.id + ' に図がない');
+        if (!fromAuthor) assert.ok(c.figure && Array.isArray(c.figure.items), c.id + ' に図がない');
       });
     });
   });

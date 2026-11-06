@@ -135,8 +135,26 @@
 
 ### 単元を足す手順
 
+「教材を作る」で書き出した教材は、組みこみの道具 `tools/add-unit.js` で 1 コマンドで足せます。
+
+1. 「教材を作る」で `content/<id>.js` を書き出す（または「下書きを書き出す」の JSON）。
+2. まず何をするかを確かめる: `node tools/add-unit.js <書き出したファイル> --dry-run`
+3. 組みこむ: `node tools/add-unit.js <書き出したファイル>`。道具が次をすべて行います。
+   - 教材の検査（`js/content-registry.js` の `validateUnit` と、問題ごとの検査）。直すところがあれば一覧を出して止まる。ほかの単元と id が重なるときも止まる
+   - `content/<id>.js` を書く（`unit.source: 'author'` の印を付ける。この印の単元は `tests/content-all.test.js` がカードの図の有無を見ない）
+   - `index.html` の `<script src="content/…">` の最後と、`sw.js` の `PRECACHE` の `'content/…'` の最後に足し、`sw.js` の `VERSION` を今日の日付で上げる
+   - `content/curriculum.js` の単元一覧の表のその学年の最後に行を足す（同じ `id` の行が既にあれば足さない）
+   - 足す `content/<id>.js` の文字で、ふりがなの辞書（`content/readings.js`）にない漢字の語を数えて出す（`--dry-run` でも出す）
+   - 先生の確認用一覧 `docs/reports/content/<id>.md` を作る（末尾に「ふりがなの未登録語」の一覧。既にあれば `--force` のときだけ上書き）
+   - `npm test` を実行して結果を出す（`--no-test` で省ける）。失敗したら、書いたファイルはそのままなので、直すか `git checkout` で戻す（新しく作ったファイルは消す）
+   - 指定: `--grade 1|2|3`・`--field 物理|化学|生物|地学`（省くと書き出しの先頭コメントや下書きの入力から読む）、`--mascot A-F`（担当の先生。省くと教材の `unit.mascot`）、`--force`（`content/<id>.js` が既にあっても上書き）
+4. ふりがなの辞書にない語が出たら（`npm test` の `tests/ruby.test.js` が失敗したときも）、下の「ふりがなの辞書を増やす」で辞書に語を足す。
+5. `docs/reports/content/<id>.md` で内容を確かめ、ブラウザで動きを見てからコミットし、公開する。
+
+道具を使わない場合（手で書いた教材など）:
+
 1. `content/light.js` と同じ形で `content/<id>.js` を作る（`unit.id` を `<id>` にする。担当の先生は `unit.mascot` に `'A'`〜`'F'`）。
-2. `index.html` の `<script src="content/light.js">` の後に `<script src="content/<id>.js"></script>` を足し、`sw.js` の `PRECACHE` にも同じ順で `'content/<id>.js'` を足して、`VERSION` を上げる（`npm test` が食い違いを見つけます）。
+2. `index.html` の `<script src="content/…">` の最後の行の後に `<script src="content/<id>.js"></script>` を足し、`sw.js` の `PRECACHE` にも同じ順で `'content/<id>.js'` を足して、`VERSION` を上げる（`npm test` が食い違いを見つけます）。
 3. `content/curriculum.js` の単元一覧の表に同じ `id` の行があれば、その学年の欄に出て押せるようになります（「準備中」が消える）。表にない `id` の単元は「その他」の欄に出ます。
 - 単元一覧の表（`content/curriculum.js`）は先生が編集してよいファイルです。単元名・学年・分野・担当の先生を書きかえられます（項目の意味はファイルの冒頭に書いてあります）。
 
