@@ -1055,6 +1055,692 @@
   ];
 
   // ================================================================
+  // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/volcano.md）
+  // ================================================================
+
+  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  function mpRegions(parts) {
+    const items = [];
+    parts.forEach(([x, y, px, py], i) => {
+      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオ'[i] });
+    });
+    return items;
+  }
+
+  // 火山の形を選ぶ図（左から ア ドーム状・イ 円すい・ウ 傾斜がゆるやか。色はすべて同じ）
+  const MP_SHAPES_Q = scene(volcanoShapes(['dome', 'cone', 'shield'], false).concat(regionsAt([60, 160, 260], 206)));
+
+  // 2 つのつくり（左 ア 斑状組織・右 イ 等粒状組織）を選ぶ図
+  const MP_TEXTURE_Q = scene(porphyryItems(30, 50).concat(granularItems(180, 50), regionsAt([85, 235], 196), [
+    { type: 'text', x: 160, y: 32, text: '火成岩をルーペで見たつくり', size: 13, anchor: 'middle' },
+  ]));
+
+  // 斑状組織の部分を選ぶ図: ア 大きな鉱物（斑晶）・イ 細かい粒の部分（石基）
+  const MP_PORPHYRY_Q = scene(porphyryItems(105, 60).concat(mpRegions([
+    [262, 122, 177, 122], [48, 186, 150, 162],
+  ])));
+
+  // 地震計の記録を選ぶ図: ア はじめの小さなゆれ・イ あとからくる大きなゆれ
+  const MP_SEISMO_Q = scene([
+    seismoLine(),
+    { type: 'region', id: 'r1', x: 110, y: 62, r: 22, label: 'ア' },
+    { type: 'line', points: [[110, 84], [110, 108]], color: 'line', width: 1 },
+    { type: 'region', id: 'r2', x: 220, y: 40, r: 22, label: 'イ' },
+    { type: 'line', points: [[220, 62], [220, 82]], color: 'line', width: 1 },
+    { type: 'text', x: 304, y: 200, text: '時間 →', size: 12, anchor: 'end' },
+  ]);
+
+  // P 波・S 波の小さなグラフ（P 波 8 km/秒、S 波 4 km/秒。横 0〜50 秒は x 50〜290、たて 0〜200 km は y 200〜40）
+  function mpWaveItems() {
+    const gx = t => 50 + 4.8 * t, gy = d => 200 - 0.8 * d;
+    const items = [];
+    [50, 100, 150, 200].forEach(d => items.push({ type: 'line', points: [[50, gy(d)], [290, gy(d)]], color: 'glass', width: 1 }));
+    [10, 20, 30, 40, 50].forEach(t => items.push({ type: 'line', points: [[gx(t), 200], [gx(t), 40]], color: 'glass', width: 1 }));
+    items.push(
+      { type: 'line', points: [[50, 200], [50, 30]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [304, 200]], width: 2, arrow: true },
+      { type: 'line', points: [[gx(0), gy(0)], [gx(25), gy(200)]], color: 'blue', width: 3 },
+      { type: 'line', points: [[gx(0), gy(0)], [gx(50), gy(200)]], color: 'green', width: 3 },
+      { type: 'text', x: 128, y: 60, text: 'P波', size: 13, color: 'blue', bold: true },
+      { type: 'text', x: 250, y: 76, text: 'S波', size: 13, color: 'green', bold: true },
+      { type: 'text', x: 56, y: 22, text: '震源からの距離〔km〕', size: 12 },
+      { type: 'text', x: 306, y: 236, text: '地震発生からの時間〔秒〕', size: 12, anchor: 'end' },
+    );
+    [0, 10, 20, 30, 40, 50].forEach(t => items.push({ type: 'text', x: gx(t), y: 216, text: String(t), size: 12, anchor: 'middle' }));
+    [100, 200].forEach(d => items.push({ type: 'text', x: 44, y: gy(d) + 4, text: String(d), size: 12, anchor: 'end' }));
+    return items;
+  }
+
+  // 海洋プレートが動く向きを選ぶ図: ア 大陸の側へ（海溝に向かう）・イ 太平洋の側へ
+  const MP_PLATE_Q = scene(plateItems().concat([
+    { type: 'arrow', x1: 300, y1: 112, x2: 262, y2: 112, color: 'blue' },
+    { type: 'region', id: 'r1', x: 280, y: 160, r: 22, label: 'ア' },
+    { type: 'line', points: [[280, 138], [280, 118]], color: 'line', width: 1 },
+    { type: 'arrow', x1: 150, y1: 186, x2: 176, y2: 160, color: 'blue' },
+    { type: 'region', id: 'r2', x: 112, y: 206, r: 22, label: 'イ' },
+    { type: 'line', points: [[132, 196], [148, 184]], color: 'line', width: 1 },
+  ]));
+
+  // ---- ステージ volcano-mp1: プリント 1（噴火と火山噴出物、火山の形、わんがけと鉱物） ----
+  const voMp1 = {
+    id: 'volcano-mp1', areaId: 'volcano-miniprint', title: 'プリント 1: 噴火と火山の形・鉱物', minutes: 5, concepts: ['vo-magma', 'vo-mineral'],
+    lessons: [
+      {
+        id: 'volcano-mp1-c1',
+        text: '噴火でふき出されたものを**火山噴出物**といいます。流れ出したマグマの**溶岩**、空中で固まった**火山弾**、細かい**火山灰**、**火山ガス**などです。火山ガスの主な成分は水蒸気です。',
+        figure: scene(volcanoSection().concat([
+          { type: 'ellipse', x: 110, y: 40, rx: 10, ry: 7, fill: 'rock' },
+          { type: 'ellipse', x: 226, y: 34, rx: 8, ry: 6, fill: 'rock' },
+          ...[[150, 30], [166, 22], [180, 36], [140, 50], [190, 52]].map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'gray', stroke: 'none' })),
+          { type: 'polygon', points: [[180, 72], [196, 92], [210, 116], [196, 116], [182, 96]], fill: 'orange', stroke: 'none' },
+          { type: 'text', x: 90, y: 64, text: '火山弾', size: 12, anchor: 'middle' },
+          { type: 'text', x: 166, y: 14, text: '火山灰・火山ガス', size: 12, anchor: 'middle' },
+          { type: 'text', x: 236, y: 112, text: '溶岩', size: 12 },
+          { type: 'text', x: 160, y: 236, text: 'マグマ', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'volcano-mp1-c2',
+        text: '火山の形は**マグマのねばりけ**で決まります。ねばりけが強いとドーム状で白っぽく、爆発的に噴火します（雲仙普賢岳）。中くらいだと円すいの形（富士山）、弱いと傾斜がゆるやかで黒っぽくなります（伊豆大島）。',
+        figure: scene(volcanoShapes(['dome', 'cone', 'shield'], true).concat([
+          { type: 'text', x: 60, y: 196, text: 'ドーム状', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 196, text: '円すいの形', size: 12, anchor: 'middle' },
+          { type: 'text', x: 260, y: 196, text: 'ゆるやか', size: 12, anchor: 'middle' },
+          { type: 'text', x: 60, y: 60, text: 'ねばりけ 強', size: 12, anchor: 'middle' },
+          { type: 'text', x: 260, y: 60, text: 'ねばりけ 弱', size: 12, anchor: 'middle' },
+          { type: 'arrow', x1: 100, y1: 56, x2: 220, y2: 56, color: 'gray' },
+        ])),
+      },
+      {
+        id: 'volcano-mp1-c3',
+        text: '火山灰を少量の水といっしょに指でやさしく押し洗い（わんがけ）し、にごった水を捨てることをくり返すと、**鉱物**の粒が残ります。白っぽい石英・長石、黒っぽい黒雲母・角閃石・輝石・磁鉄鉱などがあります。',
+        figure: scene([
+          { type: 'ellipse', x: 160, y: 140, rx: 110, ry: 40, fill: 'white' },
+          ...[[110, 132, 'white'], [140, 150, '#3A3A3A'], [170, 128, 'white'], [200, 152, '#F1E9E4'], [226, 136, '#3A3A3A'], [126, 160, '#9DBB6A'], [186, 144, '#3A3A3A']]
+            .map(([x, y, f]) => ({ type: 'polygon', points: hexPoints(x, y, 9, 6), fill: f })),
+          { type: 'text', x: 160, y: 66, text: 'わんがけで残った鉱物の粒', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 210, text: '白っぽい粒と黒っぽい粒', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-mp1-w1', concept: 'vo-magma',
+      prompt: '予想しよう。ねばりけの強いマグマと弱いマグマ。爆発的な噴火をしやすいのはどちらだと思う？',
+      options: ['ねばりけの強いマグマ', 'ねばりけの弱いマグマ', 'どちらも同じ'],
+      answer: 'a',
+      explanation: 'ねばりけが強いと、火山ガスがぬけにくく、たまったガスで爆発的に噴火しやすくなります。火山の形との関係を、このステージで学ぼう。',
+      hint: 'ガスがぬけにくいのはどちらかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'volcano-mp1-p1', concept: 'vo-magma',
+        prompt: '火山の主な 3 つの形です。爆発的な激しい噴火を起こしやすいのはどれ？ ア〜ウから選ぼう。',
+        figure: MP_SHAPES_Q,
+        answer: 'r1',
+        explanation: 'ドーム状の火山（ア）は、ねばりけの強いマグマでできていて、火山ガスがぬけにくいので爆発的な噴火を起こしやすいです。',
+        hint: 'ねばりけが強いマグマは、流れずにもり上がるよ。',
+      }),
+      fill({
+        id: 'volcano-mp1-t1', concept: 'vo-magma', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '噴火で火山からふき出されたものをまとめて[b1]という。火山灰にふくまれる、結晶になった粒を[b2]という。',
+        blanks: [
+          word('b1', ['火山噴出物', '火成岩', '堆積岩'], '火山噴出物'),
+          word('b2', ['鉱物', '化石', '石基'], '鉱物'),
+        ],
+        explanation: '溶岩・火山弾・火山灰・火山ガスなどをまとめて**火山噴出物**といいます。火山灰の中の結晶の粒は**鉱物**です。',
+        hint: '火山から「噴出」した「物」だよ。',
+      }),
+      fill({
+        id: 'volcano-mp1-p2', concept: 'vo-magma',
+        prompt: '火山噴出物です。空らんに入る言葉を選ぼう。',
+        text: 'マグマが地表に流れ出したものを[b1]、ふき飛ばされたマグマが空中で冷えて固まった大きなかたまりを[b2]、直径 2 mm 以下の細かい粒を[b3]という。',
+        blanks: [
+          word('b1', ['溶岩', '火山弾', '火山灰'], '溶岩'),
+          word('b2', ['溶岩', '火山弾', '火山灰'], '火山弾'),
+          word('b3', ['溶岩', '火山弾', '火山灰'], '火山灰'),
+        ],
+        explanation: '流れ出したマグマ（とそれが固まったもの）が溶岩、空中で固まったかたまりが火山弾、細かい粒が火山灰です。',
+        hint: '流れる・かたまり・細かい粒、の順だよ。',
+      }),
+      choice({
+        id: 'volcano-mp1-p3', concept: 'vo-magma',
+        prompt: '火山ガスの主な成分はどれ？',
+        options: ['水蒸気', '酸素', 'ちっ素'],
+        answer: 'a',
+        explanation: '火山ガスの主な成分は水蒸気で、ほかに二酸化炭素や硫化水素などがふくまれます。',
+        hint: 'マグマにとけこんでいた水が気体になったものだよ。',
+      }),
+      choice({
+        id: 'volcano-mp1-p4', concept: 'vo-magma',
+        prompt: '火山の形が、ドーム状・円すいの形・傾斜がゆるやかな形と変わるのは、何のちがいによる？',
+        options: ['マグマのねばりけ', '火山の高さ', '噴火した季節'],
+        answer: 'a',
+        explanation: 'ねばりけが強いマグマはもり上がってドーム状に、弱いマグマはうすく広がって傾斜がゆるやかな形になります。',
+        hint: 'マグマが流れやすいかどうかだよ。',
+      }),
+      fill({
+        id: 'volcano-mp1-p5', concept: 'vo-magma',
+        prompt: '火山の例です。空らんに入る形を選ぼう。',
+        text: '富士山は[b1]、伊豆大島は[b2]、雲仙普賢岳は[b3]の火山である。',
+        blanks: [
+          word('b1', ['円すいの形', '傾斜がゆるやかな形', 'ドーム状'], '円すいの形'),
+          word('b2', ['円すいの形', '傾斜がゆるやかな形', 'ドーム状'], '傾斜がゆるやかな形'),
+          word('b3', ['円すいの形', '傾斜がゆるやかな形', 'ドーム状'], 'ドーム状'),
+        ],
+        explanation: '富士山は円すいの形、伊豆大島は傾斜がゆるやかな形、雲仙普賢岳はドーム状の火山の例です。',
+        hint: '雲仙普賢岳は溶岩ドームができたことで知られているよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'volcano-mp1-r1', concept: 'vo-magma',
+        prompt: '火山の主な 3 つの形です。ふき出した溶岩の色が、いちばん黒っぽいのはどれ？ ア〜ウから選ぼう。',
+        figure: MP_SHAPES_Q,
+        answer: 'r3',
+        explanation: '傾斜がゆるやかな形の火山（ウ）は、ねばりけの弱いマグマでできていて、溶岩は黒っぽい色をしています。',
+        hint: 'ねばりけが弱いマグマは黒っぽいよ。',
+      }),
+      choice({
+        id: 'volcano-mp1-r2', concept: 'vo-mineral',
+        prompt: '火山灰（赤土）をわんがけするときの洗い方として正しいのはどれ？',
+        options: ['少量の水を入れ、指の腹でやさしく押すように洗う', 'たっぷりの水を入れ、粒をつぶすように強くこする', '水を入れずに、指でこすりつぶす'],
+        answer: 'a',
+        explanation: '水は少なめにして、指の腹でやさしく押し洗いします。強くつぶすと鉱物の粒がこわれてしまいます。にごった水を捨てて、これをくり返します。',
+        hint: '鉱物の粒をこわさないように洗うよ。',
+      }),
+      choice({
+        id: 'volcano-mp1-r3', concept: 'vo-mineral',
+        prompt: '赤土をわんがけしているとき、捨てるにごった水は何色？',
+        options: ['茶色（赤茶色）', '青色', '無色透明'],
+        answer: 'a',
+        explanation: '赤土にふくまれる細かい粘土などの粒で、水は茶色ににごります。にごらなくなるまでくり返します。',
+        hint: '赤土の色を思い出そう。',
+      }),
+      choice({
+        id: 'volcano-mp1-r4', concept: 'vo-mineral',
+        prompt: 'わんがけをくり返すと、最後にはどんな粒が残る？',
+        options: ['白っぽい粒と黒っぽい粒（鉱物）', '茶色の細かい泥だけ', '何も残らない'],
+        answer: 'a',
+        explanation: '細かい泥は水といっしょに流れ、鉱物の粒が残ります。白っぽい（無色）の粒と、黒っぽい粒が見られます。',
+        hint: '火山灰には結晶の粒がふくまれていたね。',
+      }),
+      fill({
+        id: 'volcano-mp1-r5', concept: 'vo-mineral',
+        prompt: '双眼実体顕微鏡で見た鉱物の特徴です。空らんに入る鉱物を選ぼう。',
+        text: '無色や白色で、不規則に割れるのは[b1]。白色やうす桃色で、柱の形をしているのは[b2]。黒色で、うすくはがれるのは[b3]。',
+        blanks: [
+          word('b1', ['石英', '長石', '黒雲母'], '石英'),
+          word('b2', ['石英', '長石', '黒雲母'], '長石'),
+          word('b3', ['石英', '長石', '黒雲母'], '黒雲母'),
+        ],
+        explanation: '石英は無色〜白色で不規則に割れ、長石は白色〜うす桃色の柱状、黒雲母は黒色で板のようにうすくはがれます。',
+        hint: '「雲母」はうすくはがれる鉱物だよ。',
+      }),
+      fill({
+        id: 'volcano-mp1-r6', concept: 'vo-mineral',
+        prompt: '双眼実体顕微鏡で見た鉱物の特徴です。空らんに入る鉱物を選ぼう。',
+        text: '黒色で、磁石につくのは[b1]。黄緑色で、丸みのある粒は[b2]。暗い緑色〜黒色で、細長い柱の形は[b3]、短い柱の形は[b4]。',
+        blanks: [
+          word('b1', ['磁鉄鉱', 'カンラン石', '角閃石', '輝石'], '磁鉄鉱'),
+          word('b2', ['磁鉄鉱', 'カンラン石', '角閃石', '輝石'], 'カンラン石'),
+          word('b3', ['磁鉄鉱', 'カンラン石', '角閃石', '輝石'], '角閃石'),
+          word('b4', ['磁鉄鉱', 'カンラン石', '角閃石', '輝石'], '輝石'),
+        ],
+        explanation: '磁鉄鉱は黒色で磁石につき、カンラン石は黄緑色の丸みのある粒です。角閃石は細長い柱状、輝石は短い柱状です。',
+        hint: '「磁」は磁石の磁だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ volcano-mp2: プリント 2（火山岩と深成岩、6 つの火成岩） ----
+  const voMp2 = {
+    id: 'volcano-mp2', areaId: 'volcano-miniprint', title: 'プリント 2: 火山岩と深成岩', minutes: 5, concepts: ['vo-igneous'],
+    lessons: [
+      {
+        id: 'volcano-mp2-c1',
+        text: 'マグマが冷えて固まった岩石を**火成岩**といいます。地表付近で急に冷えたものが**火山岩**で**斑状組織**、地下深くでゆっくり冷えたものが**深成岩**で**等粒状組織**です。',
+        figure: scene(porphyryItems(30, 50).concat(granularItems(180, 50), [
+          { type: 'text', x: 85, y: 32, text: '火山岩', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 235, y: 32, text: '深成岩', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 85, y: 186, text: '斑状組織', size: 13, anchor: 'middle' },
+          { type: 'text', x: 235, y: 186, text: '等粒状組織', size: 13, anchor: 'middle' },
+          { type: 'text', x: 85, y: 210, text: '急に冷えた', size: 12, anchor: 'middle' },
+          { type: 'text', x: 235, y: 210, text: 'ゆっくり冷えた', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'volcano-mp2-c2',
+        text: '火山岩には流紋岩・安山岩・玄武岩、深成岩には花こう岩・閃緑岩・はんれい岩があります。白っぽいのは流紋岩と花こう岩、黒っぽいのは玄武岩とはんれい岩です。',
+        figure: scene([
+          { type: 'text', x: 16, y: 80, text: '火山岩', size: 13, bold: true },
+          { type: 'text', x: 16, y: 140, text: '深成岩', size: 13, bold: true },
+          ...[['流紋岩', '花こう岩', '#EEEAE0'], ['安山岩', '閃緑岩', '#A8A39A'], ['玄武岩', 'はんれい岩', '#4A4540']].flatMap(([a, b, f], i) => [
+            { type: 'rect', x: 80 + 76 * i, y: 56, width: 70, height: 36, fill: f },
+            { type: 'rect', x: 80 + 76 * i, y: 116, width: 70, height: 36, fill: f },
+            { type: 'text', x: 115 + 76 * i, y: 110, text: a, size: 12, anchor: 'middle' },
+            { type: 'text', x: 115 + 76 * i, y: 170, text: b, size: 12, anchor: 'middle' },
+          ]),
+          { type: 'text', x: 115, y: 210, text: '白っぽい', size: 13, anchor: 'middle' },
+          { type: 'text', x: 267, y: 210, text: '黒っぽい', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-mp2-w1', concept: 'vo-igneous',
+      prompt: '予想しよう。マグマが地下深くでゆっくり冷えると、できる鉱物の粒の大きさはどうなると思う？',
+      options: ['大きな粒がそろう', '細かい粒ばかりになる', '粒ができない'],
+      answer: 'a',
+      explanation: 'ゆっくり冷えると、鉱物の結晶が大きく育ちます。冷え方とつくりの関係を、このステージで学ぼう。',
+      hint: '結晶が育つ時間があるかどうかを考えよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'volcano-mp2-p1', concept: 'vo-igneous',
+        prompt: '2 種類の火成岩のつくりです。火山岩のつくりはどちら？ ア・イから選ぼう。',
+        figure: MP_TEXTURE_Q,
+        answer: 'r1',
+        explanation: '火山岩は、細かい粒の中に大きな鉱物が散らばった斑状組織です（ア）。イのように同じくらいの大きさの鉱物が組み合わさった等粒状組織は深成岩です。',
+        hint: '大きな粒と細かい粒がまじっているのはどちらかな。',
+      }),
+      fill({
+        id: 'volcano-mp2-t1', concept: 'vo-igneous', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '火山岩の、細かい粒の中に大きな鉱物が散らばったつくりを[b1]、深成岩の、大きな鉱物がすき間なく組み合わさったつくりを[b2]という。',
+        blanks: [
+          word('b1', ['斑状組織', '等粒状組織'], '斑状組織'),
+          word('b2', ['斑状組織', '等粒状組織'], '等粒状組織'),
+        ],
+        explanation: '火山岩は**斑状組織**、深成岩は**等粒状組織**です。',
+        hint: '「等粒」は同じくらいの粒という意味だよ。',
+      }),
+      figureChoice({
+        id: 'volcano-mp2-p2', concept: 'vo-igneous',
+        prompt: '斑状組織のつくりです。大きな鉱物の部分「斑晶」はどれ？ ア・イから選ぼう。',
+        figure: MP_PORPHYRY_Q,
+        answer: 'r1',
+        explanation: '斑状組織で、大きく目立つ鉱物を斑晶（ア）、そのまわりの細かい粒やガラスの部分を石基（イ）といいます。',
+        hint: '大きく目立つ粒だよ。',
+      }),
+      choice({
+        id: 'volcano-mp2-p3', concept: 'vo-igneous',
+        prompt: '花こう岩のつくりはどれ？',
+        options: ['等粒状組織', '斑状組織', '粒がまったくない'],
+        answer: 'a',
+        explanation: '花こう岩は深成岩なので、大きな鉱物がすき間なく組み合わさった等粒状組織です。',
+        hint: '花こう岩は地下深くでできた岩石だよ。',
+      }),
+      choice({
+        id: 'volcano-mp2-p4', concept: 'vo-igneous',
+        prompt: '安山岩・花こう岩・流紋岩・玄武岩・閃緑岩・はんれい岩 のうち、火山岩を 3 つ選んだものはどれ？',
+        options: ['安山岩・流紋岩・玄武岩', '花こう岩・閃緑岩・はんれい岩', '安山岩・花こう岩・玄武岩'],
+        answer: 'a',
+        explanation: '火山岩は流紋岩・安山岩・玄武岩、深成岩は花こう岩・閃緑岩・はんれい岩です。',
+        hint: '名前が「〜岩（がん）」で、花こう岩・閃緑岩・はんれい岩以外だよ。',
+      }),
+      fill({
+        id: 'volcano-mp2-p5', concept: 'vo-igneous',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'マグマが冷えて固まってできた岩石を[b1]という。地下深くで冷えて固まったものを[b2]、地表や地表付近で冷えて固まったものを[b3]という。',
+        blanks: [
+          word('b1', ['火成岩', '堆積岩', '深成岩'], '火成岩'),
+          word('b2', ['火山岩', '深成岩'], '深成岩'),
+          word('b3', ['火山岩', '深成岩'], '火山岩'),
+        ],
+        explanation: 'マグマが冷えて固まった岩石を火成岩といいます。地下深くでできたものが深成岩、地表付近でできたものが火山岩です。',
+        hint: '「深」い所で「成」った岩だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'volcano-mp2-r1', concept: 'vo-igneous',
+        prompt: '安山岩・花こう岩・流紋岩・玄武岩・閃緑岩・はんれい岩 のうち、深成岩を 3 つ選んだものはどれ？',
+        options: ['花こう岩・閃緑岩・はんれい岩', '安山岩・流紋岩・玄武岩', '流紋岩・花こう岩・玄武岩'],
+        answer: 'a',
+        explanation: '深成岩は花こう岩・閃緑岩・はんれい岩です。',
+        hint: '等粒状組織の岩石だよ。',
+      }),
+      choice({
+        id: 'volcano-mp2-r2', concept: 'vo-igneous',
+        prompt: '6 つの火成岩のうち、色が白っぽい岩石を 2 つ選んだものはどれ？',
+        options: ['流紋岩・花こう岩', '玄武岩・はんれい岩', '安山岩・閃緑岩'],
+        answer: 'a',
+        explanation: '白っぽい鉱物（石英・長石）を多くふくむ流紋岩と花こう岩が白っぽい岩石です。',
+        hint: 'ねばりけの強いマグマからできた岩石だよ。',
+      }),
+      choice({
+        id: 'volcano-mp2-r3', concept: 'vo-igneous',
+        prompt: '6 つの火成岩のうち、色が黒っぽい岩石を 2 つ選んだものはどれ？',
+        options: ['玄武岩・はんれい岩', '流紋岩・花こう岩', '安山岩・閃緑岩'],
+        answer: 'a',
+        explanation: '黒っぽい鉱物（輝石・カンラン石など）を多くふくむ玄武岩とはんれい岩が黒っぽい岩石です。',
+        hint: 'ねばりけの弱いマグマからできた岩石だよ。',
+      }),
+      choice({
+        id: 'volcano-mp2-r4', concept: 'vo-igneous',
+        prompt: '火山岩と深成岩でつくりがちがうのはなぜ？',
+        options: ['火山岩は急に冷えて固まり、深成岩はゆっくり冷えて固まったから', '火山岩のほうが古い時代にできたから', '深成岩は水の中で固まったから'],
+        answer: 'a',
+        explanation: '地表付近で急に冷えた火山岩は、結晶が育つ前に固まった石基がある斑状組織になります。地下深くでゆっくり冷えた深成岩は、結晶が大きく育った等粒状組織になります。',
+        hint: '冷える速さのちがいだよ。',
+      }),
+      figureChoice({
+        id: 'volcano-mp2-r5', concept: 'vo-igneous',
+        prompt: '斑状組織のつくりです。細かい粒やガラスでできた部分「石基」はどれ？ ア・イから選ぼう。',
+        figure: MP_PORPHYRY_Q,
+        answer: 'r2',
+        explanation: '石基（イ）は、大きな斑晶のまわりにある細かい粒やガラスの部分です。マグマが急に冷えたために、結晶が大きく育たなかった部分です。',
+        hint: '大きな粒のまわりの部分だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ volcano-mp3: プリント 3（震源と震央、地震計の記録、P 波と S 波） ----
+  const voMp3 = {
+    id: 'volcano-mp3', areaId: 'volcano-miniprint', title: 'プリント 3: 地震のゆれと伝わり方', minutes: 5, concepts: ['vo-wave'],
+    lessons: [
+      {
+        id: 'volcano-mp3-c1',
+        text: '地震が発生した地下の場所を**震源**、その真上の地表の地点を**震央**といいます。ゆれは震源から四方八方へ、ほぼ同じ速さで伝わります。震源から震央までの距離を震源の深さといいます。',
+        figure: scene([
+          { type: 'rect', x: 0, y: 70, width: 320, height: 170, fill: 'sand', stroke: 'none' },
+          { type: 'line', points: [[0, 70], [320, 70]], color: 'line', width: 2 },
+          { type: 'circle', x: 160, y: 170, r: 40, fill: 'none' },
+          { type: 'circle', x: 160, y: 170, r: 70, fill: 'none' },
+          { type: 'circle', x: 160, y: 170, r: 6, fill: 'red' },
+          { type: 'circle', x: 160, y: 70, r: 6, fill: 'orange' },
+          { type: 'line', points: [[160, 76], [160, 164]], color: 'gray', width: 2, dashed: true },
+          { type: 'text', x: 172, y: 190, text: '震源', size: 13 },
+          { type: 'text', x: 160, y: 56, text: '震央', size: 13, anchor: 'middle' },
+          { type: 'text', x: 168, y: 124, text: '震源の深さ', size: 12 },
+          { type: 'circle', x: 270, y: 70, r: 5, fill: 'blue' },
+          { type: 'text', x: 270, y: 56, text: '観測地点', size: 12, anchor: 'middle' },
+          { type: 'line', points: [[166, 66], [264, 66]], color: 'blue', width: 1, dashed: true },
+          { type: 'text', x: 216, y: 34, text: '震央距離', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'volcano-mp3-c2',
+        text: '地震計の記録では、はじめの小さなゆれを**初期微動**、あとからくる大きなゆれを**主要動**といいます。初期微動は速い P 波、主要動はおそい S 波で起こります。2 つの波が着くまでの時間の差が**初期微動継続時間**です。',
+        figure: scene([
+          seismoLine(),
+          { type: 'line', points: [[70, 170], [150, 170]], color: 'blue', width: 2, arrow: true },
+          { type: 'line', points: [[150, 170], [70, 170]], color: 'blue', width: 2, arrow: true },
+          { type: 'text', x: 110, y: 192, text: '初期微動継続時間', size: 12, anchor: 'middle' },
+          { type: 'text', x: 110, y: 96, text: '初期微動', size: 13, anchor: 'middle' },
+          { type: 'text', x: 220, y: 66, text: '主要動', size: 13, anchor: 'middle' },
+          { type: 'text', x: 70, y: 220, text: 'P 波が着く', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 220, text: 'S 波が着く', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'volcano-mp3-c3',
+        text: 'グラフは、P 波（秒速 8 km）と S 波（秒速 4 km）の伝わり方です。震源から 80 km の地点では、P 波が 10 秒後、S 波が 20 秒後に着くので、初期微動継続時間は 10 秒です。震源から遠いほど長くなります。',
+        figure: scene(mpWaveItems()),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-mp3-w1', concept: 'vo-wave',
+      prompt: '予想しよう。地震のとき、はじめにカタカタと小さくゆれ、あとからグラグラと大きくゆれることがあります。なぜだと思う？',
+      options: ['速さのちがう 2 つの波が伝わってくるから', '2 回地震が起こったから', '建物がゆれをためるから'],
+      answer: 'a',
+      explanation: '地震では、速い P 波とおそい S 波が同時に発生します。速い P 波が先に着いて小さくゆらし、あとから S 波が着いて大きくゆらします。',
+      hint: '伝わる速さのちがう波があるよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'volcano-mp3-p1', concept: 'vo-wave',
+        prompt: '図は地震計の記録です。あとからくる大きなゆれ「主要動」はどちら？ ア・イから選ぼう。',
+        figure: MP_SEISMO_Q,
+        answer: 'r2',
+        explanation: 'はじめの小さなゆれ（ア）が初期微動、あとからくる大きなゆれ（イ）が主要動です。',
+        hint: 'ゆれのはばが大きいほうだよ。',
+      }),
+      fill({
+        id: 'volcano-mp3-t1', concept: 'vo-wave', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地震のゆれのうち、はじめの小さなゆれを[b1]、あとからくる大きなゆれを[b2]という。',
+        blanks: [
+          word('b1', ['初期微動', '主要動', '余震'], '初期微動'),
+          word('b2', ['初期微動', '主要動', '余震'], '主要動'),
+        ],
+        explanation: 'はじめの小さなゆれが**初期微動**（P 波による）、あとの大きなゆれが**主要動**（S 波による）です。',
+        hint: '「微動」は小さなゆれのことだよ。',
+      }),
+      fill({
+        id: 'volcano-mp3-p2', concept: 'vo-wave',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '地震が発生した地下の場所を[b1]、その真上にある地表の地点を[b2]という。',
+        blanks: [
+          word('b1', ['震源', '震央', '震度'], '震源'),
+          word('b2', ['震源', '震央', '震度'], '震央'),
+        ],
+        explanation: '地震が起こった地下の場所が震源、その真上の地表の地点が震央です。',
+        hint: '「央」は真ん中、地表で見た中心だよ。',
+      }),
+      fill({
+        id: 'volcano-mp3-p3', concept: 'vo-wave',
+        prompt: 'グラフを読んで、空らんに入る数を入れよう。',
+        figure: scene(mpWaveItems()),
+        text: 'P 波は 25 秒で 200 km 伝わるので、速さは秒速[b1]。S 波は 50 秒で 200 km 伝わるので、速さは秒速[b2]である。',
+        blanks: [number('b1', 8, 0, 'km'), number('b2', 4, 0, 'km')],
+        explanation: '速さ ＝ 距離 ÷ 時間 なので、P 波は 200 ÷ 25 ＝ 8 km/秒、S 波は 200 ÷ 50 ＝ 4 km/秒です。',
+        hint: '距離 ÷ 時間 で求めよう。',
+      }),
+      fill({
+        id: 'volcano-mp3-p4', concept: 'vo-wave',
+        prompt: 'P 波の速さを秒速 8 km、S 波の速さを秒速 4 km とします。空らんに入る数を入れよう。',
+        figure: scene(mpWaveItems()),
+        text: '震源から 80 km の地点の初期微動継続時間は[b1]、160 km の地点では[b2]である。',
+        blanks: [number('b1', 10, 0, '秒'), number('b2', 20, 0, '秒')],
+        explanation: '80 km の地点では、P 波が 80 ÷ 8 ＝ 10 秒後、S 波が 80 ÷ 4 ＝ 20 秒後に着くので、差は 10 秒です。160 km では 20 秒後と 40 秒後なので、20 秒です。',
+        hint: 'S 波が着く時間 − P 波が着く時間 だよ。',
+      }),
+      choice({
+        id: 'volcano-mp3-p5', concept: 'vo-wave',
+        prompt: '初期微動継続時間と、震源からの距離には、どんな関係がある？',
+        options: ['震源からの距離に比例して長くなる', '震源からの距離に関係なく同じ', '震源から遠いほど短くなる'],
+        answer: 'a',
+        explanation: '距離が 2 倍になると、初期微動継続時間も 2 倍になります。初期微動継続時間は、震源からの距離に比例します。',
+        hint: '80 km で 10 秒、160 km で 20 秒だったね。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'volcano-mp3-r1', concept: 'vo-wave',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '初期微動を起こす波を[b1]、主要動を起こす波を[b2]という。',
+        blanks: [
+          word('b1', ['P 波', 'S 波'], 'P 波'),
+          word('b2', ['P 波', 'S 波'], 'S 波'),
+        ],
+        explanation: '速く伝わる P 波が初期微動を、おそく伝わる S 波が主要動を起こします。',
+        hint: '先に着くのは速い波だよ。',
+      }),
+      choice({
+        id: 'volcano-mp3-t2', concept: 'vo-wave', term: true,
+        prompt: '次の説明に合う言葉はどれ？「P 波が着いてから S 波が着くまでの時間（初期微動が続く時間）」',
+        options: ['初期微動継続時間', '主要動', '震源の深さ'],
+        answer: 'a',
+        explanation: '初期微動が続く時間を**初期微動継続時間**といいます。震源から遠いほど長くなります。',
+        hint: '初期微動が「継続」する時間だよ。',
+      }),
+      fill({
+        id: 'volcano-mp3-r2', concept: 'vo-wave',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '震源から震央までの距離を[b1]、観測地点から震央までの距離を[b2]という。',
+        blanks: [
+          word('b1', ['震源の深さ', '震央距離', '震源距離'], '震源の深さ'),
+          word('b2', ['震源の深さ', '震央距離', '震源距離'], '震央距離'),
+        ],
+        explanation: '震源から真上の震央までが震源の深さ、地表の観測地点から震央までが震央距離です。',
+        hint: '震央は地表の点、震源は地下の点だよ。',
+      }),
+      choice({
+        id: 'volcano-mp3-r3', concept: 'vo-wave',
+        prompt: '地震のゆれは、震源からどのように伝わる？',
+        options: ['震源を中心に、四方八方へほぼ同じ速さで広がる', '震央から東の方向へだけ伝わる', '地表だけを伝わる'],
+        answer: 'a',
+        explanation: 'ゆれは震源を中心に、まわりへほぼ同じ速さで広がっていきます。そのため、ゆれが始まった時刻の同じ地点を結ぶと、震央を中心とした円に近い形になります。',
+        hint: '水面に石を落としたときの波を思い出そう。',
+      }),
+      fill({
+        id: 'volcano-mp3-r4', concept: 'vo-wave',
+        prompt: 'P 波を秒速 8 km、S 波を秒速 4 km として、初期微動継続時間の表をつくります。空らんに入る数を入れよう。',
+        text: '震源から 40 km では[b1]、120 km では[b2]、200 km では[b3]である。',
+        blanks: [number('b1', 5, 0, '秒'), number('b2', 15, 0, '秒'), number('b3', 25, 0, '秒')],
+        explanation: '40 km は 10 − 5 ＝ 5 秒、120 km は 30 − 15 ＝ 15 秒、200 km は 50 − 25 ＝ 25 秒です。40 km ごとに 5 秒ずつ長くなり、距離に比例しています。',
+        hint: '80 km で 10 秒だったね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ volcano-mp4: プリント 4（地震の起こるしくみ、地震と災害、マグニチュード） ----
+  const voMp4 = {
+    id: 'volcano-mp4', areaId: 'volcano-miniprint', title: 'プリント 4: 地震のしくみと災害', minutes: 5, concepts: ['vo-plate', 'vo-scale'],
+    lessons: [
+      {
+        id: 'volcano-mp4-c1',
+        text: '地球の表面は、**プレート**という岩盤でおおわれています。日本付近では、海洋プレートが大陸プレートの下に沈みこみ、引きずられた大陸プレートがはね返って大きな地震が起こります。',
+        figure: scene(plateItems({ arrows: true })),
+      },
+      {
+        id: 'volcano-mp4-c2',
+        text: '内陸の地震は、断層がずれて起こります。今後も動く可能性がある断層を**活断層**といいます。地震で大地がもち上がることを**隆起**、沈むことを**沈降**、地面が急にやわらかくなることを**液状化現象**といいます。',
+        figure: scene([
+          { type: 'polygon', points: [[20, 120], [150, 120], [170, 200], [20, 200]], fill: 'sand' },
+          { type: 'polygon', points: [[150, 140], [300, 140], [300, 220], [170, 220]], fill: 'sand' },
+          { type: 'line', points: [[140, 90], [190, 230]], width: 3 },
+          { type: 'arrow', x1: 90, y1: 110, x2: 90, y2: 80, color: 'blue' },
+          { type: 'arrow', x1: 240, y1: 120, x2: 240, y2: 150, color: 'blue' },
+          { type: 'text', x: 90, y: 66, text: '隆起', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 108, text: '沈降', size: 13, anchor: 'middle' },
+          { type: 'text', x: 200, y: 52, text: '断層', size: 13 },
+          { type: 'line', points: [[198, 48], [152, 120]], color: 'line', width: 1 },
+        ]),
+      },
+      {
+        id: 'volcano-mp4-c3',
+        text: '地震の規模（エネルギーの大きさ）は**マグニチュード**で表し、6.8 のように小数でも表します。1 つの地震でマグニチュードは 1 つですが、ゆれの大きさ（震度）は場所によってちがいます。',
+        figure: scene(shindoRow(130).concat([
+          { type: 'text', x: 160, y: 50, text: 'マグニチュード ＝ 地震の規模（1 つ）', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 110, text: '震度 ＝ 場所ごとのゆれ（10 段階）', size: 14, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-mp4-w1', concept: 'vo-plate',
+      prompt: '予想しよう。日本で地震が多いのはなぜだと思う？',
+      options: ['いくつかのプレートの境目にあるから', '火山が少ないから', '雨が多いから'],
+      answer: 'a',
+      explanation: '日本付近では 4 つのプレートが接していて、プレートの動きによって地震が多く起こります。そのしくみを、このステージで学ぼう。',
+      hint: '地球の表面をおおう岩盤のことを考えよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'volcano-mp4-p1', concept: 'vo-plate',
+        prompt: '図は日本付近の地下の断面です。海洋プレートが動く向きを表す矢印はどちら？ ア・イから選ぼう。',
+        figure: MP_PLATE_Q,
+        answer: 'r1',
+        explanation: '海洋プレートは太平洋の側から日本列島の側へ動き、海溝で大陸プレートの下に沈みこみます（ア）。イは沈みこむ向きと反対です。',
+        hint: '海洋プレートは大陸プレートの下にもぐりこんでいくね。',
+      }),
+      fill({
+        id: 'volcano-mp4-t1', concept: 'vo-plate', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '過去にくり返し動いた断層のうち、これからも動いて地震を起こす可能性がある断層を[b1]という。',
+        blanks: [word('b1', ['活断層', 'しゅう曲', '海溝'], '活断層')],
+        explanation: 'これからも活動する可能性がある断層を**活断層**といいます。内陸の地震は、こうした断層がずれて起こります。',
+        hint: '「活」動している断層だよ。',
+      }),
+      choice({
+        id: 'volcano-mp4-p2', concept: 'vo-plate',
+        prompt: '地球の表面をおおっている、厚さ 100 km ほどの岩盤を何という？',
+        options: ['プレート', 'マグマ', '地層'],
+        answer: 'a',
+        explanation: '地球の表面は、十数枚のプレートという岩盤でおおわれています。プレートは少しずつ動いています。',
+        hint: '板のような岩盤だよ。',
+      }),
+      choice({
+        id: 'volcano-mp4-p3', concept: 'vo-plate',
+        prompt: '海溝の近く（プレートの境目）で大きな地震が起こるしくみとして正しいのはどれ？',
+        options: ['沈みこむ海洋プレートに引きずられた大陸プレートが、ひずみにたえきれずにはね返る', '大陸プレートが海洋プレートの下に沈みこむ', 'プレートの動きが止まったときに起こる'],
+        answer: 'a',
+        explanation: '海洋プレートが沈みこむとき、大陸プレートの先が引きずりこまれてひずみがたまります。ひずみが限界になると大陸プレートがはね返り、大きな地震が起こります。',
+        hint: 'ばねを押し下げて、はなしたときを想像しよう。',
+      }),
+      choice({
+        id: 'volcano-mp4-p4', concept: 'vo-scale',
+        prompt: '震源が海底にある大きな地震で、海水が持ち上げられて起こる巨大な波を何という？',
+        options: ['津波', '高潮', '液状化現象'],
+        answer: 'a',
+        explanation: '海底で大地が急に動くと、海水が持ち上げられて津波が起こります。海岸に押し寄せて大きな被害をもたらします。',
+        hint: '地震のあと、海岸からはなれて高い所へにげるのはなぜかな。',
+      }),
+      fill({
+        id: 'volcano-mp4-p5', concept: 'vo-plate',
+        prompt: '地震で起こる大地の変化です。空らんに入る言葉を選ぼう。',
+        text: '大地がもち上がることを[b1]、沈みこむことを[b2]、地面が急にやわらかくなって泥水がふき出すことを[b3]という。',
+        blanks: [
+          word('b1', ['隆起', '沈降', '液状化現象'], '隆起'),
+          word('b2', ['隆起', '沈降', '液状化現象'], '沈降'),
+          word('b3', ['隆起', '沈降', '液状化現象'], '液状化現象'),
+        ],
+        explanation: 'もち上がるのが隆起、沈むのが沈降です。うめ立て地などでは、ゆれで地面が液体のようになる液状化現象が起こります。',
+        hint: '「隆」は高くなる、「沈」はしずむという意味だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'volcano-mp4-r1', concept: 'vo-scale',
+        prompt: '地震のゆれによる直接の被害の例として正しいのはどれ？',
+        options: ['建物がこわれたり、がけがくずれたりする', '雨がふらなくなる', '気温が急に上がる'],
+        answer: 'a',
+        explanation: 'ゆれによって、建物や道路がこわれたり、がけくずれが起こったりします。火災や津波、液状化現象などの被害も起こります。',
+        hint: 'ゆれで直接こわれるものを考えよう。',
+      }),
+      choice({
+        id: 'volcano-mp4-r2', concept: 'vo-scale',
+        prompt: '2011 年の東日本大震災では、高い所で約何 m の津波が押し寄せた？',
+        options: ['約 20 m', '約 20 cm', '約 200 m'],
+        answer: 'a',
+        explanation: '東日本大震災では、各地で 10 m をこえ、場所によっては 20 m 以上の高さまで津波がかけ上がりました。',
+        hint: '建物の何階分にもなる高さだったよ。',
+      }),
+      choice({
+        id: 'volcano-mp4-r3', concept: 'vo-scale',
+        prompt: '地震の規模（エネルギーの大きさ）を表すものはどれ？',
+        options: ['マグニチュード', '震度', '初期微動継続時間'],
+        answer: 'a',
+        explanation: '地震の規模はマグニチュード（M）で表します。震度は、それぞれの場所でのゆれの大きさです。',
+        hint: '1 つの地震に 1 つだけ決まる値だよ。',
+      }),
+      fill({
+        id: 'volcano-mp4-r4', concept: 'vo-scale',
+        prompt: 'マグニチュードについての文です。正しいかまちがいかを選ぼう。',
+        text: '① 値は 5.8 や 6.2 のように小数で表すことがある … [b1]　② 値が 2 倍になると、地震のエネルギーも 2 倍になる … [b2]　③ 値が 7.9 なら、どの町でも震度は 5 以上になる … [b3]　④ 1 つの地震でも震度は場所によってちがうが、マグニチュードは 1 つだけである … [b4]',
+        blanks: [
+          word('b1', ['正しい', 'まちがい'], '正しい'),
+          word('b2', ['正しい', 'まちがい'], 'まちがい'),
+          word('b3', ['正しい', 'まちがい'], 'まちがい'),
+          word('b4', ['正しい', 'まちがい'], '正しい'),
+        ],
+        explanation: '② マグニチュードが 1 大きいとエネルギーは約 32 倍、2 大きいと約 1000 倍になります。③ 震度は震源からの距離や土地のようすで変わるので、マグニチュードだけでは決まりません。',
+        hint: 'マグニチュードは規模、震度は場所ごとのゆれだよ。',
+      }),
+      choice({
+        id: 'volcano-mp4-r5', concept: 'vo-plate',
+        prompt: '海溝付近の地震と内陸の地震。断層がずれて起こるのは、おもにどちら？',
+        options: ['内陸の地震', '海溝付近の地震', 'どちらでもない'],
+        answer: 'a',
+        explanation: '内陸の地震は、プレートの動きで大地にたまったひずみによって、断層（活断層）がずれて起こります。海溝付近の地震は、プレートの境目で起こります。',
+        hint: '活断層は陸の上にあるよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1066,6 +1752,7 @@
     areas: [
       { id: 'volcano', title: '火山', order: 1, stages: [volcano1, volcano2] },
       { id: 'quake', title: '地震', order: 2, stages: [volcano3, volcano4] },
+      { id: 'volcano-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [voMp1, voMp2, voMp3, voMp4] },
     ],
   };
 

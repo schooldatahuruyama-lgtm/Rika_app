@@ -33,8 +33,8 @@
     { id: 'first-clear', title: 'はじめの一歩', glyph: '1', color: 'blue', description: '最初のステージをクリアしよう。', test: (s) => s.clearedStages >= 1 },
     { id: 'clear-5', title: 'ステージ 5', glyph: '5', color: 'blue', description: 'ステージを 5 つクリアしよう。', test: (s) => s.clearedStages >= 5 },
     { id: 'clear-20', title: 'ステージ 20', glyph: '20', color: 'blue', description: 'ステージを 20 クリアしよう。', test: (s) => s.clearedStages >= 20 },
-    { id: 'unit-master', title: '単元マスター', glyph: '単', color: 'purple', description: '1 つの単元のステージを全部クリアしよう。', test: (s) => s.clearedUnits >= 1 },
-    { id: 'unit-master-3', title: '3 単元マスター', glyph: '3単', color: 'purple', description: '3 つの単元のステージを全部クリアしよう。', test: (s) => s.clearedUnits >= 3 },
+    { id: 'unit-master', title: '単元マスター', glyph: '単', color: 'purple', description: '1 つの単元の基本のステージ（ミニプリントをのぞく）を全部クリアしよう。', test: (s) => s.clearedUnits >= 1 },
+    { id: 'unit-master-3', title: '3 単元マスター', glyph: '3単', color: 'purple', description: '3 つの単元の基本のステージ（ミニプリントをのぞく）を全部クリアしよう。', test: (s) => s.clearedUnits >= 3 },
     { id: 'perfect', title: 'パーフェクト', glyph: '★3', color: 'orange', description: '星 3 つでステージをクリアしよう。', test: (s) => s.perfectStages >= 1 },
     { id: 'stars-10', title: '星あつめ', glyph: '★10', color: 'orange', description: '星を合計 10 個あつめよう。', test: (s) => s.totalStars >= 10 },
     { id: 'stars-30', title: '星の達人', glyph: '★30', color: 'orange', description: '星を合計 30 個あつめよう。', test: (s) => s.totalStars >= 30 },
@@ -57,11 +57,17 @@
   }
 
   // 登録済みの単元ごとのステージ（教材の順）。reg が使えなければ空
+  // 各ステージは { id, free }。free は free: true の領域（ミニプリント）のステージなら true
   function unitStages(reg) {
     if (!reg || typeof reg.units !== 'function') return [];
     return arr(reg.units()).filter((u) => isObject(u) && typeof u.id === 'string').map((u) => {
+      const freeIds = new Set();
+      arr(u.areas).forEach((a) => {
+        if (!isObject(a) || a.free !== true) return;
+        arr(a.stages).forEach((s) => { if (isObject(s) && typeof s.id === 'string') freeIds.add(s.id); });
+      });
       const list = typeof reg.stagesInOrder === 'function' ? arr(reg.stagesInOrder(u.id)) : [];
-      return list.filter((s) => isObject(s) && typeof s.id === 'string').map((s) => s.id);
+      return list.filter((s) => isObject(s) && typeof s.id === 'string').map((s) => ({ id: s.id, free: freeIds.has(s.id) }));
     });
   }
 
@@ -104,12 +110,14 @@
     let perfectStages = 0;
     let totalStars = 0;
     let clearedUnits = 0;
-    units.forEach((ids) => {
-      let all = ids.length > 0;
-      ids.forEach((id) => {
+    // clearedStages・totalStars・perfectStages はミニプリント（free の領域）も数える。
+    // clearedUnits（単元マスター）は free の領域を除いた基本のステージが全部クリアなら数える
+    units.forEach((list) => {
+      let all = list.some((x) => !x.free);
+      list.forEach(({ id, free }) => {
         const s = stageOf(id);
         if (s.status === 'cleared') clearedStages += 1;
-        else all = false;
+        else if (!free) all = false;
         if (isFiniteNumber(s.stars)) {
           totalStars += s.stars;
           if (s.stars === 3) perfectStages += 1;

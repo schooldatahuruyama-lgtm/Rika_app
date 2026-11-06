@@ -794,6 +794,911 @@
   };
 
   // ================================================================
+  // 領域 3: ミニプリント（先生のミニプリントの問題を書き直したもの。共通指示 .ai-tasks/20261106-130000_ミニプリント反映_共通.md）
+  // ================================================================
+
+  // 白い粉 3 つの皿（ア 食塩・イ 砂糖・ウ デンプン）。withRegions で選ぶ場所を付ける
+  function powderScene(withRegions) {
+    const items = [{ type: 'text', x: 160, y: 30, text: 'どれも白い粉', size: 14, anchor: 'middle' }];
+    [[60, '食塩'], [160, '砂糖'], [260, 'デンプン']].forEach(([x, name], i) => {
+      items.push({ type: 'ellipse', x, y: 110, rx: 42, ry: 14, fill: 'glass' });
+      items.push({ type: 'ellipse', x, y: 104, rx: 24, ry: 7, fill: 'white' });
+      items.push({ type: 'text', x, y: 150, text: name, size: 14, anchor: 'middle' });
+      if (withRegions) items.push({ type: 'region', id: 'r' + (i + 1), x, y: 200, r: 22, label: 'アイウ'[i] });
+    });
+    return scene(items);
+  }
+
+  // 上皿てんびん（正面から）。調節ねじは うでの両はし。withRegions で ア 皿・イ 針・ウ 調節ねじ を選ぶ場所にする
+  function balanceScene(withRegions) {
+    const items = [
+      { type: 'rect', x: 50, y: 196, width: 220, height: 18, fill: 'gray' },
+      { type: 'rect', x: 150, y: 110, width: 20, height: 86, fill: 'glass' },
+      { type: 'rect', x: 50, y: 100, width: 220, height: 10, fill: 'gray' },
+      { type: 'line', points: [[80, 100], [80, 86]], width: 3 },
+      { type: 'line', points: [[240, 100], [240, 86]], width: 3 },
+      { type: 'ellipse', x: 80, y: 82, rx: 42, ry: 7, fill: 'glass' },
+      { type: 'ellipse', x: 240, y: 82, rx: 42, ry: 7, fill: 'glass' },
+      { type: 'circle', x: 46, y: 105, r: 6, fill: 'ink' },
+      { type: 'circle', x: 274, y: 105, r: 6, fill: 'ink' },
+      { type: 'line', points: [[160, 110], [160, 182]], color: 'red', width: 2 },
+      { type: 'line', points: [[140, 186], [180, 186]], width: 2 },
+    ];
+    if (withRegions) {
+      items.push({ type: 'region', id: 'r1', x: 80, y: 46, r: 22, label: 'ア' });
+      items.push({ type: 'region', id: 'r2', x: 206, y: 160, r: 22, label: 'イ' });
+      items.push({ type: 'region', id: 'r3', x: 290, y: 140, r: 22, label: 'ウ' });
+      items.push({ type: 'line', points: [[184, 160], [164, 160]], color: 'blue', width: 2 });
+      items.push({ type: 'line', points: [[282, 120], [276, 110]], color: 'blue', width: 2 });
+    } else {
+      items.push({ type: 'text', x: 80, y: 60, text: '皿', size: 14, anchor: 'middle' });
+      items.push({ type: 'text', x: 190, y: 166, text: '針', size: 14 });
+      items.push({ type: 'text', x: 296, y: 140, text: '調節ねじ', size: 13, anchor: 'end' });
+    }
+    return scene(items);
+  }
+
+  // メスシリンダーの液面を大きくした図。ふちの高さ y=90、へこんだ所 y=140。withRegions で ア ふち・イ へこんだ所
+  function meniscusScene(withRegions) {
+    const items = [
+      { type: 'polygon', points: [[82, 90], [110, 124], [160, 140], [210, 124], [238, 90], [238, 228], [82, 228]], fill: 'water', stroke: 'none' },
+      { type: 'line', points: [[82, 90], [110, 124], [160, 140], [210, 124], [238, 90]], color: 'blue', width: 2 },
+      { type: 'line', points: [[80, 20], [80, 230]], width: 3 },
+      { type: 'line', points: [[240, 20], [240, 230]], width: 3 },
+      { type: 'line', points: [[240, 90], [268, 90]], color: 'gray', width: 1, dashed: true },
+      { type: 'line', points: [[160, 140], [268, 140]], color: 'gray', width: 1, dashed: true },
+      { type: 'text', x: 92, y: 40, text: '液面を真横から見る', size: 13 },
+    ];
+    if (withRegions) {
+      items.push({ type: 'region', id: 'r1', x: 292, y: 90, r: 22, label: 'ア' });
+      items.push({ type: 'region', id: 'r2', x: 292, y: 140, r: 22, label: 'イ' });
+    } else {
+      items.push({ type: 'text', x: 160, y: 168, text: 'ここを読む', size: 14, anchor: 'middle' });
+    }
+    return scene(items);
+  }
+
+  // メスシリンダーの目盛り（50〜60 mL。1 mL ＝ 16px、目盛りは 1 mL ごと）。へこんだ所が 56 mL
+  const CYLINDER_56 = scene([
+    { type: 'polygon', points: [[122, 98], [135, 103], [150, 104], [165, 103], [178, 98], [178, 228], [122, 228]], fill: 'water', stroke: 'none' },
+    { type: 'line', points: [[122, 98], [135, 103], [150, 104], [165, 103], [178, 98]], color: 'blue', width: 2 },
+    { type: 'rect', x: 120, y: 20, width: 60, height: 210, fill: 'none' },
+    ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => ({ type: 'line', points: [[180, 200 - 16 * i], [i % 5 === 0 ? 200 : 192, 200 - 16 * i]], width: 2 })),
+    { type: 'text', x: 206, y: 46, text: '60', size: 14 },
+    { type: 'text', x: 206, y: 126, text: '55', size: 14 },
+    { type: 'text', x: 206, y: 206, text: '50', size: 14 },
+    { type: 'text', x: 236, y: 26, text: '〔mL〕', size: 12 },
+  ]);
+
+  // 体積 5 cm³ の 3 つの金属（ア 鉄・イ 銅・ウ アルミニウム）。alMass はアルミニウムの質量の文字
+  function metals5(alMass, withRegions) {
+    const items = [{ type: 'text', x: 160, y: 30, text: 'どれも体積 5 cm³', size: 14, anchor: 'middle' }];
+    [[60, 'gray', '鉄', '39.5 g'], [160, 'orange', '銅', '44.8 g'], [260, 'glass', 'アルミニウム', alMass]].forEach(([x, fill, name, mass], i) => {
+      items.push({ type: 'rect', x: x - 30, y: 60, width: 60, height: 60, fill });
+      items.push({ type: 'text', x, y: 144, text: name, size: 14, anchor: 'middle' });
+      items.push({ type: 'text', x, y: 168, text: mass, size: 15, anchor: 'middle', bold: true });
+      if (withRegions) items.push({ type: 'region', id: 'r' + (i + 1), x, y: 210, r: 22, label: 'アイウ'[i] });
+    });
+    return scene(items);
+  }
+
+  // 気体の集め方 3 種（collectScene と同じ絵）の、選ぶ場所の代わりに ア〜ウ の文字を書いた図
+  function collectPlain() {
+    const items = collectScene().items.filter(it => it.type !== 'region');
+    [[55, 'ア'], [160, 'イ'], [265, 'ウ']].forEach(([x, t]) => items.push({ type: 'text', x, y: 222, text: t, size: 16, anchor: 'middle', bold: true }));
+    return scene(items);
+  }
+
+  // ---- ステージ substance-mp1: プリント 1（白い粉・有機物と無機物・金属の性質・プラスチック） ----
+  const substanceMp1 = {
+    id: 'substance-mp1', areaId: 'substance-miniprint', title: 'プリント 1: 白い粉・有機物・金属・プラスチック', minutes: 7, concepts: ['su-organic', 'su-metal'],
+    lessons: [
+      {
+        id: 'substance-mp1-c1',
+        text: '食塩・砂糖・デンプンはどれも白い粉ですが、水にとけるか、熱すると黒くこげるかで見分けられます。熱すると黒くこげる砂糖やデンプンは、**炭素**をふくむ**有機物**です。食塩は**無機物**です。',
+        figure: scene([
+          { type: 'text', x: 90, y: 40, text: '水にとける', size: 13, anchor: 'middle' },
+          { type: 'text', x: 220, y: 40, text: '熱すると', size: 13, anchor: 'middle' },
+          ...[[80, '食塩', 'とける', 'こげない'], [130, '砂糖', 'とける', '黒くこげる'], [180, 'デンプン', 'とけにくい', '黒くこげる']].flatMap(([y, name, w, h]) => [
+            { type: 'text', x: 10, y, text: name, size: 14 },
+            { type: 'text', x: 90, y, text: w, size: 14, anchor: 'middle' },
+            { type: 'text', x: 220, y, text: h, size: 14, anchor: 'middle' },
+          ]),
+          { type: 'line', points: [[10, 52], [310, 52]], color: 'gray', width: 1 },
+          { type: 'text', x: 160, y: 224, text: '黒くこげる → 有機物（炭素をふくむ）', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-mp1-c2',
+        text: '鉄・銅・アルミニウムなどの**金属**は、みがくと光る（**金属光沢**）、電気をよく通す、熱をよく伝える、たたくと広がり引っぱるとのびる、という性質があります。磁石につくのは鉄など一部だけです。',
+        figure: scene([
+          { type: 'rect', x: 30, y: 60, width: 90, height: 60, fill: 'gray' },
+          { type: 'line', points: [[44, 74], [64, 94]], color: 'white', width: 3 },
+          { type: 'line', points: [[58, 70], [84, 96]], color: 'white', width: 3 },
+          { type: 'text', x: 75, y: 146, text: '金属光沢', size: 14, anchor: 'middle' },
+          { type: 'text', x: 150, y: 70, text: '・電気をよく通す', size: 14 },
+          { type: 'text', x: 150, y: 100, text: '・熱をよく伝える', size: 14 },
+          { type: 'text', x: 150, y: 130, text: '・広がる・のびる', size: 14 },
+          { type: 'text', x: 20, y: 206, text: '磁石につくのは鉄など一部だけ', size: 14 },
+        ]),
+      },
+      {
+        id: 'substance-mp1-c3',
+        text: '**プラスチック**は石油を原料につくられる有機物です。軽い、さびない、形をつくりやすい、酸やアルカリに強い、などの性質があり、電気は通しにくいです。燃やすと有毒な気体が出るものもあります。',
+        figure: scene([
+          { type: 'rect', x: 30, y: 60, width: 50, height: 36, fill: 'white', label: 'PVC' },
+          { type: 'rect', x: 120, y: 56, width: 70, height: 44, fill: 'sky', label: 'PS' },
+          { type: 'polygon', points: [[230, 50], [290, 50], [280, 110], [240, 110]], fill: 'lightgreen' },
+          { type: 'text', x: 55, y: 124, text: '消しゴム', size: 13, anchor: 'middle' },
+          { type: 'text', x: 155, y: 124, text: 'CD ケース', size: 13, anchor: 'middle' },
+          { type: 'text', x: 260, y: 130, text: 'バケツ（PE）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 180, text: '原料は石油・軽い・さびない', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 206, text: '電気を通しにくい', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-mp1-w1', concept: 'su-organic',
+      prompt: '予想しよう。食塩・砂糖・デンプンを、それぞれ燃焼さじにのせてガスバーナーで熱すると、黒くこげるのはどれだと思う？',
+      options: ['食塩だけ', '砂糖とデンプン', '3 つすべて'],
+      answer: 'b',
+      explanation: '砂糖とデンプンは黒くこげますが、食塩はこげません。こげるのは炭素をふくむからです。',
+      hint: 'ホットケーキをこがしたときを思い出そう。食塩はどうかな。',
+    }),
+    problems: [
+      fill({
+        id: 'substance-mp1-p1', concept: 'su-organic',
+        prompt: '3 つの白い粉を調べた結果をまとめよう。',
+        text: '食塩は水に[b1]、熱すると[b2]。砂糖は水に[b3]、熱すると[b4]。デンプン（小麦粉）は水に[b5]、熱すると[b6]。',
+        blanks: [
+          word('b1', ['とける', 'とけにくい'], 'とける'),
+          word('b2', ['黒くこげる', 'こげない'], 'こげない'),
+          word('b3', ['とける', 'とけにくい'], 'とける'),
+          word('b4', ['黒くこげる', 'こげない'], '黒くこげる'),
+          word('b5', ['とける', 'とけにくい'], 'とけにくい'),
+          word('b6', ['黒くこげる', 'こげない'], '黒くこげる'),
+        ],
+        explanation: '水にとけるのは食塩と砂糖、とけにくいのはデンプンです。熱すると黒くこげるのは砂糖とデンプンです。2 つの性質を組み合わせると、3 つの白い粉を見分けられます。',
+        hint: '片栗粉（デンプン）を水に入れると、白くにごってしずむね。',
+      }),
+      fill({
+        id: 'substance-mp1-t1', concept: 'su-organic', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '砂糖やデンプンを熱すると黒くこげるのは、[b1]がふくまれているからである。[b1]をふくむ物質を[b2]、それ以外の物質を[b3]という。',
+        blanks: [
+          word('b1', ['炭素', '酸素', '水素'], '炭素'),
+          word('b2', ['有機物', '無機物'], '有機物'),
+          word('b3', ['有機物', '無機物'], '無機物'),
+        ],
+        explanation: '黒くこげたのは**炭素**です。炭素をふくむ物質を**有機物**、それ以外を**無機物**といいます（二酸化炭素などは無機物に分けます）。',
+        hint: '黒くこげたもの（炭）は、何という物質かな。',
+      }),
+      figureChoice({
+        id: 'substance-mp1-p2', concept: 'su-organic',
+        prompt: 'ア〜ウの白い粉のうち、有機物ではないもの（無機物）はどれ？',
+        figure: powderScene(true),
+        answer: 'r1',
+        explanation: '熱しても黒くこげない食塩は無機物です。熱すると黒くこげる砂糖とデンプンは、炭素をふくむ有機物です。',
+        hint: '熱すると黒くこげなかったものはどれかな。',
+      }),
+      choice({
+        id: 'substance-mp1-p3', concept: 'su-metal',
+        prompt: '次のうち、すべての金属に共通する性質ではないものはどれ？',
+        options: ['みがくと光る', '電気をよく通す', '磁石につく', '熱をよく伝える'],
+        answer: 'c',
+        explanation: '電気をよく通すのは、すべての金属に共通する性質です。磁石につくのは鉄などの一部の金属だけで、銅やアルミニウムは磁石につきません。',
+        hint: 'アルミニウムのかんに磁石を近づけると、どうなるかな。',
+      }),
+      fill({
+        id: 'substance-mp1-p4', concept: 'su-metal',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '金属をみがくと出る、金属特有のかがやきを[b1]という。金属はどれも、電気を[b2]。',
+        blanks: [
+          word('b1', ['金属光沢', '炎色', '結晶'], '金属光沢'),
+          word('b2', ['よく通す', 'まったく通さない'], 'よく通す'),
+        ],
+        explanation: 'みがくと出るかがやきを**金属光沢**といいます。電気をよく通すのは、どの金属にも共通する性質です。',
+        hint: '10 円玉をみがくと、ぴかぴかになるね。',
+      }),
+      fill({
+        id: 'substance-mp1-p5', concept: 'su-organic',
+        prompt: 'プラスチックの性質として、あてはまるものと、あてはまらないものを選ぼう。',
+        text: 'ア 軽い → [b1]。イ さびない → [b2]。ウ 電気をよく通す → [b3]。エ 形をつくりやすい（加工しやすい） → [b4]。オ 酸やアルカリに強い → [b5]。',
+        blanks: [
+          word('b1', ['あてはまる', 'あてはまらない'], 'あてはまる'),
+          word('b2', ['あてはまる', 'あてはまらない'], 'あてはまる'),
+          word('b3', ['あてはまる', 'あてはまらない'], 'あてはまらない'),
+          word('b4', ['あてはまる', 'あてはまらない'], 'あてはまる'),
+          word('b5', ['あてはまる', 'あてはまらない'], 'あてはまる'),
+        ],
+        explanation: 'プラスチックは軽く、さびず、加工しやすく、酸やアルカリに強い物質です。電気は通しにくいので、電気のコードを包むのにも使われます。',
+        hint: '電気のコードのまわりは、何でできているかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'substance-mp1-r1', concept: 'su-organic',
+        prompt: '食塩・砂糖・デンプン（小麦粉）を見た目でくらべました。色はどうだった？',
+        options: ['どれも白い', '食塩だけ黒い', '砂糖だけ赤い'],
+        answer: 'a',
+        explanation: '3 つともよく似た白い粉なので、見た目だけでは区別できません。水へのとけ方や、熱したときのようすを調べて見分けます。',
+        hint: 'このプリントの題は「白い粉」だったね。',
+      }),
+      choice({
+        id: 'substance-mp1-r2', concept: 'su-organic',
+        prompt: '熱すると黒くこげたことから、食塩・砂糖・デンプンのうち有機物といえるのはどれ？',
+        options: ['食塩だけ', '砂糖とデンプン', '3 つすべて'],
+        answer: 'b',
+        explanation: '黒くこげた砂糖とデンプンは、炭素をふくむ有機物です。こげなかった食塩は無機物です。',
+        hint: '黒くこげた物質には、何がふくまれていたかな。',
+      }),
+      choice({
+        id: 'substance-mp1-r3', concept: 'su-organic',
+        prompt: '砂糖・デンプンのほかに、有機物の例として正しいものはどれ？',
+        options: ['食塩', '鉄', 'ロウ', 'ガラス'],
+        answer: 'c',
+        explanation: 'ロウは燃えると二酸化炭素ができる有機物です。ほかにエタノール、木、紙、プラスチックも有機物です。食塩・鉄・ガラスは無機物です。',
+        hint: '火をつけると燃えて、炭素をふくむものはどれかな。',
+      }),
+      choice({
+        id: 'substance-mp1-r4', concept: 'su-organic',
+        prompt: 'プラスチックは、主に何を原料にしてつくられている？',
+        options: ['石油', '鉄鉱石', '食塩'],
+        answer: 'a',
+        explanation: 'プラスチックは、石油を精製してとり出した物質を原料にしてつくられます。そのため有機物で、燃やすと二酸化炭素が出ます。',
+        hint: 'ガソリンや灯油と同じ原料だよ。',
+      }),
+      choice({
+        id: 'substance-mp1-r5', concept: 'su-organic',
+        prompt: 'プラスチックのごみを燃やすときに注意が必要なのはなぜ？',
+        options: ['燃やすと有毒な気体が出るものがあるから', '燃やすと金属にかわるから', '燃やすと水だけが出るから'],
+        answer: 'a',
+        explanation: 'ポリ塩化ビニルのように、燃やすと有毒な気体が出るプラスチックがあります。また、燃やすと二酸化炭素も出ます。分別して処理することが大切です。',
+        hint: '種類によっては、燃やしたときに体に悪い気体が出るよ。',
+      }),
+      fill({
+        id: 'substance-mp1-r6', concept: 'su-organic',
+        prompt: '身のまわりの物に、多く使われているプラスチックを選ぼう。',
+        text: '消しゴム → [b1]。CD ケース → [b2]。バケツ → [b3]。',
+        blanks: [
+          word('b1', ['ポリ塩化ビニル', 'ポリスチレン', 'ポリエチレン'], 'ポリ塩化ビニル'),
+          word('b2', ['ポリ塩化ビニル', 'ポリスチレン', 'ポリエチレン'], 'ポリスチレン'),
+          word('b3', ['ポリ塩化ビニル', 'ポリスチレン', 'ポリエチレン'], 'ポリエチレン'),
+        ],
+        explanation: '消しゴムにはポリ塩化ビニル（PVC）、CD ケースには透明でかたいポリスチレン（PS）、バケツにはじょうぶなポリエチレン（PE）がよく使われます。製品によってちがうこともあります。',
+        hint: 'CD ケースは透明でかたい、バケツは少しやわらかくてじょうぶだね。',
+      }),
+      choice({
+        id: 'substance-mp1-r7', concept: 'su-metal',
+        prompt: '次のうち、金属ではないものはどれ？',
+        options: ['鉄', '銅', 'アルミニウム', 'ガラス'],
+        answer: 'd',
+        explanation: '鉄・銅・アルミニウムは金属です。ガラスはみがいても金属光沢がなく、電気を通さないので金属ではありません。',
+        hint: '電気を通すかどうかで考えよう。',
+      }),
+      choice({
+        id: 'substance-mp1-t2', concept: 'su-metal', term: true,
+        prompt: '次の説明に合う言葉はどれ？「みがくと光り、電気をよく通し、熱をよく伝える物質のなかま」',
+        options: ['有機物', '金属', 'プラスチック'],
+        answer: 'b',
+        explanation: 'このような性質をもつ物質を**金属**といいます。鉄・銅・アルミニウムなどがあります。',
+        hint: '10 円玉やなべの材料のなかまだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-mp2: プリント 2（上皿てんびん・メスシリンダー） ----
+  const substanceMp2 = {
+    id: 'substance-mp2', areaId: 'substance-miniprint', title: 'プリント 2: 上皿てんびんとメスシリンダー', minutes: 6, concepts: ['su-measure'],
+    lessons: [
+      {
+        id: 'substance-mp2-c1',
+        text: '**上皿てんびん**は水平な台に置き、針が左右に等しくふれるように**調節ねじ**で合わせてから使います。分銅は重いものからのせ、重すぎたら次に軽いものにかえます。使い終わったら皿を一方に重ねます。',
+        figure: balanceScene(false),
+      },
+      {
+        id: 'substance-mp2-c2',
+        text: '**メスシリンダー**は液体の体積を測る器具です。水平な台に置き、液面のへこんだ所を真横から見て、1 目盛りの 10 分の 1 まで読みます。100 mL 用では、ふつう 1 目盛りが 1 mL です。',
+        figure: meniscusScene(false),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-mp2-w1', concept: 'su-measure',
+      prompt: '予想しよう。メスシリンダーに入れた水の液面を真横から見ると、どんな形をしていると思う？',
+      options: ['まん中がへこんでいる', 'まん中が盛り上がっている', 'まっすぐで平ら'],
+      answer: 'a',
+      explanation: '水の液面は、ガラスにふれているふちが少し上がり、まん中がへこんでいます。目盛りは、このへこんだ所で読みます。',
+      hint: 'コップの水のふちを、真横からよく見てみよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'substance-mp2-p1', concept: 'su-measure',
+        prompt: '上皿てんびんで、皿に何ものせないで、つり合いを合わせるときに回す部分（調節ねじ）はア〜ウのどれ？',
+        figure: balanceScene(true),
+        answer: 'r3',
+        explanation: 'うでの両はしにあるのが調節ねじです。使う前に、皿に何ものせないで、針が左右に等しくふれるように調節ねじを回して合わせます。アは皿、イは針です。',
+        hint: 'うでのはしにある、小さなねじをさがそう。',
+      }),
+      fill({
+        id: 'substance-mp2-t1', concept: 'su-measure', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '液体の体積を測る器具を[b1]という。物体の質量を、分銅とつり合わせて測る器具を[b2]という。',
+        blanks: [
+          word('b1', ['メスシリンダー', '上皿てんびん', 'ビーカー'], 'メスシリンダー'),
+          word('b2', ['メスシリンダー', '上皿てんびん', 'ビーカー'], '上皿てんびん'),
+        ],
+        explanation: '体積は**メスシリンダー**、質量は**上皿てんびん**で測ります。ビーカーの目盛りはおよその量しか分かりません。',
+        hint: '「メス」は「測る」、「てんびん」はつり合いで測る道具だよ。',
+      }),
+      choice({
+        id: 'substance-mp2-p2', concept: 'su-measure',
+        prompt: '上皿てんびんの皿に何ものせないとき、左の皿が下がっていました（左が重い）。つり合わせるには、調節ねじをどちらへ動かす？',
+        options: ['軽いほう（右）へ動かす', '重いほう（左）へ動かす', 'どちらへ動かしても同じ'],
+        answer: 'a',
+        explanation: '調節ねじを軽いほう（上がっている右）へ動かすと、右のはしが重くなって、つり合いに近づきます。針が左右に等しくふれるまで調節します。',
+        hint: 'てんびんの軽いほうを、少し重くしたいね。',
+      }),
+      choice({
+        id: 'substance-mp2-p3', concept: 'su-measure',
+        prompt: '左の皿にねじをのせ、右の皿に 20 g の分銅をのせると、分銅の皿が下がりました。次にすることはどれ？',
+        options: ['20 g の分銅をおろし、次に重い 10 g の分銅をのせる', '20 g の分銅の上に 10 g の分銅を足す', 'ねじを右の皿に移す'],
+        answer: 'a',
+        explanation: '分銅の皿が下がったのは、分銅のほうが重いからです。分銅をおろして、次に重い分銅にかえます。分銅は重いものから順にためします。',
+        hint: '分銅とねじのどちらが重かったのかな。',
+      }),
+      fill({
+        id: 'substance-mp2-p4', concept: 'su-measure',
+        prompt: '空らんに入る数を入れよう。',
+        text: '10 g と 5 g の分銅をのせると、分銅の皿が上がった（ねじが重い）。さらに 2 g の分銅を足すと、分銅の皿が下がった。ねじの質量は、[b1]より重く、[b2]より軽い。',
+        blanks: [number('b1', 15, 0, 'g'), number('b2', 17, 0, 'g')],
+        explanation: '15 g ではねじが重く、17 g では分銅が重いので、ねじは 15 g より重く 17 g より軽いことが分かります。このあと 1 g などの軽い分銅でくわしく調べます。',
+        hint: '分銅の合計が何 g のときに、どちらへかたむいたか考えよう。',
+      }),
+      figureChoice({
+        id: 'substance-mp2-p5', concept: 'su-measure',
+        prompt: 'メスシリンダーの目盛りを読むとき、液面のどの高さで読む？ ア（ふちの高さ）かイ（へこんだ所の高さ）を選ぼう。',
+        figure: meniscusScene(true),
+        answer: 'r2',
+        explanation: '液面は、ふちが少し上がり、まん中がへこんでいます。目盛りは、へこんだ所の平らな面を真横から見て読みます。',
+        hint: '液面のいちばん低い、平らな所だよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'substance-mp2-r1', concept: 'su-measure',
+        prompt: '図のメスシリンダーの目盛りを読もう（1 目盛りは 1 mL）。',
+        figure: CYLINDER_56,
+        text: '液体の体積は[b1]である。',
+        blanks: [number('b1', 56, 0, 'mL')],
+        explanation: '液面のへこんだ所は、50 mL から 6 目盛り上なので 56 mL です。1 目盛りの 10 分の 1 まで読んで、56.0 mL と書くこともあります。',
+        hint: '50 の目盛りから、へこんだ所まで何目盛りあるか数えよう。',
+      }),
+      choice({
+        id: 'substance-mp2-r2', concept: 'su-measure',
+        prompt: '100 mL 用のメスシリンダーで、10 mL ごとの太い目盛りのあいだが 10 目盛りに分かれていました。1 目盛りは何 mL？',
+        options: ['0.1 mL', '1 mL', '10 mL'],
+        answer: 'b',
+        explanation: '10 mL を 10 に分けているので、1 目盛りは 10 ÷ 10 ＝ 1 mL です。',
+        hint: '10 mL を何こに分けているかな。',
+      }),
+      choice({
+        id: 'substance-mp2-r3', concept: 'su-measure',
+        prompt: '上皿てんびんを使い終わって片づけるとき、皿はどうしておく？',
+        options: ['皿を一方に重ねておく', '両方の皿に分銅をのせておく', '皿を外して水で洗っておく'],
+        answer: 'a',
+        explanation: '皿を一方に重ねておくと、うでが動かず、支えの部分がいたみにくくなります。分銅はピンセットで箱にもどします。',
+        hint: 'うでがゆれ続けないようにするには？',
+      }),
+      choice({
+        id: 'substance-mp2-r4', concept: 'su-measure',
+        prompt: 'メスシリンダーで、液体の体積のほかに何が分かる？ メスシリンダーが測る量として正しいものを選ぼう。',
+        options: ['液体の体積', '液体の質量', '液体の温度'],
+        answer: 'a',
+        explanation: 'メスシリンダーは液体の体積を測る器具です。質量は上皿てんびんや電子てんびん、温度は温度計で測ります。',
+        hint: '目盛りの単位は mL だね。',
+      }),
+      choice({
+        id: 'substance-mp2-t2', concept: 'su-measure', term: true,
+        prompt: '次の説明に合う言葉はどれ？「物体の質量を、分銅とつり合わせて測る器具」',
+        options: ['メスシリンダー', '上皿てんびん', '調節ねじ'],
+        answer: 'b',
+        explanation: '**上皿てんびん**は、物体と分銅をつり合わせて質量を測ります。',
+        hint: '皿が 2 つある器具だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-mp3: プリント 3（密度・密度 2） ----
+  const substanceMp3 = {
+    id: 'substance-mp3', areaId: 'substance-miniprint', title: 'プリント 3: 密度の計算', minutes: 6, concepts: ['su-density'],
+    lessons: [
+      {
+        id: 'substance-mp3-c1',
+        text: '物質 1 cm³ あたりの質量を**密度**といい、密度〔g/cm³〕＝ 質量〔g〕÷ 体積〔cm³〕で求めます。単位 g/cm³ は「**グラム毎立方センチメートル**」と読みます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 70, text: '密度 ＝ 質量 ÷ 体積', size: 20, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 120, text: '〔g/cm³〕 〔g〕 〔cm³〕', size: 15, anchor: 'middle' },
+          { type: 'text', x: 160, y: 180, text: '例: 160 g ÷ 20 cm³ ＝ 8 g/cm³', size: 15, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-mp3-c2',
+        text: '体積が同じ 5 cm³ の金属でも、鉄・銅・アルミニウムでは質量がちがいます。密度は物質ごとに決まっているので、**密度**を求めると物質を見分ける手がかりになります。',
+        figure: metals5('？ g', false),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-mp3-w1', concept: 'su-density',
+      prompt: '予想しよう。同じ 5 cm³ の鉄とアルミニウムでは、どちらの質量が大きいと思う？',
+      options: ['鉄', 'アルミニウム', '同じ'],
+      answer: 'a',
+      explanation: '鉄のほうが質量が大きいです。同じ体積でも物質によって質量がちがい、それを表すのが密度です。',
+      hint: '1 円玉（アルミニウム）は、とても軽いね。',
+    }),
+    problems: [
+      fill({
+        id: 'substance-mp3-p1', concept: 'su-density',
+        prompt: '密度を求める式をつくろう。',
+        text: '密度〔g/cm³〕＝ [b1]〔g〕÷ [b2]〔cm³〕',
+        blanks: [
+          word('b1', ['質量', '体積'], '質量'),
+          word('b2', ['質量', '体積'], '体積'),
+        ],
+        explanation: '密度は 1 cm³ あたりの質量なので、質量を体積でわって求めます。単位 g/cm³ の「/」は「÷」と同じ意味です。',
+        hint: '単位 g/cm³ を見ると、何を何でわるか分かるよ。',
+      }),
+      fill({
+        id: 'substance-mp3-t1', concept: 'su-density', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '物質 1 cm³ あたりの質量を[b1]という。その単位 g/cm³ は「[b2]」と読む。',
+        blanks: [
+          word('b1', ['密度', '質量', '体積'], '密度'),
+          word('b2', ['グラム毎立方センチメートル', 'グラムかける立方センチメートル', '立方センチメートル毎グラム'], 'グラム毎立方センチメートル'),
+        ],
+        explanation: '1 cm³ あたりの質量が**密度**です。g/cm³ は「**グラム毎立方センチメートル**」と読み、「1 cm³ ごとに何 g」という意味です。',
+        hint: '「毎」は「〜ごとに」という意味だよ。',
+      }),
+      fill({
+        id: 'substance-mp3-p2', concept: 'su-density',
+        prompt: '空らんに入る数を入れよう。',
+        text: '質量 160 g、体積 20 cm³ の物質の密度は[b1]である。',
+        blanks: [number('b1', 8, 0, 'g/cm³')],
+        explanation: '密度＝質量÷体積なので、160 ÷ 20 ＝ 8 g/cm³ です。',
+        hint: '160 を 20 でわろう。',
+      }),
+      fill({
+        id: 'substance-mp3-p3', concept: 'su-density',
+        prompt: '空らんに入る数を入れよう。',
+        text: '質量 40 g、体積 50 cm³ の物質の密度は[b1]である。',
+        blanks: [number('b1', 0.8, 0, 'g/cm³')],
+        explanation: '40 ÷ 50 ＝ 0.8 g/cm³ です。質量より体積のほうが大きいので、密度は 1 より小さくなります。この物質は水（約 1.0 g/cm³）に浮きます。',
+        hint: '40 ÷ 50 は 1 より小さい数になるよ。',
+      }),
+      figureChoice({
+        id: 'substance-mp3-p4', concept: 'su-density',
+        prompt: 'ア〜ウは、どれも体積 5 cm³ の金属です。密度がいちばん大きいのはどれ？（アルミニウムは鉄より軽い）',
+        figure: metals5('？ g', true),
+        answer: 'r2',
+        explanation: '体積が同じなら、質量が大きいほど密度が大きくなります。いちばん質量が大きいのは銅（44.8 g）なので、密度も銅がいちばん大きいです。',
+        hint: '体積は同じ。質量をくらべよう。',
+      }),
+      fill({
+        id: 'substance-mp3-p5', concept: 'su-density',
+        prompt: '図の質量を使って、空らんに入る数を入れよう。',
+        figure: metals5('？ g', false),
+        text: '鉄の密度は[b1]、銅の密度は[b2]である。',
+        blanks: [number('b1', 7.9, 0, 'g/cm³'), number('b2', 8.96, 0, 'g/cm³')],
+        explanation: '鉄は 39.5 ÷ 5 ＝ 7.9 g/cm³、銅は 44.8 ÷ 5 ＝ 8.96 g/cm³ です。',
+        hint: 'どちらも体積は 5 cm³。質量を 5 でわろう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'substance-mp3-r1', concept: 'su-density',
+        prompt: '空らんに入る数を入れよう。',
+        figure: metals5('？ g', false),
+        text: 'アルミニウムの密度は 2.7 g/cm³ である。体積 5 cm³ のアルミニウムの質量は[b1]である。',
+        blanks: [number('b1', 13.5, 0, 'g')],
+        explanation: '質量＝密度×体積なので、2.7 × 5 ＝ 13.5 g です。密度の式を、形を変えて使います。',
+        hint: '1 cm³ で 2.7 g。5 cm³ では？',
+      }),
+      choice({
+        id: 'substance-mp3-r2', concept: 'su-density',
+        prompt: '体積 5 cm³、質量 39.5 g の鉄の密度を求める式はどれ？',
+        options: ['39.5 ÷ 5', '5 ÷ 39.5', '39.5 × 5'],
+        answer: 'a',
+        explanation: '密度＝質量÷体積なので、39.5 ÷ 5 です。答えは 7.9 g/cm³ です。',
+        hint: '質量を体積でわるんだったね。',
+      }),
+      fill({
+        id: 'substance-mp3-r3', concept: 'su-density',
+        prompt: '空らんに入る数を入れよう。',
+        text: '質量 54 g、体積 20 cm³ の金属の密度は[b1]である。',
+        blanks: [number('b1', 2.7, 0, 'g/cm³')],
+        explanation: '54 ÷ 20 ＝ 2.7 g/cm³ です。これはアルミニウムの密度と同じなので、この金属はアルミニウムと考えられます。',
+        hint: '54 を 20 でわろう。',
+      }),
+      choice({
+        id: 'substance-mp3-t2', concept: 'su-density', term: true,
+        prompt: '次の説明に合う言葉はどれ？「物質 1 cm³ あたりの質量。物質ごとに決まっている」',
+        options: ['体積', '密度', '重さ'],
+        answer: 'b',
+        explanation: '物質 1 cm³ あたりの質量を**密度**といいます。物質を見分ける手がかりになります。',
+        hint: '単位が g/cm³ になる量だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-mp4: プリント 4（気体の集め方・二酸化炭素と酸素・酸素の発生・気体の発生について） ----
+  const substanceMp4 = {
+    id: 'substance-mp4', areaId: 'substance-miniprint', title: 'プリント 4: 気体の発生と集め方', minutes: 7, concepts: ['su-collection', 'su-gases'],
+    lessons: [
+      {
+        id: 'substance-mp4-c1',
+        text: '水にとけにくい気体は**水上置換法**、水にとけやすく空気より軽い気体は**上方置換法**、水にとけやすく空気より重い気体は**下方置換法**で集めます。酸素や水素は水上置換法、アンモニアは上方置換法です。',
+        figure: collectPlain(),
+      },
+      {
+        id: 'substance-mp4-c2',
+        text: '**二酸化炭素**は石灰石にうすい塩酸を、**酸素**は二酸化マンガンにオキシドール（うすい過酸化水素水）を加えて発生させます。二酸化炭素は石灰水を白くにごらせ、酸素はものが燃えるのを助けます。',
+        figure: scene([
+          { type: 'tube', x: 80, y: 170, height: 100, level: 0.35, liquid: 'sky' },
+          { type: 'circle', x: 80, y: 160, r: 7, fill: 'rock' },
+          { type: 'text', x: 80, y: 200, text: '石灰石＋塩酸', size: 13, anchor: 'middle' },
+          { type: 'text', x: 80, y: 224, text: '→ 二酸化炭素', size: 13, anchor: 'middle' },
+          { type: 'tube', x: 240, y: 170, height: 100, level: 0.35, liquid: 'sky' },
+          { type: 'circle', x: 240, y: 162, r: 6, fill: 'ink' },
+          { type: 'text', x: 240, y: 200, text: '二酸化マンガン＋', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 224, text: 'オキシドール → 酸素', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-mp4-c3',
+        text: '**水上置換法**では、水を満たした試験管を水の中で逆さに立てておきます。はじめに出てくる気体は装置の中の空気がまざっているので集めません。集め終わったら、水の中でゴム栓をしてから取り出します。',
+        figure: scene([
+          { type: 'rect', x: 60, y: 110, width: 200, height: 100, fill: 'none' },
+          { type: 'rect', x: 62, y: 128, width: 196, height: 80, fill: 'water', stroke: 'none' },
+          { type: 'tube', x: 180, y: 50, height: 110, tilt: 180, level: 1 },
+          { type: 'line', points: [[20, 80], [100, 80], [100, 190], [180, 190], [180, 166]], width: 3 },
+          { type: 'text', x: 200, y: 40, text: '水を満たして逆さに', size: 13 },
+          { type: 'text', x: 20, y: 232, text: 'はじめの気体は集めない', size: 13 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-mp4-w1', concept: 'su-gases',
+      prompt: '予想しよう。二酸化マンガンにオキシドールを加えると、あわが出てきました。出てきた気体は何だと思う？',
+      options: ['酸素', '二酸化炭素', 'アンモニア'],
+      answer: 'a',
+      explanation: '二酸化マンガンにオキシドール（うすい過酸化水素水）を加えると、酸素が発生します。',
+      hint: '火のついた線香を入れると、激しく燃える気体だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'substance-mp4-p1', concept: 'su-collection',
+        prompt: 'アンモニアを集めるのに適した方法はア〜ウのどれ？（アンモニアは水にとてもとけやすく、空気より軽い）',
+        figure: collectScene(),
+        answer: 'r2',
+        explanation: '水にとけやすく空気より軽いアンモニアは、試験管の口を下に向けて集める上方置換法（イ）で集めます。水上置換法では水にとけてしまいます。',
+        hint: '空気より軽い気体は、上にたまるね。',
+      }),
+      fill({
+        id: 'substance-mp4-t1', concept: 'su-collection', term: true,
+        prompt: '図のア〜ウの集め方の名前を選ぼう。',
+        figure: collectPlain(),
+        text: 'アは[b1]、イは[b2]、ウは[b3]である。',
+        blanks: [
+          word('b1', ['水上置換法', '上方置換法', '下方置換法'], '水上置換法'),
+          word('b2', ['水上置換法', '上方置換法', '下方置換法'], '上方置換法'),
+          word('b3', ['水上置換法', '上方置換法', '下方置換法'], '下方置換法'),
+        ],
+        explanation: '水と置きかえるアが**水上置換法**、口を下に向けて上にためるイが**上方置換法**、口を上に向けて下にためるウが**下方置換法**です。',
+        hint: '気体がたまる場所（水の中・上・下）から名前を考えよう。',
+      }),
+      choice({
+        id: 'substance-mp4-p2', concept: 'su-collection',
+        prompt: '上方置換法（イ）で集める気体は、どんな性質をもっている？',
+        options: ['水にとけやすく、空気より軽い', '水にとけやすく、空気より重い', '水にとけにくい'],
+        answer: 'a',
+        explanation: '上方置換法は、水にとけやすく空気より軽い気体を集める方法です。軽い気体は試験管の上にたまっていきます。',
+        hint: '試験管の口を下に向けても、にげない気体だよ。',
+      }),
+      figureChoice({
+        id: 'substance-mp4-p3', concept: 'su-collection',
+        prompt: '酸素を集めるのに最も適した方法はア〜ウのどれ？（酸素は水にとけにくい）',
+        figure: collectScene(),
+        answer: 'r1',
+        explanation: '水にとけにくい酸素は、水上置換法（ア）で集めます。水上置換法は、空気がまざりにくく、集まった量も見えるのでよい方法です。',
+        hint: '水にとけにくい気体は、水と置きかえて集められるね。',
+      }),
+      fill({
+        id: 'substance-mp4-p4', concept: 'su-gases',
+        prompt: '気体を発生させる物質の組み合わせを選ぼう。',
+        text: '二酸化炭素は、[b1]に[b2]を加えて発生させる。酸素は、[b3]に[b4]を加えて発生させる。',
+        blanks: [
+          word('b1', ['石灰石', '亜鉛', '二酸化マンガン'], '石灰石'),
+          word('b2', ['うすい塩酸', '過酸化水素水', 'エタノール'], 'うすい塩酸'),
+          word('b3', ['石灰石', '亜鉛', '二酸化マンガン'], '二酸化マンガン'),
+          word('b4', ['うすい塩酸', '過酸化水素水', 'エタノール'], '過酸化水素水'),
+        ],
+        explanation: '石灰石にうすい塩酸を加えると二酸化炭素、二酸化マンガンに過酸化水素水（オキシドール）を加えると酸素が発生します。亜鉛にうすい塩酸を加えると水素が発生します。',
+        hint: '貝がらや石灰石に塩酸をかけると、あわが出るね。',
+      }),
+      fill({
+        id: 'substance-mp4-p5', concept: 'su-gases',
+        prompt: '酸素を集めた試験管で調べよう。',
+        text: '酸素を集めた試験管に水を 3 分の 1 ほど入れ、ゴム栓をしてよくふった。水の中で栓をとってまた栓をし、取り出すと、試験管の中の水の量は[b1]。このことから、酸素は水に[b2]。',
+        blanks: [
+          word('b1', ['増えた', '減った', 'ほとんど変わらなかった'], 'ほとんど変わらなかった'),
+          word('b2', ['とけやすいといえる', 'とけやすいとはいえない'], 'とけやすいとはいえない'),
+        ],
+        explanation: '酸素は水にとけにくいので、ふっても気体はほとんど減らず、水の量はほとんど変わりません。気体がたくさんとけると、そのぶん水が入りこんで水が増えます。',
+        hint: '気体が水にとけて減ると、水が入ってくるよ。酸素はどうかな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'substance-mp4-r1', concept: 'su-gases',
+        prompt: '二酸化炭素の性質を選ぼう。',
+        text: '二酸化炭素は[b1]で、空気より[b2]。水に少しとけ、その水溶液は[b3]を示す。石灰水を[b4]。',
+        blanks: [
+          word('b1', ['無色・無臭', '黄緑色・刺激臭'], '無色・無臭'),
+          word('b2', ['重い', '軽い'], '重い'),
+          word('b3', ['酸性', 'アルカリ性'], '酸性'),
+          word('b4', ['白くにごらせる', '変化させない'], '白くにごらせる'),
+        ],
+        explanation: '二酸化炭素は無色・無臭で空気より重く、水に少しとけて酸性を示します。石灰水を白くにごらせるのが、二酸化炭素を確かめる方法です。',
+        hint: '炭酸水は二酸化炭素がとけた水だね。',
+      }),
+      fill({
+        id: 'substance-mp4-r2', concept: 'su-gases',
+        prompt: '酸素の性質を選ぼう。',
+        text: '酸素は[b1]で、空気より少し[b2]。水に[b3]。ほかのものが燃えるのを[b4]はたらきがある。',
+        blanks: [
+          word('b1', ['無色・無臭', '黄緑色・刺激臭'], '無色・無臭'),
+          word('b2', ['重い', '軽い'], '重い'),
+          word('b3', ['とけにくい', 'とけやすい'], 'とけにくい'),
+          word('b4', ['助ける', '止める'], '助ける'),
+        ],
+        explanation: '酸素は無色・無臭で、空気より少し重く、水にとけにくい気体です。酸素そのものは燃えませんが、ほかのものが燃えるのを助けます。',
+        hint: '酸素の中に火のついた線香を入れると、どうなるかな。',
+      }),
+      choice({
+        id: 'substance-mp4-r3', concept: 'su-gases',
+        prompt: '酸素を集めた試験管に、火のついた線香を入れました。線香はどうなる？',
+        options: ['すぐに火が消える', '炎を上げて激しく燃える', 'ポンと音を立てて気体が燃える'],
+        answer: 'b',
+        explanation: '酸素にはものが燃えるのを助けるはたらきがあるので、線香は炎を上げて激しく燃えます。ポンと音を立てて燃えるのは水素です。',
+        hint: '酸素は「ものが燃えるのを助ける」気体だったね。',
+      }),
+      choice({
+        id: 'substance-mp4-r4', concept: 'su-collection',
+        prompt: '水上置換法で気体を集めるとき、気体を集める試験管は、はじめにどうしておく？',
+        options: ['水を満たして、水そうの中で逆さに立てておく', '空のまま口を上に向けておく', '石灰水を入れておく'],
+        answer: 'a',
+        explanation: '試験管に水を満たして逆さに立てておくと、出てきた気体が水を押し出して、試験管にたまります。',
+        hint: '気体と「水」を置きかえる方法だよ。',
+      }),
+      choice({
+        id: 'substance-mp4-r5', concept: 'su-collection',
+        prompt: '気体を発生させたとき、はじめに出てくる気体は集めません。なぜ？',
+        options: ['装置の中にあった空気が多くまざっているから', 'はじめの気体は水にとけてしまうから', 'はじめの気体は色がついているから'],
+        answer: 'a',
+        explanation: 'はじめに出てくるのは、三角フラスコやガラス管の中にあった空気を多くふくむ気体です。発生した気体だけを集めるため、しばらく出してから集めます。',
+        hint: '気体が出る前、フラスコの中には何が入っていたかな。',
+      }),
+      choice({
+        id: 'substance-mp4-r6', concept: 'su-collection',
+        prompt: '水上置換法で気体を集め終わりました。試験管を水そうから取り出す前にすることはどれ？',
+        options: ['水の中でゴム栓をする', '試験管をふって気体をにがす', '試験管を熱する'],
+        answer: 'a',
+        explanation: '水の中でゴム栓をすると、集めた気体がにげず、空気も入りません。栓をしてから水そうから取り出します。',
+        hint: '集めた気体をにがさないためには？',
+      }),
+      choice({
+        id: 'substance-mp4-t2', concept: 'su-collection', term: true,
+        prompt: '次の説明に合う言葉はどれ？「水にとけにくい気体を、水と置きかえて集める方法」',
+        options: ['水上置換法', '上方置換法', '下方置換法'],
+        answer: 'a',
+        explanation: '水と置きかえて集める方法を**水上置換法**といいます。酸素や水素を集めるのに使います。',
+        hint: '「水の上で置きかえる」と書く方法だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-mp5: プリント 5（気体の性質まとめ・水素とアンモニア・アンモニア噴水実験・いろいろな気体） ----
+  const substanceMp5 = {
+    id: 'substance-mp5', areaId: 'substance-miniprint', title: 'プリント 5: いろいろな気体の性質', minutes: 7, concepts: ['su-gases'],
+    lessons: [
+      {
+        id: 'substance-mp5-c1',
+        text: '**水素**は亜鉛にうすい塩酸を加えると発生し、最も軽い気体で、火をつけると音を立てて燃えます。**アンモニア**は塩化アンモニウムと水酸化カルシウムを混ぜて熱すると発生し、刺激臭があり水にとてもよくとけます。',
+        figure: scene([
+          { type: 'text', x: 80, y: 40, text: '水素', size: 18, anchor: 'middle', bold: true },
+          { type: 'text', x: 80, y: 72, text: '亜鉛＋塩酸', size: 13, anchor: 'middle' },
+          { type: 'text', x: 80, y: 100, text: '最も軽い', size: 13, anchor: 'middle' },
+          { type: 'text', x: 80, y: 128, text: '音を立てて燃える', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 40, text: 'アンモニア', size: 18, anchor: 'middle', bold: true },
+          { type: 'text', x: 240, y: 72, text: '塩化アンモニウム＋', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 92, text: '水酸化カルシウム', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 120, text: '刺激臭・水によくとける', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 148, text: '水溶液はアルカリ性', size: 13, anchor: 'middle' },
+          { type: 'line', points: [[160, 20], [160, 160]], color: 'gray', width: 1 },
+          { type: 'text', x: 160, y: 210, text: 'どちらも空気より軽い', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-mp5-c2',
+        text: 'アンモニアを満たしたフラスコに少し水を入れると、アンモニアが水にとけてフラスコの中の気体が減り、ビーカーの水が吸い上げられて**噴水**になります。フェノールフタレイン溶液を入れた水は、赤い噴水になります。',
+        figure: scene([
+          { type: 'circle', x: 160, y: 70, r: 50, fill: 'white' },
+          { type: 'line', points: [[160, 76], [160, 196]], width: 3 },
+          { type: 'line', points: [[160, 76], [140, 50]], color: 'red', width: 3 },
+          { type: 'line', points: [[160, 76], [180, 50]], color: 'red', width: 3 },
+          { type: 'line', points: [[160, 76], [160, 42]], color: 'red', width: 3 },
+          { type: 'circle', x: 136, y: 44, r: 4, fill: 'red', stroke: 'red' },
+          { type: 'circle', x: 184, y: 44, r: 4, fill: 'red', stroke: 'red' },
+          { type: 'circle', x: 160, y: 34, r: 4, fill: 'red', stroke: 'red' },
+          { type: 'beaker', x: 160, y: 228, width: 110, height: 50, level: 0.7 },
+          { type: 'text', x: 220, y: 40, text: 'アンモニア', size: 13 },
+          { type: 'text', x: 220, y: 110, text: '赤い噴水', size: 13 },
+          { type: 'text', x: 10, y: 200, text: 'フェノール', size: 12 },
+          { type: 'text', x: 10, y: 216, text: 'フタレイン入りの水', size: 12 },
+        ]),
+      },
+      {
+        id: 'substance-mp5-c3',
+        text: '身のまわりの気体として、漂白剤と酸性の洗剤を混ぜると出る有毒な**塩素**、風船に入れる軽い**ヘリウム**、ガスボンベで使うプロパン、不完全燃焼で出る有毒な一酸化炭素などがあります。',
+        figure: scene([
+          { type: 'ellipse', x: 70, y: 70, rx: 34, ry: 42, fill: 'pink' },
+          { type: 'line', points: [[70, 112], [74, 190]], color: 'gray', width: 2 },
+          { type: 'text', x: 70, y: 214, text: 'ヘリウム', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 140, y: 80, width: 50, height: 110, fill: 'gray', rx: 14 },
+          { type: 'text', x: 165, y: 214, text: 'プロパン', size: 14, anchor: 'middle' },
+          { type: 'text', x: 210, y: 70, text: 'まぜるな', size: 14, bold: true },
+          { type: 'text', x: 210, y: 92, text: '危険', size: 14, bold: true },
+          { type: 'text', x: 210, y: 130, text: '→ 塩素', size: 14 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-mp5-w1', concept: 'su-gases',
+      prompt: '予想しよう。次の気体のうち、空気より軽いのはどれだと思う？',
+      options: ['二酸化炭素', '水素', '酸素'],
+      answer: 'b',
+      explanation: '水素は最も軽い気体で、空気よりずっと軽いです。二酸化炭素と酸素は空気より重い気体です。',
+      hint: '風船に入れると、ふわふわと上がっていく気体だよ。',
+    }),
+    problems: [
+      fill({
+        id: 'substance-mp5-p1', concept: 'su-gases',
+        prompt: '二酸化炭素・酸素・水素・アンモニア・窒素から選ぼう。',
+        text: 'においがある気体は[b1]である。水溶液が酸性になる気体は[b2]、水溶液がアルカリ性になる気体は[b3]である。',
+        blanks: [
+          word('b1', ['二酸化炭素', '酸素', '水素', 'アンモニア', '窒素'], 'アンモニア'),
+          word('b2', ['二酸化炭素', '酸素', '水素', 'アンモニア', '窒素'], '二酸化炭素'),
+          word('b3', ['二酸化炭素', '酸素', '水素', 'アンモニア', '窒素'], 'アンモニア'),
+        ],
+        explanation: 'アンモニアは刺激臭があり、水溶液はアルカリ性です。二酸化炭素の水溶液（炭酸水）は酸性です。酸素・水素・窒素は無色・無臭で、水にとけにくい気体です。',
+        hint: 'トイレのようなツンとするにおいの気体は？',
+      }),
+      fill({
+        id: 'substance-mp5-t1', concept: 'su-gases', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '亜鉛にうすい塩酸を加えると[b1]が発生する。塩化アンモニウムと水酸化カルシウムを混ぜて熱すると[b2]が発生する。',
+        blanks: [
+          word('b1', ['水素', 'アンモニア', '酸素', '二酸化炭素'], '水素'),
+          word('b2', ['水素', 'アンモニア', '酸素', '二酸化炭素'], 'アンモニア'),
+        ],
+        explanation: '亜鉛＋うすい塩酸で**水素**、塩化アンモニウム＋水酸化カルシウムを熱すると**アンモニア**が発生します。',
+        hint: '「アンモニウム」をふくむ物質から出る気体は？',
+      }),
+      figureChoice({
+        id: 'substance-mp5-p2', concept: 'su-gases',
+        prompt: '3 本の試験管に、それぞれ気体が入っています。水を少し入れてゴム栓をしてふると、気体がほとんど水にとけてしまうのはア〜ウのどれ？',
+        figure: threeGasTubes('水を少し入れてふる', ['酸素', 'アンモニア', '水素']),
+        answer: 'r2',
+        explanation: 'アンモニアは水にとてもよくとけるので、ふるとほとんどとけてしまいます。酸素と水素は水にとけにくい気体です。',
+        hint: '噴水の実験に使う気体はどれかな。',
+      }),
+      choice({
+        id: 'substance-mp5-p3', concept: 'su-gases',
+        prompt: 'アンモニアを満たしたフラスコに少し水を入れると、ビーカーの水が吸い上げられて噴水になりました。これは、アンモニアのどんな性質によるもの？',
+        options: ['水にとてもとけやすい', '空気より重い', '燃えやすい'],
+        answer: 'a',
+        explanation: 'アンモニアが水にとけてフラスコの中の気体が減り、中の圧力が下がるので、ビーカーの水が吸い上げられて噴水になります。',
+        hint: 'フラスコの中のアンモニアは、水を入れるとどうなるかな。',
+      }),
+      fill({
+        id: 'substance-mp5-p4', concept: 'su-gases',
+        prompt: 'アンモニアの噴水の色を考えよう。',
+        text: 'ビーカーの水にフェノールフタレイン溶液を入れておくと、噴水は[b1]色になる。アンモニアの水溶液が[b2]だからである。水を、緑色にした BTB 溶液にかえて同じ実験をすると、噴水は[b3]色になる。',
+        blanks: [
+          word('b1', ['赤', '青', '黄', '無'], '赤'),
+          word('b2', ['酸性', '中性', 'アルカリ性'], 'アルカリ性'),
+          word('b3', ['赤', '青', '黄', '緑'], '青'),
+        ],
+        explanation: 'アンモニアの水溶液はアルカリ性です。フェノールフタレイン溶液はアルカリ性で赤色、BTB 溶液はアルカリ性で青色になります。',
+        hint: 'BTB 溶液は、酸性で黄色、中性で緑色、アルカリ性で何色かな。',
+      }),
+      fill({
+        id: 'substance-mp5-p5', concept: 'su-gases',
+        prompt: '身のまわりの気体の名前を選ぼう。',
+        text: '「まぜるな危険」の漂白剤と酸性の洗剤を混ぜると発生する有毒な気体は[b1]。風船に入れたり、吸うと声が高くなったりする軽い気体は[b2]。不完全燃焼で出る、中毒を起こす気体は[b3]。',
+        blanks: [
+          word('b1', ['塩素', 'ヘリウム', '一酸化炭素', 'プロパン'], '塩素'),
+          word('b2', ['塩素', 'ヘリウム', '一酸化炭素', 'プロパン'], 'ヘリウム'),
+          word('b3', ['塩素', 'ヘリウム', '一酸化炭素', 'プロパン'], '一酸化炭素'),
+        ],
+        explanation: '漂白剤と酸性の洗剤を混ぜると有毒な**塩素**が出るので、絶対に混ぜてはいけません。風船には**ヘリウム**、不完全燃焼で出るのは一酸化炭素です。',
+        hint: 'プールの消毒のようなにおいの気体、風船の気体、を思い出そう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'substance-mp5-r1', concept: 'su-gases',
+        prompt: '二酸化炭素・酸素・水素・アンモニア・窒素のうち、空気より軽い気体の組み合わせはどれ？',
+        options: ['水素とアンモニア', '二酸化炭素と酸素', '酸素と窒素'],
+        answer: 'a',
+        explanation: '水素とアンモニアは空気より軽い気体です。二酸化炭素と酸素は空気より重く、窒素は空気とほぼ同じ（少し軽い）です。',
+        hint: '上方置換法や、風船で上がる気体を思い出そう。',
+      }),
+      choice({
+        id: 'substance-mp5-r2', concept: 'su-gases',
+        prompt: '二酸化炭素・酸素・水素・アンモニア・窒素のうち、水にとける気体の組み合わせはどれ？',
+        options: ['酸素と水素', '二酸化炭素とアンモニア', '窒素と酸素'],
+        answer: 'b',
+        explanation: 'アンモニアは水にとてもよくとけ、二酸化炭素も水に少しとけます。酸素・水素・窒素は水にとけにくい気体です。',
+        hint: '水溶液が酸性やアルカリ性になる気体は、水にとけるね。',
+      }),
+      fill({
+        id: 'substance-mp5-r3', concept: 'su-gases',
+        prompt: '水素の性質を選ぼう。',
+        text: '水素は[b1]で、空気より[b2]。水に[b3]。火をつけると[b4]。',
+        blanks: [
+          word('b1', ['無色・無臭', '刺激臭がある'], '無色・無臭'),
+          word('b2', ['軽い', '重い'], '軽い'),
+          word('b3', ['とけにくい', 'とけやすい'], 'とけにくい'),
+          word('b4', ['音を立てて燃える', 'すぐに消える'], '音を立てて燃える'),
+        ],
+        explanation: '水素は無色・無臭で、最も軽い気体です。水にとけにくく、火をつけるとポンと音を立てて燃え、水ができます。',
+        hint: '水素が燃えると、何ができるかな。',
+      }),
+      fill({
+        id: 'substance-mp5-r4', concept: 'su-gases',
+        prompt: 'アンモニアの性質を選ぼう。',
+        text: 'アンモニアは[b1]があり、空気より[b2]。水に[b3]、水溶液は[b4]を示す。からだには[b5]である。',
+        blanks: [
+          word('b1', ['刺激臭', 'あまいにおい'], '刺激臭'),
+          word('b2', ['軽い', '重い'], '軽い'),
+          word('b3', ['とてもとけやすく', 'とけにくく'], 'とてもとけやすく'),
+          word('b4', ['アルカリ性', '酸性'], 'アルカリ性'),
+          word('b5', ['有毒', '無害'], '有毒'),
+        ],
+        explanation: 'アンモニアは刺激臭のある有毒な気体で、空気より軽く、水にとてもとけやすく、水溶液はアルカリ性です。においをかぐときは、手であおぐようにします。',
+        hint: '上方置換法で集めた気体だね。',
+      }),
+      choice({
+        id: 'substance-mp5-r5', concept: 'su-gases',
+        prompt: '都市ガスが来ていない地域で、家庭用のガスボンベに入れて使われることが多い気体はどれ？',
+        options: ['プロパン', 'ヘリウム', '塩素'],
+        answer: 'a',
+        explanation: 'ガスボンベには、プロパン（LP ガス）がよく使われます。プロパンは燃えやすい気体です。',
+        hint: '「LP ガス」ともよばれる気体だよ。',
+      }),
+      choice({
+        id: 'substance-mp5-t2', concept: 'su-gases', term: true,
+        prompt: '次の説明に合う言葉はどれ？「漂白剤と酸性の洗剤を混ぜると発生する、黄緑色で刺激臭のある有毒な気体」',
+        options: ['塩素', 'ヘリウム', '水素'],
+        answer: 'a',
+        explanation: 'この気体は**塩素**です。プールの消毒のようなツンとしたにおい（刺激臭）があり、とても危険です。',
+        hint: '「まぜるな危険」の表示を思い出そう。',
+      }),
+    ],
+  };
+
+
+  // ================================================================
   // 概念（学び直しの確認問題 checkPool つき）
   // ================================================================
 
@@ -827,6 +1732,18 @@
           ],
           explanation: '金属には、金属光沢がある、電気をよく通す、熱をよく伝える、たたくと広がり引っぱるとのびる、という共通の性質があります。',
           hint: 'なべやフライパンが金属でできている理由を考えよう。',
+        }),
+        // ミニプリント「金属の性質」(5) のあふれた分
+        fill({
+          id: 'su-metal-k4', concept: 'su-metal',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: '金属は、たたくとうすく[b1]、引っぱると細く[b2]性質がある。',
+          blanks: [
+            word('b1', ['広がり', 'くだけ', 'とけ'], '広がり'),
+            word('b2', ['のびる', 'ちぢむ', 'こげる'], 'のびる'),
+          ],
+          explanation: '金属は、たたくとうすく広がり（アルミニウムはく）、引っぱると細くのびます（銅線）。この性質で、いろいろな形に加工できます。',
+          hint: 'アルミニウムはくや、細い銅線を思い出そう。',
         }),
       ],
     },
@@ -979,6 +1896,15 @@
           explanation: '二酸化炭素は空気より重い気体です。水素とアンモニアは空気より軽いので、上へのぼっていきます。',
           hint: '下方置換法でも集められる気体を思い出そう。',
         }),
+        // ミニプリント「いろいろな気体」(2) のあふれた分
+        choice({
+          id: 'su-gases-k4', concept: 'su-gases',
+          prompt: '漂白剤と酸性の洗剤を混ぜると発生する塩素は、どんなにおいがする？',
+          options: ['においはない', 'プールの消毒のような、ツンとする刺激臭', 'あまいにおい'],
+          answer: 'b',
+          explanation: '塩素には、プールの消毒のようなツンとする刺激臭があります。有毒なので、においをかいではいけません。家庭でも「まぜるな危険」の洗剤は混ぜないようにします。',
+          hint: 'プールの水のにおいを思い出そう。',
+        }),
       ],
     },
   ];
@@ -995,6 +1921,7 @@
     areas: [
       { id: 'props', title: '物質の性質', order: 1, stages: [sub1, sub2] },
       { id: 'gas', title: '気体の性質', order: 2, stages: [sub3, sub4] },
+      { id: 'substance-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [substanceMp1, substanceMp2, substanceMp3, substanceMp4, substanceMp5] },
     ],
   };
 

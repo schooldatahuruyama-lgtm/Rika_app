@@ -1070,6 +1070,345 @@
   ];
 
   // ================================================================
+  // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/strata.md）
+  // ================================================================
+
+  // 川の 3 か所（riverItems()）を選ぶ図: ア 山の中・イ 山から平地に出た所・ウ 河口
+  const MP_RIVER_Q = scene(riverItems().concat([
+    { type: 'region', id: 'r1', x: 40, y: 100, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 110, y: 160, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 226, y: 178, r: 22, label: 'ウ' },
+  ]));
+
+  // ある地層の断面（上から ア れき岩・イ 砂岩・ウ 泥岩・エ 凝灰岩・オ 石灰岩・カ 砂岩。上下の逆転はない）
+  const MP_LAYERS = [['gravel', 'れき岩'], ['sand', '砂岩'], ['mud', '泥岩'], ['tuff', '凝灰岩'], ['lime', '石灰岩'], ['sand', '砂岩']];
+  // regions: ア〜カの選ぶ場所（左右に互いちがいに置く）。なければ層の右に記号の文字だけ書く
+  function mpLayerScene(regions) {
+    const items = [{ type: 'text', x: 160, y: 22, text: 'ある地層の断面（上下の逆転はない）', size: 13, anchor: 'middle' }];
+    MP_LAYERS.forEach(([kind, name], i) => {
+      const y = 34 + 32 * i;
+      items.push({ type: 'rect', x: 40, y, width: 140, height: 32, fill: LAYER_FILL[kind], label: name });
+      if (regions) {
+        const x = i % 2 ? 268 : 216;
+        items.push({ type: 'line', points: [[180, y + 16], [x - 22, y + 16]], color: 'line', width: 1 });
+        items.push({ type: 'region', id: 'r' + (i + 1), x, y: y + 16, r: 22, label: 'アイウエオカ'[i] });
+      } else {
+        items.push({ type: 'text', x: 192, y: y + 22, text: 'アイウエオカ'[i], size: 14 });
+      }
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ strata-mp1: プリント 1（流れる水のはたらき、地層のでき方、堆積岩） ----
+  const srMp1 = {
+    id: 'strata-mp1', areaId: 'strata-miniprint', title: 'プリント 1: 地層のでき方と堆積岩', minutes: 5, concepts: ['st-erosion', 'st-grain', 'st-sedimentary'],
+    lessons: [
+      {
+        id: 'strata-mp1-c1',
+        text: '岩石は**風化**でもろくなり、流れる水に**浸食**され、**運搬**されて、流れがゆるやかな所に**堆積**します。山の中には V 字谷、山から平地に出た所には扇状地、河口には三角州ができます。',
+        figure: scene(riverItems().concat([
+          { type: 'text', x: 44, y: 118, text: 'V字谷', size: 12, anchor: 'middle' },
+          { type: 'text', x: 112, y: 150, text: '扇状地', size: 12, anchor: 'middle' },
+          { type: 'text', x: 230, y: 132, text: '三角州', size: 12, anchor: 'middle' },
+          { type: 'text', x: 250, y: 220, text: '海', size: 14, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'strata-mp1-c2',
+        text: '海の中は流れがおそいので、運ばれてきた土砂が**堆積**します。粒の大きいれきは河口の近くに、砂はその先に、細かい泥は沖のほうに積もります。これが長い年月くり返されて、**地層**ができます。',
+        figure: scene(seaItems().concat([
+          ...[[86, 112], [100, 116], [114, 120]].map(([x, y]) => ({ type: 'circle', x, y, r: 6, fill: 'rock' })),
+          ...[[160, 136], [172, 140], [184, 144], [196, 148]].map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'sand' })),
+          ...[[250, 170], [260, 174], [270, 177], [280, 181], [290, 184]].map(([x, y]) => ({ type: 'circle', x, y, r: 2, fill: MUD, stroke: 'none' })),
+          { type: 'text', x: 100, y: 100, text: 'れき', size: 12, anchor: 'middle' },
+          { type: 'text', x: 178, y: 124, text: '砂', size: 12, anchor: 'middle' },
+          { type: 'text', x: 270, y: 160, text: '泥', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'strata-mp1-c3',
+        text: '堆積岩は、粒の大きさで**れき岩**（2 mm 以上）・**砂岩**・**泥岩**（約 1/16 mm 以下）に分けます。生物の殻などからできた**石灰岩**と**チャート**、火山灰からできた**凝灰岩**もあります。',
+        figure: scene([
+          ...[['れき岩', '粒が 2 mm 以上'], ['砂岩', '粒が約 1/16〜2 mm'], ['泥岩', '粒が約 1/16 mm 以下'], ['石灰岩', '生物の殻など（炭酸カルシウム）'],
+            ['チャート', '生物の殻など（二酸化ケイ素）'], ['凝灰岩', '火山灰などが固まった']].flatMap(([a, b], i) => [
+            { type: 'text', x: 20, y: 40 + 34 * i, text: a, size: 14, bold: true },
+            { type: 'text', x: 106, y: 40 + 34 * i, text: b, size: 13 },
+          ]),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'strata-mp1-w1', concept: 'st-grain',
+      prompt: '予想しよう。川が運んできたれき・砂・泥のうち、河口のいちばん近くに積もるのはどれだと思う？',
+      options: ['れき', '泥', 'どれも同じ所に積もる'],
+      answer: 'a',
+      explanation: '粒が大きく重いれきは、流れがゆるやかになるとすぐに積もるので、河口の近くにたまります。地層のでき方を、このステージで学ぼう。',
+      hint: '重いものほど、早くしずむね。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'strata-mp1-p1', concept: 'st-erosion',
+        prompt: '図は山から海へ流れる川です。扇状地ができやすい場所はどこ？ ア〜ウから選ぼう。',
+        figure: MP_RIVER_Q,
+        answer: 'r2',
+        explanation: '川が山から平地に出ると、流れが急にゆるやかになり、運ばれてきた土砂が扇形に積もって扇状地ができます（イ）。アの山の中には V 字谷、ウの河口には三角州ができます。',
+        hint: '山から平地に出て、流れがゆるやかになる所だよ。',
+      }),
+      fill({
+        id: 'strata-mp1-t1', concept: 'st-erosion', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '流れる水が岩石をけずるはたらきを[b1]、土砂を運ぶはたらきを[b2]、土砂を積もらせるはたらきを[b3]という。',
+        blanks: [
+          word('b1', ['浸食', '運搬', '堆積'], '浸食'),
+          word('b2', ['浸食', '運搬', '堆積'], '運搬'),
+          word('b3', ['浸食', '運搬', '堆積'], '堆積'),
+        ],
+        explanation: '流れる水には、けずる**浸食**、運ぶ**運搬**、積もらせる**堆積**の 3 つのはたらきがあります。',
+        hint: 'けずる・運ぶ・積もらせる、の順だよ。',
+      }),
+      choice({
+        id: 'strata-mp1-p2', concept: 'st-grain',
+        prompt: '海岸の近くと沖では、海底にたまる土砂の粒が大きいのはどちら？',
+        options: ['海岸の近く', '沖', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '大きく重い粒は早くしずむので、海岸（河口）の近くに積もります。細かい泥は遠くまで運ばれて、沖に積もります。',
+        hint: '重い粒ほど早くしずむよ。',
+      }),
+      fill({
+        id: 'strata-mp1-p3', concept: 'st-erosion',
+        prompt: '川がつくる地形です。空らんに入る言葉を選ぼう。',
+        text: '山の中では[b1]、川が山から平地に出た所では[b2]、河口では[b3]ができやすい。',
+        blanks: [
+          word('b1', ['V字谷', '扇状地', '三角州'], 'V字谷'),
+          word('b2', ['V字谷', '扇状地', '三角州'], '扇状地'),
+          word('b3', ['V字谷', '扇状地', '三角州'], '三角州'),
+        ],
+        explanation: '流れが速い山の中では浸食で V 字谷が、流れがゆるやかになる所では堆積で扇状地や三角州ができます。',
+        hint: '流れが速い所ではけずられ、ゆるやかな所では積もるよ。',
+      }),
+      fill({
+        id: 'strata-mp1-p4', concept: 'st-grain',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '海の中の流れは、川の流れに比べて[b1]。そのため、海では流れる水の[b2]のはたらきが強くなり、長い年月の間に海底に地層ができる。',
+        blanks: [
+          word('b1', ['速い', 'おそい'], 'おそい'),
+          word('b2', ['浸食', '運搬', '堆積'], '堆積'),
+        ],
+        explanation: '海に流れこむと流れがおそくなるので、運ばれてきた土砂が積もります（堆積）。これがくり返されて地層ができます。',
+        hint: '流れがおそくなると、土砂はどうなるかな。',
+      }),
+      fill({
+        id: 'strata-mp1-p5', concept: 'st-sedimentary',
+        prompt: '粒の大きさで分ける堆積岩です。空らんに入る名前を選ぼう。',
+        text: '粒の大きさが 2 mm 以上のものは[b1]、約 1/16〜2 mm のものは[b2]、約 1/16 mm 以下のものは[b3]である。',
+        blanks: [
+          word('b1', ['れき岩', '砂岩', '泥岩'], 'れき岩'),
+          word('b2', ['れき岩', '砂岩', '泥岩'], '砂岩'),
+          word('b3', ['れき岩', '砂岩', '泥岩'], '泥岩'),
+        ],
+        explanation: 'れき・砂・泥は粒の大きさで分けます。れきが固まったものがれき岩、砂が砂岩、泥が泥岩です。',
+        hint: '大きい順に、れき・砂・泥だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'strata-mp1-r1', concept: 'st-erosion',
+        prompt: '地表の岩石が、気温の変化や水のはたらきで、表面からもろくくずれていくことを何という？',
+        options: ['風化', '浸食', '堆積'],
+        answer: 'a',
+        explanation: '岩石が気温の変化や水・風などで、表面からもろくなってくずれることを風化といいます。くずれたものが流れる水で浸食・運搬されます。',
+        hint: '「風」に当たって「化」ける、と書くよ。',
+      }),
+      figureChoice({
+        id: 'strata-mp1-r2', concept: 'st-erosion',
+        prompt: '図は山から海へ流れる川です。三角州ができやすい場所はどこ？ ア〜ウから選ぼう。',
+        figure: MP_RIVER_Q,
+        answer: 'r3',
+        explanation: '三角州は、川が海に流れこむ河口（ウ）で、流れがおそくなって土砂が積もってできます。',
+        hint: '川が海に流れこむ所だよ。',
+      }),
+      choice({
+        id: 'strata-mp1-r3', concept: 'st-grain',
+        prompt: '河口から運ばれた土砂が、長い年月の間に海底に積み重なると、何ができる？',
+        options: ['地層', '火山', '断層'],
+        answer: 'a',
+        explanation: 'れき・砂・泥などが層になって積み重なり、地層ができます。',
+        hint: '層になって重なったものだよ。',
+      }),
+      fill({
+        id: 'strata-mp1-r4', concept: 'st-sedimentary',
+        prompt: '堆積岩の名前を選ぼう。',
+        text: '生物の殻などが固まり、主な成分が炭酸カルシウムのものは[b1]、主な成分が二酸化ケイ素のものは[b2]、火山灰が固まったものは[b3]である。',
+        blanks: [
+          word('b1', ['石灰岩', 'チャート', '凝灰岩'], '石灰岩'),
+          word('b2', ['石灰岩', 'チャート', '凝灰岩'], 'チャート'),
+          word('b3', ['石灰岩', 'チャート', '凝灰岩'], '凝灰岩'),
+        ],
+        explanation: '石灰岩とチャートは生物の殻などからでき、石灰岩は炭酸カルシウム、チャートは二酸化ケイ素が主な成分です。凝灰岩は火山灰などからできます。',
+        hint: '「石灰」は炭酸カルシウムのなかまだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ strata-mp2: プリント 2（地層の読み取り、化石、大陸の移動、標高と柱状図） ----
+  const srMp2 = {
+    id: 'strata-mp2', areaId: 'strata-miniprint', title: 'プリント 2: 地層の読み取りと化石', minutes: 5, concepts: ['st-column', 'st-fossil', 'st-sedimentary', 'st-deform'],
+    lessons: [
+      {
+        id: 'strata-mp2-c1',
+        text: '地層は、逆転していなければ下の層ほど古いです。**凝灰岩**の層があれば、当時近くで火山の噴火がありました。**石灰岩**は塩酸をかけると二酸化炭素が出ます。粒の大きい層ほど、海岸に近い所で積もりました。',
+        figure: mpLayerScene(false),
+      },
+      {
+        id: 'strata-mp2-c2',
+        text: '当時の環境が分かる化石を**示相化石**（サンゴならあたたかく浅い海）、地層ができた時代が分かる化石を**示準化石**といいます。サンヨウチュウは古生代、恐竜やアンモナイトは中生代の示準化石です。',
+        figure: scene([
+          { type: 'text', x: 160, y: 34, text: '示相化石（環境が分かる）', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 62, text: 'サンゴ: あたたかく浅い海', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 86, text: 'シジミ: 河口や湖', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 130, text: '示準化石（時代が分かる）', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 158, text: 'サンヨウチュウ: 古生代', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 182, text: '恐竜・アンモナイト: 中生代', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 206, text: 'ビカリア: 新生代', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'strata-mp2-c3',
+        text: '地層が水平に広がっていれば、同じ層は同じ**標高**にあります。A 地点（標高 60 m）で地表から 14 m の深さにある凝灰岩の上の面は標高 46 m なので、標高 50 m の地点では地表から 4 m の深さにあります。',
+        figure: scene(elevationItems()),
+      },
+      {
+        id: 'strata-mp2-c4',
+        text: '大昔、大陸は 1 つにまとまっていて、移動して今の形になったという考えを、ウェゲナーが発表しました。大陸が動くのは、大陸をのせた**プレート**が動いているからです。',
+        figure: scene([
+          { type: 'polygon', points: [[90, 70], [150, 60], [170, 110], [140, 170], [100, 150], [80, 110]], fill: 'lightgreen' },
+          { type: 'polygon', points: [[176, 60], [240, 70], [250, 120], [210, 180], [180, 130]], fill: 'lightgreen' },
+          { type: 'arrow', x1: 110, y1: 200, x2: 70, y2: 200, color: 'blue' },
+          { type: 'arrow', x1: 210, y1: 200, x2: 250, y2: 200, color: 'blue' },
+          { type: 'text', x: 160, y: 36, text: '大陸は少しずつ移動している', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 228, text: 'プレートの動き', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'strata-mp2-w1', concept: 'st-column',
+      prompt: '予想しよう。地層が逆転していないとき、いちばん古いのはどの層だと思う？',
+      options: ['いちばん下の層', 'いちばん上の層', 'まん中の層'],
+      answer: 'a',
+      explanation: '地層は下から順に積み重なるので、逆転していなければ下の層ほど古くなります。地層や化石から分かることを、このステージで学ぼう。',
+      hint: '積み木を積み重ねる順を考えよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'strata-mp2-p1', concept: 'st-sedimentary',
+        prompt: '図はある地層の断面です。うすい塩酸をかけると気体（二酸化炭素）が発生する岩石の層はどれ？ ア〜カから選ぼう。',
+        figure: mpLayerScene(true),
+        answer: 'r5',
+        explanation: '石灰岩（オ）は炭酸カルシウムが主な成分なので、うすい塩酸をかけると二酸化炭素が発生します。チャートは塩酸をかけても気体が出ません。',
+        hint: '炭酸カルシウムをふくむ岩石だよ。',
+      }),
+      fill({
+        id: 'strata-mp2-t1', concept: 'st-fossil', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地層ができた当時の環境が分かる化石を[b1]、地層ができた時代が分かる化石を[b2]という。',
+        blanks: [
+          word('b1', ['示相化石', '示準化石'], '示相化石'),
+          word('b2', ['示相化石', '示準化石'], '示準化石'),
+        ],
+        explanation: '環境（様相）が分かるのが**示相化石**、時代の基準になるのが**示準化石**です。',
+        hint: '「相」はようす、「準」は基準のことだよ。',
+      }),
+      choice({
+        id: 'strata-mp2-p2', concept: 'st-fossil',
+        prompt: 'サンゴの化石が見つかった地層は、できた当時どんな環境だったと考えられる？',
+        options: ['あたたかくて浅い海', '冷たくて深い海', '川の上流'],
+        answer: 'a',
+        explanation: 'サンゴは、あたたかくて浅い、きれいな海にすんでいます。サンゴの化石は、当時の環境を示す示相化石です。',
+        hint: 'サンゴ礁がある海を思い出そう。',
+      }),
+      fill({
+        id: 'strata-mp2-p3', concept: 'st-fossil',
+        prompt: '示準化石と時代です。空らんに入る言葉を選ぼう。',
+        text: 'サンヨウチュウの化石が見つかった地層は[b1]、恐竜の化石が見つかった地層は[b2]にできたと考えられる。',
+        blanks: [
+          word('b1', ['古生代', '中生代', '新生代'], '古生代'),
+          word('b2', ['古生代', '中生代', '新生代'], '中生代'),
+        ],
+        explanation: 'サンヨウチュウは古生代、恐竜は中生代に栄えた生物です。ビカリアやナウマンゾウは新生代の示準化石です。',
+        hint: 'いちばん古いのは古生代だよ。',
+      }),
+      choice({
+        id: 'strata-mp2-p4', concept: 'st-column',
+        prompt: '図の地層で、イ（砂岩）とウ（泥岩）が積もったとき、海岸線に近かったのはどちら？',
+        figure: mpLayerScene(false),
+        options: ['イ（砂岩）', 'ウ（泥岩）', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '粒の大きい砂は海岸に近い所に、細かい泥は沖の深い所に積もります。イの砂岩が積もったときのほうが、海岸線に近かったと考えられます。',
+        hint: '粒の大きいほうが、海岸の近くに積もるよ。',
+      }),
+      fill({
+        id: 'strata-mp2-p5', concept: 'st-column',
+        prompt: '図の A 地点（標高 60 m）では、凝灰岩の層が地表から 14〜18 m の深さにある。地層は水平に広がり、断層やしゅう曲はない。空らんに入る数を入れよう。',
+        figure: scene(elevationItems()),
+        text: '標高 50 m の B 地点を掘ると、凝灰岩の層は地表から[b1]〜[b2]の深さに出てくる。',
+        blanks: [number('b1', 4, 0, 'm'), number('b2', 8, 0, 'm')],
+        explanation: 'A 地点で凝灰岩は標高 60 − 14 ＝ 46 m から 60 − 18 ＝ 42 m にあります。B 地点の地表は標高 50 m なので、50 − 46 ＝ 4 m から 50 − 42 ＝ 8 m の深さです。',
+        hint: 'まず凝灰岩の層の標高を求めよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'strata-mp2-r1', concept: 'st-sedimentary',
+        prompt: '図はある地層の断面です。積もった当時、近くで火山の噴火があったと考えられる層はどれ？ ア〜カから選ぼう。',
+        figure: mpLayerScene(true),
+        answer: 'r4',
+        explanation: '凝灰岩（エ）は火山灰などが積もって固まった岩石です。凝灰岩の層があると、当時近くで火山の噴火があったと分かります。',
+        hint: '火山灰からできた岩石をさがそう。',
+      }),
+      figureChoice({
+        id: 'strata-mp2-r2', concept: 'st-column',
+        prompt: '図はある地層の断面です。いちばん古い層はどれ？ ア〜カから選ぼう。',
+        figure: mpLayerScene(true),
+        answer: 'r6',
+        explanation: '地層は下から順に積み重なるので、逆転していなければいちばん下のカがいちばん古い層です。',
+        hint: '最初に積もったのはどの層かな。',
+      }),
+      choice({
+        id: 'strata-mp2-r3', concept: 'st-deform',
+        prompt: '大陸は昔 1 つにまとまっていて、移動して今の形になったという説を、はじめに発表した人はだれ？',
+        options: ['ウェゲナー', 'ニュートン', 'アインシュタイン'],
+        answer: 'a',
+        explanation: 'ドイツのウェゲナーが、大陸の海岸線の形や化石の分布などから、大陸が移動したという説（大陸移動説）を発表しました。',
+        hint: '気象学者でもあった人だよ。',
+      }),
+      choice({
+        id: 'strata-mp2-r4', concept: 'st-deform',
+        prompt: '大陸が移動する原因になっている動きはどれ？',
+        options: ['プレートの動き', '月の引力', '川の流れ'],
+        answer: 'a',
+        explanation: '大陸は、それをのせたプレートが少しずつ動くことで移動します。動く速さは 1 年に数 cm ほどです。',
+        hint: '地球の表面をおおう岩盤だよ。',
+      }),
+      choice({
+        id: 'strata-mp2-r5', concept: 'st-deform',
+        prompt: '今のインド半島は、約 2 億年前にはどのあたりにあったと考えられている？',
+        options: ['今より南（アフリカ大陸や南極大陸の近く）', '今より北（北極の近く）', 'ずっと今と同じ場所'],
+        answer: 'a',
+        explanation: 'インド半島は、昔は南のほうにあり、北へ移動してユーラシア大陸にぶつかりました。そのときにもり上がってできたのがヒマラヤ山脈です。',
+        hint: 'ヒマラヤ山脈ができた理由と関係があるよ。',
+      }),
+      choice({
+        id: 'strata-mp2-r6', concept: 'st-sedimentary',
+        prompt: '石灰岩とチャートを見分ける方法として正しいのはどれ？',
+        options: ['うすい塩酸をかけて、気体が出れば石灰岩', '水をかけて、とければ石灰岩', '磁石を近づけて、つけばチャート'],
+        answer: 'a',
+        explanation: '石灰岩はうすい塩酸をかけると二酸化炭素が出ます。チャートは塩酸をかけても変化がなく、とてもかたいです。',
+        hint: '炭酸カルシウムと塩酸の反応だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1081,6 +1420,7 @@
     areas: [
       { id: 'form', title: '地層のでき方', order: 1, stages: [strata1, strata2] },
       { id: 'history', title: '地層から読み取る', order: 2, stages: [strata3, strata4] },
+      { id: 'strata-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [srMp1, srMp2] },
     ],
   };
 

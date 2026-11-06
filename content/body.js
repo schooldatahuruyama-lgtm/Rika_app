@@ -1,6 +1,7 @@
 // 「生物のからだのつくりとはたらき」教材データ（中学2年 理科）
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通指示 .ai-tasks/20261104-170000_単元教材の共通指示.md）。
 // 2 領域 × 2 ステージ（細胞と植物のはたらき・動物のからだ）と、概念 6 つ（id は単元の接頭辞 bo- を付けて全単元で一意にする）。
+// 領域 3「ミニプリント」（11 ステージ、概念 3 つを追加）は、先生のミニプリントの問題を書き直したもの（.ai-tasks/20261106-130000_ミニプリント反映_共通.md）。
 // 図（scene）の item は js/figures.js の汎用の部品で描く（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
 // 解説文の **語句** は大切な言葉（用語）。term: true の問題は、その用語を聞く用語問題。
@@ -953,6 +954,1700 @@
   };
 
   // ================================================================
+  // 領域 3: ミニプリント（先生のミニプリントの問題を書き直したもの。.ai-tasks/20261106-130000_ミニプリント反映_共通.md）
+  // プリントの順は学ぶ順（細胞 → 植物 → 消化 → 血液 → 呼吸・排出 → 感覚 → 神経 → 骨格・分類）
+  // ================================================================
+
+  // ---- ミニプリント用の図 ----
+
+  // 植物の細胞の部分の名前（PLANT_CELL_Q と同じ位置に名前を書く）
+  const PLANT_CELL_NAMES = scene(plantCell(160, 120, 1).concat([
+    leader(58, 70, 102, 70),
+    leader(58, 160, 101, 160),
+    leader(258, 40, 236, 40),
+    leader(258, 130, 200, 130),
+    leader(258, 200, 229, 200),
+    { type: 'text', x: 36, y: 75, text: '核', size: 14, anchor: 'middle' },
+    { type: 'text', x: 32, y: 165, text: '葉緑体', size: 13, anchor: 'middle' },
+    { type: 'text', x: 284, y: 45, text: '細胞壁', size: 13, anchor: 'middle' },
+    { type: 'text', x: 284, y: 135, text: '液胞', size: 13, anchor: 'middle' },
+    { type: 'text', x: 286, y: 205, text: '細胞膜', size: 13, anchor: 'middle' },
+  ]));
+
+  // ふ入りの葉（FU_LEAF_Q から選ぶ場所を除き、青紫色になる所を書く）
+  const FU_LEAF_RESULT = scene(FU_LEAF_Q.items.filter(it => it.type !== 'region').concat([
+    { type: 'text', x: 210, y: 82, text: '青紫色', size: 14, anchor: 'middle', bold: true, color: 'purple' },
+    { type: 'text', x: 160, y: 232, text: '緑色で光が当たった部分だけ青紫色', size: 12, anchor: 'middle' },
+  ]));
+
+  // BTB 溶液の試験管 A（水草あり）・B（水草なし）に光を当てる。A の中心 x 120、B の中心 x 220
+  function btbItems(colorA, colorB) {
+    return [
+      { type: 'circle', x: 36, y: 36, r: 16, fill: 'yellow', stroke: 'orange' },
+      { type: 'arrow', x1: 56, y1: 50, x2: 100, y2: 82, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 58, y1: 40, x2: 196, y2: 80, color: 'orange', width: 2 },
+      { type: 'tube', x: 120, y: 200, height: 130, level: 0.85, liquid: colorA },
+      { type: 'tube', x: 220, y: 200, height: 130, level: 0.85, liquid: colorB },
+      { type: 'line', points: [[120, 192], [114, 170], [124, 150], [114, 130], [122, 108]], color: 'green', width: 3 },
+      { type: 'text', x: 120, y: 226, text: 'A（水草を入れる）', size: 13, anchor: 'middle' },
+      { type: 'text', x: 228, y: 226, text: 'B（何も入れない）', size: 13, anchor: 'middle' },
+    ];
+  }
+  const BTB_Q = scene(btbItems('green', 'green').concat([
+    { type: 'text', x: 310, y: 24, text: '光を当てる前（どちらも緑色）', size: 12, anchor: 'end' },
+    { type: 'region', id: 'r1', x: 120, y: 150, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 220, y: 150, r: 22, label: 'イ' },
+  ]));
+
+  // 昼と夜の植物の気体の出入り。X は昼だけ（上の矢印）、Y は昼も夜も（下の矢印）。
+  // 昼の矢印の中点: X 入る (34, 86)、X 出る (126, 86)、Y 入る (35, 178)、Y 出る (125, 178)
+  function dayNightItems() {
+    const plant = (x) => [
+      { type: 'line', points: [[x, 210], [x, 128]], color: 'green', width: 4 },
+      { type: 'ellipse', x: x - 18, y: 132, rx: 18, ry: 8, fill: 'green', stroke: 'none' },
+      { type: 'ellipse', x: x + 18, y: 132, rx: 18, ry: 8, fill: 'green', stroke: 'none' },
+    ];
+    return [
+      { type: 'line', points: [[160, 10], [160, 230]], color: 'gray', width: 1, dashed: true },
+      { type: 'text', x: 80, y: 24, text: '昼', size: 16, anchor: 'middle', bold: true },
+      { type: 'text', x: 240, y: 24, text: '夜', size: 16, anchor: 'middle', bold: true },
+      ...plant(80), ...plant(240),
+      { type: 'arrow', x1: 12, y1: 62, x2: 56, y2: 110, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 104, y1: 110, x2: 148, y2: 62, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 12, y1: 196, x2: 58, y2: 160, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 102, y1: 160, x2: 148, y2: 196, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 172, y1: 196, x2: 218, y2: 160, color: 'orange', width: 2 },
+      { type: 'arrow', x1: 262, y1: 160, x2: 308, y2: 196, color: 'orange', width: 2 },
+      { type: 'text', x: 80, y: 40, text: 'X（昼だけ）', size: 12, anchor: 'middle' },
+      { type: 'text', x: 80, y: 232, text: 'Y（昼も夜も）', size: 12, anchor: 'middle' },
+      { type: 'text', x: 240, y: 232, text: 'Y', size: 12, anchor: 'middle' },
+    ];
+  }
+  const DAY_NIGHT_Q = scene(dayNightItems().concat([
+    { type: 'region', id: 'r1', x: 34, y: 86, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 126, y: 86, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 35, y: 178, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 125, y: 178, r: 22, label: 'エ' },
+  ]));
+
+  // 茎の断面 2 つ。左 (80, 112) は維管束が輪のように並ぶ、右 (240, 112) は散らばる
+  function stemPairItems() {
+    const items = [
+      { type: 'circle', x: 80, y: 112, r: 56, fill: 'lightgreen', stroke: 'green' },
+      { type: 'circle', x: 240, y: 112, r: 56, fill: 'lightgreen', stroke: 'green' },
+    ];
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      items.push({ type: 'circle', x: Math.round(80 + 38 * Math.cos(a)), y: Math.round(112 + 38 * Math.sin(a)), r: 7, fill: 'white', stroke: 'line' });
+    }
+    [[-30, -20], [-10, -36], [14, -30], [34, -12], [-36, 8], [-14, -10], [8, -4], [30, 14], [-24, 30], [0, 20], [20, 36], [-4, 42]]
+      .forEach(([dx, dy]) => items.push({ type: 'circle', x: 240 + dx, y: 112 + dy, r: 5, fill: 'white', stroke: 'line' }));
+    items.push({ type: 'text', x: 160, y: 234, text: '茎の断面（白い丸が維管束）', size: 12, anchor: 'middle' });
+    return items;
+  }
+  const STEM_PAIR_Q = scene(stemPairItems().concat([
+    { type: 'region', id: 'r1', x: 80, y: 196, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 240, y: 196, r: 22, label: 'イ' },
+  ]));
+
+  // 消化にかかわる器官の名前（gutItems に名前を書く）
+  const GUT_NAMES = scene(gutItems().concat([
+    leader(36, 96, 84, 92),
+    { type: 'text', x: 6, y: 101, text: '肝臓', size: 13 },
+    leader(198, 36, 172, 50),
+    { type: 'text', x: 200, y: 40, text: '食道', size: 13 },
+    leader(284, 96, 246, 100),
+    { type: 'text', x: 288, y: 101, text: '胃', size: 13 },
+    leader(264, 146, 236, 145),
+    { type: 'text', x: 268, y: 151, text: 'すい臓', size: 13 },
+    leader(264, 192, 202, 190),
+    { type: 'text', x: 268, y: 197, text: '小腸', size: 13 },
+    leader(36, 186, 100, 186),
+    { type: 'text', x: 6, y: 191, text: '大腸', size: 13 },
+  ]));
+
+  // だ液の実験。A（デンプンのり＋水）の中心 x 120、B（デンプンのり＋だ液）の中心 x 200。約 40 ℃ の湯に入れる
+  function salivaItems() {
+    return [
+      { type: 'beaker', x: 160, y: 214, width: 220, height: 120, level: 0.7, liquid: 'water' },
+      { type: 'tube', x: 120, y: 204, height: 120, level: 0.5, liquid: '#F4EFD9' },
+      { type: 'tube', x: 200, y: 204, height: 120, level: 0.5, liquid: '#F4EFD9' },
+      { type: 'line', points: [[256, 96], [256, 198]], color: 'red', width: 3 },
+      { type: 'circle', x: 256, y: 202, r: 5, fill: 'red', stroke: 'none' },
+      { type: 'text', x: 120, y: 76, text: 'A', size: 15, anchor: 'middle', bold: true },
+      { type: 'text', x: 200, y: 76, text: 'B', size: 15, anchor: 'middle', bold: true },
+      { type: 'text', x: 6, y: 20, text: 'A: デンプンのり＋水', size: 13 },
+      { type: 'text', x: 6, y: 40, text: 'B: デンプンのり＋だ液', size: 13 },
+      { type: 'text', x: 316, y: 236, text: '約 40 ℃ の湯', size: 12, anchor: 'end' },
+    ];
+  }
+  const SALIVA_Q = scene(salivaItems().concat([
+    { type: 'region', id: 'r1', x: 120, y: 170, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 200, y: 170, r: 22, label: 'イ' },
+  ]));
+
+  // 血液を顕微鏡で見たようす（模式図）。赤血球 (70, 120) など、血小板の集まり (142, 128)、白血球 (230, 96)、血しょう (60, 190)
+  function bloodItems() {
+    const items = [{ type: 'rect', x: 10, y: 10, width: 300, height: 220, rx: 8, fill: '#FBEFD5', stroke: 'line' }];
+    [[60, 60], [110, 50], [70, 120], [250, 170], [270, 54], [160, 190], [190, 150]].forEach(([x, y]) => items.push(
+      { type: 'circle', x, y, r: 15, fill: 'red', stroke: 'none' },
+      { type: 'circle', x, y, r: 6, fill: '#E88A87', stroke: 'none' },
+    ));
+    items.push(
+      { type: 'circle', x: 230, y: 96, r: 24, fill: 'white', stroke: 'line' },
+      { type: 'ellipse', x: 230, y: 96, rx: 12, ry: 8, fill: 'purple', stroke: 'none' },
+      ...[[140, 120], [150, 132], [132, 134]].map(([x, y]) => ({ type: 'circle', x, y, r: 4, fill: 'purple', stroke: 'none' })),
+    );
+    return items;
+  }
+  const BLOOD_Q = scene(bloodItems().concat([
+    { type: 'region', id: 'r1', x: 70, y: 120, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 142, y: 128, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 230, y: 96, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 60, y: 190, r: 22, label: 'エ' },
+  ]));
+
+  // 肺のつくり（模式図）。気管 (160, 40)、左の気管支の中ほど (132, 104)、肺胞の集まり 左 (100, 150)・右 (220, 150)
+  function lungItems() {
+    const items = [
+      { type: 'line', points: [[160, 14], [160, 80]], color: 'pink', width: 12 },
+      { type: 'line', points: [[160, 80], [104, 128]], color: 'pink', width: 8 },
+      { type: 'line', points: [[160, 80], [216, 128]], color: 'pink', width: 8 },
+    ];
+    [100, 220].forEach(cx => [[0, 0], [-20, -8], [20, -8], [-12, 16], [12, 16]].forEach(([dx, dy]) =>
+      items.push({ type: 'circle', x: cx + dx, y: 150 + dy, r: 12, fill: 'white', stroke: 'line' })));
+    items.push(
+      { type: 'line', points: [[188, 176], [204, 186], [232, 186], [248, 166], [246, 136], [232, 124]], color: 'red', width: 2 },
+      { type: 'line', points: [[132, 176], [116, 186], [88, 186], [72, 166], [74, 136], [88, 124]], color: 'red', width: 2 },
+    );
+    return items;
+  }
+  const LUNG_Q = scene(lungItems().concat([
+    { type: 'text', x: 316, y: 230, text: '赤い線は毛細血管', size: 12, anchor: 'end' },
+    { type: 'region', id: 'r1', x: 160, y: 40, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 132, y: 104, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 220, y: 150, r: 22, label: 'ウ' },
+  ]));
+
+  // じん臓とぼうこう（正面から見た模式図）。じん臓 (100, 80)・(220, 80)、輸尿管の中ほど (125, 139)、ぼうこう (160, 180)
+  function kidneyItems() {
+    return [
+      { type: 'line', points: [[152, 16], [152, 150]], color: 'red', width: 6 },
+      { type: 'line', points: [[168, 16], [168, 150]], color: 'blue', width: 6 },
+      { type: 'line', points: [[118, 70], [202, 70]], color: 'red', width: 3 },
+      { type: 'line', points: [[118, 92], [202, 92]], color: 'blue', width: 3 },
+      { type: 'ellipse', x: 100, y: 80, rx: 20, ry: 32, fill: 'brown' },
+      { type: 'ellipse', x: 220, y: 80, rx: 20, ry: 32, fill: 'brown' },
+      { type: 'line', points: [[104, 110], [146, 168]], color: 'line', width: 3 },
+      { type: 'line', points: [[216, 110], [174, 168]], color: 'line', width: 3 },
+      { type: 'ellipse', x: 160, y: 180, rx: 28, ry: 18, fill: 'yellow', stroke: 'line' },
+      { type: 'line', points: [[160, 198], [160, 226]], color: 'line', width: 3 },
+      { type: 'text', x: 316, y: 236, text: '赤: 動脈　青: 静脈', size: 12, anchor: 'end' },
+    ];
+  }
+  const KIDNEY_Q = scene(kidneyItems().concat([
+    { type: 'region', id: 'r1', x: 100, y: 80, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 180, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 125, y: 139, r: 22, label: 'ウ' },
+  ]));
+
+  // ヒトの目の断面（模式図。左から光が入る）。レンズ (120, 120)、虹彩 x 102、網膜は奥の赤い線、視神経は右へ出る黄色の線
+  function eyeItems() {
+    const retina = [];
+    for (let a = -70; a <= 70; a += 10) {
+      const t = a * Math.PI / 180;
+      retina.push([Math.round(180 + 78 * Math.cos(t)), Math.round(120 + 78 * Math.sin(t))]);
+    }
+    return [
+      { type: 'arrow', x1: 8, y1: 120, x2: 70, y2: 120, color: 'orange', width: 3 },
+      { type: 'text', x: 20, y: 108, text: '光', size: 13 },
+      { type: 'circle', x: 180, y: 120, r: 84, fill: 'white', stroke: 'ink' },
+      { type: 'line', points: [[96, 96], [86, 120], [96, 144]], color: 'line', width: 2 },
+      { type: 'line', points: retina, color: 'red', width: 4 },
+      { type: 'line', points: [[102, 88], [102, 104]], color: 'brown', width: 6 },
+      { type: 'line', points: [[102, 136], [102, 152]], color: 'brown', width: 6 },
+      { type: 'ellipse', x: 120, y: 120, rx: 10, ry: 26, fill: 'lensFill', stroke: 'ink' },
+      { type: 'line', points: [[262, 120], [314, 120]], color: 'yellow', width: 12 },
+      leader(120, 94, 120, 48),
+      leader(102, 152, 60, 190),
+      leader(235, 65, 270, 40),
+    ];
+  }
+  const EYE_Q = scene(eyeItems().concat([
+    { type: 'region', id: 'r1', x: 120, y: 26, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 48, y: 206, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 284, y: 26, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 292, y: 150, r: 22, label: 'エ' },
+  ]));
+
+  // ヒトの耳のつくり（模式図）。鼓膜 x 104（下はし (104, 170)）、耳小骨 (130, 112)、うずまき管 (186, 150)、半規管 (190, 76)
+  function earItems() {
+    return [
+      { type: 'polygon', points: [[10, 60], [34, 52], [44, 90], [40, 150], [30, 190], [12, 184], [20, 140], [18, 96]], fill: 'pink', stroke: 'line' },
+      { type: 'rect', x: 40, y: 108, width: 62, height: 26, fill: 'sky', stroke: 'line' },
+      { type: 'line', points: [[104, 90], [104, 170]], color: 'brown', width: 4 },
+      { type: 'line', points: [[106, 120], [124, 104], [142, 112], [156, 124]], color: 'gray', width: 5 },
+      { type: 'circle', x: 176, y: 72, r: 16, fill: 'none', stroke: 'ink' },
+      { type: 'circle', x: 206, y: 62, r: 16, fill: 'none', stroke: 'ink' },
+      { type: 'circle', x: 198, y: 94, r: 12, fill: 'none', stroke: 'ink' },
+      { type: 'line', points: [[212, 150], [300, 170]], color: 'yellow', width: 8 },
+      { type: 'circle', x: 186, y: 150, r: 26, fill: 'pink', stroke: 'line' },
+      { type: 'circle', x: 190, y: 148, r: 13, fill: 'none', stroke: 'line' },
+      { type: 'circle', x: 192, y: 148, r: 5, fill: 'none', stroke: 'line' },
+    ];
+  }
+  const EAR_Q = scene(earItems().concat([
+    { type: 'region', id: 'r1', x: 104, y: 196, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 130, y: 84, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 186, y: 150, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 252, y: 64, r: 22, label: 'エ' },
+    leader(230, 66, 222, 64),
+  ]));
+
+  // うでの骨と筋肉（模式図。左がかた、ひじで曲げている）。左はしのけん (40, 112)、関節 (170, 130)、
+  // 内側の筋肉 (100, 106)、外側の筋肉 (100, 154)
+  function armItems() {
+    return [
+      { type: 'line', points: [[30, 130], [166, 130]], color: 'rock', width: 10 },
+      { type: 'line', points: [[174, 126], [280, 64]], color: 'rock', width: 10 },
+      { type: 'circle', x: 286, y: 58, r: 12, fill: 'pink', stroke: 'line' },
+      { type: 'line', points: [[52, 106], [28, 120]], color: 'ink', width: 2 },
+      { type: 'line', points: [[148, 106], [196, 112]], color: 'ink', width: 2 },
+      { type: 'line', points: [[52, 154], [28, 140]], color: 'ink', width: 2 },
+      { type: 'line', points: [[148, 154], [172, 140]], color: 'ink', width: 2 },
+      { type: 'ellipse', x: 100, y: 106, rx: 50, ry: 13, fill: 'pink', stroke: 'line' },
+      { type: 'ellipse', x: 100, y: 154, rx: 50, ry: 13, fill: '#E6A57E', stroke: 'line' },
+      { type: 'circle', x: 170, y: 130, r: 9, fill: 'white', stroke: 'ink' },
+      { type: 'text', x: 8, y: 76, text: 'かた', size: 12 },
+      { type: 'text', x: 304, y: 40, text: '手', size: 12 },
+    ];
+  }
+  const ARM_Q = scene(armItems().concat([
+    { type: 'region', id: 'r1', x: 40, y: 112, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 170, y: 130, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 100, y: 100, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 100, y: 160, r: 22, label: 'エ' },
+  ]));
+
+  // ---- ステージ body-mp1: 細胞と組織（ミニプリント「細胞の部分」「組織と器官」） ----
+  const bodyMp1 = {
+    id: 'body-mp1', areaId: 'body-miniprint', title: 'プリント 1: 細胞と組織', minutes: 5, concepts: ['bo-cell'],
+    lessons: [
+      {
+        id: 'body-mp1-c1',
+        text: '細胞の模式図では、植物にも動物にもある**核**と**細胞膜**、植物の細胞だけにある**細胞壁**・**葉緑体**・**液胞**を見分けます。核と細胞壁をのぞいた部分を**細胞質**といいます。核は染色液によく染まります。',
+        figure: PLANT_CELL_NAMES,
+      },
+      {
+        id: 'body-mp1-c2',
+        text: 'からだが多くの細胞でできている生物を**多細胞生物**といいます。多細胞生物では、形やはたらきが同じ細胞が集まって**組織**になり、いくつかの組織が組み合わさって胃や葉などの**器官**ができます。',
+        // 細胞 → 組織 → 器官 → 個体
+        figure: scene([
+          ...['細胞', '組織', '器官', '個体'].map((t, i) => ({ type: 'rect', x: 8 + i * 80, y: 40, width: 64, height: 40, fill: i === 0 ? 'lightgreen' : 'white' })),
+          ...['細胞', '組織', '器官', '個体'].map((t, i) => ({ type: 'text', x: 40 + i * 80, y: 66, text: t, size: 15, anchor: 'middle', bold: true })),
+          ...[0, 1, 2].map(i => ({ type: 'arrow', x1: 73 + i * 80, y1: 60, x2: 87 + i * 80, y2: 60, width: 2 })),
+          ...['筋肉の細胞', '筋肉の組織', '胃', 'ヒト'].map((t, i) => ({ type: 'text', x: 40 + i * 80, y: 104, text: t, size: 12, anchor: 'middle' })),
+          { type: 'circle', x: 40, y: 150, r: 12, fill: 'pink', stroke: 'line' },
+          ...[-14, 0, 14].flatMap(dx => [-14, 0, 14].map(dy => ({ type: 'circle', x: 120 + dx, y: 150 + dy, r: 7, fill: 'pink', stroke: 'line' }))),
+          { type: 'ellipse', x: 200, y: 150, rx: 26, ry: 18, fill: 'pink', stroke: 'line' },
+          { type: 'circle', x: 280, y: 128, r: 10, fill: 'pink', stroke: 'line' },
+          { type: 'rect', x: 270, y: 140, width: 20, height: 36, rx: 6, fill: 'pink', stroke: 'line' },
+          { type: 'text', x: 160, y: 222, text: '単細胞生物は、1 つの細胞がそのまま個体', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp1-w1', concept: 'bo-cell',
+      prompt: '予想しよう。ミジンコとゾウリムシのうち、からだが 1 つの細胞だけでできているのはどちらだと思う？',
+      options: ['ゾウリムシ', 'ミジンコ', 'どちらも多くの細胞でできている'],
+      answer: 'a',
+      explanation: 'ゾウリムシは 1 つの細胞でできた単細胞生物、ミジンコは小さくても多くの細胞でできた多細胞生物です。細胞のつくりと、細胞の集まり方を復習しよう。',
+      hint: '大きさだけでは決められないよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp1-p1', concept: 'bo-cell',
+        prompt: '植物の細胞の模式図です（ア: 丸い粒、イ: たくさんある小さな粒、ウ: いちばん外側のあつい囲み、エ: 中央の大きなふくろ）。酢酸カーミン液などの染色液によく染まるのはどれ？',
+        figure: PLANT_CELL_Q,
+        answer: 'r1',
+        explanation: '染色液によく染まるのは核（ア）です。核はふつう 1 つの細胞に 1 個あります。イは葉緑体、ウは細胞壁、エは液胞です。',
+        hint: '細胞に、ふつう 1 個だけある粒だよ。',
+      }),
+      fill({
+        id: 'body-mp1-t1', concept: 'bo-cell', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '細胞のうち、核と細胞壁をのぞいた部分をまとめて[b1]という。',
+        blanks: [word('b1', ['細胞質', '細胞膜', '液胞'], '細胞質')],
+        explanation: '核と細胞壁をのぞいた部分を**細胞質**といいます。細胞膜や葉緑体、液胞も細胞質にふくまれます。',
+        hint: '「細胞の中身」という意味の言葉だよ。',
+      }),
+      fill({
+        id: 'body-mp1-p2', concept: 'bo-cell',
+        prompt: '植物の細胞のつくりの名前を入れよう。',
+        text: '緑色の小さな粒を[b1]、細胞の中の大きなふくろを[b2]、細胞膜の外側のじょうぶなしきりを[b3]という。',
+        blanks: [
+          word('b1', ['葉緑体', '液胞', '細胞壁'], '葉緑体'),
+          word('b2', ['葉緑体', '液胞', '細胞壁'], '液胞'),
+          word('b3', ['葉緑体', '液胞', '細胞壁'], '細胞壁'),
+        ],
+        explanation: '緑色の粒が葉緑体、大きなふくろが液胞、外側のじょうぶなしきりが細胞壁です。この 3 つは植物の細胞の特徴です（液胞は動物の細胞では小さい）。',
+        hint: '光合成をするのは緑色の粒だったね。',
+      }),
+      choice({
+        id: 'body-mp1-p3', concept: 'bo-cell',
+        prompt: '次のうち、どちらも多くの細胞でできている生物の組み合わせはどれ？',
+        options: ['ミジンコとオオカナダモ', 'ゾウリムシとミカヅキモ', 'ゾウリムシとミジンコ', 'ミカヅキモとオオカナダモ'],
+        answer: 'a',
+        explanation: 'ミジンコとオオカナダモは多細胞生物です。ゾウリムシとミカヅキモは、からだが 1 つの細胞でできた単細胞生物です。',
+        hint: 'ゾウリムシとミカヅキモは、顕微鏡で 1 つの細胞が見える生物だよ。',
+      }),
+      fill({
+        id: 'body-mp1-p4', concept: 'bo-cell',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'からだが多くの細胞でできている生物を[b1]という。形やはたらきが同じ細胞が集まった部分を[b2]、[b2]がいくつか組み合わさった部分を[b3]という。',
+        blanks: [
+          word('b1', ['多細胞生物', '単細胞生物'], '多細胞生物'),
+          word('b2', ['組織', '器官', '個体'], '組織'),
+          word('b3', ['組織', '器官', '個体'], '器官'),
+        ],
+        explanation: '多細胞生物のからだは、細胞 → 組織 → 器官 → 個体と組み立てられています。たとえば、胃は筋肉の組織などが組み合わさった器官です。',
+        hint: '小さいほうから、細胞 → ？ → ？ → 個体 の順だよ。',
+      }),
+      choice({
+        id: 'body-mp1-p5', concept: 'bo-cell',
+        prompt: '細胞のいちばん外側をおおううすい膜で、動物の細胞にも植物の細胞にもあるものはどれ？',
+        options: ['細胞膜', '細胞壁', '液胞', '葉緑体'],
+        answer: 'a',
+        explanation: '細胞膜はどの細胞にもあるうすい膜です。植物の細胞では、細胞膜のさらに外側に細胞壁があります。',
+        hint: '「膜」はうすいもの、「壁」はじょうぶなしきりだよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp1-r1', concept: 'bo-cell',
+        prompt: '植物の細胞の模式図です（ア: 丸い粒、イ: たくさんある小さな粒、ウ: いちばん外側のあつい囲み、エ: 中央の大きなふくろ）。植物の細胞で大きく育っている液胞はどれ？',
+        figure: PLANT_CELL_Q,
+        answer: 'r4',
+        explanation: '中央の大きなふくろ（エ）が液胞です。液胞の中には、不要な物質などがとけた液が入っています。',
+        hint: '細胞の中で、いちばん大きな部分をさがそう。',
+      }),
+      choice({
+        id: 'body-mp1-r2', concept: 'bo-cell',
+        prompt: '胃や小腸、植物の葉のように、いくつかの組織が組み合わさって特定のはたらきをする部分を何という？',
+        options: ['器官', '組織', '細胞'],
+        answer: 'a',
+        explanation: 'いくつかの組織が組み合わさって特定のはたらきをする部分を器官といいます。器官が集まって個体になります。',
+        hint: '組織より 1 段大きなまとまりだよ。',
+      }),
+      choice({
+        id: 'body-mp1-r3', concept: 'bo-cell',
+        prompt: '細胞質にふくまれるものはどれ？',
+        options: ['細胞膜', '核', '細胞壁'],
+        answer: 'a',
+        explanation: '細胞質は、核と細胞壁をのぞいた部分です。細胞膜は細胞質にふくまれます。',
+        hint: '細胞質に入らないのは、核と細胞壁の 2 つだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp2: 光合成の実験（ミニプリント「アサガオの葉（ふ入り）」「光合成の行われる場所」「光合成とＢＴＢ」） ----
+  const bodyMp2 = {
+    id: 'body-mp2', areaId: 'body-miniprint', title: 'プリント 2: 光合成の実験', minutes: 5, concepts: ['bo-photosynthesis'],
+    lessons: [
+      {
+        id: 'body-mp2-c1',
+        text: 'ふ入りの葉の白い部分には**葉緑体**がありません。一晩暗い所に置いた葉の一部をアルミニウムはくでおおい、光を当ててからヨウ素液で調べると、緑色で光が当たった部分だけにデンプンができています。',
+        figure: FU_LEAF_RESULT,
+      },
+      {
+        id: 'body-mp2-c2',
+        text: '青色の**BTB溶液**に息をふきこんで緑色にし、水草を入れた A と入れない B に光を当てます。A だけ青色になるのは、光合成で二酸化炭素が使われたからです。B のように条件を 1 つだけ変えてくらべる実験を**対照実験**といいます。',
+        figure: scene(btbItems('blue', 'green').concat([
+          { type: 'text', x: 310, y: 24, text: '光を当てたあと', size: 13, anchor: 'end' },
+          { type: 'text', x: 138, y: 124, text: '青色', size: 13, color: 'blue', bold: true },
+          { type: 'text', x: 238, y: 124, text: '緑色のまま', size: 13 },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp2-w1', concept: 'bo-photosynthesis',
+      prompt: '予想しよう。ふ入りの葉の白い部分（ふ）に光を当てると、デンプンはできると思う？',
+      options: ['できない', 'できる', '緑色の部分より多くできる'],
+      answer: 'a',
+      explanation: 'ふの部分には葉緑体がないので、光が当たってもデンプンはできません。光合成に必要なものを、実験で確かめよう。',
+      hint: '光合成は、細胞の中のどこで行われていたかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp2-p1', concept: 'bo-photosynthesis',
+        prompt: 'ふ入りの葉の一部をアルミニウムはくでおおい、光を当てました（ア: ふの部分で光が当たった、イ: 緑色の部分で光が当たった、ウ: ふの部分ではくにおおわれた、エ: 緑色の部分ではくにおおわれた）。光は当たったのに、葉緑体がないためにデンプンができなかったのはどれ？',
+        figure: FU_LEAF_Q,
+        answer: 'r1',
+        explanation: 'ア（ふの部分で光が当たった）は、光は当たっていますが葉緑体がないので、デンプンはできません。ウとエは光が当たっていません。デンプンができたのはイだけです。',
+        hint: '「光あり」で「葉緑体なし」の場所をさがそう。',
+      }),
+      fill({
+        id: 'body-mp2-t1', concept: 'bo-photosynthesis', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ふ入りの葉のふの部分には[b1]がないので、光が当たっても[b2]が行われない。',
+        blanks: [
+          word('b1', ['葉緑体', '核', '気孔'], '葉緑体'),
+          word('b2', ['光合成', '呼吸', '蒸散'], '光合成'),
+        ],
+        explanation: 'ふの部分が白く見えるのは、**葉緑体**がないからです。葉緑体がないと、**光合成**は行われません。',
+        hint: '葉が緑色に見えるのは、何があるからかな。',
+      }),
+      choice({
+        id: 'body-mp2-p2', concept: 'bo-photosynthesis',
+        prompt: 'ふ入りの葉の実験で、葉の一部をアルミニウムはくでおおうのはなぜ？',
+        options: ['その部分に日光が当たらないようにするため', '葉をあたためるため', '葉の水分がにげないようにするため'],
+        answer: 'a',
+        explanation: 'アルミニウムはくでおおった部分には日光が当たりません。光が当たった部分とくらべることで、光合成に光が必要かどうかを調べます。',
+        hint: 'はくは光を通すかな。',
+      }),
+      choice({
+        id: 'body-mp2-p3', concept: 'bo-photosynthesis',
+        prompt: '十分に光を当てたオオカナダモの葉 A と、一晩暗室に置いた葉 B に、ヨウ素液をかけて顕微鏡で見ました。青紫色に染まった粒が見られたのはどれ？',
+        options: ['A だけ', 'B だけ', 'A と B の両方', 'どちらも染まらない'],
+        answer: 'a',
+        explanation: '光を当てた A では、細胞の中の葉緑体でデンプンがつくられたので、葉緑体が青紫色に染まります。暗室に置いた B では光合成ができず、デンプンがありません。',
+        hint: 'デンプンをつくるには光が必要だったね。',
+      }),
+      fill({
+        id: 'body-mp2-p4', concept: 'bo-photosynthesis',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ヨウ素液は[b1]があると青紫色に変わる。オオカナダモの葉では、細胞の中の[b2]が青紫色に染まった。',
+        blanks: [
+          word('b1', ['デンプン', 'ブドウ糖', 'タンパク質'], 'デンプン'),
+          word('b2', ['葉緑体', '核', '液胞'], '葉緑体'),
+        ],
+        explanation: 'ヨウ素液はデンプンを調べる薬品です。青紫色に染まったのは葉緑体なので、光合成は葉緑体で行われていると分かります。',
+        hint: '光合成でデンプンがつくられる場所はどこかな。',
+      }),
+      figureChoice({
+        id: 'body-mp2-p5', concept: 'bo-photosynthesis',
+        prompt: '息をふきこんで緑色にした BTB 溶液を、水草を入れた試験管（ア）と、何も入れない試験管（イ）に入れ、光を当てました。しばらくして青色に変わるのはどちら？',
+        figure: BTB_Q,
+        answer: 'r1',
+        explanation: '水草を入れたア（A）では、光合成で水中の二酸化炭素が使われて減るので、BTB 溶液は青色（アルカリ性）になります。イ（B）は緑色のままです。',
+        hint: '光合成で使われる気体を考えよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'body-mp2-r1', concept: 'bo-photosynthesis',
+        prompt: 'BTB 溶液の実験で、何も入れない試験管 B も用意したのはなぜ？',
+        options: ['色の変化が水草のはたらきによることを確かめるため', '水草を入れる場所が足りないため', 'B に光を当てないため'],
+        answer: 'a',
+        explanation: 'B は、水草がないと色が変わらないことを確かめるためのものです。調べたい条件だけを変えてくらべる実験を対照実験といいます。',
+        hint: 'A と B でちがうのは、水草があるかないかだけだよ。',
+      }),
+      choice({
+        id: 'body-mp2-r2', concept: 'bo-photosynthesis',
+        prompt: '水草を入れた試験管 A の BTB 溶液が、緑色から青色に変わった理由はどれ？',
+        options: ['二酸化炭素が減ったから', '二酸化炭素が増えたから', '酸素が減ったから', '酸素が増えたから'],
+        answer: 'a',
+        explanation: '二酸化炭素は水にとけると酸性を示します。光合成で二酸化炭素が使われて減ったので、溶液がアルカリ性になり青色に変わりました。酸素も増えますが、BTB 溶液の色を変えるのは二酸化炭素の量です。',
+        hint: 'BTB 溶液の色は、酸性・中性・アルカリ性で変わるよ。',
+      }),
+      figureChoice({
+        id: 'body-mp2-r3', concept: 'bo-photosynthesis',
+        prompt: 'ふ入りの葉の実験です（ア: ふの部分で光が当たった、イ: 緑色の部分で光が当たった、ウ: ふの部分ではくにおおわれた、エ: 緑色の部分ではくにおおわれた）。光合成に葉緑体が必要なことを確かめるには、イの結果とどれをくらべればよい？',
+        figure: FU_LEAF_Q,
+        answer: 'r1',
+        explanation: 'イとアは、どちらも光が当たっていて、ちがうのは葉緑体があるかないかだけです。イだけ青紫色になるので、光合成には葉緑体が必要だと分かります。',
+        hint: '光の条件は同じで、葉緑体の有無だけがちがうものをさがそう。',
+      }),
+      choice({
+        id: 'body-mp2-r4', concept: 'bo-photosynthesis',
+        prompt: '光合成の実験の前に、葉を一晩暗い所に置いておくのはなぜ？',
+        options: ['葉の中のデンプンをなくしておくため', '葉の緑色をぬくため', '葉をやわらかくするため'],
+        answer: 'a',
+        explanation: '暗い所では光合成ができず、葉にあったデンプンは別の場所へ運ばれてなくなります。こうしておくと、実験で見つかったデンプンは、光を当てた間にできたものだと分かります。',
+        hint: '実験の前から葉にデンプンがあったら、どうなるかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp3: 光合成と呼吸（ミニプリント「光合成のまとめ」「呼吸と光合成」） ----
+  const bodyMp3 = {
+    id: 'body-mp3', areaId: 'body-miniprint', title: 'プリント 3: 光合成と呼吸', minutes: 5, concepts: ['bo-photosynthesis'],
+    lessons: [
+      {
+        id: 'body-mp3-c1',
+        text: '光合成は、**光エネルギー**を使って細胞の**葉緑体**で行われます。材料は二酸化炭素と水で、デンプンなどの養分と酸素ができます。式で表すと「二酸化炭素 ＋ 水 → デンプンなど ＋ 酸素」です。',
+        // 光合成の式
+        figure: scene([
+          { type: 'circle', x: 160, y: 36, r: 14, fill: 'yellow', stroke: 'orange' },
+          { type: 'text', x: 160, y: 72, text: '光エネルギー', size: 13, anchor: 'middle' },
+          { type: 'rect', x: 6, y: 92, width: 130, height: 56, fill: 'white' },
+          { type: 'text', x: 71, y: 126, text: '二酸化炭素 ＋ 水', size: 14, anchor: 'middle' },
+          { type: 'arrow', x1: 140, y1: 120, x2: 180, y2: 120, width: 3 },
+          { type: 'rect', x: 184, y: 92, width: 130, height: 56, fill: 'white' },
+          { type: 'text', x: 249, y: 116, text: 'デンプンなど', size: 14, anchor: 'middle' },
+          { type: 'text', x: 249, y: 138, text: '＋ 酸素', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 176, text: '葉緑体で', size: 13, anchor: 'middle' },
+          { type: 'ellipse', x: 160, y: 196, rx: 16, ry: 9, fill: 'green', stroke: 'none' },
+          { type: 'text', x: 160, y: 232, text: '材料は気孔と根から入り、酸素は気孔から出る', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'body-mp3-c2',
+        text: '植物は昼も夜も**呼吸**をして、酸素をとり入れ二酸化炭素を出します。光合成は光が当たる昼だけです。昼は光合成のほうがさかんなので、全体としては二酸化炭素をとり入れ、酸素を出しているように見えます。',
+        figure: scene(dayNightItems().concat([
+          { type: 'text', x: 4, y: 56, text: '二酸化炭素', size: 12 },
+          { type: 'text', x: 156, y: 56, text: '酸素', size: 12, anchor: 'end' },
+          { type: 'text', x: 4, y: 214, text: '酸素', size: 12 },
+          { type: 'text', x: 156, y: 214, text: '二酸化炭素', size: 12, anchor: 'end' },
+          { type: 'text', x: 166, y: 214, text: '酸素', size: 12 },
+          { type: 'text', x: 316, y: 214, text: '二酸化炭素', size: 12, anchor: 'end' },
+          { type: 'text', x: 240, y: 60, text: 'X: 光合成（昼だけ）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 240, y: 80, text: 'Y: 呼吸（昼も夜も）', size: 12, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp3-w1', concept: 'bo-photosynthesis',
+      prompt: '予想しよう。光合成でできる気体は何だと思う？',
+      options: ['酸素', '二酸化炭素', '窒素'],
+      answer: 'a',
+      explanation: '光合成では、二酸化炭素と水からデンプンなどができ、酸素が出されます。光合成と呼吸の気体の出入りを整理しよう。',
+      hint: 'わたしたちが呼吸に使う気体だよ。',
+    }),
+    problems: [
+      fill({
+        id: 'body-mp3-p1', concept: 'bo-photosynthesis',
+        prompt: '光合成の式の空らんに入る言葉を選ぼう。',
+        text: '[b1] ＋ 水 → デンプンなど ＋ [b2]',
+        blanks: [
+          word('b1', ['二酸化炭素', '酸素', '窒素'], '二酸化炭素'),
+          word('b2', ['酸素', '二酸化炭素', '水素'], '酸素'),
+        ],
+        explanation: '光合成の材料は二酸化炭素と水で、デンプンなどの養分と酸素ができます。',
+        hint: '気孔からとり入れる気体と、出す気体を考えよう。',
+      }),
+      fill({
+        id: 'body-mp3-t1', concept: 'bo-photosynthesis', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '光合成は、細胞の中の[b1]で、[b2]を使って行われる。',
+        blanks: [
+          word('b1', ['葉緑体', '核', '液胞'], '葉緑体'),
+          word('b2', ['光エネルギー', '熱エネルギー', '電気エネルギー'], '光エネルギー'),
+        ],
+        explanation: '光合成は**葉緑体**で、**光エネルギー**を使って行われます。光が当たらないと光合成はできません。',
+        hint: '光合成という名前に、使うものが入っているよ。',
+      }),
+      figureChoice({
+        id: 'body-mp3-p2', concept: 'bo-photosynthesis',
+        prompt: '植物の昼と夜の気体の出入りの図です。X は昼だけ、Y は昼も夜も行うはたらきです（ア・イ: X の矢印、ウ・エ: Y の矢印）。二酸化炭素が出ていくようすを表している矢印はどれ？',
+        figure: DAY_NIGHT_Q,
+        answer: 'r4',
+        explanation: 'Y は昼も夜も行う呼吸で、酸素をとり入れ（ウ）、二酸化炭素を出します（エ）。X は昼だけの光合成で、二酸化炭素をとり入れ（ア）、酸素を出します（イ）。',
+        hint: '二酸化炭素を出すのは、光合成と呼吸のどちらかな。',
+      }),
+      choice({
+        id: 'body-mp3-p3', concept: 'bo-photosynthesis',
+        prompt: '昼だけ行うはたらき X と、昼も夜も行うはたらき Y の組み合わせとして正しいものはどれ？',
+        options: ['X 光合成、Y 呼吸', 'X 呼吸、Y 光合成', 'X も Y も光合成'],
+        answer: 'a',
+        explanation: '光合成は光が必要なので昼だけ、呼吸は生きるためにいつも行っているので昼も夜も行います。',
+        hint: '光がないとできないのはどちらかな。',
+      }),
+      choice({
+        id: 'body-mp3-p4', concept: 'bo-photosynthesis',
+        prompt: '光が十分に当たる昼に、植物がよりさかんに行っているのは X（光合成）と Y（呼吸）のどちら？',
+        options: ['X（光合成）', 'Y（呼吸）', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '光が十分な昼は、光合成のほうが呼吸よりさかんです。そのため、全体としては二酸化炭素をとり入れ、酸素を出しているように見えます。',
+        hint: '昼の植物は、全体として酸素を出していたね。',
+      }),
+      choice({
+        id: 'body-mp3-p5', concept: 'bo-photosynthesis',
+        prompt: '夜の植物の気体の出入りとして正しいものはどれ？',
+        options: ['酸素をとり入れ、二酸化炭素を出す', '二酸化炭素をとり入れ、酸素を出す', '気体の出入りはない'],
+        answer: 'a',
+        explanation: '夜は光合成ができず、呼吸だけを行うので、酸素をとり入れて二酸化炭素を出します。',
+        hint: '夜に行っているはたらきは 1 つだけだよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp3-r1', concept: 'bo-photosynthesis',
+        prompt: '植物の昼と夜の気体の出入りの図です。X は昼だけ、Y は昼も夜も行うはたらきです（ア・イ: X の矢印、ウ・エ: Y の矢印）。酸素がとり入れられるようすを表している矢印はどれ？',
+        figure: DAY_NIGHT_Q,
+        answer: 'r3',
+        explanation: '酸素をとり入れるのは呼吸（Y）なので、ウです。アは光合成でとり入れる二酸化炭素、イは光合成で出す酸素、エは呼吸で出す二酸化炭素です。',
+        hint: '呼吸でとり入れる気体は何かな。',
+      }),
+      fill({
+        id: 'body-mp3-r2', concept: 'bo-photosynthesis',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '光合成でできる養分は[b1]などで、このとき[b2]も発生する。',
+        blanks: [
+          word('b1', ['デンプン', 'タンパク質', '脂肪'], 'デンプン'),
+          word('b2', ['酸素', '二酸化炭素', '窒素'], '酸素'),
+        ],
+        explanation: '光合成ではデンプンなどの養分がつくられ、酸素が出されます。デンプンは水にとけやすい物質に変えられて、師管を通って運ばれます。',
+        hint: 'ヨウ素液で調べた養分を思い出そう。',
+      }),
+      choice({
+        id: 'body-mp3-r3', concept: 'bo-photosynthesis',
+        prompt: '植物の呼吸について正しいものはどれ？',
+        options: ['昼も夜も行い、酸素をとり入れて二酸化炭素を出す', '夜だけ行う', '光が当たっているときだけ行う'],
+        answer: 'a',
+        explanation: '植物も動物と同じように、昼も夜も呼吸をしています。昼は光合成もしているので、呼吸が目立たないだけです。',
+        hint: '呼吸は生きるためにいつも必要なはたらきだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp4: 茎のはたらきと蒸散（ミニプリント「茎のはたらき」「蒸散」「気孔の役割・蒸散」） ----
+  const bodyMp4 = {
+    id: 'body-mp4', areaId: 'body-miniprint', title: 'プリント 4: 茎のはたらきと蒸散', minutes: 5, concepts: ['bo-transport'],
+    lessons: [
+      {
+        id: 'body-mp4-c1',
+        text: '茎の断面には、**道管**と**師管**が集まった**維管束**があります。ヒマワリやアサガオなどの**双子葉類**では維管束が輪のように並び、トウモロコシやユリなどの**単子葉類**では茎全体に散らばっています。',
+        figure: scene(stemPairItems().concat([
+          { type: 'text', x: 80, y: 192, text: 'ヒマワリなど', size: 13, anchor: 'middle' },
+          { type: 'text', x: 80, y: 210, text: '輪のように並ぶ', size: 12, anchor: 'middle' },
+          { type: 'text', x: 240, y: 192, text: 'トウモロコシなど', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 210, text: '散らばっている', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'body-mp4-c2',
+        text: '葉の表皮には、2 つの**孔辺細胞**に囲まれたすきまの**気孔**があります。根から吸い上げた水は、気孔から水蒸気となって出ていきます。これを**蒸散**といいます。ワセリンで気孔をふさぐと、蒸散は起こりにくくなります。',
+        // 気孔と孔辺細胞
+        figure: scene([
+          { type: 'rect', x: 20, y: 20, width: 280, height: 200, fill: 'lightgreen', stroke: 'line' },
+          { type: 'ellipse', x: 140, y: 120, rx: 22, ry: 52, fill: 'green', stroke: 'ink' },
+          { type: 'ellipse', x: 180, y: 120, rx: 22, ry: 52, fill: 'green', stroke: 'ink' },
+          { type: 'ellipse', x: 160, y: 120, rx: 5, ry: 34, fill: 'ink', stroke: 'none' },
+          leader(230, 80, 194, 90),
+          { type: 'text', x: 234, y: 85, text: '孔辺細胞', size: 13 },
+          leader(230, 150, 163, 132),
+          { type: 'text', x: 234, y: 155, text: '気孔', size: 13 },
+          { type: 'text', x: 160, y: 236, text: '水蒸気・酸素・二酸化炭素が出入りする', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp4-w1', concept: 'bo-transport',
+      prompt: '予想しよう。葉にワセリンをぬって気孔をふさぐと、枝から出ていく水の量はどうなると思う？',
+      options: ['減る', '増える', '変わらない'],
+      answer: 'a',
+      explanation: '水は気孔から水蒸気となって出ていくので、気孔をふさぐと出ていく水が減ります。茎の中の通り道と、蒸散のしくみを復習しよう。',
+      hint: '水蒸気の出口をふさいだらどうなるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp4-p1', concept: 'bo-transport',
+        prompt: '2 種類の植物の茎の断面です（ア: 維管束が輪のように並ぶ、イ: 維管束が散らばっている）。ヒマワリの茎の断面はどちら？',
+        figure: STEM_PAIR_Q,
+        answer: 'r1',
+        explanation: 'ヒマワリは双子葉類なので、維管束が輪のように並んでいます（ア）。トウモロコシやユリなどの単子葉類は、維管束が散らばっています（イ）。',
+        hint: 'ヒマワリは、子葉が 2 枚のなかまだよ。',
+      }),
+      fill({
+        id: 'body-mp4-t1', concept: 'bo-transport', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '葉の表皮にある、2 つの[b1]に囲まれたすきまを[b2]という。',
+        blanks: [
+          word('b1', ['孔辺細胞', '表皮細胞', '道管'], '孔辺細胞'),
+          word('b2', ['気孔', '師管', '維管束'], '気孔'),
+        ],
+        explanation: '三日月形の 2 つの**孔辺細胞**に囲まれたすきまが**気孔**です。気孔は、孔辺細胞の形が変わることで開いたり閉じたりします。',
+        hint: '「孔」は小さな穴という意味だよ。',
+      }),
+      fill({
+        id: 'body-mp4-p2', concept: 'bo-transport',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '根から吸い上げた水や肥料分が通る管を[b1]、葉でつくられた栄養分が通る管を[b2]、2 つが集まった部分を[b3]という。',
+        blanks: [
+          word('b1', ['道管', '師管', '維管束'], '道管'),
+          word('b2', ['道管', '師管', '維管束'], '師管'),
+          word('b3', ['道管', '師管', '維管束'], '維管束'),
+        ],
+        explanation: '水や肥料分は道管、葉でつくられた栄養分は師管を通ります。道管と師管が集まった部分が維管束です。',
+        hint: '水の「道」が道管だよ。',
+      }),
+      choice({
+        id: 'body-mp4-p3', concept: 'bo-transport',
+        prompt: '葉の数と大きさがそろった枝を水にさし、ア 何もぬらない、イ 葉の表側にワセリン、ウ 葉の裏側にワセリン、エ 葉の表と裏の両方にワセリンをぬりました。水の減った量は ア 5.5 mL、イ 3.5 mL、ウ 2.5 mL、エ 0.5 mL でした。気孔が多いのは葉のどちら側？',
+        options: ['葉の裏側', '葉の表側', '表と裏で同じ'],
+        answer: 'a',
+        explanation: '裏側をふさいだウ（2.5 mL）のほうが、表側をふさいだイ（3.5 mL）より減り方が少ないので、裏側からの蒸散が多いと分かります。表側からは 5.5 − 3.5 ＝ 2.0 mL、裏側からは 5.5 − 2.5 ＝ 3.0 mL です。',
+        hint: 'ふさいだとき、水の減り方が大きく変わったのはどちら側かな。',
+      }),
+      choice({
+        id: 'body-mp4-p4', concept: 'bo-transport',
+        prompt: '上の実験で、葉の表と裏の両方にワセリンをぬったエでも、水が 0.5 mL 減りました。ここから分かることはどれ？',
+        options: ['葉以外の茎などからも、少し蒸散している', '葉の表側から最も多く蒸散している', 'ワセリンをぬると水が増える'],
+        answer: 'a',
+        explanation: 'エは葉の気孔をすべてふさいでいるので、減った 0.5 mL は茎などから出た水です。蒸散は、おもに葉で行われますが、茎からも少し行われます。',
+        hint: 'エで、水が出ていける場所はどこが残っているかな。',
+      }),
+      choice({
+        id: 'body-mp4-p5', concept: 'bo-transport',
+        prompt: '水を入れたメスシリンダーに枝をさし、水面に油をたらして明るい所に半日置きました。水の量はどうなる？',
+        options: ['減る', '増える', '変わらない'],
+        answer: 'a',
+        explanation: '根や茎から吸い上げた水が、葉の気孔から水蒸気となって出ていく（蒸散）ので、水は減ります。',
+        hint: '植物は水を吸い上げて、どこから出していたかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp4-r1', concept: 'bo-transport',
+        prompt: '2 種類の植物の茎の断面です（ア: 維管束が輪のように並ぶ、イ: 維管束が散らばっている）。トウモロコシの茎の断面はどちら？',
+        figure: STEM_PAIR_Q,
+        answer: 'r2',
+        explanation: 'トウモロコシは単子葉類なので、維管束が茎全体に散らばっています（イ）。ユリも同じなかまです。',
+        hint: 'トウモロコシは、子葉が 1 枚のなかまだよ。',
+      }),
+      fill({
+        id: 'body-mp4-r2', concept: 'bo-transport',
+        prompt: '空らんに入る数を入れよう。',
+        text: '何もぬらない枝で 5.5 mL、葉の裏側にワセリンをぬった枝で 2.5 mL の水が減ったとき、葉の裏側から出た水は[b1]と考えられる。',
+        blanks: [number('b1', 3.0, 0.1, 'mL')],
+        explanation: '何もぬらない枝は葉の表・裏・茎から、裏にぬった枝は葉の表と茎から蒸散しています。差の 5.5 − 2.5 ＝ 3.0 mL が、葉の裏側から出た水です。',
+        hint: '2 つの枝で、蒸散している場所のちがいは葉の裏側だけだよ。',
+      }),
+      choice({
+        id: 'body-mp4-r3', concept: 'bo-transport',
+        prompt: '蒸散の実験で、水面に油をたらしておくのはなぜ？',
+        options: ['水面から水が直接蒸発するのを防ぐため', '植物に養分をあたえるため', '水を冷やすため'],
+        answer: 'a',
+        explanation: '水面から水が蒸発すると、植物から出た水の量が正しく分かりません。油でふたをして、減った水がすべて植物を通ったものになるようにします。',
+        hint: '植物を通らずに水が減ることはないかな。',
+      }),
+      choice({
+        id: 'body-mp4-r4', concept: 'bo-transport',
+        prompt: '維管束の中で、葉でつくられた栄養分が通る管はどれ？',
+        options: ['師管', '道管', '気孔'],
+        answer: 'a',
+        explanation: '葉でつくられた栄養分は師管を通って、からだのいろいろな部分へ運ばれます。道管は、根から吸い上げた水や肥料分が通る管です。',
+        hint: '水が通る管ではないほうだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp5: 消化器官と小腸・肝臓（ミニプリント「消化器管」「小腸」「肝臓」） ----
+  const bodyMp5 = {
+    id: 'body-mp5', areaId: 'body-miniprint', title: 'プリント 5: 消化器官と小腸・肝臓', minutes: 5, concepts: ['bo-digestion'],
+    lessons: [
+      {
+        id: 'body-mp5-c1',
+        text: '食物は、口 → 食道 → 胃 → 小腸 → 大腸 → 肛門と運ばれます。口では**だ液せん**からだ液が出ます。**肝臓**は**胆汁**をつくり、胆汁は**胆のう**にたくわえられてから出されます。すい臓はすい液を出します。',
+        figure: GUT_NAMES,
+      },
+      {
+        id: 'body-mp5-c2',
+        text: '小腸のかべには多くのひだがあり、その表面に**柔毛**がびっしり並んでいるので、表面積が大きく養分を効率よく吸収できます。**肝臓**は、養分をたくわえたり、有害なアンモニアを**尿素**に変えたりします。',
+        figure: scene(villusItems().concat([
+          { type: 'text', x: 160, y: 20, text: '柔毛（小腸のかべの小さな突起）', size: 13, anchor: 'middle' },
+          leader(62, 120, 152, 120),
+          { type: 'text', x: 4, y: 116, text: 'リンパ管', size: 13 },
+          leader(258, 150, 210, 150),
+          { type: 'text', x: 260, y: 146, text: '毛細', size: 13 },
+          { type: 'text', x: 260, y: 162, text: '血管', size: 13 },
+          { type: 'text', x: 160, y: 226, text: 'ひだと柔毛で表面積が大きい', size: 12, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp5-w1', concept: 'bo-digestion',
+      prompt: '予想しよう。からだの中の内臓で、いちばん大きいのはどれだと思う？',
+      options: ['肝臓', '胃', '心臓'],
+      answer: 'a',
+      explanation: '肝臓は、内臓の中でいちばん大きな器官です。消化管と、消化を助ける器官のはたらきを復習しよう。',
+      hint: 'おなかの右上にある、大きな器官だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp5-p1', concept: 'bo-digestion',
+        prompt: 'ヒトの消化にかかわる器官の図です（図の左がからだの右。ア: 図の左上の大きな器官、イ: 図の右上のふくろのような器官、ウ: 中央で長く折りたたまれた管、エ: そのまわりを囲む太い管）。口から入った食物が通らない器官はどれ？',
+        figure: GUT_Q,
+        answer: 'r1',
+        explanation: 'アは肝臓で、食物は通りません。食物は、イの胃、ウの小腸、エの大腸を通ります。肝臓でつくられた胆汁は、管を通って小腸へ出されます。',
+        hint: '消化管（食物の通り道）ではない器官をさがそう。',
+      }),
+      fill({
+        id: 'body-mp5-t1', concept: 'bo-digestion', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '小腸のかべの表面にある小さな突起を[b1]という。[b1]の中には、毛細血管と[b2]が通っている。',
+        blanks: [
+          word('b1', ['柔毛', '肺胞', '気孔'], '柔毛'),
+          word('b2', ['リンパ管', '気管', '道管'], 'リンパ管'),
+        ],
+        explanation: '小腸のかべの突起が**柔毛**です。中には毛細血管と**リンパ管**が通っていて、吸収した養分を運びます。',
+        hint: '脂肪からできた物質が入る管は何だったかな。',
+      }),
+      choice({
+        id: 'body-mp5-p2', concept: 'bo-digestion',
+        prompt: '口から入った食物が通る器官を、順にならべたものはどれ？',
+        options: ['口 → 食道 → 胃 → 小腸 → 大腸 → 肛門', '口 → 食道 → 肝臓 → 胃 → 小腸 → 肛門', '口 → 胃 → 食道 → 大腸 → 小腸 → 肛門'],
+        answer: 'a',
+        explanation: '食物は、口 → 食道 → 胃 → 小腸 → 大腸 → 肛門の順に消化管を通ります。肝臓やすい臓は食物が通らない器官です。',
+        hint: '肝臓は、食物の通り道ではなかったね。',
+      }),
+      choice({
+        id: 'body-mp5-p3', concept: 'bo-digestion',
+        prompt: 'ブドウ糖・アミノ酸・脂肪酸・モノグリセリドのうち、柔毛の毛細血管に入るものの組み合わせはどれ？',
+        options: ['ブドウ糖とアミノ酸', '脂肪酸とモノグリセリド', 'ブドウ糖と脂肪酸', '4 つすべて'],
+        answer: 'a',
+        explanation: 'ブドウ糖とアミノ酸は毛細血管に入ります。脂肪酸とモノグリセリドは、柔毛の中で再び脂肪になってリンパ管に入ります。',
+        hint: 'リンパ管に入るのは、脂肪からできた 2 つだよ。',
+      }),
+      choice({
+        id: 'body-mp5-p4', concept: 'bo-digestion',
+        prompt: '肝臓のはたらきとして、正しくないものはどれ？',
+        options: ['養分をたくわえ、必要なときに送り出す', '有害なアンモニアを尿素に変える', '脂肪の消化を助ける胆汁をつくる', '血液中の尿素をこし出して尿をつくる'],
+        answer: 'd',
+        explanation: '尿素をこし出して尿をつくるのはじん臓です。肝臓は、養分をたくわえる、アンモニアを尿素に変える、胆汁をつくるなど、たくさんのはたらきをしています。',
+        hint: '尿をつくる器官は別にあったね。',
+      }),
+      choice({
+        id: 'body-mp5-p5', concept: 'bo-digestion',
+        prompt: '口の近くにあるだ液せんから出る消化液はどれ？',
+        options: ['だ液', '胃液', '胆汁', 'すい液'],
+        answer: 'a',
+        explanation: 'だ液せんからはだ液が出ます。だ液にはデンプンを分解するアミラーゼがふくまれています。',
+        hint: '名前に答えが入っているよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp5-r1', concept: 'bo-digestion',
+        prompt: 'ヒトの消化にかかわる器官の図です（図の左がからだの右。ア: 図の左上の大きな器官、イ: 図の右上のふくろのような器官、ウ: 中央で長く折りたたまれた管、エ: そのまわりを囲む太い管）。分解された養分の多くを吸収する器官はどれ？',
+        figure: GUT_Q,
+        answer: 'r3',
+        explanation: '養分の多くは小腸（ウ）の柔毛から吸収されます。大腸（エ）では、おもに水分が吸収されます。',
+        hint: '柔毛がたくさんある長い管だよ。',
+      }),
+      choice({
+        id: 'body-mp5-r2', concept: 'bo-digestion',
+        prompt: '肝臓について正しいものはどれ？',
+        options: ['内臓の中でいちばん大きく、養分をたくわえる', '食物が通る消化管の一部である', '尿をためておく'],
+        answer: 'a',
+        explanation: '肝臓は内臓の中でいちばん大きな器官で、小腸で吸収された養分をたくわえます。食物は通りません。',
+        hint: '肝臓は、食物の通り道ではないよ。',
+      }),
+      fill({
+        id: 'body-mp5-r3', concept: 'bo-digestion',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '肝臓では、タンパク質が分解されてできる有害な[b1]が、害の少ない[b2]に変えられる。',
+        blanks: [
+          word('b1', ['アンモニア', 'ブドウ糖', '二酸化炭素'], 'アンモニア'),
+          word('b2', ['尿素', '胆汁', 'アミノ酸'], '尿素'),
+        ],
+        explanation: 'アミノ酸が使われるとアンモニアができます。肝臓はこれを尿素に変え、尿素はじん臓でこし出されて尿として出されます。',
+        hint: '尿の中にふくまれる物質の名前だよ。',
+      }),
+      choice({
+        id: 'body-mp5-r4', concept: 'bo-digestion',
+        prompt: '肝臓でつくられた胆汁が、一時たくわえられるところはどこ？',
+        options: ['胆のう', 'すい臓', 'ぼうこう'],
+        answer: 'a',
+        explanation: '胆汁は胆のうにたくわえられ、小腸（十二指腸）へ出されて脂肪の消化を助けます。',
+        hint: '胆汁の「胆」がつく器官だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp6: 消化酵素とだ液の実験（ミニプリント「消化酵素」「唾液の実験１〜３」） ----
+  const bodyMp6 = {
+    id: 'body-mp6', areaId: 'body-miniprint', title: 'プリント 6: 消化酵素とだ液の実験', minutes: 5, concepts: ['bo-digestion'],
+    lessons: [
+      {
+        id: 'body-mp6-c1',
+        text: '食物を吸収できる形に分解することを**消化**、消化液にふくまれ養分を分解する物質を**消化酵素**といいます。デンプンは**ブドウ糖**、タンパク質は**アミノ酸**、脂肪は**脂肪酸**と**モノグリセリド**にまで分解されます。',
+        // 養分と最後に分解されたもの
+        figure: scene([
+          ...[['デンプン', 'ブドウ糖', 'だ液・すい液など', 50], ['タンパク質', 'アミノ酸', '胃液・すい液など', 112], ['脂肪', null, 'すい液など', 176]].flatMap(([a, b, e, y]) => [
+            { type: 'text', x: 8, y, text: a, size: 14, bold: true },
+            { type: 'arrow', x1: 104, y1: y - 5, x2: 168, y2: y - 5, width: 2 },
+            { type: 'text', x: 136, y: y - 16, text: e, size: 12, anchor: 'middle' },
+          ].concat(b ? [{ type: 'text', x: 176, y, text: b, size: 14 }] : [])),
+          { type: 'text', x: 176, y: 168, text: '脂肪酸', size: 13 },
+          { type: 'text', x: 176, y: 186, text: '＋ モノグリセリド', size: 13 },
+          { type: 'text', x: 160, y: 228, text: '最後は小腸の柔毛から吸収される', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'body-mp6-c2',
+        text: 'デンプンのりに水を加えた A と、だ液を加えた B を約 40 ℃ に保ちます。**ヨウ素液**を加えると A だけ青紫色になり、**ベネジクト液**を加えて加熱すると B だけ赤褐色の沈殿ができます。だ液がデンプンを麦芽糖などに変えたのです。',
+        figure: scene(salivaItems()),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp6-w1', concept: 'bo-digestion',
+      prompt: '予想しよう。デンプン溶液にだ液を加え、2 分おきに少しずつとり出してヨウ素液を加えていくと、色はどう変わると思う？',
+      options: ['青紫色がだんだんうすくなる', 'だんだん濃い青紫色になる', 'ずっと同じ色のまま'],
+      answer: 'a',
+      explanation: 'だ液がデンプンを分解していくので、時間がたつほどデンプンが減り、青紫色がうすくなっていきます。消化酵素のはたらきを実験で確かめよう。',
+      hint: 'だ液は、デンプンをどうするのだったかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp6-p1', concept: 'bo-digestion',
+        prompt: 'デンプンのりに水を加えた A（ア）と、だ液を加えた B（イ）を、約 40 ℃ の湯に入れました。そのあとベネジクト液を加えて加熱したとき、赤褐色の沈殿ができるのはどちら？',
+        figure: SALIVA_Q,
+        answer: 'r2',
+        explanation: 'ベネジクト液は、麦芽糖やブドウ糖などがあると、加熱したときに赤褐色の沈殿ができます。だ液を加えたイ（B）では、デンプンが麦芽糖などに分解されています。',
+        hint: '麦芽糖などができているのは、だ液を加えたほうだね。',
+      }),
+      fill({
+        id: 'body-mp6-t1', concept: 'bo-digestion', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '食物を吸収できる小さな物質に分解することを[b1]といい、そのはたらきをする、消化液にふくまれる物質を[b2]という。',
+        blanks: [
+          word('b1', ['消化', '吸収', '排出'], '消化'),
+          word('b2', ['消化酵素', '消化管', '柔毛'], '消化酵素'),
+        ],
+        explanation: '分解することを**消化**、分解する物質を**消化酵素**といいます。だ液のアミラーゼ、胃液のペプシンは消化酵素の例です。',
+        hint: 'アミラーゼやペプシンをまとめた呼び名だよ。',
+      }),
+      choice({
+        id: 'body-mp6-p2', concept: 'bo-digestion',
+        prompt: 'デンプン溶液にだ液を加え、2 分おきに少しずつとり出してヨウ素液を加えました。とり出した時間が早いものから順に、色の変化として正しいものはどれ？',
+        options: ['青紫色 → 赤紫色 → ヨウ素液の色（うすい茶色）', 'ヨウ素液の色（うすい茶色） → 赤紫色 → 青紫色', '赤紫色 → 青紫色 → ヨウ素液の色（うすい茶色）'],
+        answer: 'a',
+        explanation: 'はじめはデンプンが多いので青紫色、分解が進むと赤紫色になり、デンプンがなくなるとヨウ素液そのもののうすい茶色（黄色っぽい色）になります。',
+        hint: '時間がたつほど、デンプンは減っていくよ。',
+      }),
+      choice({
+        id: 'body-mp6-p3', concept: 'bo-digestion',
+        prompt: '上の実験で、時間がたつとヨウ素液の色が変わらなくなりました。デンプンはどうなった？',
+        options: ['だ液によって、麦芽糖などに分解された', '水にとけて見えなくなった', '熱で固まった'],
+        answer: 'a',
+        explanation: 'だ液にふくまれるアミラーゼが、デンプンを麦芽糖などに分解したので、ヨウ素液で調べてもデンプンがなくなっていました。',
+        hint: 'だ液にふくまれる消化酵素のはたらきだよ。',
+      }),
+      fill({
+        id: 'body-mp6-p4', concept: 'bo-digestion',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ヨウ素液は[b1]があるかを調べる薬品で、あると[b2]色になる。ベネジクト液は[b3]があるかを調べる薬品で、加熱すると[b4]色の沈殿ができる。',
+        blanks: [
+          word('b1', ['デンプン', '麦芽糖など', 'タンパク質'], 'デンプン'),
+          word('b2', ['青紫', '赤褐', '白'], '青紫'),
+          word('b3', ['デンプン', '麦芽糖など', '脂肪'], '麦芽糖など'),
+          word('b4', ['青紫', '赤褐', '白'], '赤褐'),
+        ],
+        explanation: 'ヨウ素液はデンプンで青紫色、ベネジクト液は麦芽糖やブドウ糖などで、加熱すると赤褐色の沈殿ができます。ベネジクト液は加熱しないと色が変わりません。',
+        hint: '2 つの薬品が、それぞれ何を見つけるのか整理しよう。',
+      }),
+      choice({
+        id: 'body-mp6-p5', concept: 'bo-digestion',
+        prompt: '脂肪が最後に分解されてできる 2 つの物質はどれ？',
+        options: ['脂肪酸とモノグリセリド', '塩酸とワセリン', 'ブドウ糖とアミノ酸', 'アミノ酸と脂肪酸'],
+        answer: 'a',
+        explanation: '脂肪は、すい液のリパーゼなどのはたらきで、脂肪酸とモノグリセリドに分解されます。ブドウ糖はデンプン、アミノ酸はタンパク質が分解されたものです。',
+        hint: '「脂肪」の字がつくものと、もう 1 つだよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp6-r1', concept: 'bo-digestion',
+        prompt: 'デンプンのりに水を加えた A（ア）と、だ液を加えた B（イ）を、約 40 ℃ の湯に入れました。そのあとヨウ素液を加えたとき、青紫色になるのはどちら？',
+        figure: SALIVA_Q,
+        answer: 'r1',
+        explanation: '水を加えたア（A）ではデンプンがそのまま残っているので、ヨウ素液で青紫色になります。だ液を加えたイ（B）では、デンプンが分解されています。',
+        hint: 'デンプンが残っているのはどちらかな。',
+      }),
+      choice({
+        id: 'body-mp6-r2', concept: 'bo-digestion',
+        prompt: 'A（デンプンのり＋水）と B（デンプンのり＋だ液）の結果から分かる、だ液のはたらきはどれ？',
+        options: ['デンプンを麦芽糖などに変えるはたらき', 'デンプンをつくるはたらき', 'タンパク質を分解するはたらき'],
+        answer: 'a',
+        explanation: 'B ではデンプンがなくなり（ヨウ素液が反応しない）、麦芽糖などができた（ベネジクト液が反応する）ので、だ液にはデンプンを麦芽糖などに変えるはたらきがあると分かります。',
+        hint: 'ヨウ素液とベネジクト液の結果を合わせて考えよう。',
+      }),
+      choice({
+        id: 'body-mp6-r3', concept: 'bo-digestion',
+        prompt: '水にヨウ素液を加えたときの色はどれ？',
+        options: ['うすい茶色（ヨウ素液の色のまま）', '青紫色', '赤褐色'],
+        answer: 'a',
+        explanation: '水にはデンプンがないので、ヨウ素液はそのもののうすい茶色（黄色っぽい色）のままです。デンプンがあるときだけ青紫色になります。',
+        hint: '水にはデンプンがふくまれているかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp7: 血液と心臓（ミニプリント「血液の成分」「心臓のつくり」「心臓と血管」） ----
+  const bodyMp7 = {
+    id: 'body-mp7', areaId: 'body-miniprint', title: 'プリント 7: 血液と心臓', minutes: 5, concepts: ['bo-circulation'],
+    lessons: [
+      {
+        id: 'body-mp7-c1',
+        text: '血液の固形の成分は、酸素を運ぶ**赤血球**、細菌などを分解する**白血球**、出血したとき血液を固める**血小板**です。液体の**血しょう**は養分や不要な物質を運び、一部は毛細血管からしみ出して細胞のまわりを満たす**組織液**になります。',
+        figure: scene(bloodItems().concat([
+          leader(44, 38, 52, 48),
+          { type: 'text', x: 18, y: 32, text: '赤血球', size: 13 },
+          { type: 'text', x: 124, y: 102, text: '血小板', size: 13, anchor: 'middle' },
+          { type: 'text', x: 230, y: 140, text: '白血球', size: 13, anchor: 'middle' },
+          { type: 'text', x: 24, y: 214, text: '血しょう（液体）', size: 13 },
+        ])),
+      },
+      {
+        id: 'body-mp7-c2',
+        text: '心臓は**右心房**・**右心室**・**左心房**・**左心室**の 4 つの部屋に分かれています。全身からもどった血液は、大静脈 → 右心房 → 右心室 → 肺動脈 → 肺 → 肺静脈 → 左心房 → 左心室 → 大動脈と流れます。',
+        figure: scene(heartRooms(true).concat([
+          { type: 'text', x: 160, y: 44, text: '正面から見た図（図の左がからだの右）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 210, text: '全身 → 右心房 → 右心室 → 肺', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 230, text: '肺 → 左心房 → 左心室 → 全身', size: 12, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp7-w1', concept: 'bo-circulation',
+      prompt: '予想しよう。血液が赤く見えるのは、血液のどの成分のためだと思う？',
+      options: ['赤血球', '白血球', '血しょう'],
+      answer: 'a',
+      explanation: '赤血球にふくまれる赤い物質（ヘモグロビン）のために、血液は赤く見えます。血液の成分と、心臓のつくりを復習しよう。',
+      hint: '名前に色が入っている成分だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp7-p1', concept: 'bo-circulation',
+        prompt: '血液を顕微鏡で見たようすの模式図です（ア: 赤い円盤形の粒、イ: とても小さな粒、ウ: 大きく核のある粒、エ: 粒のまわりの液体）。細菌などの病原体をとらえて分解するのはどれ？',
+        figure: BLOOD_Q,
+        answer: 'r3',
+        explanation: '細菌などを分解するのは白血球（ウ）です。アは赤血球、イは血小板、エは血しょうです。',
+        hint: '核があって、形を変えて動ける成分だよ。',
+      }),
+      fill({
+        id: 'body-mp7-t1', concept: 'bo-circulation', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '血しょうの一部は毛細血管からしみ出して、細胞のまわりを満たす[b1]になる。',
+        blanks: [word('b1', ['組織液', '胃液', '胆汁'], '組織液')],
+        explanation: 'しみ出した血しょうを**組織液**といいます。組織液を通して、細胞と血液のあいだで酸素・養分や二酸化炭素・不要な物質が受けわたされます。',
+        hint: '組織（細胞の集まり）のまわりの液だよ。',
+      }),
+      figureChoice({
+        id: 'body-mp7-p2', concept: 'bo-circulation',
+        prompt: 'ヒトの心臓の 4 つの部屋を、正面から見た模式図です（図の左がからだの右。ア: 図の左上、イ: 図の左下、ウ: 図の右上、エ: 図の右下）。全身からもどった血液が、大静脈を通って最初に入る部屋はどれ？',
+        figure: HEART_Q,
+        answer: 'r1',
+        explanation: '全身からもどった血液は、大静脈から右心房（ア）に入ります。そのあと右心室（イ）から肺動脈を通って肺へ送られます。',
+        hint: '全身からの血液は、心臓の「右」の上の部屋に入るよ。',
+      }),
+      choice({
+        id: 'body-mp7-p3', concept: 'bo-circulation',
+        prompt: '大静脈から始めて、血液が流れる順として正しいものはどれ？',
+        options: [
+          '大静脈 → 右心房 → 右心室 → 肺動脈 → 肺 → 肺静脈 → 左心房 → 左心室 → 大動脈 → 全身',
+          '大静脈 → 左心房 → 左心室 → 肺静脈 → 肺 → 肺動脈 → 右心房 → 右心室 → 大動脈 → 全身',
+          '大静脈 → 右心室 → 右心房 → 肺静脈 → 肺 → 肺動脈 → 左心室 → 左心房 → 大動脈 → 全身',
+        ],
+        answer: 'a',
+        explanation: '血液は、心房に入ってから心室へ送られます。全身からの血液は右心房 → 右心室 → 肺動脈 → 肺 → 肺静脈 → 左心房 → 左心室 → 大動脈と流れて、全身へ送られます。',
+        hint: '心房（入る部屋）→ 心室（送り出す部屋）の順だよ。',
+      }),
+      choice({
+        id: 'body-mp7-p4', concept: 'bo-circulation',
+        prompt: '血管の説明として、正しくないものはどれ？',
+        options: ['動脈には、心臓から送り出される血液が流れる', '静脈には、心臓へもどる血液が流れる', '毛細血管は、髪の毛より細い', '動脈のかべは、静脈のかべよりうすい'],
+        answer: 'd',
+        explanation: '動脈は心臓から勢いよく送り出される血液が流れるので、かべがあつく弾力があります。静脈のかべは動脈よりうすく、ところどころに弁があります。',
+        hint: '勢いの強い血液が流れる血管は、じょうぶなほうがいいね。',
+      }),
+      fill({
+        id: 'body-mp7-p5', concept: 'bo-circulation',
+        prompt: '血管の名前を入れよう。',
+        text: '右心室から肺へ血液を送る血管を[b1]、肺から左心房へもどる血管を[b2]、左心室から全身へ血液を送る血管を[b3]という。',
+        blanks: [
+          word('b1', ['肺動脈', '肺静脈', '大動脈', '大静脈'], '肺動脈'),
+          word('b2', ['肺動脈', '肺静脈', '大動脈', '大静脈'], '肺静脈'),
+          word('b3', ['肺動脈', '肺静脈', '大動脈', '大静脈'], '大動脈'),
+        ],
+        explanation: '心臓から出る血管が動脈、心臓へもどる血管が静脈です。肺へ行くのが肺動脈、肺からもどるのが肺静脈、全身へ行くのが大動脈、全身からもどるのが大静脈です。',
+        hint: '心臓から「出る」か「もどる」かで、動脈と静脈を決めよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp7-r1', concept: 'bo-circulation',
+        prompt: '血液を顕微鏡で見たようすの模式図です（ア: 赤い円盤形の粒、イ: とても小さな粒、ウ: 大きく核のある粒、エ: 粒のまわりの液体）。出血したときに血液を固めるはたらきをするのはどれ？',
+        figure: BLOOD_Q,
+        answer: 'r2',
+        explanation: '血液を固めるのは血小板（イ）です。血小板は、血液の固形の成分の中でいちばん小さい成分です。',
+        hint: 'いちばん小さな粒だよ。',
+      }),
+      figureChoice({
+        id: 'body-mp7-r2', concept: 'bo-circulation',
+        prompt: '血液を顕微鏡で見たようすの模式図です（ア: 赤い円盤形の粒、イ: とても小さな粒、ウ: 大きく核のある粒、エ: 粒のまわりの液体）。養分や二酸化炭素などをとかして運ぶ液体の成分はどれ？',
+        figure: BLOOD_Q,
+        answer: 'r4',
+        explanation: '養分や二酸化炭素、不要な物質をとかして運ぶのは、液体の血しょう（エ）です。',
+        hint: '粒ではなく、液体の部分だよ。',
+      }),
+      figureChoice({
+        id: 'body-mp7-r3', concept: 'bo-circulation',
+        prompt: 'ヒトの心臓の 4 つの部屋を、正面から見た模式図です（図の左がからだの右。ア: 図の左上、イ: 図の左下、ウ: 図の右上、エ: 図の右下）。肺動脈へ血液を送り出す部屋はどれ？',
+        figure: HEART_Q,
+        answer: 'r2',
+        explanation: '肺動脈へ血液を送り出すのは右心室（イ）です。右心房から入った血液は、右心室から肺へ送られます。',
+        hint: '血液を送り出すのは「心室」だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp8: 呼吸と排出（ミニプリント「呼吸」「排出のしくみ」） ----
+  const bodyMp8 = {
+    id: 'body-mp8', areaId: 'body-miniprint', title: 'プリント 8: 呼吸と排出', minutes: 5, concepts: ['bo-circulation'],
+    lessons: [
+      {
+        id: 'body-mp8-c1',
+        text: '鼻や口から吸った空気は、**気管** → **気管支** → **肺胞**へ入ります。肺胞のまわりの毛細血管で、酸素が血液にとりこまれ、二酸化炭素が出されます。肺胞がたくさんあるので表面積が大きく、気体の交換を効率よく行えます。',
+        figure: scene(lungItems().concat([
+          { type: 'text', x: 174, y: 40, text: '気管', size: 13 },
+          { type: 'text', x: 198, y: 100, text: '気管支', size: 13 },
+          leader(256, 146, 238, 146),
+          { type: 'text', x: 260, y: 151, text: '肺胞', size: 13 },
+          leader(40, 204, 76, 176),
+          { type: 'text', x: 6, y: 222, text: '毛細血管', size: 13 },
+        ])),
+      },
+      {
+        id: 'body-mp8-c2',
+        text: 'タンパク質が分解されてできる有害な**アンモニア**は、血液で**肝臓**に運ばれ、害の少ない**尿素**に変えられます。尿素などは**じん臓**で血液からこし出されて尿になり、**輸尿管**を通って**ぼうこう**にためられます。',
+        figure: scene(kidneyItems().concat([
+          { type: 'text', x: 140, y: 14, text: '大動脈', size: 12, anchor: 'end' },
+          { type: 'text', x: 180, y: 14, text: '大静脈', size: 12 },
+          leader(250, 46, 234, 56),
+          { type: 'text', x: 252, y: 44, text: 'じん臓', size: 13 },
+          leader(70, 156, 120, 140),
+          { type: 'text', x: 20, y: 166, text: '輸尿管', size: 13 },
+          { type: 'text', x: 196, y: 206, text: 'ぼうこう', size: 13 },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp8-w1', concept: 'bo-circulation',
+      prompt: '予想しよう。吸う息とはく息では、二酸化炭素が多くふくまれているのはどちらだと思う？',
+      options: ['はく息', '吸う息', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '肺で血液中の二酸化炭素が出されるので、はく息のほうが二酸化炭素を多くふくみます。肺のつくりと、不要な物質を出すしくみを復習しよう。',
+      hint: '肺では、何をとり入れて何を出していたかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp8-p1', concept: 'bo-circulation',
+        prompt: '肺のつくりの模式図です（ア: いちばん上の太い管、イ: 枝分かれした管、ウ: 先にある小さなふくろの集まり。赤い線は毛細血管）。酸素と二酸化炭素の交換が行われるのはどれ？',
+        figure: LUNG_Q,
+        answer: 'r3',
+        explanation: '気体の交換は、肺胞（ウ）とそのまわりの毛細血管とのあいだで行われます。アは気管、イは気管支です。',
+        hint: '毛細血管がとり囲んでいる部分をさがそう。',
+      }),
+      fill({
+        id: 'body-mp8-t1', concept: 'bo-circulation', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '気管支の先にある小さなふくろを[b1]といい、そのまわりを[b2]がとり囲んでいる。',
+        blanks: [
+          word('b1', ['肺胞', '柔毛', '気孔'], '肺胞'),
+          word('b2', ['毛細血管', 'リンパ管', '神経'], '毛細血管'),
+        ],
+        explanation: '小さなふくろが**肺胞**で、まわりを**毛細血管**がとり囲んでいます。肺胞の中の空気と毛細血管の血液のあいだで、酸素と二酸化炭素が交換されます。',
+        hint: '小腸の柔毛と同じように、表面積を大きくするつくりだよ。',
+      }),
+      choice({
+        id: 'body-mp8-p2', concept: 'bo-circulation',
+        prompt: '肺胞から毛細血管の血液へ移る気体と、毛細血管の血液から肺胞へ出される気体の組み合わせはどれ？',
+        options: ['肺胞 → 血液: 酸素、血液 → 肺胞: 二酸化炭素', '肺胞 → 血液: 二酸化炭素、血液 → 肺胞: 酸素', 'どちらも酸素'],
+        answer: 'a',
+        explanation: '吸った空気の酸素は肺胞から血液にとりこまれ、全身から運ばれてきた二酸化炭素は血液から肺胞へ出されて、はく息とともに出ていきます。',
+        hint: 'はく息に多くふくまれている気体を思い出そう。',
+      }),
+      figureChoice({
+        id: 'body-mp8-p3', concept: 'bo-circulation',
+        prompt: 'ヒトの排出にかかわる器官の模式図です（ア: 左右に 1 つずつある器官、イ: 下にあるふくろ、ウ: アとイをつなぐ管）。血液中から尿素などの不要な物質をこし出すのはどれ？',
+        figure: KIDNEY_Q,
+        answer: 'r1',
+        explanation: '血液中から尿素などをこし出して尿をつくるのは、じん臓（ア）です。尿は輸尿管（ウ）を通ってぼうこう（イ）にためられます。',
+        hint: '血管がつながっている器官だよ。',
+      }),
+      fill({
+        id: 'body-mp8-p4', concept: 'bo-circulation',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'タンパク質が分解してできた有害な[b1]は、血液で[b2]に運ばれ、害の少ない[b3]に変えられる。',
+        blanks: [
+          word('b1', ['アンモニア', '二酸化炭素', 'ブドウ糖'], 'アンモニア'),
+          word('b2', ['肝臓', 'じん臓', 'すい臓'], '肝臓'),
+          word('b3', ['尿素', '尿', '胆汁'], '尿素'),
+        ],
+        explanation: 'アンモニアは肝臓で尿素に変えられます。尿素はじん臓で血液からこし出され、尿として体外へ出されます。',
+        hint: '尿素をつくるのと、こし出すのは別の器官だよ。',
+      }),
+      choice({
+        id: 'body-mp8-p5', concept: 'bo-circulation',
+        prompt: 'じん臓でつくられた尿は、どこを通ってぼうこうにためられる？',
+        options: ['輸尿管', '気管', '大動脈'],
+        answer: 'a',
+        explanation: '尿はじん臓から輸尿管を通ってぼうこうに運ばれ、ためられてから体外へ出されます。',
+        hint: '尿を「輸（運）」ぶ管だよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp8-r1', concept: 'bo-circulation',
+        prompt: 'ヒトの排出にかかわる器官の模式図です（ア: 左右に 1 つずつある器官、イ: 下にあるふくろ、ウ: アとイをつなぐ管）。尿を一時ためておくのはどれ？',
+        figure: KIDNEY_Q,
+        answer: 'r2',
+        explanation: '尿を一時ためておくのはぼうこう（イ）です。アはじん臓、ウは輸尿管です。',
+        hint: 'ふくろの形をした器官だよ。',
+      }),
+      figureChoice({
+        id: 'body-mp8-r2', concept: 'bo-circulation',
+        prompt: '肺のつくりの模式図です（ア: いちばん上の太い管、イ: 枝分かれした管、ウ: 先にある小さなふくろの集まり。赤い線は毛細血管）。鼻や口から吸った空気が最初に通る太い管はどれ？',
+        figure: LUNG_Q,
+        answer: 'r1',
+        explanation: '吸った空気は気管（ア）を通り、枝分かれした気管支（イ）を通って肺胞（ウ）に入ります。',
+        hint: '枝分かれする前の管だよ。',
+      }),
+      choice({
+        id: 'body-mp8-r3', concept: 'bo-circulation',
+        prompt: '肺には筋肉がありません。肺に空気が出入りするのは、何の動きによる？',
+        options: ['横隔膜とろっ骨の動き', '肺の筋肉の動き', '心臓の拍動'],
+        answer: 'a',
+        explanation: '横隔膜が下がり、ろっ骨が上がると胸の中が広がって空気が肺に入ります。逆に動くと空気が出ていきます。',
+        hint: '胸とおなかのさかいにある膜を思い出そう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp9: 感覚器官（ミニプリント「目のしくみ」「耳の仕組み」「鼻、舌、皮膚のしくみ」「感覚器官と動物の目」） ----
+  const bodyMp9 = {
+    id: 'body-mp9', areaId: 'body-miniprint', title: 'プリント 9: 感覚器官', minutes: 5, concepts: ['bo-sense'],
+    lessons: [
+      {
+        id: 'body-mp9-c1',
+        text: '目では、**レンズ**（水晶体）で光が屈折し、**網膜**に像を結びます。網膜の細胞が受けとった刺激は、視神経で脳へ伝わります。**虹彩**はひとみの大きさを変えて、目に入る光の量を調節します。',
+        figure: scene(eyeItems().concat([
+          { type: 'text', x: 120, y: 30, text: 'レンズ（水晶体）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 48, y: 210, text: '虹彩', size: 13, anchor: 'middle' },
+          { type: 'text', x: 284, y: 30, text: '網膜', size: 13, anchor: 'middle' },
+          { type: 'text', x: 290, y: 150, text: '視神経', size: 13, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'body-mp9-c2',
+        text: '耳では、音で**鼓膜**が振動し、**耳小骨**を通って**うずまき管**に伝わり、そこの細胞が音の刺激を受けとります。**半規管**はからだの傾きや回転を感じます。鼻はにおい、舌は味、皮ふは圧力・温度・痛みを受けとります。',
+        figure: scene(earItems().concat([
+          { type: 'text', x: 104, y: 196, text: '鼓膜', size: 13, anchor: 'middle' },
+          { type: 'text', x: 130, y: 92, text: '耳小骨', size: 13, anchor: 'middle' },
+          { type: 'text', x: 186, y: 200, text: 'うずまき管', size: 13, anchor: 'middle' },
+          leader(230, 66, 222, 64),
+          { type: 'text', x: 234, y: 70, text: '半規管', size: 13 },
+        ])),
+      },
+      {
+        id: 'body-mp9-c3',
+        text: '外界の刺激を受けとる器官を**感覚器官**といいます。シマウマのような草食動物は目が顔の横につき、広い範囲を見わたせます。ライオンのような肉食動物は目が前向きで、立体的に見える範囲が広く、えものとの距離をつかみやすいです。',
+        // 上から見た頭と、目で見える範囲
+        figure: scene([
+          { type: 'polygon', points: [[56, 118], [4, 50], [4, 200]], fill: 'sky', stroke: 'none' },
+          { type: 'polygon', points: [[104, 118], [156, 50], [156, 200]], fill: 'sky', stroke: 'none' },
+          { type: 'ellipse', x: 80, y: 130, rx: 26, ry: 36, fill: 'white', stroke: 'ink' },
+          { type: 'circle', x: 56, y: 118, r: 5, fill: 'ink', stroke: 'none' },
+          { type: 'circle', x: 104, y: 118, r: 5, fill: 'ink', stroke: 'none' },
+          { type: 'polygon', points: [[226, 124], [176, 34], [252, 34]], fill: 'sky', stroke: 'none' },
+          { type: 'polygon', points: [[254, 124], [228, 34], [304, 34]], fill: 'sky', stroke: 'none' },
+          { type: 'polygon', points: [[240, 76], [228, 34], [252, 34]], fill: '#9CC3F5', stroke: 'none' },
+          { type: 'ellipse', x: 240, y: 150, rx: 30, ry: 32, fill: 'sand', stroke: 'ink' },
+          { type: 'circle', x: 226, y: 124, r: 5, fill: 'ink', stroke: 'none' },
+          { type: 'circle', x: 254, y: 124, r: 5, fill: 'ink', stroke: 'none' },
+          { type: 'text', x: 80, y: 24, text: '上から見た図', size: 12, anchor: 'middle' },
+          { type: 'text', x: 80, y: 226, text: 'シマウマ: 目が横向き', size: 12, anchor: 'middle' },
+          { type: 'text', x: 240, y: 208, text: 'ライオン: 目が前向き', size: 12, anchor: 'middle' },
+          { type: 'text', x: 240, y: 228, text: '濃い所は立体的に見える', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp9-w1', concept: 'bo-sense',
+      prompt: '予想しよう。明るい所から暗い所に入ると、ひとみの大きさはどうなると思う？',
+      options: ['大きくなる', '小さくなる', '変わらない'],
+      answer: 'a',
+      explanation: '暗い所では、虹彩がはたらいてひとみが大きくなり、目に入る光の量を増やします。目や耳などの感覚器官のつくりを復習しよう。',
+      hint: '光を多くとり入れたいのは、明るい所と暗い所のどちらかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp9-p1', concept: 'bo-sense',
+        prompt: 'ヒトの目の断面の模式図です（左から光が入る。ア: 光を屈折させるふくらんだ部分、イ: ひとみのまわりの茶色の部分、ウ: いちばん奥の赤い膜、エ: 奥から出る黄色の太い線）。光の刺激を受けとる細胞があるのはどれ？',
+        figure: EYE_Q,
+        answer: 'r3',
+        explanation: '光の刺激を受けとる細胞があるのは、網膜（ウ）です。アはレンズ、イは虹彩、エは視神経です。',
+        hint: 'レンズを通った光が像を結ぶところだよ。',
+      }),
+      fill({
+        id: 'body-mp9-t1', concept: 'bo-sense', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '目・耳・鼻・舌・皮ふのように、外界からの刺激を受けとる器官を[b1]という。',
+        blanks: [word('b1', ['感覚器官', '消化器官', '中枢神経'], '感覚器官')],
+        explanation: '刺激を受けとる器官を**感覚器官**といいます。感覚器官には、それぞれ決まった刺激を受けとる細胞があります。',
+        hint: '刺激を「感じる」器官だよ。',
+      }),
+      choice({
+        id: 'body-mp9-p2', concept: 'bo-sense',
+        prompt: '近くの物を見るとき、目はどのようにピントを合わせる？',
+        options: ['レンズを厚くする', 'レンズをうすくする', '網膜を前に動かす'],
+        answer: 'a',
+        explanation: 'レンズのまわりの筋肉がはたらいて、近くを見るときはレンズを厚くし、遠くを見るときはレンズをうすくして、網膜に像を結ばせます。',
+        hint: '近くの物ほど、光を大きく曲げる必要があるよ。',
+      }),
+      figureChoice({
+        id: 'body-mp9-p3', concept: 'bo-sense',
+        prompt: 'ヒトの耳のつくりの模式図です（ア: 耳の穴のおくのうすい膜、イ: 膜につながる小さな骨、ウ: かたつむりのようなうず巻き、エ: 輪が 3 つ組み合わさった部分）。音の刺激を受けとる細胞があるのはどれ？',
+        figure: EAR_Q,
+        answer: 'r3',
+        explanation: '音の刺激を受けとる細胞があるのは、うずまき管（ウ）です。アは鼓膜、イは耳小骨、エは半規管です。',
+        hint: '鼓膜の振動は、耳小骨を通ってどこへ伝わるかな。',
+      }),
+      choice({
+        id: 'body-mp9-p4', concept: 'bo-sense',
+        prompt: '皮ふは圧力の刺激を受けとります。圧力のほかに皮ふが受けとる刺激の組み合わせはどれ？',
+        options: ['温度と痛み', '音と光', 'においと味'],
+        answer: 'a',
+        explanation: '皮ふには、ふれる・おす（圧力）、あたたかい・冷たい（温度）、痛みを受けとるところがあります。',
+        hint: '熱いものにふれたときに感じることを思い出そう。',
+      }),
+      choice({
+        id: 'body-mp9-p5', concept: 'bo-sense',
+        prompt: 'シマウマのように目が顔の横についていると、どんな点で生きるのに有利？',
+        options: ['広い範囲を見わたせて、敵を早く見つけやすい', '物を立体的に見て、距離をつかみやすい', '暗い所でもよく見える'],
+        answer: 'a',
+        explanation: '目が横についていると、見える範囲が広く、後ろのほうまで見わたせます。肉食動物に早く気づいてにげるのに役立ちます。',
+        hint: '草食動物は、おそわれないことが大切だね。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp9-r1', concept: 'bo-sense',
+        prompt: 'ヒトの目の断面の模式図です（左から光が入る。ア: 光を屈折させるふくらんだ部分、イ: ひとみのまわりの茶色の部分、ウ: いちばん奥の赤い膜、エ: 奥から出る黄色の太い線）。ひとみの大きさを変えて、目に入る光の量を調節するのはどれ？',
+        figure: EYE_Q,
+        answer: 'r2',
+        explanation: 'ひとみの大きさを変えるのは虹彩（イ）です。明るい所ではひとみを小さく、暗い所では大きくします。',
+        hint: 'ひとみのまわりにある部分だよ。',
+      }),
+      figureChoice({
+        id: 'body-mp9-r2', concept: 'bo-sense',
+        prompt: 'ヒトの耳のつくりの模式図です（ア: 耳の穴のおくのうすい膜、イ: 膜につながる小さな骨、ウ: かたつむりのようなうず巻き、エ: 輪が 3 つ組み合わさった部分）。音を受けて最初に振動するのはどれ？',
+        figure: EAR_Q,
+        answer: 'r1',
+        explanation: '音は空気の振動で、まず鼓膜（ア）を振動させます。その振動が耳小骨（イ）からうずまき管（ウ）へ伝わります。',
+        hint: '耳の穴のいちばん奥にある膜だよ。',
+      }),
+      choice({
+        id: 'body-mp9-r3', concept: 'bo-sense',
+        prompt: '耳が、音のほかに感じとっているものはどれ？',
+        options: ['からだの傾きや回転', 'におい', '温度'],
+        answer: 'a',
+        explanation: '耳の半規管などは、からだの傾きや回転を感じとり、からだのつり合いを保つのに役立っています。',
+        hint: 'くるくる回ると目が回るのは、耳と関係があるよ。',
+      }),
+      choice({
+        id: 'body-mp9-r4', concept: 'bo-sense',
+        prompt: '遠くの物を見るとき、目はどのようにピントを合わせる？',
+        options: ['レンズをうすくする', 'レンズを厚くする', 'ひとみを閉じる'],
+        answer: 'a',
+        explanation: '遠くを見るときはレンズをうすくして、光の曲がり方を小さくし、網膜に像を結ばせます。',
+        hint: '近くを見るときと、反対の動きだよ。',
+      }),
+      fill({
+        id: 'body-mp9-r5', concept: 'bo-sense',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '鼻のおくの細胞は空気中の[b1]の刺激を、舌の細胞は[b2]の刺激を受けとる。',
+        blanks: [
+          word('b1', ['におい', '味', '音'], 'におい'),
+          word('b2', ['味', 'におい', '光'], '味'),
+        ],
+        explanation: '鼻はにおい、舌は味の刺激を受けとる感覚器官です。かぜで鼻がつまると味が分かりにくくなるのは、においも味の感じ方に関係しているからです。',
+        hint: '鼻と舌で感じるものを考えよう。',
+      }),
+      choice({
+        id: 'body-mp9-r6', concept: 'bo-sense',
+        prompt: 'ライオンのように目が顔の前についていると、どんな点で有利？',
+        options: ['物が立体的に見えて、えものとの距離をつかみやすい', '後ろまで見わたせる', 'においがよく分かる'],
+        answer: 'a',
+        explanation: '両目で見える範囲が重なるところでは、物が立体的に見え、距離がつかみやすくなります。えものをとらえる肉食動物に役立ちます。',
+        hint: '両目で見える範囲が重なると、何が分かりやすくなるかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp10: 刺激と反応・反射（ミニプリント「刺激と反応」「反射」） ----
+  const bodyMp10 = {
+    id: 'body-mp10', areaId: 'body-miniprint', title: 'プリント 10: 刺激と反応・反射', minutes: 5, concepts: ['bo-nerve'],
+    lessons: [
+      {
+        id: 'body-mp10-c1',
+        text: '脳と脊髄を**中枢神経**、そこから枝分かれして全身に広がる神経を**末しょう神経**といいます。刺激の信号は**感覚神経**で中枢神経へ、中枢神経からの命令は**運動神経**で筋肉へ伝わります。',
+        figure: scene(nerveItems(true).concat([
+          { type: 'text', x: 108, y: 40, text: '脳', size: 13 },
+          { type: 'text', x: 76, y: 214, text: '脊髄', size: 13 },
+          { type: 'text', x: 92, y: 94, text: '運動神経', size: 13 },
+          { type: 'text', x: 216, y: 82, text: '筋肉', size: 13 },
+          { type: 'text', x: 128, y: 200, text: '感覚神経', size: 13 },
+          { type: 'text', x: 284, y: 132, text: '皮ふ', size: 13, anchor: 'middle' },
+          { type: 'text', x: 316, y: 236, text: '脳と脊髄 ＝ 中枢神経', size: 12, anchor: 'end' },
+        ])),
+      },
+      {
+        id: 'body-mp10-c2',
+        text: '熱いものにふれて、熱いと感じる前に手を引っこめるように、意識と関係なく起こる反応を**反射**といいます。命令が脳ではなく脊髄から出るので、刺激を受けてから反応するまでの時間が短く、からだを危険から守るのに役立ちます。',
+        // 刺激を受けてから反応するまでの時間のくらべ
+        figure: scene([
+          { type: 'text', x: 160, y: 28, text: '刺激を受けてから反応するまでの時間', size: 13, anchor: 'middle' },
+          { type: 'text', x: 8, y: 80, text: '反射', size: 14, bold: true },
+          { type: 'rect', x: 90, y: 60, width: 70, height: 30, fill: 'blue', stroke: 'none' },
+          { type: 'text', x: 168, y: 80, text: '短い', size: 13 },
+          { type: 'text', x: 8, y: 146, text: '考えて', size: 14, bold: true },
+          { type: 'text', x: 8, y: 164, text: '動く', size: 14, bold: true },
+          { type: 'rect', x: 90, y: 136, width: 200, height: 30, fill: 'orange', stroke: 'none' },
+          { type: 'text', x: 160, y: 200, text: '反射: 皮ふ → 脊髄 → 筋肉（脳を通らない）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 222, text: '考えて動く: 皮ふ → 脊髄 → 脳 → 脊髄 → 筋肉', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp10-w1', concept: 'bo-nerve',
+      prompt: '予想しよう。目の前に急にボールが飛んできて思わず目を閉じるのは、考えてから閉じていると思う？',
+      options: ['考える前に、からだが反応している', 'よく考えてから閉じている', 'わざと閉じている'],
+      answer: 'a',
+      explanation: '思わず目を閉じるのは、意識と関係なく起こる反応（反射）です。刺激が伝わる道すじと、反射のしくみを復習しよう。',
+      hint: '「思わず」というのがヒントだよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp10-p1', concept: 'bo-nerve',
+        prompt: '刺激が伝わる道すじの模式図です（ア: 頭の中の器官、イ: 背骨の中を通る太い神経、ウ: 手の皮ふ、エ: うでの筋肉。青い線と橙の線は神経）。意識して手を動かすとき、筋肉への命令を出すのはどこ？',
+        figure: NERVE_Q,
+        answer: 'r1',
+        explanation: '意識して手を動かすときは、脳（ア）が判断して命令を出します。命令は脊髄（イ）から運動神経を通って筋肉（エ）へ伝わります。',
+        hint: '考えたり判断したりするのはどこかな。',
+      }),
+      fill({
+        id: 'body-mp10-t1', concept: 'bo-nerve', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '刺激に対して、意識とは関係なく決まった反応が起こることを[b1]という。',
+        blanks: [word('b1', ['反射', '消化', '蒸散'], '反射')],
+        explanation: '意識と関係なく起こる反応を**反射**といいます。熱いものから手を引っこめる、明るい所でひとみが小さくなる、などが反射の例です。',
+        hint: '「はんしゃ」と読む言葉だよ。',
+      }),
+      choice({
+        id: 'body-mp10-p2', concept: 'bo-nerve',
+        prompt: '信号が青に変わったのを見て、歩き出しました。このときの信号の伝わり方として正しいものはどれ？',
+        options: ['目 → 感覚神経 → 脳 → 脊髄 → 運動神経 → 足の筋肉', '目 → 運動神経 → 脳 → 感覚神経 → 足の筋肉', '目 → 感覚神経 → 脊髄 → 運動神経 → 足の筋肉（脳を通らない）'],
+        answer: 'a',
+        explanation: '目で受けとった刺激は感覚神経で脳へ伝わります。脳が「歩こう」と判断し、その命令が脊髄から運動神経を通って足の筋肉へ伝わります。',
+        hint: '見て判断する反応なので、脳を通るよ。',
+      }),
+      choice({
+        id: 'body-mp10-p3', concept: 'bo-nerve',
+        prompt: '熱いものにふれて思わず手を引っこめる反射で、信号が伝わる順として正しいものはどれ？',
+        options: ['皮ふ → 感覚神経 → 脊髄 → 運動神経 → 筋肉', '皮ふ → 感覚神経 → 脳 → 運動神経 → 筋肉', '皮ふ → 運動神経 → 脊髄 → 感覚神経 → 筋肉'],
+        answer: 'a',
+        explanation: 'この反射では、信号が脊髄に伝わると、脳を通らずに脊髄から運動神経へ命令が出ます。そのため、熱いと感じるより先に手が動きます。',
+        hint: '反射の命令は、脳ではなくどこから出たかな。',
+      }),
+      choice({
+        id: 'body-mp10-p4', concept: 'bo-nerve',
+        prompt: '反射は、わたしたちにとってどんなことに役立っている？',
+        options: ['危険からすばやくからだを守る', 'よく考えて正しく判断する', '筋肉を大きくする'],
+        answer: 'a',
+        explanation: '反射は刺激を受けてから反応するまでの時間が短いので、やけどやけがなどの危険から、からだをすばやく守るのに役立ちます。',
+        hint: '反射のいちばんの特徴は、反応の速さだよ。',
+      }),
+      fill({
+        id: 'body-mp10-p5', concept: 'bo-nerve',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '脳と脊髄をまとめて[b1]といい、そこから出て全身に広がる感覚神経や運動神経を[b2]という。',
+        blanks: [
+          word('b1', ['中枢神経', '末しょう神経', '運動神経'], '中枢神経'),
+          word('b2', ['中枢神経', '末しょう神経', '運動神経'], '末しょう神経'),
+        ],
+        explanation: '脳と脊髄は中枢神経、そこから枝分かれした感覚神経や運動神経は末しょう神経です。',
+        hint: '「中枢」は中心、「末しょう」は先のほうという意味だよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp10-r1', concept: 'bo-nerve',
+        prompt: '刺激が伝わる道すじの模式図です（ア: 頭の中の器官、イ: 背骨の中を通る太い神経、ウ: 手の皮ふ、エ: うでの筋肉。青い線と橙の線は神経）。反射のとき、感覚神経からの信号を受けて、脳を通らずに命令を出すのはどこ？',
+        figure: NERVE_Q,
+        answer: 'r2',
+        explanation: '反射では、脊髄（イ）が直接命令を出します。信号は脊髄から脳へも伝わるので、手を引っこめたあとで「熱い」と感じます。',
+        hint: '背骨の中を通る中枢神経だよ。',
+      }),
+      choice({
+        id: 'body-mp10-r2', concept: 'bo-nerve',
+        prompt: '次のうち、反射の例はどれ？',
+        options: ['明るい所に出ると、ひとみが小さくなる', '友だちによばれて、ふり向く', 'ボールを見て、バットをふる'],
+        answer: 'a',
+        explanation: 'ひとみの大きさが変わるのは、意識と関係なく起こる反射です。よばれてふり向く、ボールを見てバットをふるのは、脳で判断してから起こる反応です。',
+        hint: '自分では止められない反応をさがそう。',
+      }),
+      choice({
+        id: 'body-mp10-r3', concept: 'bo-nerve',
+        prompt: '刺激を受けてから反応するまでの時間が短いのはどちら？',
+        options: ['反射', '意識して起こす反応', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '反射は、信号が脳まで行って判断されるのを待たずに、脊髄などから命令が出るので、反応までの時間が短くなります。',
+        hint: '信号の通り道が短いのはどちらかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-mp11: 骨格と筋肉・動物の分類（ミニプリント「骨格と筋肉」「セキツイ動物分類基準」） ----
+  const bodyMp11 = {
+    id: 'body-mp11', areaId: 'body-miniprint', title: 'プリント 11: 骨格と筋肉・動物の分類', minutes: 5, concepts: ['bo-movement', 'bo-vertebrate'],
+    lessons: [
+      {
+        id: 'body-mp11-c1',
+        text: 'ヒトのからだは、約 200 個の骨が組み合わさった**骨格**で支えられています。骨と骨のつなぎ目で曲がるところを**関節**、筋肉が骨についている部分を**けん**といいます。うでを曲げるときは、内側の筋肉が縮み、外側の筋肉がゆるみます。',
+        figure: scene(armItems().concat([
+          { type: 'text', x: 22, y: 100, text: 'けん', size: 13 },
+          { type: 'text', x: 170, y: 160, text: '関節', size: 13, anchor: 'middle' },
+          { type: 'text', x: 100, y: 86, text: '縮む（内側の筋肉）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 100, y: 186, text: 'ゆるむ（外側の筋肉）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 316, y: 236, text: 'うでを曲げたとき', size: 12, anchor: 'end' },
+        ])),
+      },
+      {
+        id: 'body-mp11-c2',
+        text: 'セキツイ動物は、魚類・両生類・ハチュウ類・鳥類・ホニュウ類に分けられます。分ける基準には、子のうまれ方（**胎生**か**卵生**か）、呼吸のしかた、卵に殻があるか、体温が変わるか（**恒温動物**か**変温動物**か）などがあります。',
+        // 5 つのなかまと、分ける基準
+        figure: scene([
+          { type: 'line', points: [[4, 52], [124, 52]], color: 'blue', width: 3 },
+          { type: 'text', x: 64, y: 44, text: '子はえらで呼吸', size: 12, anchor: 'middle' },
+          { type: 'line', points: [[132, 52], [316, 52]], color: 'blue', width: 3 },
+          { type: 'text', x: 224, y: 44, text: '肺で呼吸', size: 12, anchor: 'middle' },
+          ...['魚類', '両生類', 'ハチュウ類', '鳥類', 'ホニュウ類'].flatMap((t, i) => [
+            { type: 'rect', x: 2 + i * 64, y: 64, width: 60, height: 40, fill: 'white' },
+            { type: 'text', x: 32 + i * 64, y: 89, text: t, size: 12, anchor: 'middle', bold: true },
+          ]),
+          { type: 'line', points: [[4, 118], [252, 118]], color: 'green', width: 3 },
+          { type: 'text', x: 128, y: 136, text: '卵生', size: 12, anchor: 'middle' },
+          { type: 'line', points: [[260, 118], [316, 118]], color: 'green', width: 3 },
+          { type: 'text', x: 288, y: 136, text: '胎生', size: 12, anchor: 'middle' },
+          { type: 'line', points: [[132, 158], [252, 158]], color: 'orange', width: 3 },
+          { type: 'text', x: 192, y: 176, text: '殻のある卵', size: 12, anchor: 'middle' },
+          { type: 'line', points: [[4, 198], [188, 198]], color: 'gray', width: 3 },
+          { type: 'text', x: 96, y: 218, text: '変温動物', size: 12, anchor: 'middle' },
+          { type: 'line', points: [[196, 198], [316, 198]], color: 'red', width: 3 },
+          { type: 'text', x: 256, y: 218, text: '恒温動物', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'body-mp11-w1', concept: 'bo-movement',
+      prompt: '予想しよう。うでを曲げるとき、うでの内側の筋肉はどうなると思う？',
+      options: ['縮む', 'のびる', '変わらない'],
+      answer: 'a',
+      explanation: 'うでを曲げると、内側の筋肉が縮んで、かたくもり上がります。骨と筋肉のしくみと、動物のなかま分けを復習しよう。',
+      hint: '力こぶをつくったときの筋肉を思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-mp11-p1', concept: 'bo-movement',
+        prompt: 'ヒトのうでの骨と筋肉の模式図です（左がかた。ア: 筋肉のはしの細い部分、イ: 2 本の骨のつなぎ目、ウ: 内側の筋肉、エ: 外側の筋肉）。うでを曲げるときに縮む筋肉はどれ？',
+        figure: ARM_Q,
+        answer: 'r3',
+        explanation: 'うでを曲げるときは、内側の筋肉（ウ）が縮み、外側の筋肉（エ）がゆるみます。筋肉は自分で縮むことはできても、のびることはできないので、2 つの筋肉が組になってはたらきます。',
+        hint: '曲げる側（内側）の筋肉が、骨を引っぱるよ。',
+      }),
+      fill({
+        id: 'body-mp11-t1', concept: 'bo-movement', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '骨と骨のつなぎ目で曲がるところを[b1]、筋肉の両はしで骨についている部分を[b2]という。',
+        blanks: [
+          word('b1', ['関節', 'けん', '骨格'], '関節'),
+          word('b2', ['関節', 'けん', '骨格'], 'けん'),
+        ],
+        explanation: '曲がるつなぎ目が**関節**、筋肉が骨につく部分が**けん**です。筋肉は関節をまたいで 2 つの骨についているので、縮むと関節で曲がります。',
+        hint: 'アキレスけんは、足の筋肉と骨をつないでいるよ。',
+      }),
+      choice({
+        id: 'body-mp11-p2', concept: 'bo-movement',
+        prompt: 'ヒトのからだの骨は、全部でおよそ何個ある？',
+        options: ['約 20 個', '約 200 個', '約 2000 個'],
+        answer: 'b',
+        explanation: 'ヒトの骨は約 200 個あり、組み合わさって骨格をつくっています。骨格はからだを支え、脳や内臓を守り、筋肉とともにからだを動かします。',
+        hint: '手や足の指にも、それぞれ小さな骨がたくさんあるよ。',
+      }),
+      choice({
+        id: 'body-mp11-p3', concept: 'bo-vertebrate',
+        prompt: 'セキツイ動物を「ホニュウ類」と「それ以外の 4 つのなかま」に分けました。何を基準にして分けた？',
+        options: ['子のうまれ方（胎生か卵生か）', '背骨があるかどうか', 'すむ場所（水中か陸上か）'],
+        answer: 'a',
+        explanation: 'ホニュウ類は、子が母親の体内である程度育ってからうまれる胎生です。ほかの 4 つのなかまは、卵をうむ卵生です。背骨はどのセキツイ動物にもあります。',
+        hint: 'ホニュウ類だけがもつ特徴を考えよう。',
+      }),
+      choice({
+        id: 'body-mp11-p4', concept: 'bo-vertebrate',
+        prompt: '卵をうむセキツイ動物を「魚類・両生類」と「ハチュウ類・鳥類」に分けました。何を基準にして分けた？',
+        options: ['卵に殻があるかどうか', '背骨があるかどうか', '子を乳で育てるかどうか'],
+        answer: 'a',
+        explanation: '魚類・両生類は殻のない卵を水中にうみ、ハチュウ類・鳥類は殻のある卵を陸上にうみます。殻があると、卵がかわきにくくなります。',
+        hint: 'カエルの卵とニワトリの卵のちがいを考えよう。',
+      }),
+      choice({
+        id: 'body-mp11-p5', concept: 'bo-vertebrate',
+        prompt: 'セキツイ動物を「鳥類・ホニュウ類」と「魚類・両生類・ハチュウ類」に分けました。何を基準にして分けた？',
+        options: ['まわりの温度が変わっても体温がほぼ一定かどうか', 'えらで呼吸するかどうか', '卵をうむかどうか'],
+        answer: 'a',
+        explanation: '鳥類とホニュウ類は、体温がほぼ一定に保たれる恒温動物です。魚類・両生類・ハチュウ類は、まわりの温度によって体温が変わる変温動物です。',
+        hint: '冬になると動かなくなるなかまはどれかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-mp11-r1', concept: 'bo-movement',
+        prompt: 'ヒトのうでの骨と筋肉の模式図です（左がかた。ア: 筋肉のはしの細い部分、イ: 2 本の骨のつなぎ目、ウ: 内側の筋肉、エ: 外側の筋肉）。曲げたうでをのばすときに縮む筋肉はどれ？',
+        figure: ARM_Q,
+        answer: 'r4',
+        explanation: 'うでをのばすときは、外側の筋肉（エ）が縮み、内側の筋肉（ウ）がゆるみます。曲げるときと反対の筋肉がはたらきます。',
+        hint: '曲げるときに縮んだ筋肉とは、反対側だよ。',
+      }),
+      figureChoice({
+        id: 'body-mp11-r2', concept: 'bo-movement',
+        prompt: 'ヒトのうでの骨と筋肉の模式図です（左がかた。ア: 筋肉のはしの細い部分、イ: 2 本の骨のつなぎ目、ウ: 内側の筋肉、エ: 外側の筋肉）。筋肉が骨についている部分（けん）はどれ？',
+        figure: ARM_Q,
+        answer: 'r1',
+        explanation: '筋肉のはしの細い部分（ア）がけんで、骨についています。イは関節です。',
+        hint: '筋肉のはしをさがそう。',
+      }),
+      choice({
+        id: 'body-mp11-r3', concept: 'bo-movement',
+        prompt: 'うでを曲げるとき、外側の筋肉はどうなる？',
+        options: ['ゆるむ', '縮む', 'かたくなって骨になる'],
+        answer: 'a',
+        explanation: 'うでを曲げるとき、内側の筋肉が縮み、外側の筋肉はゆるみます。2 つの筋肉が反対のはたらきをすることで、関節を曲げたりのばしたりできます。',
+        hint: '内側と外側の筋肉は、反対のはたらきをするよ。',
+      }),
+      choice({
+        id: 'body-mp11-r4', concept: 'bo-vertebrate',
+        prompt: '一生えらで呼吸するセキツイ動物のなかまはどれ？',
+        options: ['魚類', '両生類', 'ハチュウ類'],
+        answer: 'a',
+        explanation: '魚類は一生えらで呼吸します。両生類は、子はえらと皮ふ、親は肺と皮ふで呼吸します。ハチュウ類は肺で呼吸します。',
+        hint: '水の中だけでくらすなかまだよ。',
+      }),
+      choice({
+        id: 'body-mp11-r5', concept: 'bo-vertebrate',
+        prompt: 'からだの表面が羽毛でおおわれているセキツイ動物のなかまはどれ？',
+        options: ['鳥類', 'ハチュウ類', 'ホニュウ類'],
+        answer: 'a',
+        explanation: '鳥類のからだは羽毛でおおわれています。ハチュウ類はうろこ、ホニュウ類は毛でおおわれています。体表のようすも、なかま分けの基準になります。',
+        hint: '空を飛ぶなかまだよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（学び直しの確認問題 checkPool つき）
   // ================================================================
   const concepts = [
@@ -1133,6 +2828,96 @@
         }),
       ],
     },
+    {
+      id: 'bo-sense', title: '感覚器官', basic: 'bo-nerve', lessonStageId: 'body-mp9',
+      checkPool: [
+        choice({
+          id: 'bo-sense-k1', concept: 'bo-sense',
+          prompt: '目で、レンズを通った光が像を結ぶところはどこ？',
+          options: ['網膜', '虹彩', '鼓膜'],
+          answer: 'a',
+          explanation: 'レンズで屈折した光は網膜に像を結び、網膜の細胞が光の刺激を受けとります。虹彩は光の量を調節し、鼓膜は耳のつくりです。',
+          hint: '目のいちばん奥の膜だよ。',
+        }),
+        fill({
+          id: 'bo-sense-k2', concept: 'bo-sense',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: '音で振動した鼓膜の振動は、[b1]を通ってうずまき管に伝わる。',
+          blanks: [word('b1', ['耳小骨', '半規管', '網膜'], '耳小骨')],
+          explanation: '鼓膜の振動は、耳小骨という小さな骨を通って、うずまき管へ伝わります。',
+          hint: '鼓膜につながっている小さな骨だよ。',
+        }),
+        choice({
+          id: 'bo-sense-k3', concept: 'bo-sense',
+          prompt: '皮ふが受けとる刺激でないものはどれ？',
+          options: ['光', '圧力', '温度', '痛み'],
+          answer: 'a',
+          explanation: '皮ふは圧力・温度・痛みなどを受けとります。光の刺激を受けとるのは目です。',
+          hint: '目で受けとる刺激はどれかな。',
+        }),
+      ],
+    },
+    {
+      id: 'bo-movement', title: '骨格と筋肉', basic: 'bo-nerve', lessonStageId: 'body-mp11',
+      checkPool: [
+        choice({
+          id: 'bo-movement-k1', concept: 'bo-movement',
+          prompt: '筋肉の両はしで、骨についている部分を何という？',
+          options: ['けん', '関節', '神経'],
+          answer: 'a',
+          explanation: '筋肉の両はしはけんになって骨についています。関節は骨と骨のつなぎ目です。',
+          hint: 'アキレスけんの「けん」だよ。',
+        }),
+        fill({
+          id: 'bo-movement-k2', concept: 'bo-movement',
+          prompt: '空らんに入る言葉を選ぼう。',
+          text: 'うでを曲げるとき、内側の筋肉は[b1]、外側の筋肉は[b2]。',
+          blanks: [
+            word('b1', ['縮み', 'ゆるみ'], '縮み'),
+            word('b2', ['縮む', 'ゆるむ'], 'ゆるむ'),
+          ],
+          explanation: 'うでを曲げるとき、内側の筋肉が縮み、外側の筋肉がゆるみます。のばすときは反対になります。',
+          hint: '力こぶができるのは内側の筋肉だね。',
+        }),
+        choice({
+          id: 'bo-movement-k3', concept: 'bo-movement',
+          prompt: '骨格のはたらきでないものはどれ？',
+          options: ['食物を消化する', 'からだを支える', '脳や内臓を守る'],
+          answer: 'a',
+          explanation: '骨格は、からだを支え、脳や内臓を守り、筋肉とともにからだを動かします。食物の消化は消化器官のはたらきです。',
+          hint: '頭の骨やろっ骨が何を囲んでいるか考えよう。',
+        }),
+      ],
+    },
+    {
+      id: 'bo-vertebrate', title: 'セキツイ動物のなかま分け', basic: 'bo-circulation', lessonStageId: 'body-mp11',
+      checkPool: [
+        choice({
+          id: 'bo-vertebrate-k1', concept: 'bo-vertebrate',
+          prompt: '子が母親の体内である程度育ってからうまれる、うまれ方を何という？',
+          options: ['胎生', '卵生', '分裂'],
+          answer: 'a',
+          explanation: '母親の体内で育ってからうまれるうまれ方を胎生といいます。セキツイ動物ではホニュウ類が胎生です。卵をうむうまれ方は卵生です。',
+          hint: '「胎」は母親のおなかの中という意味だよ。',
+        }),
+        choice({
+          id: 'bo-vertebrate-k2', concept: 'bo-vertebrate',
+          prompt: '次のうち、まわりの温度によって体温が変わる変温動物のなかまはどれ？',
+          options: ['ハチュウ類', '鳥類', 'ホニュウ類'],
+          answer: 'a',
+          explanation: '魚類・両生類・ハチュウ類は変温動物、鳥類とホニュウ類は体温がほぼ一定の恒温動物です。',
+          hint: '冬眠するトカゲやヘビのなかまだよ。',
+        }),
+        choice({
+          id: 'bo-vertebrate-k3', concept: 'bo-vertebrate',
+          prompt: '両生類の子（オタマジャクシ）は、おもに何で呼吸する？',
+          options: ['えらと皮ふ', '肺', '気門'],
+          answer: 'a',
+          explanation: '両生類の子は水中でくらし、えらと皮ふで呼吸します。親になると陸上にも上がり、肺と皮ふで呼吸します。',
+          hint: '水の中でくらしているときの呼吸だよ。',
+        }),
+      ],
+    },
   ];
 
   // ================================================================
@@ -1147,6 +2932,7 @@
     areas: [
       { id: 'cell', title: '細胞と植物のはたらき', order: 1, stages: [body1, body2] },
       { id: 'organ', title: '動物のからだ', order: 2, stages: [body3, body4] },
+      { id: 'body-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [bodyMp1, bodyMp2, bodyMp3, bodyMp4, bodyMp5, bodyMp6, bodyMp7, bodyMp8, bodyMp9, bodyMp10, bodyMp11] },
     ],
   };
 

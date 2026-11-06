@@ -4,7 +4,7 @@
 // http(s):// で開いたときだけ js/app.js が登録する（file:// では動かない）。
 'use strict';
 
-const VERSION = '2026-11-06-24';
+const VERSION = '2026-11-06-25';
 const CACHE_PREFIX = 'rika-quest-';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 
@@ -185,6 +185,7 @@ const PRECACHE = [
   'js/ruby.js',
   'content/readings.js',
   'content/curriculum.js',
+  'content/basics.js',
   'content/light.js',
   'content/sound.js',
   'content/force.js',

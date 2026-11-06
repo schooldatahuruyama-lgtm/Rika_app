@@ -1075,6 +1075,322 @@
   ];
 
   // ================================================================
+  // 領域 3: ミニプリント（先生の自作プリントの問題を書き直したもの。docs/reports/content/animals.md）
+  // ================================================================
+
+  // 選ぶ場所と、部品までの引き出し線。parts は [[選ぶ場所の x, y, 部品の点の x, y], ...]（左から ア・イ…の順）
+  function mpRegions(parts) {
+    const items = [];
+    parts.forEach(([x, y, px, py], i) => {
+      items.push({ type: 'line', points: [[x < px ? x + 22 : x - 22, y], [px, py]], color: 'line', width: 1 });
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエオ'[i] });
+    });
+    return items;
+  }
+
+  // イカ（squid()）の部分を選ぶ図: ア 外とう膜・イ あし・ウ 目
+  const MP_SQUID_Q = scene(squid().concat(mpRegions([
+    [270, 90, 192, 90], [56, 212, 128, 206], [56, 150, 138, 141],
+  ])));
+
+  // 昆虫（insect()）を上から見た図の部分を選ぶ: ア 頭部・イ 胸部・ウ 腹部（中心 (160, 120)、倍率 1.6）
+  const MP_INSECT_Q = scene(insect(160, 120, 1.6).concat([
+    { type: 'region', id: 'r1', x: 86, y: 196, r: 22, label: 'ア' },
+    { type: 'line', points: [[86, 174], [86, 136]], color: 'line', width: 1 },
+    { type: 'region', id: 'r2', x: 131, y: 50, r: 22, label: 'イ' },
+    { type: 'line', points: [[131, 72], [131, 104]], color: 'line', width: 1 },
+    { type: 'region', id: 'r3', x: 208, y: 196, r: 22, label: 'ウ' },
+    { type: 'line', points: [[208, 174], [208, 140]], color: 'line', width: 1 },
+  ]));
+
+  // ---- ステージ animals-mp1: プリント 1（セキツイ動物と無セキツイ動物、5 つのなかまの特徴） ----
+  const anMp1 = {
+    id: 'animals-mp1', areaId: 'animals-miniprint', title: 'プリント 1: セキツイ動物の分類', minutes: 5, concepts: ['an-groups', 'an-traits', 'an-classify'],
+    lessons: [
+      {
+        id: 'animals-mp1-c1',
+        text: '背骨をもつ動物を**セキツイ動物**、もたない動物を**無セキツイ動物**といいます。セキツイ動物は、魚類・両生類・ハチュウ類・鳥類・ホニュウ類の 5 つのなかまに分けられます。',
+        figure: scene(fiveAnimals().concat([
+          { type: 'text', x: 60, y: 106, text: '魚類', size: 13, anchor: 'middle' },
+          { type: 'text', x: 165, y: 106, text: '両生類', size: 13, anchor: 'middle' },
+          { type: 'text', x: 262, y: 106, text: 'ハチュウ類', size: 13, anchor: 'middle' },
+          { type: 'text', x: 105, y: 206, text: '鳥類', size: 13, anchor: 'middle' },
+          { type: 'text', x: 225, y: 206, text: 'ホニュウ類', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 232, text: 'どれも背骨がある', size: 13, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'animals-mp1-c2',
+        text: '体の表面は、魚類とハチュウ類が**うろこ**、両生類は湿った皮膚、鳥類は**羽毛**、ホニュウ類は**毛**です。鳥類とホニュウ類は体温がほぼ一定で、殻のある卵をうむのはハチュウ類と鳥類です。',
+        figure: scene(vertTree().concat(
+          [['ホニュウ類', 30], ['鳥類', 78], ['ハチュウ類', 122], ['魚類', 170], ['両生類', 214]].map(([t, y]) => ({ type: 'text', x: 242, y: y + 5, text: t, size: 12 })),
+        )),
+      },
+    ],
+    warmup: choice({
+      id: 'animals-mp1-w1', concept: 'an-groups',
+      prompt: '予想しよう。カエルとカニ。背骨があるのはどちらだと思う？',
+      options: ['カエル', 'カニ', 'どちらもない'],
+      answer: 'a',
+      explanation: 'カエルには背骨があり、カニにはありません。カニは、かたい殻で体を支えています。背骨の有無による分け方を、このステージで学ぼう。',
+      hint: 'カニの体はかたい殻でおおわれているね。',
+    }),
+    problems: [
+      fill({
+        id: 'animals-mp1-t1', concept: 'an-groups', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '背骨をもつ動物をまとめて[b1]、背骨をもたない動物をまとめて[b2]という。',
+        blanks: [
+          word('b1', ['セキツイ動物', '無セキツイ動物', '節足動物'], 'セキツイ動物'),
+          word('b2', ['セキツイ動物', '無セキツイ動物', '節足動物'], '無セキツイ動物'),
+        ],
+        explanation: '背骨（セキツイ）をもつ動物が**セキツイ動物**、もたない動物が**無セキツイ動物**です。',
+        hint: '「セキツイ」は背骨のことだよ。',
+      }),
+      choice({
+        id: 'animals-mp1-p1', concept: 'an-groups',
+        prompt: 'ヒト・カラス・トンボ・タコ・カエル・カニ・ヒトデ・タイ・ヘビ・クモ のうち、セキツイ動物をすべて選んだものはどれ？',
+        options: ['ヒト・カラス・カエル・タイ・ヘビ', 'ヒト・カラス・トンボ・タイ・クモ', 'カエル・カニ・タイ・ヘビ・タコ'],
+        answer: 'a',
+        explanation: 'ヒト（ホニュウ類）・カラス（鳥類）・カエル（両生類）・タイ（魚類）・ヘビ（ハチュウ類）には背骨があります。トンボ・タコ・カニ・ヒトデ・クモは無セキツイ動物です。',
+        hint: '5 つのなかまのどれかに入るものをさがそう。',
+      }),
+      figureChoice({
+        id: 'animals-mp1-p2', concept: 'an-classify',
+        prompt: '図はセキツイ動物の分け方です。体温がほぼ一定で、殻のある卵をうむなかま（鳥類）はどこ？ ア〜オから選ぼう。',
+        figure: VERT_TREE_Q,
+        answer: 'r2',
+        explanation: '卵生で殻のある卵をうみ、体温がほぼ一定なのは鳥類です（イ）。同じく殻のある卵をうむハチュウ類は、体温がまわりの温度で変わります。',
+        hint: '「卵生」→「殻あり」→「体温がほぼ一定」とたどろう。',
+      }),
+      choice({
+        id: 'animals-mp1-p3', concept: 'an-traits',
+        prompt: '魚類・両生類・ハチュウ類・鳥類・ホニュウ類のうち、体温が常にほぼ一定のなかまをすべて選んだものはどれ？',
+        options: ['鳥類・ホニュウ類', 'ハチュウ類・鳥類・ホニュウ類', 'ホニュウ類だけ'],
+        answer: 'a',
+        explanation: '鳥類とホニュウ類は、まわりの温度が変わっても体温がほぼ一定（恒温動物）です。魚類・両生類・ハチュウ類は、まわりの温度で体温が変わります（変温動物）。',
+        hint: '羽毛や毛で体温を保っているなかまだよ。',
+      }),
+      choice({
+        id: 'animals-mp1-p4', concept: 'an-traits',
+        prompt: '5 つのなかまのうち、一生、肺で呼吸するものをすべて選んだものはどれ？',
+        options: ['ハチュウ類・鳥類・ホニュウ類', '両生類・ハチュウ類・鳥類・ホニュウ類', '鳥類・ホニュウ類'],
+        answer: 'a',
+        explanation: 'ハチュウ類・鳥類・ホニュウ類は一生肺で呼吸します。両生類は、子（幼生）のときはえら、親（成体）になると肺と皮膚で呼吸します。魚類は一生えらです。',
+        hint: '両生類は、子のときと親のときで呼吸のしかたが変わるね。',
+      }),
+      fill({
+        id: 'animals-mp1-p5', concept: 'an-traits',
+        prompt: '魚類の特徴です。空らんに入る言葉を選ぼう。',
+        text: '魚類は[b1]で生活し、[b2]で呼吸する。体の表面は[b3]でおおわれ、[b4]卵をうむ。',
+        blanks: [
+          word('b1', ['水中', '陸上'], '水中'),
+          word('b2', ['えら', '肺'], 'えら'),
+          word('b3', ['うろこ', '羽毛', '毛'], 'うろこ'),
+          word('b4', ['殻のある', '殻のない'], '殻のない'),
+        ],
+        explanation: '魚類は一生水中で生活し、えらで呼吸します。体はうろこでおおわれ、殻のない卵を水中にうみます。体温はまわりの水の温度で変わります。',
+        hint: '水の中で生活する動物の特徴を考えよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'animals-mp1-r1', concept: 'an-traits',
+        prompt: '5 つのなかまのうち、殻のある卵をうむものをすべて選んだものはどれ？',
+        options: ['ハチュウ類・鳥類', '魚類・両生類', '鳥類だけ'],
+        answer: 'a',
+        explanation: 'ハチュウ類と鳥類は、陸上に殻のある卵をうみます。殻があるので、卵がかわきにくくなっています。魚類と両生類は、水中に殻のない卵をうみます。',
+        hint: '陸上に卵をうむなかまを考えよう。',
+      }),
+      choice({
+        id: 'animals-mp1-r2', concept: 'an-traits',
+        prompt: '5 つのなかまのうち、卵ではなく、親と同じような姿の子（赤ちゃん）をうむのはどれ？',
+        options: ['ホニュウ類', '鳥類', 'ハチュウ類'],
+        answer: 'a',
+        explanation: 'ホニュウ類は、母親の体内（子宮）で子を育ててからうみます（胎生）。うまれた子は乳を飲んで育ちます。',
+        hint: 'ヒトやイヌのなかまだよ。',
+      }),
+      fill({
+        id: 'animals-mp1-r3', concept: 'an-traits',
+        prompt: '両生類の特徴です。空らんに入る言葉を選ぼう。',
+        text: '両生類の子（幼生）は[b1]で生活して[b2]で呼吸し、親（成体）は陸上や水辺で生活して肺と皮膚で呼吸する。皮膚はいつも[b3]いる。',
+        blanks: [
+          word('b1', ['水中', '陸上'], '水中'),
+          word('b2', ['えら', '肺'], 'えら'),
+          word('b3', ['湿って', 'かわいて'], '湿って'),
+        ],
+        explanation: 'カエルの子（オタマジャクシ）は水中でえら呼吸をし、親になると肺と皮膚で呼吸します。皮膚は湿っていて、うろこはありません。',
+        hint: 'オタマジャクシとカエルのくらしを思い出そう。',
+      }),
+      fill({
+        id: 'animals-mp1-r4', concept: 'an-groups',
+        prompt: '体の表面のようすです。空らんに入る言葉を選ぼう。',
+        text: 'ハチュウ類の体の表面は[b1]、鳥類は[b2]、ホニュウ類は[b3]でおおわれている。',
+        blanks: [
+          word('b1', ['うろこ', '羽毛', '毛'], 'うろこ'),
+          word('b2', ['うろこ', '羽毛', '毛'], '羽毛'),
+          word('b3', ['うろこ', '羽毛', '毛'], '毛'),
+        ],
+        explanation: 'ハチュウ類はかたいうろこ、鳥類は羽毛、ホニュウ類は毛でおおわれています。羽毛や毛は体温を保つのに役立ちます。',
+        hint: 'ヘビ・ハト・イヌの体の表面を思い出そう。',
+      }),
+      choice({
+        id: 'animals-mp1-r5', concept: 'an-groups',
+        prompt: 'ヒト・カラス・トンボ・タコ・カエル・カニ・ヒトデ・タイ・ヘビ・クモ のうち、無セキツイ動物をすべて選んだものはどれ？',
+        options: ['トンボ・タコ・カニ・ヒトデ・クモ', 'トンボ・カエル・カニ・ヘビ', 'タコ・タイ・ヒトデ・クモ'],
+        answer: 'a',
+        explanation: 'トンボ・カニ・クモは節足動物、タコは軟体動物、ヒトデはそのほかの無セキツイ動物で、どれも背骨がありません。',
+        hint: '背骨がない動物をさがそう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ animals-mp2: プリント 2（無セキツイ動物: 節足動物・軟体動物） ----
+  const anMp2 = {
+    id: 'animals-mp2', areaId: 'animals-miniprint', title: 'プリント 2: 無セキツイ動物', minutes: 5, concepts: ['an-arthropod', 'an-mollusc', 'an-classify'],
+    lessons: [
+      {
+        id: 'animals-mp2-c1',
+        text: '昆虫類・クモ類・多足類・甲殻類をまとめて**節足動物**といいます。体はかたい**外骨格**でおおわれ、あしに節があります。昆虫のあしは 6 本、クモのあしは 8 本です。エビ・カニは**甲殻類**です。',
+        figure: scene(insect(160, 110, 1.6).concat([
+          { type: 'text', x: 86, y: 190, text: '頭部', size: 13, anchor: 'middle' },
+          { type: 'text', x: 131, y: 50, text: '胸部（あし 6 本）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 208, y: 190, text: '腹部', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 226, text: '昆虫の体は 3 つに分かれる', size: 13, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'animals-mp2-c2',
+        text: 'タコ・イカ・アサリ・ナメクジなどは**軟体動物**です。背骨も節もなく、内臓は**外とう膜**という膜に包まれています。ミミズ・ヒトデ・クラゲなども、節足動物でも軟体動物でもない無セキツイ動物です。',
+        figure: scene(squid().concat([
+          { type: 'line', points: [[214, 90], [192, 90]], color: 'line', width: 1 },
+          { type: 'text', x: 218, y: 94, text: '外とう膜', size: 13 },
+          { type: 'text', x: 40, y: 40, text: 'イカ', size: 14, bold: true },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'animals-mp2-w1', concept: 'an-arthropod',
+      prompt: '予想しよう。カブトムシのあしは何本だと思う？',
+      options: ['6 本', '8 本', '10 本'],
+      answer: 'a',
+      explanation: 'カブトムシは昆虫なので、あしは 6 本で、すべて胸部から出ています。背骨のない動物のなかまを、このステージで学ぼう。',
+      hint: '昆虫のあしの数を思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'animals-mp2-p1', concept: 'an-mollusc',
+        prompt: '図はイカです。内臓を包んでいる膜「外とう膜」はどれ？ ア〜ウから選ぼう。',
+        figure: MP_SQUID_Q,
+        answer: 'r1',
+        explanation: 'イカの胴の部分は外とう膜で、内臓を包んでいます。外とう膜をもつのが軟体動物の特徴です。',
+        hint: '胴の部分を包んでいる膜だよ。',
+      }),
+      fill({
+        id: 'animals-mp2-t1', concept: 'an-arthropod', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '節足動物の体の外側をおおっている、かたい殻を[b1]という。',
+        blanks: [word('b1', ['外骨格', '外とう膜', '背骨'], '外骨格')],
+        explanation: '節足動物の体は、かたい殻（**外骨格**）でおおわれています。外骨格は体を支え、内部を守っています。',
+        hint: '体の「外」にある「骨格」だよ。',
+      }),
+      fill({
+        id: 'animals-mp2-p2', concept: 'an-arthropod',
+        prompt: '空らんに入る言葉や数を選ぼう。',
+        text: '昆虫類・クモ類・多足類・甲殻類をまとめて[b1]という。昆虫のあしは[b2]本、クモのあしは[b3]本である。',
+        blanks: [
+          word('b1', ['節足動物', '軟体動物', 'セキツイ動物'], '節足動物'),
+          word('b2', ['4', '6', '8'], '6'),
+          word('b3', ['4', '6', '8'], '8'),
+        ],
+        explanation: 'あしに節がある動物をまとめて節足動物といいます。昆虫のあしは 6 本、クモのあしは 8 本です。',
+        hint: '「節」のある「足」の動物だよ。',
+      }),
+      choice({
+        id: 'animals-mp2-p3', concept: 'an-mollusc',
+        prompt: 'タコ・イカ・ナメクジ・アサリなどをまとめて何という？',
+        options: ['軟体動物', '節足動物', 'ハチュウ類'],
+        answer: 'a',
+        explanation: 'タコ・イカ・ナメクジ・アサリは、外とう膜をもち、背骨も節もない軟体動物です。',
+        hint: 'やわらかい体の動物だよ。',
+      }),
+      choice({
+        id: 'animals-mp2-p4', concept: 'an-arthropod',
+        prompt: '節足動物のうち、エビやカニのなかまを何という？',
+        options: ['甲殻類', '昆虫類', '多足類'],
+        answer: 'a',
+        explanation: 'エビやカニは、かたい甲らをもつ節足動物で、甲殻類といいます。多くは水中でえら呼吸をします。',
+        hint: 'かたい「甲」らをもつなかまだよ。',
+      }),
+      choice({
+        id: 'animals-mp2-p5', concept: 'an-classify',
+        prompt: '節足動物でも軟体動物でもない無セキツイ動物の例はどれ？',
+        options: ['ミミズ・ヒトデ・クラゲ', 'カニ・クモ・ムカデ', 'タコ・イカ・アサリ'],
+        answer: 'a',
+        explanation: 'ミミズ・ヒトデ・クラゲは、背骨がなく、節足動物にも軟体動物にも入らない無セキツイ動物です。カニ・クモ・ムカデは節足動物、タコ・イカ・アサリは軟体動物です。',
+        hint: 'あしの節も外とう膜もない動物をさがそう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'animals-mp2-r1', concept: 'an-arthropod',
+        prompt: '図は昆虫を上から見たようすです。6 本のあしが出ている部分はどこ？ ア〜ウから選ぼう。',
+        figure: MP_INSECT_Q,
+        answer: 'r2',
+        explanation: '昆虫の体は頭部・胸部・腹部に分かれ、6 本のあしはすべて胸部から出ています（イ）。',
+        hint: '体のまん中の部分だよ。',
+      }),
+      choice({
+        id: 'animals-mp2-r2', concept: 'an-mollusc',
+        prompt: '軟体動物の特徴として正しいのはどれ？',
+        options: ['外とう膜をもち、背骨も節もない', '外骨格をもち、あしに節がある', '背骨をもち、肺で呼吸する'],
+        answer: 'a',
+        explanation: '軟体動物は、内臓を包む外とう膜をもち、背骨もあしの節もありません。外骨格とあしの節は節足動物の特徴です。',
+        hint: '「外とう膜」がキーワードだよ。',
+      }),
+      choice({
+        id: 'animals-mp2-r3', concept: 'an-arthropod',
+        prompt: 'クモのあしは何本？',
+        options: ['8 本', '6 本', '10 本'],
+        answer: 'a',
+        explanation: 'クモのあしは 8 本です。昆虫（6 本）とはちがうなかま（クモ類）です。',
+        hint: '昆虫より多いよ。',
+      }),
+    ],
+  };
+
+  // あふれた問題を、もとからある概念の確認問題（checkPool）に足す
+  function addCheck(id, problems) { concepts.find(c => c.id === id).checkPool.push(...problems); }
+  addCheck('an-traits', [
+    choice({
+      id: 'animals-mp1-k1', concept: 'an-traits',
+      prompt: '子が母親の体内（子宮）である程度育ってから、親と同じような姿でうまれるうまれ方を何という？',
+      options: ['胎生', '卵生', '変態'],
+      answer: 'a',
+      explanation: '母親の体内で育ってからうまれるうまれ方を胎生といいます。ホニュウ類のうまれ方です。卵でうまれるのは卵生です。',
+      hint: '「胎」は母親の体内という意味だよ。',
+    }),
+    choice({
+      id: 'animals-mp1-k2', concept: 'an-traits',
+      prompt: 'うまれた子が、母親の乳を飲んで育つなかまはどれ？',
+      options: ['ホニュウ類', '鳥類', '両生類'],
+      answer: 'a',
+      explanation: 'ホニュウ類の子は、母親の乳を飲んで育ちます。「ホニュウ」は乳で育てるという意味です。',
+      hint: 'なかまの名前に答えがあるよ。',
+    }),
+  ]);
+  addCheck('an-groups', [
+    choice({
+      id: 'animals-mp1-k3', concept: 'an-groups',
+      prompt: '魚類・両生類・ハチュウ類・鳥類・ホニュウ類のうち、背骨をもつのはどれ？',
+      options: ['5 つすべて', 'ホニュウ類だけ', '鳥類とホニュウ類だけ'],
+      answer: 'a',
+      explanation: 'この 5 つは、どれも背骨をもつセキツイ動物のなかまです。',
+      hint: 'セキツイ動物の 5 つのなかまだったね。',
+    }),
+  ]);
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1086,6 +1402,7 @@
     areas: [
       { id: 'vertebrate', title: 'セキツイ動物', order: 1, stages: [animals1, animals2] },
       { id: 'invertebrate', title: '無セキツイ動物', order: 2, stages: [animals3, animals4] },
+      { id: 'animals-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [anMp1, anMp2] },
     ],
   };
 

@@ -560,7 +560,7 @@
       ]));
       return;
     }
-    section.append(el('p', { class: 'muted', text: unit.title + '　どの領域から始めてもよいよ。領域の中は順番に開きます。' }));
+    section.append(el('p', { class: 'muted', text: unit.title + '　どの領域から始めてもよいよ。領域の中は順番に開きます（ミニプリントはどれからでも開けます）。' }));
 
     areasInOrder(unit).forEach((area, ai) => {
       const stages = (area.stages || []).filter(Boolean);
@@ -1260,7 +1260,14 @@
     const nextStage = isStage && !stopped ? ctx.reg.nextStage(session.stageId) : null;
     const canNext = nextStage && RQ.recommend.isUnlocked(ctx.reg, rec, nextStage.id);
     if (stopped && isStage) next.push(el('p', { text: '明日、もう一度「' + stageTitleOf(ctx, session.stageId) + '」に挑戦しよう。' }));
-    else if (canNext) next.push(el('p', { text: '次のステージ「' + nextStage.title + '」が開いたよ。' }));
+    else if (canNext) {
+      // 次のステージが free の領域（ミニプリント）なら、もともと開いているので「挑戦してみよう」にする
+      const nextArea = areaOfStage(ctx.reg.unitOfStage(nextStage.id), nextStage.id);
+      const text = nextArea && nextArea.free === true
+        ? '次は「' + nextStage.title + '」にも挑戦してみよう。'
+        : '次のステージ「' + nextStage.title + '」が開いたよ。';
+      next.push(el('p', { text }));
+    }
     else if (!suggested) next.push(el('p', { class: 'muted', text: '学習マップから、好きなステージを選ぼう。' }));
     section.append(card(next));
 

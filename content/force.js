@@ -755,6 +755,350 @@
   };
 
   // ================================================================
+  // 領域 3: ミニプリント（先生のミニプリントの問題を書き直したもの。共通指示 .ai-tasks/20261106-130000_ミニプリント反映_共通.md）
+  // ================================================================
+
+  // 力のはたらき 3 つの場面（ア スポンジを押す・イ 転がるボールを止める・ウ 荷物を支える）。選ぶ場所は下の段
+  const EFFECT_3 = scene([
+    { type: 'ellipse', x: 55, y: 140, rx: 38, ry: 12, fill: 'yellow' },
+    { type: 'arrow', x1: 55, y1: 70, x2: 55, y2: 124, color: 'blue' },
+    { type: 'text', x: 55, y: 176, text: 'スポンジ', size: 13, anchor: 'middle' },
+    { type: 'circle', x: 150, y: 130, r: 14, fill: 'white' },
+    { type: 'arrow', x1: 110, y1: 130, x2: 132, y2: 130, color: 'gray', width: 2 },
+    { type: 'ellipse', x: 178, y: 130, rx: 10, ry: 18, fill: 'pink' },
+    { type: 'arrow', x1: 196, y1: 100, x2: 166, y2: 100, color: 'blue' },
+    { type: 'text', x: 160, y: 176, text: '転がるボール', size: 13, anchor: 'middle' },
+    { type: 'rect', x: 245, y: 96, width: 44, height: 34, fill: 'sand' },
+    { type: 'ellipse', x: 267, y: 140, rx: 26, ry: 9, fill: 'pink' },
+    { type: 'arrow', x1: 267, y1: 130, x2: 267, y2: 80, color: 'blue' },
+    { type: 'text', x: 267, y: 176, text: '荷物', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 55, y: 210, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 210, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 267, y: 210, r: 22, label: 'ウ' },
+  ]);
+
+  // 1 つの物体（箱）に 2 力。上から ア つり合う、イ 大きさがちがう、ウ 一直線上にない。選ぶ場所は右の列
+  const BALANCE_3 = scene([
+    { type: 'rect', x: 130, y: 35, width: 40, height: 30, fill: 'sand' },
+    ...force(130, 50, 60, 50), ...force(170, 50, 240, 50),
+    { type: 'rect', x: 130, y: 105, width: 40, height: 30, fill: 'sand' },
+    ...force(130, 120, 60, 120), ...force(170, 120, 205, 120),
+    { type: 'rect', x: 130, y: 175, width: 40, height: 30, fill: 'sand' },
+    ...force(130, 180, 60, 180), ...force(170, 200, 240, 200),
+    { type: 'region', id: 'r1', x: 286, y: 50, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 286, y: 120, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 286, y: 190, r: 22, label: 'ウ' },
+  ]);
+
+  // ---- ステージ force-mp1: プリント 1（力を加えると 2・力の作図矢印） ----
+  const forceMp1 = {
+    id: 'force-mp1', areaId: 'force-miniprint', title: 'プリント 1: 力のはたらきと力の矢印', minutes: 6, concepts: ['fo-effect', 'fo-kinds', 'fo-arrow'],
+    lessons: [
+      {
+        id: 'force-mp1-c1',
+        text: '物体に力を加えると、物体の**形を変える**、物体の**運動のようす**（速さや向き）を変える、物体を**支える**、のどれかのはたらきが見られます。1 つの場面で 2 つのはたらきが同時に見られることもあります。',
+        figure: scene(EFFECT_3.items.filter(it => it.type !== 'region').concat([
+          { type: 'text', x: 55, y: 214, text: '形を変える', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 214, text: '運動を変える', size: 13, anchor: 'middle' },
+          { type: 'text', x: 267, y: 214, text: '支える', size: 13, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'force-mp1-c2',
+        text: '地球が物体を中心に向かって引く力が**重力**、面が押されたときに押し返す力が**垂直抗力**、ふれ合う 2 つの物体の一方が動こうとするとき、その動きをさまたげる向きにはたらく力が**摩擦力**です。',
+        figure: scene([
+          { type: 'line', points: [[20, 170], [300, 170]], color: 'line', width: 3 },
+          { type: 'rect', x: 120, y: 110, width: 80, height: 60, fill: 'sand' },
+          ...force(160, 140, 160, 210),
+          ...force(160, 170, 160, 90),
+          { type: 'arrow', x1: 200, y1: 150, x2: 260, y2: 150, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 120, y1: 166, x2: 72, y2: 166, color: 'green' },
+          { type: 'text', x: 172, y: 222, text: '重力', size: 14 },
+          { type: 'text', x: 172, y: 86, text: '垂直抗力', size: 14 },
+          { type: 'text', x: 214, y: 140, text: '動かす向き', size: 13 },
+          { type: 'text', x: 30, y: 156, text: '摩擦力', size: 14 },
+        ]),
+      },
+      {
+        id: 'force-mp1-c3',
+        text: '力は矢印で表します。矢印の始まりを**作用点**、矢印の向きを力の向き、矢印の長さを力の大きさにします。重力は物体の中心から真下に、押す力は手が物体にふれている点からかきます。',
+        figure: scene([
+          { type: 'rect', x: 110, y: 90, width: 100, height: 70, fill: 'sand' },
+          { type: 'ellipse', x: 88, y: 125, rx: 22, ry: 10, fill: 'pink' },
+          ...force(110, 125, 190, 125),
+          { type: 'text', x: 70, y: 186, text: '作用点', size: 14 },
+          { type: 'text', x: 20, y: 40, text: '矢印の長さ ＝ 力の大きさ', size: 14 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'force-mp1-w1', concept: 'fo-effect',
+      prompt: '予想しよう。やわらかいゴムボールを両手でぎゅっと押すと、ボールはどうなると思う？',
+      options: ['形が変わる（へこむ）', 'まったく変わらない', '重くなる'],
+      answer: 'a',
+      explanation: '力を加えると、物体の形が変わります。これは力の 3 つのはたらきの 1 つです。',
+      hint: 'ねん土やスポンジを押したときを思い出そう。',
+    }),
+    problems: [
+      fill({
+        id: 'force-mp1-p1', concept: 'fo-effect',
+        prompt: '次の A〜D で見られる力のはたらきを選ぼう。',
+        text: 'A ばねを引っぱってのばす → [b1]。B 転がってきたボールを手で止める → [b2]。C 重い荷物を持ったまま立っている → [b3]。D 投げられたボールをバットで打ち返す → [b4]。',
+        blanks: [
+          word('b1', ['形を変える', '運動のようすを変える', '支える'], '形を変える'),
+          word('b2', ['形を変える', '運動のようすを変える', '支える'], '運動のようすを変える'),
+          word('b3', ['形を変える', '運動のようすを変える', '支える'], '支える'),
+          word('b4', ['形を変える', '運動のようすを変える', '支える'], '運動のようすを変える'),
+        ],
+        explanation: 'のばしたばねは形が変わります。ボールを止める・打ち返すと、速さや向き（運動のようす）が変わります。荷物を持ったまま立つのは、物体を支えるはたらきです。',
+        hint: '物体の形・動き・落ちないで止まっているか、のどれが変わったかを見よう。',
+      }),
+      fill({
+        id: 'force-mp1-t1', concept: 'fo-kinds', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地球が物体を中心に向かって引く力を[b1]、面が押されたときに押し返す力を[b2]、ふれ合う物体の動きをさまたげる向きにはたらく力を[b3]という。',
+        blanks: [
+          word('b1', ['重力', '垂直抗力', '摩擦力', '弾性力'], '重力'),
+          word('b2', ['重力', '垂直抗力', '摩擦力', '弾性力'], '垂直抗力'),
+          word('b3', ['重力', '垂直抗力', '摩擦力', '弾性力'], '摩擦力'),
+        ],
+        explanation: '地球が引く力が**重力**、面が押し返す力が**垂直抗力**、動きをさまたげる力が**摩擦力**です。弾性力は、のびたばねがもとに戻ろうとする力です。',
+        hint: '「重」「垂直」「摩擦（こすれる）」という字から考えよう。',
+      }),
+      figureChoice({
+        id: 'force-mp1-p2', concept: 'fo-effect',
+        prompt: 'ア〜ウのうち、力が「物体を支える」はたらきをしているのはどれ？（ア: スポンジを押す、イ: 転がるボールを手で止める、ウ: 荷物を手で持ち上げたままにする）',
+        figure: EFFECT_3,
+        answer: 'r3',
+        explanation: '荷物を持ち上げたままにしているとき、手の力が荷物を支えて、落ちないようにしています。アは形を変える、イは運動のようすを変えるはたらきです。',
+        hint: '物体が落ちないように止まっているのはどれかな。',
+      }),
+      figureChoice({
+        id: 'force-mp1-p3', concept: 'fo-arrow',
+        prompt: '机の上に 200 g の本があります。本にはたらく重力を正しく表した矢印はア〜ウのどれ？（100 g の物体にはたらく重力を 1 N とし、左上の線の長さを 1 N とする）',
+        // 1 N ＝ 25px。ア 中心から下へ 50px（2 N・正解）、イ 中心から上へ 50px、ウ 中心から下へ 75px（3 N）
+        figure: scene([
+          { type: 'line', points: [[20, 30], [45, 30]], width: 4 },
+          { type: 'text', x: 52, y: 35, text: '1 N', size: 13 },
+          { type: 'line', points: [[10, 140], [310, 140]], color: 'brown', width: 4 },
+          { type: 'rect', x: 35, y: 100, width: 40, height: 40, fill: 'lightgreen' },
+          ...force(55, 120, 55, 170),
+          { type: 'rect', x: 140, y: 100, width: 40, height: 40, fill: 'lightgreen' },
+          ...force(160, 120, 160, 70),
+          { type: 'rect', x: 245, y: 100, width: 40, height: 40, fill: 'lightgreen' },
+          ...force(265, 120, 265, 195),
+          { type: 'region', id: 'r1', x: 55, y: 216, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 216, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 265, y: 216, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r1',
+        explanation: '200 g の本にはたらく重力は 2 N です。重力は本の中心を作用点にして真下に、1 N の線の 2 倍の長さでかきます。イは向きが逆、ウは長さが 3 N ぶんです。',
+        hint: '向き（真下）と長さ（2 N）の両方を確かめよう。',
+      }),
+      drag({
+        id: 'force-mp1-p4', concept: 'fo-arrow',
+        prompt: '手で箱を右向きに押しています。押す力の作用点はどこ？ 青い点を動かして、作用点の位置に置こう。',
+        // 手は箱の左の面の (110,130) にふれている → 作用点。不正解例は箱の中心 (160,130)（50 はなれる）
+        figure: scene([
+          { type: 'line', points: [[20, 160], [300, 160]], color: 'line', width: 3 },
+          { type: 'rect', x: 110, y: 100, width: 100, height: 60, fill: 'sand', label: '箱' },
+          { type: 'ellipse', x: 88, y: 130, rx: 22, ry: 10, fill: 'pink' },
+          { type: 'arrow', x1: 220, y1: 80, x2: 290, y2: 80, color: 'gray', label: '押す向き' },
+          { type: 'circle', id: 'pt', x: 270, y: 200, r: 10, fill: 'blue', stroke: 'blue', label: '作用点', labelPos: 'below' },
+        ]),
+        draggable: { itemId: 'pt', axis: 'xy' },
+        target: { x: 110, y: 130 },
+        samples: { correct: { x: 110, y: 130 }, wrong: { x: 160, y: 130 } },
+        explanation: '押す力は、手が箱にふれているところにはたらきます。だから作用点は、手と箱がふれている箱の左の面の点です。そこから右向きに矢印をかきます。',
+        hint: '手が箱にふれているところをさがそう。',
+      }),
+      choice({
+        id: 'force-mp1-p5', concept: 'fo-arrow',
+        prompt: '床の上に置いた箱を、床が押し返す力（垂直抗力）を矢印でかきます。正しいかき方はどれ？',
+        options: ['箱の中心から真下へかく', '床と箱がふれている面の中央から真上へかく', '箱の上の面から真下へかく'],
+        answer: 'b',
+        explanation: '垂直抗力は床が箱を押す力なので、床と箱がふれている面が作用点で、向きは上向き（面に垂直）です。重力（中心から真下）と区別しよう。',
+        hint: '押している床は、箱のどこにふれているかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'force-mp1-r1', concept: 'fo-kinds',
+        prompt: '床の上の重い箱を横に押しましたが、箱は動きませんでした。押す力と反対向きにはたらいて、箱の動きをさまたげている力は？',
+        options: ['重力', '摩擦力', '磁力'],
+        answer: 'b',
+        explanation: '床と箱がふれ合っている面で、動きをさまたげる向きに摩擦力がはたらいています。',
+        hint: 'ふれ合う面ではたらく、動きをじゃまする力だよ。',
+      }),
+      choice({
+        id: 'force-mp1-r2', concept: 'fo-kinds',
+        prompt: '机の上に置いた本を、机の面が押し返している力はどれ？',
+        options: ['垂直抗力', '摩擦力', '弾性力'],
+        answer: 'a',
+        explanation: '本に押された机の面が、本を押し返す力を垂直抗力といいます。面に垂直な向きにはたらきます。',
+        hint: '面に「垂直」にはたらく力だよ。',
+      }),
+      choice({
+        id: 'force-mp1-r3', concept: 'fo-effect',
+        prompt: '走っている自転車にブレーキをかけると止まりました。このときの力のはたらきはどれ？',
+        options: ['形を変える', '運動のようすを変える', '支える'],
+        answer: 'b',
+        explanation: 'ブレーキの力で速さが変わり、止まりました。速さや向きが変わるのは「運動のようすを変える」はたらきです。',
+        hint: '自転車の速さはどう変わったかな。',
+      }),
+      fill({
+        id: 'force-mp1-r4', concept: 'fo-arrow',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 N の力を 1 cm の矢印で表すとき、300 g の物体にはたらく重力（100 g で 1 N）は、長さ[b1]の矢印でかく。',
+        blanks: [number('b1', 3, 0, 'cm')],
+        explanation: '300 g の物体にはたらく重力は 3 N です。1 N を 1 cm にするので、3 cm の矢印でかきます。',
+        hint: 'まず重力が何 N か求めよう。',
+      }),
+      choice({
+        id: 'force-mp1-t2', concept: 'fo-kinds', term: true,
+        prompt: '次の説明に合う言葉はどれ？「地球が物体を、地球の中心に向かって引く力」',
+        options: ['重力', '垂直抗力', '摩擦力'],
+        answer: 'a',
+        explanation: '地球が物体を中心に向かって引く力を**重力**といいます。物体の中心から真下に矢印でかきます。',
+        hint: '手をはなすと物が落ちるのは、この力のせいだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ force-mp2: プリント 2（フックの法則・ばねの伸びを調べる・2 力のつりあい） ----
+  const forceMp2 = {
+    id: 'force-mp2', areaId: 'force-miniprint', title: 'プリント 2: ばねの伸びと 2 力のつり合い', minutes: 6, concepts: ['fo-hooke', 'fo-balance'],
+    lessons: [
+      {
+        id: 'force-mp2-c1',
+        text: 'ばねの伸びは、ばねを引く力の大きさに**比例**します。これを**フックの法則**といいます。測った値をグラフにするときは、点のなるべく近くを通る直線を引きます。直線は原点を通ります。',
+        figure: scene(hookeGraph()),
+      },
+      {
+        id: 'force-mp2-c2',
+        text: '1 つの物体に 2 つの力がはたらいて物体が動かないとき、2 力は**つり合っている**といいます。2 力の大きさが等しく、向きが反対で、同じ**一直線上**にあるとき、つり合います。',
+        figure: scene([
+          { type: 'line', points: [[30, 120], [290, 120]], color: 'gray', width: 1, dashed: true },
+          { type: 'rect', x: 130, y: 100, width: 60, height: 40, fill: 'sand', label: '箱' },
+          ...force(130, 120, 60, 120, '3 N'),
+          ...force(190, 120, 260, 120, '3 N'),
+          { type: 'text', x: 160, y: 190, text: '大きさが等しい・向きが反対', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 214, text: '同じ一直線上', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'force-mp2-w1', concept: 'fo-hooke',
+      prompt: '予想しよう。ばねにつるすおもりの数を 2 倍にすると、ばねの伸びはどうなると思う？',
+      options: ['約 2 倍になる', '変わらない', '半分になる'],
+      answer: 'a',
+      explanation: 'ばねの伸びは引く力の大きさに比例するので、おもりを 2 倍にすると伸びも約 2 倍になります。',
+      hint: '輪ゴムを強く引くほど、よくのびるね。',
+    }),
+    problems: [
+      fill({
+        id: 'force-mp2-p1', concept: 'fo-hooke',
+        prompt: 'グラフを読んで、空らんに入る数を入れよう。',
+        figure: scene(hookeGraph()),
+        text: 'グラフのばねでは、0.4 N の力で引いたときの伸びは[b1]、伸びを 5.0 cm にする力の大きさは[b2]である。',
+        blanks: [number('b1', 4, 0, 'cm'), number('b2', 0.5, 0, 'N')],
+        explanation: 'グラフの直線は 0.1 N で 1 cm 伸びるばねです。0.4 N では 4.0 cm、5.0 cm 伸ばすには 0.5 N の力がいります。',
+        hint: '横の 0.4 から上へ、縦の 5 から横へたどろう。',
+      }),
+      fill({
+        id: 'force-mp2-t1', concept: 'fo-hooke', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '力の大きさとばねの伸びのグラフが原点を通る直線になるとき、伸びは力の大きさに[b1]している。このばねの決まりを[b2]という。',
+        blanks: [
+          word('b1', ['比例', '反比例', '反射'], '比例'),
+          word('b2', ['フックの法則', '反射の法則', '2 力のつり合い'], 'フックの法則'),
+        ],
+        explanation: '原点を通る直線のグラフは**比例**を表します。ばねの伸びが力の大きさに比例することを**フックの法則**といいます。',
+        hint: '一方が 2 倍・3 倍になると、もう一方も 2 倍・3 倍になる関係だよ。',
+      }),
+      fill({
+        id: 'force-mp2-p2', concept: 'fo-hooke',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'グラフのばね（0.1 N で 1.0 cm 伸びる）を 1.5 N の力で引くと、伸びは[b1]になる。',
+        blanks: [number('b1', 15, 0, 'cm')],
+        explanation: '1.5 N は 0.1 N の 15 倍なので、伸びも 15 倍の 15 cm です。グラフの外でも、比例の関係を使えば計算できます。',
+        hint: '1.5 N は 0.1 N の何倍かな。',
+      }),
+      fill({
+        id: 'force-mp2-p3', concept: 'fo-hooke',
+        prompt: '表を見て、ばねの伸びを計算しよう。',
+        text: '10 g のおもり（0.1 N）を 1 個ずつつるし、ばねの下のはしの目盛りを読んだ。0 N のとき 43 cm、0.1 N のとき 48 cm、0.3 N のとき 57 cm、0.5 N のとき 69 cm だった。ばねの伸びは、0.1 N のとき[b1]、0.3 N のとき[b2]、0.5 N のとき[b3]である。',
+        blanks: [number('b1', 5, 0, 'cm'), number('b2', 14, 0, 'cm'), number('b3', 26, 0, 'cm')],
+        explanation: 'ばねの伸びは、そのときの目盛りから、何もつるさないときの目盛り 43 cm を引いて求めます。48 − 43 ＝ 5、57 − 43 ＝ 14、69 − 43 ＝ 26 です。',
+        hint: '伸び ＝ そのときの目盛り − はじめの目盛り（43 cm）だよ。',
+      }),
+      figureChoice({
+        id: 'force-mp2-p4', concept: 'fo-balance',
+        prompt: '箱を 2 つの力で引いています。箱が動かない（2 力がつり合っている）のはア〜ウのどれ？（矢印の長さが力の大きさ）',
+        figure: BALANCE_3,
+        answer: 'r1',
+        explanation: 'アは、2 力の大きさが等しく、向きが反対で、同じ一直線上にあるので、つり合って動きません。イは大きさがちがうので長いほうへ動き、ウは一直線上にないので箱が回ってしまいます。',
+        hint: '大きさ・向き・一直線上の 3 つを確かめよう。',
+      }),
+      fill({
+        id: 'force-mp2-p5', concept: 'fo-balance',
+        prompt: '2 力がつり合う 3 つの条件をまとめよう。',
+        text: '2 力の大きさが[b1]。2 力の向きが[b2]。2 力が同じ[b3]にある。',
+        blanks: [
+          word('b1', ['等しい', 'ちがう'], '等しい'),
+          word('b2', ['反対', '同じ'], '反対'),
+          word('b3', ['一直線上', '平らな面の上'], '一直線上'),
+        ],
+        explanation: '2 力がつり合う条件は、大きさが等しい、向きが反対、一直線上にある、の 3 つです。どれか 1 つでも欠けると、物体は動きだします。',
+        hint: 'つな引きで、つなが動かないときを考えよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'force-mp2-r1', concept: 'fo-hooke',
+        prompt: '力の大きさを表す単位はどれ？',
+        options: ['N（ニュートン）', 'g（グラム）', 'cm（センチメートル）'],
+        answer: 'a',
+        explanation: '力の大きさの単位は N（ニュートン）です。100 g の物体にはたらく重力が約 1 N です。g は質量、cm は長さの単位です。',
+        hint: '「1 N」のように書く単位だよ。',
+      }),
+      choice({
+        id: 'force-mp2-r2', concept: 'fo-hooke',
+        prompt: '力の大きさとばねの伸びを測って、方眼紙にグラフをかきます。点を打ったあと、線はどう引く？',
+        options: ['点を順に折れ線で結ぶ', '点のなるべく近くを通る直線を引く', '線は引かない'],
+        answer: 'b',
+        explanation: '測った値には少しずつ誤差があるので、点を折れ線で結ばず、点のなるべく近くを通る直線を引きます。ばねでは原点を通る直線になります。',
+        hint: '測った値には、少しずつずれ（誤差）があるよ。',
+      }),
+      fill({
+        id: 'force-mp2-r3', concept: 'fo-hooke',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 個 10 g のおもりを 3 個つるすと、ばねを引く力の大きさは[b1]になる。（100 g の物体にはたらく重力を 1 N とする）',
+        blanks: [number('b1', 0.3, 0, 'N')],
+        explanation: '10 g × 3 ＝ 30 g です。100 g で 1 N なので、30 g では 0.3 N です。',
+        hint: '10 g のおもり 1 個は 0.1 N だよ。',
+      }),
+      choice({
+        id: 'force-mp2-r4', concept: 'fo-balance',
+        prompt: '箱を左右から同じ 3 N の力で引きましたが、2 つの力が同じ一直線上にありません（上下にずれている）。箱はどうなる？',
+        options: ['まったく動かない', '回るように動きだす', '3 N の 2 倍の力で右へ動く'],
+        answer: 'b',
+        explanation: '大きさが等しく向きが反対でも、一直線上にないとつり合いません。箱は回るように動きだします。',
+        hint: 'つり合いの 3 つの条件のうち、どれが欠けているかな。',
+      }),
+      choice({
+        id: 'force-mp2-t2', concept: 'fo-balance', term: true,
+        prompt: '1 つの物体に 2 つの力がはたらいていて、物体が動かないとき、2 力は何といえる？',
+        options: ['比例している', 'つり合っている', '反射している'],
+        answer: 'b',
+        explanation: '物体が動かないとき、2 力は**つり合っている**といいます。大きさが等しく、向きが反対で、一直線上にあります。',
+        hint: 'てんびんが水平になるときにも使う言葉だよ。',
+      }),
+    ],
+  };
+
+
+  // ================================================================
   // 概念（確認問題 checkPool つき）
   // ================================================================
 
@@ -947,6 +1291,7 @@
     areas: [
       { id: 'what', title: '力とは', order: 1, stages: [force1, force2] },
       { id: 'spring', title: '力の大きさ', order: 2, stages: [force3, force4] },
+      { id: 'force-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [forceMp1, forceMp2] },
     ],
   };
 

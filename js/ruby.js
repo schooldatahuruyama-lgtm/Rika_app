@@ -2,6 +2,7 @@
 // RikaQuest.ruby = { annotate, apply, strip, setEnabled, prepare, parts }
 //   prepare(words)          … 辞書のキーを長い順に並べた配列（漢字をふくまないキーは入れない）
 //   annotate(text, words)   … 左から最長一致で辞書の語をさがす → [{ text, reading }]（reading は null か読み）
+//                             数字（＋空白）のあとの 月・日 は がつ・にち（辞書の 1 字の語より優先）
 //   parts(text, reading)    … 辞書の語 1 つを、漢字の部分（読みつき）と送りがな（reading: null）に分ける
 //   apply(rootNode, words)  … rootNode 以下の文字を <ruby class="rq-ruby">語<rt>よみ</rt></ruby> に置きかえる（ブラウザ）。
 //                             1 つのテキストノードからできた ruby と文字の並びは <span class="rq-ruby-run"> 1 つに包む
@@ -46,6 +47,18 @@
 
   // ---- 文に読みを付ける ----
 
+  // 数字（半角・全角）＋任意の空白のあとの 月・日 は、がつ・にち と読む（「4 月 1 日」）。
+  // 辞書の 1 字の語（月 → つき、日 → ひ）より優先。辞書のもっと長い語（月ごろ、日目 など）はそちらを使う
+  const DATE_READING = { 月: 'がつ', 日: 'にち' };
+  const DIGIT = /[0-9０-９]/;
+  const SPACE = /[ \u3000]/;
+
+  function afterDigit(s, i) {
+    let j = i - 1;
+    while (j >= 0 && SPACE.test(s[j])) j -= 1;
+    return j >= 0 && DIGIT.test(s[j]);
+  }
+
   function annotate(text, words) {
     const s = typeof text === 'string' ? text : '';
     if (s === '') return [];
@@ -61,7 +74,12 @@
           if (s.startsWith(keys[k], i)) { hit = keys[k]; break; }
         }
       }
-      if (hit) {
+      const date = (!hit || hit.length === 1) && Object.prototype.hasOwnProperty.call(DATE_READING, s[i]) && afterDigit(s, i);
+      if (date) {
+        if (plain !== '') { out.push({ text: plain, reading: null }); plain = ''; }
+        out.push({ text: s[i], reading: DATE_READING[s[i]] });
+        i += 1;
+      } else if (hit) {
         if (plain !== '') { out.push({ text: plain, reading: null }); plain = ''; }
         out.push({ text: hit, reading: words[hit] });
         i += hit.length;

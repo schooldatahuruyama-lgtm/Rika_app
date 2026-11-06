@@ -835,13 +835,15 @@
     return { unit, errors };
   }
 
-  // content/<id>.js の中身
+  // content/<id>.js の中身。unit には source: 'author'（AI 教材作成で作った印）を入れる
+  // （tests/content-all.test.js がカードの図の検査を飛ばす目印。validateUnit は知らない項目を無視する）
   function toContentJs(unit, input, now) {
     const inp = normalizeInput(input);
     const oneLine = (s) => String(s).replace(/[\r\n\u2028\u2029]+/g, ' ');
     const title = oneLine(isObject(unit) && unit.title ? unit.title : inp.title);
     const date = isoOf(now).slice(0, 10);
-    const json = JSON.stringify(unit, null, 2)
+    const marked = isObject(unit) ? Object.assign({ source: 'author' }, unit, { source: 'author' }) : unit;
+    const json = JSON.stringify(marked, null, 2)
       .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
       .split('\n').map((l, i) => (i === 0 ? l : '  ' + l)).join('\n');
     return [

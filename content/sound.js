@@ -814,6 +814,463 @@
   };
 
   // ================================================================
+  // 領域 3: ミニプリント（先生のミニプリントの問題を書き直したもの。共通指示 .ai-tasks/20261106-130000_ミニプリント反映_共通.md）
+  // ================================================================
+
+  // 2 つのおんさ A（左・鳴らす）と B（右）。板を置く場所の選択肢（region）は呼ぶ側で足す
+  function twoForks() {
+    return [
+      ...fork(70, 50, true),
+      ...fork(250, 50, false),
+      { type: 'line', points: [[112, 80], [120, 115], [112, 150]], color: 'blue', width: 2 },
+      { type: 'line', points: [[140, 74], [150, 115], [140, 156]], color: 'blue', width: 2 },
+      { type: 'line', points: [[168, 80], [178, 115], [168, 150]], color: 'blue', width: 2 },
+      { type: 'text', x: 70, y: 226, text: 'A（鳴らす）', anchor: 'middle', size: 14 },
+      { type: 'text', x: 250, y: 226, text: 'B', anchor: 'middle', size: 14 },
+    ];
+  }
+
+  // 波形 A（くらべるもと。選べない）と B〜D（選ぶ場所つき）。横はばはどれも同じ時間
+  const WAVES_MP = scene([
+    { type: 'line', points: [[60, 32], [310, 32]], color: 'gray', width: 1 },
+    wave(60, 32, 250, 12, 2),
+    { type: 'text', x: 20, y: 38, text: 'A', size: 16, bold: true },
+    ...waveRow('r1', 'B', 90, 22, 2),
+    ...waveRow('r2', 'C', 148, 12, 4),
+    ...waveRow('r3', 'D', 206, 6, 1),
+  ]);
+
+  // 花火と、はなれた所にいる 3 人（ア 340 m・イ 680 m・ウ 1020 m）
+  const FIREWORKS_3 = scene([
+    { type: 'line', points: [[10, 200], [310, 200]], color: 'line', width: 2 },
+    { type: 'circle', x: 30, y: 50, r: 20, fill: 'yellow', stroke: 'orange' },
+    { type: 'line', points: [[30, 70], [30, 200]], color: 'gray', width: 2, dashed: true },
+    ...[[110, '340 m'], [200, '680 m'], [290, '1020 m']].flatMap(([x, d]) => [
+      { type: 'circle', x, y: 160, r: 8 },
+      { type: 'polygon', points: [[x - 8, 170], [x + 8, 170], [x + 11, 198], [x - 11, 198]], fill: 'green' },
+      { type: 'text', x, y: 222, text: d, size: 13, anchor: 'middle' },
+    ]),
+    { type: 'text', x: 60, y: 40, text: '花火からの距離', size: 13 },
+    { type: 'region', id: 'r1', x: 110, y: 118, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 200, y: 118, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 290, y: 118, r: 22, label: 'ウ' },
+  ]);
+
+  // ---- ステージ sound-mp1: プリント 1（おんさ・音の伝わり方・真空にする） ----
+  const soundMp1 = {
+    id: 'sound-mp1', areaId: 'sound-miniprint', title: 'プリント 1: おんさと音の伝わり方', minutes: 5, concepts: ['so-vibration', 'so-medium'],
+    lessons: [
+      {
+        id: 'sound-mp1-c1',
+        text: '**おんさ**は、たたくと決まった高さの音を出す器具です。鳴っているおんさにふれると、細かくふるえて（**振動**して）いるのが分かります。うでを強くにぎると振動が止まり、音も止まります。',
+        figure: scene([
+          ...fork(100, 40, true),
+          { type: 'text', x: 100, y: 214, text: 'おんさ', anchor: 'middle', size: 14 },
+          { type: 'text', x: 170, y: 70, text: '点線: うでが振動', size: 14 },
+          { type: 'text', x: 170, y: 110, text: 'にぎると', size: 14 },
+          { type: 'text', x: 170, y: 132, text: '振動も音も止まる', size: 14 },
+        ]),
+      },
+      {
+        id: 'sound-mp1-c2',
+        text: '同じ高さの音を出す 2 つのおんさを並べ、一方を鳴らすと、もう一方も鳴りだします。これを**共鳴**といいます。振動が空気を伝わって届くからで、間に板を置くと、もう一方はほとんど鳴りません。',
+        figure: scene([
+          ...twoForks(),
+          { type: 'text', x: 145, y: 30, text: '空気の振動', anchor: 'middle', size: 14 },
+        ]),
+      },
+      {
+        id: 'sound-mp1-c3',
+        text: 'ブザーを入れた容器から空気をぬいていくと、ブザーの音はしだいに小さくなります。音を伝えていたのは空気です。物質がない**真空**では、音は伝わりません。水の中では音は伝わります。',
+        // 容器（左）の中のブザーと、管でつないだポンプ（右）
+        figure: scene([
+          { type: 'rect', x: 20, y: 90, width: 130, height: 120, fill: 'glass', rx: 10 },
+          { type: 'circle', x: 70, y: 170, r: 16, fill: 'yellow' },
+          { type: 'text', x: 70, y: 232, text: 'ブザー', anchor: 'middle', size: 14 },
+          { type: 'line', points: [[150, 150], [220, 150]], width: 4, color: 'line' },
+          { type: 'rect', x: 220, y: 110, width: 70, height: 90, fill: 'gray' },
+          { type: 'text', x: 255, y: 232, text: 'ポンプ', anchor: 'middle', size: 14 },
+          { type: 'arrow', x1: 160, y1: 132, x2: 210, y2: 132, color: 'blue', width: 2 },
+          { type: 'text', x: 160, y: 40, text: '空気をぬくと音が小さくなる', anchor: 'middle', size: 14 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'sound-mp1-w1', concept: 'so-vibration',
+      prompt: '予想しよう。たたいて鳴らしたおんさのうでの先を、水の中に入れると、どうなると思う？',
+      options: ['水しぶきが上がる', '水がすぐにこおる', '何も起こらない'],
+      answer: 'a',
+      explanation: '鳴っているおんさのうでは細かく振動しているので、水に入れると水しぶきが上がります。目で見えにくい振動も、水を使うと確かめられます。',
+      hint: '鳴っているおんさにふれると、指に何を感じるかな。',
+    }),
+    problems: [
+      choice({
+        id: 'sound-mp1-p1', concept: 'so-vibration',
+        prompt: '鳴っているおんさの金属のうでを、手で強くにぎりました。音はどうなる？',
+        options: ['音が止まる', '音が大きくなる', '音が高くなる'],
+        answer: 'a',
+        explanation: 'にぎるとうでの振動が止まるので、音も止まります。音が出ているあいだ、おんさはずっと振動しています。',
+        hint: 'にぎると、うでのふるえはどうなるかな。',
+      }),
+      fill({
+        id: 'sound-mp1-t1', concept: 'so-vibration', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'たたくと決まった高さの音を出す、U の字の形の金属の器具を[b1]という。鳴っている[b1]にふれると、細かく[b2]していることが分かる。',
+        blanks: [
+          word('b1', ['おんさ', 'モノコード', 'ブザー'], 'おんさ'),
+          word('b2', ['振動', '反射', '蒸発'], '振動'),
+        ],
+        explanation: 'この器具は**おんさ**です。鳴っているおんさにふれると、細かく**振動**していることが分かります。音を出すものは振動しています。',
+        hint: '音楽の時間に、音の高さを合わせるのに使う器具だよ。',
+      }),
+      choice({
+        id: 'sound-mp1-p2', concept: 'so-vibration',
+        prompt: '同じ高さの音を出す 2 つのおんさ A・B を並べ、A だけを鳴らすと、ふれていない B も鳴りだしました。この現象を何という？',
+        options: ['反射', '共鳴', '屈折'],
+        answer: 'b',
+        explanation: '一方のおんさの振動が伝わって、もう一方も鳴りだす現象を共鳴といいます。2 つのおんさが同じ高さの音を出すときに起こります。',
+        hint: '「共に鳴る」と書く言葉だよ。',
+      }),
+      choice({
+        id: 'sound-mp1-p3', concept: 'so-vibration',
+        prompt: 'A を鳴らすと、はなれた B も鳴りだしました。B が鳴りだしたのはなぜ？',
+        options: ['A から出た光が B に当たったから', 'A の振動がまわりの空気を振動させ、その振動が B に伝わったから', '机がかたむいて B がゆれたから'],
+        answer: 'b',
+        explanation: 'A の振動がまわりの空気を次々に振動させ、その振動が B に届いて B も振動しはじめました。音は振動として空気を伝わります。',
+        hint: 'A と B のあいだには、何があるかな。',
+      }),
+      figureChoice({
+        id: 'sound-mp1-p4', concept: 'so-vibration',
+        prompt: 'A を鳴らしても B が鳴りにくくなるようにしたい。厚い板を立てる場所として最もよいのはア〜ウのどこ？（ア: A と B のあいだ、イ: A の左、ウ: B の右）',
+        figure: scene([
+          ...twoForks(),
+          { type: 'region', id: 'r1', x: 160, y: 190, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 24, y: 110, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 296, y: 110, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r1',
+        explanation: 'A の振動は、A と B のあいだの空気を伝わって B に届きます。あいだに板を立てると、空気の振動がさえぎられて B はほとんど鳴りません。A の左や B の右に置いても、さえぎることはできません。',
+        hint: 'A の振動は、どこを通って B に届くかな。',
+      }),
+      choice({
+        id: 'sound-mp1-p5', concept: 'so-medium',
+        prompt: '容器の中でブザーを鳴らしながら、ポンプで中の空気をぬいていきました。ブザーの音はどうなる？',
+        options: ['しだいに大きくなる', 'しだいに小さくなる', '変わらない'],
+        answer: 'b',
+        explanation: 'ブザーは振動し続けていますが、音を伝える空気が少なくなるので、聞こえる音はしだいに小さくなります。',
+        hint: 'ブザーの振動を耳まで運んでいるものが減っていくよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'sound-mp1-r1', concept: 'so-vibration',
+        prompt: 'A と B のおんさのあいだに厚い板を立ててから、A を鳴らしました。B はどうなる？',
+        options: ['板がないときより大きく鳴る', 'ほとんど鳴らない', '板がないときと同じように鳴る'],
+        answer: 'b',
+        explanation: '板が A からの空気の振動をさえぎるので、B にはほとんど届かず、B はほとんど鳴りません。',
+        hint: 'A の振動は空気を伝わって B に届いていたね。',
+      }),
+      choice({
+        id: 'sound-mp1-r2', concept: 'so-medium',
+        prompt: '容器の空気をぬくとブザーの音が小さくなったことから、ふだんブザーの音を耳まで伝えているものは何だと分かる？',
+        options: ['光', '空気', '電気'],
+        answer: 'b',
+        explanation: '空気が少なくなると音が小さくなったので、音を伝えていたのは空気だと分かります。音は物質の振動で伝わります。',
+        hint: '容器の中から何をぬいていったかな。',
+      }),
+      choice({
+        id: 'sound-mp1-r3', concept: 'so-medium',
+        prompt: 'プールにもぐって、水の中で鳴らしたブザーの音を聞きました。音は聞こえる？',
+        options: ['聞こえる', '聞こえない'],
+        answer: 'a',
+        explanation: '水などの液体も振動を伝えるので、水の中でも音は聞こえます。音が伝わらないのは、物質のない真空です。',
+        hint: '音を伝えるのは、気体だけだったかな。',
+      }),
+      choice({
+        id: 'sound-mp1-r4', concept: 'so-medium',
+        prompt: '空気をぬく容器の中に、軽い紙のふき流しをつるしておきました。ポンプで空気をぬき始めると、ふき流しが空気の流れでポンプの方へなびきました。このことから分かることはどれ？',
+        options: ['容器の中の空気がぬけていっていること', 'ブザーの振動が止まったこと', '容器の中が明るくなったこと'],
+        answer: 'a',
+        explanation: 'ふき流しは、空気が動いているかどうかを目で見るためのものです。なびいたのは、容器の中の空気がポンプへ流れ出ているからです。空気が少なくなるにつれて、ブザーの音も小さくなります。',
+        hint: 'ふき流しを動かしたのは何の流れかな。',
+      }),
+      choice({
+        id: 'sound-mp1-t2', concept: 'so-medium', term: true,
+        prompt: '次の説明に合う言葉はどれ？「空気などの物質がまったくない状態。音が伝わらない」',
+        options: ['共鳴', '真空', 'おんさ'],
+        answer: 'b',
+        explanation: '物質がまったくない状態を**真空**といいます。音は物質の振動で伝わるので、真空では伝わりません。',
+        hint: '容器の空気を全部ぬいたときの状態だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ sound-mp2: プリント 2（音の速さ・音の速さ 2） ----
+  const soundMp2 = {
+    id: 'sound-mp2', areaId: 'sound-miniprint', title: 'プリント 2: 音の速さの計算', minutes: 5, concepts: ['so-speed'],
+    lessons: [
+      {
+        id: 'sound-mp2-c1',
+        text: '花火は、光が見えてから少しおくれて音が聞こえます。光の速さは秒速約 30 万 km、空気中の**音の速さ**は秒速約 340 m で、音のほうがずっとおそいからです。',
+        figure: scene(fireworks('光が先、音があと').concat([
+          { type: 'text', x: 110, y: 100, text: '光: 秒速 約30万km', size: 13 },
+          { type: 'text', x: 110, y: 130, text: '音: 秒速 約340m', size: 13 },
+        ])),
+      },
+      {
+        id: 'sound-mp2-c2',
+        text: '**音の速さ**〔m/s〕は、音が伝わった距離〔m〕÷ かかった時間〔s〕で求めます。600 m はなれた所の音が 2.0 秒後に聞こえたら、600 ÷ 2.0 ＝ 300 m/s です。距離は 速さ × 時間 で求めます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 60, text: '速さ ＝ 距離 ÷ 時間', anchor: 'middle', size: 18, bold: true },
+          { type: 'text', x: 160, y: 110, text: '距離 ＝ 速さ × 時間', anchor: 'middle', size: 18, bold: true },
+          { type: 'line', points: [[40, 170], [280, 170]], width: 2 },
+          { type: 'circle', x: 40, y: 170, r: 6, fill: 'ink' },
+          { type: 'circle', x: 280, y: 170, r: 6, fill: 'ink' },
+          { type: 'text', x: 160, y: 160, text: '600 m', anchor: 'middle', size: 14 },
+          { type: 'text', x: 160, y: 200, text: '2.0 秒 → 600 ÷ 2.0 ＝ 300 m/s', anchor: 'middle', size: 14 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'sound-mp2-w1', concept: 'so-speed',
+      prompt: '予想しよう。打ち上げ花火が光ってから 2.0 秒後に、ドーンという音が聞こえた。音がおくれて聞こえたのはなぜだと思う？',
+      options: ['音は光よりずっとおそく伝わるから', '音は光よりずっと速く伝わるから', '音は花火が消えてから出るから'],
+      answer: 'a',
+      explanation: '音と光は同時に出ますが、音は光よりずっとおそく伝わるので、光が見えたあとに音が届きます。',
+      hint: 'かみなりも、光ってから音が聞こえるね。',
+    }),
+    problems: [
+      fill({
+        id: 'sound-mp2-p1', concept: 'so-speed',
+        prompt: '空らんに入るものを選ぼう。',
+        text: '空気中を音が伝わる速さはおよそ[b1]、光が伝わる速さはおよそ[b2]である。',
+        blanks: [
+          word('b1', ['秒速 340 m', '秒速 340 km', '秒速 30 万 m', '秒速 30 万 km'], '秒速 340 m'),
+          word('b2', ['秒速 340 m', '秒速 340 km', '秒速 30 万 m', '秒速 30 万 km'], '秒速 30 万 km'),
+        ],
+        explanation: '音はおよそ秒速 340 m、光はおよそ秒速 30 万 km です。光は 1 秒で地球を 7 周半するほど速く、音とは比べものになりません。',
+        hint: '音は 1 秒で 340 m ほど。光はけたちがいに速いよ。',
+      }),
+      fill({
+        id: 'sound-mp2-t1', concept: 'so-speed', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '音が 1 秒間に伝わる距離を[b1]という。空気中では約 340 m/s で、[b1]は 距離 ÷ [b2] で求める。',
+        blanks: [
+          word('b1', ['音の速さ', '振動数', '振幅'], '音の速さ'),
+          word('b2', ['時間', '質量', '体積'], '時間'),
+        ],
+        explanation: '**音の速さ**は、音が伝わった距離をかかった時間でわって求めます。単位は m/s（メートル毎秒）です。',
+        hint: '速さは「1 秒あたりに進む距離」だったね。',
+      }),
+      figureChoice({
+        id: 'sound-mp2-p2', concept: 'so-speed',
+        prompt: '花火が光ってから 2.0 秒後に音が聞こえたのは、ア〜ウのどの人？ 音の速さを 340 m/s とする。',
+        figure: FIREWORKS_3,
+        answer: 'r2',
+        explanation: '音は 2.0 秒で 340 × 2.0 ＝ 680 m 進みます。花火から 680 m の所にいるイの人です。アは 1.0 秒後、ウは 3.0 秒後に聞こえます。',
+        hint: '音が 2.0 秒で進む距離を先に計算しよう。',
+      }),
+      fill({
+        id: 'sound-mp2-p3', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。',
+        figure: scene(fireworks('光ってから 2.0 秒後に音')),
+        text: 'A さんは、花火が光ってから 2.0 秒後に音を聞いた。音の速さを 340 m/s とすると、花火から A さんまでの距離は[b1]である。',
+        blanks: [number('b1', 680, 0, 'm')],
+        explanation: '距離＝音の速さ×時間なので、340 × 2.0 ＝ 680 m です。光はほとんど一瞬で届くので、音が届くまでの時間だけで計算できます。',
+        hint: '音は 1 秒で 340 m 進むよ。2.0 秒では？',
+      }),
+      fill({
+        id: 'sound-mp2-p4', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '600 m はなれた所で鳴らした音が、2.0 秒後に聞こえた。このときの音の速さは[b1]である。',
+        blanks: [number('b1', 300, 0, 'm/s')],
+        explanation: '速さ＝距離÷時間なので、600 ÷ 2.0 ＝ 300 m/s です。',
+        hint: '600 m を 2.0 秒でわろう。',
+      }),
+      fill({
+        id: 'sound-mp2-p5', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1300 m はなれた所で鳴らした音が、4.0 秒後に聞こえた。このときの音の速さは[b1]である。',
+        blanks: [number('b1', 325, 0, 'm/s')],
+        explanation: '速さ＝距離÷時間なので、1300 ÷ 4.0 ＝ 325 m/s です。',
+        hint: '1300 m を 4.0 秒でわろう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'sound-mp2-r1', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。（小数第 1 位を四捨五入して、整数で答える）',
+        text: '2000 m はなれた所で鳴らした音が、6.2 秒後に聞こえた。このときの音の速さは[b1]である。',
+        blanks: [number('b1', 323, 0, 'm/s')],
+        explanation: '2000 ÷ 6.2 ＝ 322.58… なので、小数第 1 位を四捨五入して 323 m/s です。わり切れないときは、指示された位で四捨五入します。',
+        hint: '2000 ÷ 6.2 を計算して、小数第 1 位を見よう。',
+      }),
+      choice({
+        id: 'sound-mp2-r2', concept: 'so-speed',
+        prompt: '音が伝わった距離と、聞こえるまでの時間から、音の速さを求める式はどれ？',
+        options: ['距離 × 時間', '距離 ÷ 時間', '時間 ÷ 距離'],
+        answer: 'b',
+        explanation: '速さは 1 秒あたりに進む距離なので、距離 ÷ 時間 で求めます。距離を求めるときは 速さ × 時間 です。',
+        hint: '単位 m/s は「m を s でわる」という意味だよ。',
+      }),
+      fill({
+        id: 'sound-mp2-r3', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'いなずまが光ってから 4.0 秒後に、かみなりの音が聞こえた。音の速さを 340 m/s とすると、いなずままでの距離は[b1]である。',
+        blanks: [number('b1', 1360, 0, 'm')],
+        explanation: '距離＝音の速さ×時間なので、340 × 4.0 ＝ 1360 m です。',
+        hint: '音の速さに、聞こえるまでの時間をかけよう。',
+      }),
+      choice({
+        id: 'sound-mp2-t2', concept: 'so-speed', term: true,
+        prompt: '次の説明に合う言葉はどれ？「音が 1 秒間に伝わる距離。空気中では約 340 m/s」',
+        options: ['振動数', '音の速さ', '振幅'],
+        answer: 'b',
+        explanation: '**音の速さ**です。距離 ÷ 時間 で求めます。振動数は 1 秒間に振動する回数で、別のものです。',
+        hint: '単位が m/s になるものだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ sound-mp3: プリント 3（音の大小と高低・モノコード 2・モノコード） ----
+  const soundMp3 = {
+    id: 'sound-mp3', areaId: 'sound-miniprint', title: 'プリント 3: 波形とモノコード', minutes: 6, concepts: ['so-waveform', 'so-amplitude', 'so-frequency'],
+    lessons: [
+      {
+        id: 'sound-mp3-c1',
+        text: '音の波形で、中心から山のいちばん高い所までの高さ（図の X）を**振幅**といいます。振幅が大きいほど大きい音です。1 秒間に振動する回数を**振動数**といい、多いほど高い音です。',
+        figure: scene([
+          { type: 'line', points: [[30, 120], [300, 120]], color: 'gray', width: 1 },
+          wave(40, 120, 250, 60, 2),
+          { type: 'arrow', x1: 72, y1: 120, x2: 72, y2: 62, color: 'blue', width: 2 },
+          { type: 'text', x: 96, y: 46, text: 'X（振幅）', size: 14 },
+          { type: 'text', x: 160, y: 222, text: '同じ時間の波の数 → 振動数', anchor: 'middle', size: 14 },
+        ]),
+      },
+      {
+        id: 'sound-mp3-c2',
+        text: 'モノコードの弦を強くはじくと**振幅**が大きくなり、大きい音が出ます。はじく部分を短くする、弦を強く張る、細い弦にすると**振動数**が多くなり、高い音が出ます。振動数の単位はヘルツ（Hz）です。',
+        figure: scene([
+          ...monochord(70),
+          bridge(220, 70),
+          { type: 'text', x: 110, y: 58, text: 'はじく部分', size: 13 },
+          { type: 'text', x: 296, y: 160, text: 'おもり', anchor: 'end', size: 13 },
+          { type: 'text', x: 20, y: 190, text: '強くはじく → 大きい音', size: 14 },
+          { type: 'text', x: 20, y: 214, text: '短く・強く張る・細く → 高い音', size: 14 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'sound-mp3-w1', concept: 'so-frequency',
+      prompt: '予想しよう。ギターには 6 本の弦があり、それぞれちがう高さの音が出ます。弦は材質のほかに、主に何がちがうと思う？',
+      options: ['弦の色', '弦の太さ', '弦のにおい'],
+      answer: 'b',
+      explanation: 'ギターの弦は太さがちがいます。細い弦ほど振動数が多くなり、高い音が出ます。張りの強さを変えて、音の高さを合わせることもします。',
+      hint: '高い音の弦と低い音の弦を見くらべると、何がちがうかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'sound-mp3-p1', concept: 'so-waveform',
+        prompt: '図の A〜D は、いろいろな音の波形です（横はばは同じ時間）。A より大きい音はどれ？ B〜D から選ぼう。',
+        figure: WAVES_MP,
+        answer: 'r1',
+        explanation: '大きい音は、振幅（山の高さ）が大きい音です。A より山が高いのは B です。C は A と山の高さが同じで、波の数が多い（高い音）です。',
+        hint: '波の数ではなく、山の高さを A とくらべよう。',
+      }),
+      fill({
+        id: 'sound-mp3-t1', concept: 'so-waveform', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '波形の中心から山の高さまでを[b1]といい、音の大きさを表す。音源が 1 秒間に振動する回数を[b2]といい、音の高さを表す。',
+        blanks: [
+          word('b1', ['振幅', '振動数', '波形'], '振幅'),
+          word('b2', ['振幅', '振動数', '波形'], '振動数'),
+        ],
+        explanation: '山の高さが**振幅**（音の大きさ）、1 秒間の振動の回数が**振動数**（音の高さ）です。',
+        hint: '「振れるはば」と「振動する回数」だよ。',
+      }),
+      figureChoice({
+        id: 'sound-mp3-p2', concept: 'so-waveform',
+        prompt: '図の A〜D の波形で、A より高い音はどれ？ B〜D から選ぼう。',
+        figure: WAVES_MP,
+        answer: 'r2',
+        explanation: '高い音は、同じ時間の中の波の数（振動数）が多い音です。A は 2 回、C は 4 回振動しているので、C が A より高い音です。B は A と同じ高さで、大きい音です。',
+        hint: '同じ時間の中の、波の数を数えよう。',
+      }),
+      choice({
+        id: 'sound-mp3-p3', concept: 'so-amplitude',
+        prompt: 'モノコードの弦を、前より強くはじきました。音はどうなる？',
+        options: ['大きくなる', '小さくなる', '高くなる', '低くなる'],
+        answer: 'a',
+        explanation: '強くはじくと振幅が大きくなり、音が大きくなります。はじく強さでは、音の高さは変わりません。',
+        hint: '強くはじくと、弦の振れるはばはどうなるかな。',
+      }),
+      choice({
+        id: 'sound-mp3-p4', concept: 'so-frequency',
+        prompt: 'モノコードのことじ（木片）を右へずらして、はじく部分の弦を長くしました。同じ強さではじくと、音はどうなる？',
+        options: ['高くなる', '低くなる', '大きくなる', '変わらない'],
+        answer: 'b',
+        explanation: '弦の振動する部分が長いほど振動数が少なくなり、低い音になります。短くすると高い音になります。',
+        hint: '弦が短いほど高い音が出たね。長くすると？',
+      }),
+      choice({
+        id: 'sound-mp3-p5', concept: 'so-frequency',
+        prompt: 'モノコードのおもりの数を増やして、弦の張りを強くしました。同じ強さではじくと、音はどうなる？',
+        options: ['高くなる', '低くなる', '小さくなる', '変わらない'],
+        answer: 'a',
+        explanation: 'おもりを増やすと弦が強く張られ、振動数が多くなって高い音になります。',
+        hint: '弦を強く張ると、音の高さはどうなったかな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'sound-mp3-r1', concept: 'so-frequency',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '音の高さは、弦の振動数で決まる。振動数が多いと、音は[b1]なる。振動数の単位は[b2]である。',
+        blanks: [
+          word('b1', ['高く', '低く', '大きく'], '高く'),
+          word('b2', ['ヘルツ', 'メートル', 'ニュートン'], 'ヘルツ'),
+        ],
+        explanation: '振動数が多いほど高い音です。振動数の単位はヘルツ（記号 Hz）で、1 秒間に 1 回の振動が 1 Hz です。',
+        hint: '1 秒間にたくさん振動すると、キーンという音になるね。',
+      }),
+      choice({
+        id: 'sound-mp3-r2', concept: 'so-amplitude',
+        prompt: 'モノコードで、音の高さは変えずに大きな音を出すには、どうすればよい？',
+        options: ['弦を強くはじく', 'ことじを動かして弦を短くする', 'おもりを増やす'],
+        answer: 'a',
+        explanation: '強くはじくと振幅だけが大きくなり、高さは同じまま大きい音になります。弦を短くしたり、おもりを増やしたりすると高い音になります。',
+        hint: '振幅だけを大きくする方法を考えよう。',
+      }),
+      figureChoice({
+        id: 'sound-mp3-r3', concept: 'so-amplitude',
+        prompt: '図の A〜D の波形（横はばは同じ時間）で、いちばん小さい音はどれ？ B〜D から選ぼう。',
+        figure: WAVES_MP,
+        answer: 'r3',
+        explanation: '振幅（山の高さ）がいちばん小さいのは D です。D は波の数も少ないので、小さくて低い音です。',
+        hint: '山の高さがいちばん低い波形をさがそう。',
+      }),
+      fill({
+        id: 'sound-mp3-r4', concept: 'so-waveform',
+        prompt: '空らんに入る数を入れよう。',
+        figure: timedWave(4, '0.01 秒'),
+        text: '図は、ある音の 0.01 秒間の波形である。この音は 1 秒間に[b1]振動している。',
+        blanks: [number('b1', 400, 0, '回')],
+        explanation: '0.01 秒間に 4 回振動しています。1 秒は 0.01 秒の 100 倍なので、4 × 100 ＝ 400 回です。振動数は 400 Hz です。',
+        hint: 'まず波の数を数え、1 秒間なら何回か考えよう。',
+      }),
+      choice({
+        id: 'sound-mp3-t2', concept: 'so-frequency', term: true,
+        prompt: '次の説明に合う言葉はどれ？「音源が 1 秒間に振動する回数。単位はヘルツ」',
+        options: ['振幅', '振動数', '波形'],
+        answer: 'b',
+        explanation: '1 秒間に振動する回数を**振動数**といいます。振動数が多いほど高い音です。',
+        hint: '「振動する回数」だよ。',
+      }),
+    ],
+  };
+
+
+  // ================================================================
   // 概念（学び直しの確認問題 checkPool つき）
   // ================================================================
   const concepts = [
@@ -1011,6 +1468,7 @@
     areas: [
       { id: 'travel', title: '音の伝わり方', order: 1, stages: [sound1, sound2] },
       { id: 'pitch', title: '音の大きさと高さ', order: 2, stages: [sound3, sound4] },
+      { id: 'sound-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [soundMp1, soundMp2, soundMp3] },
     ],
   };
 
