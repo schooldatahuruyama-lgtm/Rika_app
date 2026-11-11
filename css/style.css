@@ -2215,6 +2215,14 @@ svg.scene .scene-label {
   animation: levelup-hop 0.6s ease-in-out infinite alternate;
 }
 
+/* 生徒のアバターが飛び跳ねる画像（画像そのものがジャンプの絵なので、上下に大きめにはねさせる。下で少しつぶれる） */
+.levelup-avatar {
+  width: min(56vw, 220px);
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: levelup-jump 0.5s ease-in-out infinite alternate;
+}
+
 .levelup-skip {
   color: #fff;
   font-size: 18px;
@@ -2230,9 +2238,15 @@ svg.scene .scene-label {
   to { transform: translateY(-12px); }
 }
 
+@keyframes levelup-jump {
+  from { transform: translateY(0) scale(1.04, 0.96); }
+  to { transform: translateY(-32px) scale(1, 1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .levelup-overlay,
-  .levelup-overlay .mascot {
+  .levelup-overlay .mascot,
+  .levelup-overlay .levelup-avatar {
     animation: none;
   }
 }
