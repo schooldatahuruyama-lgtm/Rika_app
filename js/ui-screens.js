@@ -22,13 +22,14 @@
   const HISTORY_LIMIT = 30;      // 記録画面の取り組み履歴に出す件数
 
   // オリジナルキャラクター 6 種。保存済みプロフィールと互換性を保つため id は従来の値を使う。
+  // jump はレベルアップの祝いに出す、飛び跳ねている画像（320×320 の透明 PNG）。
   const AVATARS = [
-    { id: 'fox', image: 'assets/avatars/poyon.png', label: 'ポヨン' },
-    { id: 'cat', image: 'assets/avatars/mojari.png', label: 'モジャリ' },
-    { id: 'dog', image: 'assets/avatars/nyokki.png', label: 'ニョッキ' },
-    { id: 'panda', image: 'assets/avatars/purumo.png', label: 'プルモ' },
-    { id: 'frog', image: 'assets/avatars/mukuri.png', label: 'ムクリ' },
-    { id: 'penguin', image: 'assets/avatars/nemune.png', label: 'ネムネ' },
+    { id: 'fox', image: 'assets/avatars/poyon.png', jump: 'assets/avatars/jump/poyon.png', label: 'ポヨン' },
+    { id: 'cat', image: 'assets/avatars/mojari.png', jump: 'assets/avatars/jump/mojari.png', label: 'モジャリ' },
+    { id: 'dog', image: 'assets/avatars/nyokki.png', jump: 'assets/avatars/jump/nyokki.png', label: 'ニョッキ' },
+    { id: 'panda', image: 'assets/avatars/purumo.png', jump: 'assets/avatars/jump/purumo.png', label: 'プルモ' },
+    { id: 'frog', image: 'assets/avatars/mukuri.png', jump: 'assets/avatars/jump/mukuri.png', label: 'ムクリ' },
+    { id: 'penguin', image: 'assets/avatars/nemune.png', jump: 'assets/avatars/jump/nemune.png', label: 'ネムネ' },
   ];
 
   // プロフィール画面の注意書き（別のブラウザ・別の URL では別の記録になることも伝える）
@@ -935,7 +936,29 @@
   // 進行は ctx.state.session（session.js の形）。画面は app.renderSession() が current() の view で選ぶ。
   // 操作は ctx.app.next() / answer(value) / choose(choice) / stopSession() を呼ぶ（記録・保存は app がする）。
 
-  const LEVELUP_MS = 1500;   // レベルアップの祝いを出しておく時間（タップで消せる）
+  const LEVELUP_MS = 2000;   // レベルアップの祝いを出しておく時間（ジャンプが 3 回ほど見える。タップで消せる）
+
+  // レベルアップの祝いの部品。いまの生徒のアバターが飛び跳ねる画像と吹き出し。
+  // プロフィールが取れないときは、今までどおり先生のマスコットにする（mascot が作る SVG 文字列）。
+  // ジャンプの画像が読みこめなかったときは、1 回だけ、ふつうのアバターの画像に差しかえる。
+  function levelupFigure(profile, message, teacher) {
+    if (!profile) {
+      const box = el('div');
+      box.innerHTML = RQ.mascot.celebrateMarkup(message, teacher);
+      return box.firstElementChild;
+    }
+    const a = avatarOf(profile.avatar);
+    const img = el('img', { class: 'levelup-avatar', src: a.jump, alt: a.label, width: 320, height: 320, draggable: 'false' });
+    const onError = () => {
+      img.removeEventListener('error', onError);
+      img.src = a.image;
+    };
+    img.addEventListener('error', onError);
+    return el('div', { class: 'mascot-celebrate' }, [
+      img,
+      el('p', { class: 'mascot-bubble', text: message }),
+    ]);
+  }
 
   // 経験値の種類の名前（結果画面の内訳。並びもこの順）
   const XP_LABEL = {
@@ -1325,13 +1348,13 @@
     buttons.append(button('マップへ', () => ctx.go('map'), 'btn-block'));
     section.append(buttons);
 
-    // レベルアップの祝い（1.5 秒。タップで消える）。一度見せたら同じ結果では出さない
+    // レベルアップの祝い（2 秒。タップで消える）。一度見せたら同じ結果では出さない
     let timer = null;
     let overlay = null;
     if (levelAfter > levelBefore && !result.celebrated) {
       result.celebrated = true;
       overlay = el('div', { class: 'levelup-overlay', role: 'dialog', 'aria-label': 'レベルアップ', tabindex: '-1' });
-      overlay.innerHTML = RQ.mascot.celebrateMarkup('レベル ' + levelAfter + ' になった！', teacher);
+      overlay.append(levelupFigure(currentProfile(ctx.store), 'レベル ' + levelAfter + ' になった！', teacher));
       overlay.append(el('p', { class: 'levelup-skip', text: 'タップでとじる' }));
       const close = () => {
         if (timer) clearTimeout(timer);

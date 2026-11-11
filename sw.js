@@ -4,7 +4,7 @@
 // http(s):// で開いたときだけ js/app.js が登録する（file:// では動かない）。
 'use strict';
 
-const VERSION = '2026-11-11-29';
+const VERSION = '2026-11-11-30';
 const CACHE_PREFIX = 'rika-quest-';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 
@@ -21,6 +21,12 @@ const PRECACHE = [
   'assets/avatars/purumo.png',
   'assets/avatars/mukuri.png',
   'assets/avatars/nemune.png',
+  'assets/avatars/jump/poyon.png',
+  'assets/avatars/jump/mojari.png',
+  'assets/avatars/jump/nyokki.png',
+  'assets/avatars/jump/purumo.png',
+  'assets/avatars/jump/mukuri.png',
+  'assets/avatars/jump/nemune.png',
   'assets/mascots/mascot_A.svg',
   'assets/mascots/mascot_B.svg',
   'assets/mascots/mascot_C.svg',
