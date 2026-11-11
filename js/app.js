@@ -24,7 +24,10 @@
 //                               apiKey() / setApiKey(key|null)（localStorage の rika-quest:author-key。学習記録には入れない）、
 //                               builtinIds()（起動時に登録されていた公開版の教材の id）
 //   ctx.live                  … ライブクイズ（js/ui-live-host.js・js/ui-live.js。設計書 14 章）:
-//                               dbUrl() / setDbUrl(url|null)（Firebase のデータベースの URL。localStorage の rika-quest:live-db）、
+//                               dbUrl()（使う Firebase のデータベースの URL。この端末に保存した URL（localStorage の rika-quest:live-db）が
+//                               あればそれ、なければ config.live.dbUrl（アプリに組みこみ））、savedDbUrl()（この端末に保存した URL だけ。なければ ''）、
+//                               builtinDbUrl()（config.live.dbUrl）、setDbUrl(url|null)（null・空なら保存を消して組みこみに戻す）、
+//                               pendingCode()（起動時の URL の ?live=<部屋コード>。1 回読むと消える。なければ null）、
 //                               sessionId()（学習記録の履歴に入れる id。呼ぶたびに新しい id）、
 //                               record(events, profileId)（今の生徒の記録に record.applyEvents で入れ、バッジも判定して保存。
 //                               戻り値 { applied: 記録に入れた, saved: 保存に成功 }。profileId が今の生徒とちがえば入れずに applied: false）、
@@ -83,6 +86,7 @@
     protectedStorage: false,
     contentErrors: [],
     storageObj: null,       // 読み書きに使う storage（ふつうは localStorage）
+    pendingLive: null,      // 起動時の URL の ?live=<部屋コード>（QR コードで開いたとき）。ライブクイズの参加画面が 1 回読んで消す
   };
   Object.defineProperty(state, 'record', { enumerable: true, get: currentRecord });
 
@@ -621,7 +625,8 @@
 
   // ---- ライブクイズ（データベースの URL・学習記録） ----
 
-  function liveDbUrl() {
+  // この端末に保存した URL（なければ ''）
+  function savedLiveDbUrl() {
     try {
       return state.storageObj.getItem(LIVE_DB_KEY) || '';
     } catch (e) {
@@ -629,10 +634,43 @@
     }
   }
 
-  // url が空・null なら消す。保存できなければ false
+  // アプリに組みこんだ URL（config.live.dbUrl。なければ ''）
+  function builtinLiveDbUrl() {
+    const live = state.config && state.config.live;
+    return live && typeof live.dbUrl === 'string' ? live.dbUrl : '';
+  }
+
+  // 使う URL: この端末に保存した URL があればそれ、なければ組みこみ
+  function liveDbUrl() {
+    return savedLiveDbUrl() || builtinLiveDbUrl();
+  }
+
+  // URL を比べるための形（RikaQuest.liveDb.normalizeUrl を通した値。通らなければ前後の空白を取った文字列）
+  function liveUrlKey(url) {
+    const t = typeof url === 'string' ? url.trim() : '';
+    if (t === '') return '';
+    const LD = RQ.liveDb;
+    const n = LD && typeof LD.normalizeUrl === 'function' ? LD.normalizeUrl(t) : null;
+    return n || t;
+  }
+
+  // この端末に組みこみとちがう URL を保存しているか（末尾の / などのちがいは同じとみなす）
+  function isCustomLiveDbUrl() {
+    const saved = liveUrlKey(savedLiveDbUrl());
+    return saved !== '' && saved !== liveUrlKey(builtinLiveDbUrl());
+  }
+
+  // 起動時の ?live=<部屋コード>（1 回読むと消える）
+  function livePendingCode() {
+    const code = state.pendingLive;
+    state.pendingLive = null;
+    return code || null;
+  }
+
+  // url が空・null・組みこみと同じ（正規化した値どうしで比べる）なら消す（組みこみに戻す）。保存できなければ false
   function setLiveDbUrl(url) {
     try {
-      if (typeof url === 'string' && url.trim() !== '') state.storageObj.setItem(LIVE_DB_KEY, url.trim());
+      if (typeof url === 'string' && url.trim() !== '' && liveUrlKey(url) !== liveUrlKey(builtinLiveDbUrl())) state.storageObj.setItem(LIVE_DB_KEY, url.trim());
       else state.storageObj.removeItem(LIVE_DB_KEY);
       return true;
     } catch (e) {
@@ -661,7 +699,11 @@
 
   const liveCtx = {
     dbUrl: liveDbUrl,
+    savedDbUrl: savedLiveDbUrl,
+    builtinDbUrl: builtinLiveDbUrl,
+    isCustomDbUrl: isCustomLiveDbUrl,
     setDbUrl: setLiveDbUrl,
+    pendingCode: livePendingCode,
     sessionId: liveSessionId,
     record: liveRecord,
     onSaved,
@@ -706,6 +748,9 @@
     }
     let screen = name;
     let p = params || {};
+    // QR コードで開いて（?live=<部屋コード>）、まだ参加画面を見ていなければ、ホームの代わりに参加画面へ
+    // （プロフィールを作った・選んだあとのホームへの移動もここで参加画面になる）
+    if (screen === 'home' && state.pendingLive && currentProfile()) screen = 'live';
     // プロフィールがないと開けない画面は、プロフィール画面へ
     if (NO_PROFILE_SCREENS.indexOf(screen) === -1 && !currentProfile()) {
       screen = 'profile';
@@ -941,6 +986,25 @@
     return count;
   }
 
+  function readJoinParam() {
+    const search = root.location.search || '';
+    if (!search || !RQ.qr || typeof RQ.qr.parseJoin !== 'function') return;
+    let params;
+    try { params = new URLSearchParams(search); } catch (e) { return; }
+    if (!params.has('live')) return;
+    const code = RQ.qr.parseJoin(search);
+    if (code) state.pendingLive = code;
+    params.delete('live');
+    const rest = params.toString();
+    try {
+      if (root.history && typeof root.history.replaceState === 'function') {
+        root.history.replaceState(root.history.state, '', root.location.pathname + (rest ? '?' + rest : '') + root.location.hash);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   function start() {
     state.storageObj = openStorage();
     const loaded = RQ.storage.load(state.storageObj, state.config);
@@ -964,6 +1028,9 @@
     if (root.location.protocol === 'file:') showNotice('file-notice', NOTICE_FILE);
     setupOffline();
 
+    // QR コードの参加用の URL（?live=<部屋コード>）で開いたら、コードを覚えて URL から消す（読み込み直しで入り直さない）。
+    // 最初の画面は参加画面（プロフィールがなければプロフィール作成のあと。go の home → live）
+    readJoinParam();
     go(currentProfile() ? 'home' : 'profile');
   }
 

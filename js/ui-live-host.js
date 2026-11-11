@@ -1,9 +1,12 @@
 // ライブクイズの先生の画面（ブラウザ専用。ui-teacher.js の後に読み込む）。RikaQuest.ui.screens['live-host'] を足す。設計書 14 章。
 // 準備（データベースの URL）→ 問題を選ぶ → 部屋を作る（ロビー）→ 出題 → 答え合わせ → … → 最終結果、を 1 画面で行う。
+// ロビーには参加用の URL（<このページ>?live=<部屋コード>）の QR コードを大きく出す（js/qr.js。SVG は qr.svg が作った文字列だけを入れる）。
+// 出題・答え合わせの画面には、途中から入る人のために小さく参加コードを出す。
 // 部屋のデータの形・得点・状態遷移は js/live.js（RikaQuest.live）、通信は js/live-db.js（RikaQuest.liveDb）。
-// データベースの URL は ctx.live.dbUrl() / setDbUrl(url|null)（js/app.js。この端末の localStorage）。
+// データベースの URL は ctx.live.dbUrl()（この端末に保存した URL か、アプリに組みこみの config.live.dbUrl）/ setDbUrl(url|null)
+// （js/app.js。この端末の localStorage。null で組みこみに戻す）。別の URL に変える入力は「くわしい設定」にしまっておく。
 // 開けるのは先生画面を解錠しているときだけ（app.go が teacher に回す。teacher ↔ live-host の行き来では解錠は消えない）。
-// 利用者の文字はすべて textContent で入れる（innerHTML は使わない）。先生の画面なので、ふりがなは付けない（section に data-no-ruby）。
+// 利用者の文字はすべて textContent で入れる（innerHTML は QR コードの SVG だけ）。先生の画面なので、ふりがなは付けない（section に data-no-ruby）。
 // 部屋の受信（watch）は画面を離れたら止める（後片付けの関数を返す）。部屋と選んだ問題はページを読み込み直すまで残し、
 // 戻ってきたら受信をつなぎ直す。非同期の処理は ui-teacher.js の renderSeq と同じ守りで、いまの画面のときだけ描く。
 (function (root) {
@@ -33,6 +36,7 @@
   const GAVE_UP = '接続できません（通信を確かめてください）';
   const RECONNECTED = '再接続しました';
   const NOTICE_MS = 4000;         // 「再接続しました」を出しておく時間
+  const UNSHAREABLE = 'いまの URL は生徒の端末では開けません。公開版のアプリで部屋を作るか、部屋コードを入れてもらってください';
 
   function list(x) { return Array.isArray(x) ? x : []; }
   // 文の **語句** 記法は外して、文だけを出す（スクリーンに映すため）
@@ -44,6 +48,7 @@
   let renderSeq = 0;
   let active = null;              // いまの描画 { isCurrent, paint }
   let urlError = '';              // 準備の card の失敗の文
+  let advancedOpen = false;       // 準備の「くわしい設定」を開いている
   let setupError = '';            // 部屋を作るときの失敗の文
   let creating = false;           // 部屋を作っている途中
   // 選んだ問題など。questions は出す順（live.questionFromProblem / customQuestion の形）
@@ -311,9 +316,14 @@
 
   function setupCard(ctx) {
     const url = LD().normalizeUrl(ctx.live.dbUrl());
+    const builtin = LD().normalizeUrl(typeof ctx.live.builtinDbUrl === 'function' ? ctx.live.builtinDbUrl() : '');
+    const saved = typeof ctx.live.savedDbUrl === 'function' ? ctx.live.savedDbUrl() : ctx.live.dbUrl();
+    // この端末で別の URL にしている（保存した URL と組みこみの URL は、どちらも正規化した値で比べる）
+    const custom = typeof ctx.live.isCustomDbUrl === 'function' ? ctx.live.isCustomDbUrl()
+      : !!saved && (LD().normalizeUrl(saved) || saved.trim()) !== (builtin || '');
     const input = el('input', {
       class: 'text-input', id: 'live-db-url', type: 'url', autocomplete: 'off', spellcheck: 'false',
-      placeholder: 'https://○○-default-rtdb.firebaseio.com', value: url || '',
+      placeholder: 'https://○○-default-rtdb.firebaseio.com', value: custom ? saved : '',
     });
     const saveUrl = () => {
       const u = LD().normalizeUrl(input.value);
@@ -323,17 +333,29 @@
       repaint();
       ctx.message('データベースの URL を保存しました。', 'ok');
     };
-    return card([
-      cardTitle('1. 準備'),
-      url ? el('p', null, ['データベース: ', el('span', { class: 'live-url', text: url })]) : el('p', { class: 'caution', text: SETUP_NOTE }),
-      el('label', { class: 'field-label', for: 'live-db-url', text: 'データベースの URL' }),
+    const fields = [
+      el('label', { class: 'field-label', for: 'live-db-url', text: builtin ? '別のデータベースの URL' : 'データベースの URL' }),
       input,
       el('div', { class: 'btn-row live-row' }, [
         button('保存', saveUrl, url ? '' : 'btn-primary'),
-        url ? button('消す', () => { ctx.live.setDbUrl(null); urlError = ''; repaint(); }) : null,
+        custom ? button(builtin ? '消す（組みこみに戻す）' : '消す', () => { ctx.live.setDbUrl(null); urlError = ''; repaint(); }) : null,
       ]),
-      errorLine(urlError),
-    ]);
+    ];
+    // 組みこみの URL があれば、変える入力は「くわしい設定」にしまう（開いているかは描き直しても保つ）
+    let more = null;
+    if (builtin) {
+      more = el('details', { class: 'live-advanced', open: advancedOpen || custom || !!urlError }, [
+        el('summary', { text: 'くわしい設定（別のデータベースを使う）' }),
+        el('p', { class: 'muted', text: '自分で準備した Firebase を使うときだけ入れます（docs/live/setup.md）。消すとアプリに組みこみの URL に戻ります。' }),
+      ].concat(fields));
+      more.addEventListener('toggle', () => { advancedOpen = more.open; });
+    }
+    return card([
+      cardTitle('1. 準備'),
+      url
+        ? el('p', null, ['いまのデータベース: ', el('span', { class: 'live-url', text: url }), custom ? '（この端末で設定）' : '（アプリに組みこみ）'])
+        : el('p', { class: 'caution', text: SETUP_NOTE }),
+    ].concat(builtin ? [more] : fields, [errorLine(urlError)]));
   }
 
   // ステージの選択式の問題（problems・retryPool の順。出せないものは入れない）
@@ -459,6 +481,32 @@
     return el('div', { class: 'live-code', 'data-no-ruby': true, 'aria-label': '部屋コード ' + r.code.split('').join(' '), text: r.code });
   }
 
+  // 参加用の URL: このページ（クエリと # を除く）に ?live=<部屋コード>
+  function joinUrl(code) {
+    const href = String(root.location.href || '');
+    return href.split('#')[0].split('?')[0] + '?live=' + code;
+  }
+
+  // いまのページの URL が生徒の端末でも開けるか（https: で、localhost でない。判定は js/qr.js の isShareableUrl）
+  function shareable() {
+    if (!RQ.qr || typeof RQ.qr.isShareableUrl !== 'function') return true;
+    return RQ.qr.isShareableUrl(root.location);
+  }
+
+  // 参加用の URL の QR コード（入らない長さなら出さない）。SVG は qr.svg が作った文字列だけ
+  function qrBox(r) {
+    if (!RQ.qr || typeof RQ.qr.encode !== 'function') return null;
+    const m = RQ.qr.encode(joinUrl(r.code), { ec: 'M' });
+    if (!m) return null;
+    const box = H.svgBox(RQ.qr.svg(m, { scale: 8, margin: 4 }), 'live-qr');
+    return box;
+  }
+
+  // 出題・答え合わせの画面の右上に出す、小さな参加コード（途中から入る人のため）
+  function smallCode(r) {
+    return el('p', { class: 'live-code-small' }, ['参加コード ', el('span', { 'data-no-ruby': true, text: r.code })]);
+  }
+
   function questionHead(r, s) {
     return el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + r.questions.length + ' 問目' });
   }
@@ -485,11 +533,15 @@
     const names = Object.keys(d.players).map((pid) => d.players[pid])
       .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
       .map((p) => el('li', { text: p.name }));
+    const qr = qrBox(r);
     return card([
       cardTitle('ロビー' + (d.meta.title ? '（' + d.meta.title + '）' : '')),
+      qr,
+      qr ? el('p', { class: 'live-qr-note', text: 'タブレットのカメラでこの QR コードを読むと参加できます。' }) : null,
+      qr && !shareable() ? el('p', { class: 'caution', text: UNSHAREABLE }) : null,
       el('p', { text: '部屋コード' }),
       codeBox(r),
-      el('p', { text: '生徒はホームの『ライブクイズに参加』でこのコードを入れます。' }),
+      el('p', { text: '生徒はホームの『ライブクイズに参加』でこのコードを入れるか、「QR コードを読む」で読みます。' }),
       el('p', { class: 'live-joined', text: '参加者 ' + names.length + ' 人（' + r.questions.length + ' 問・1 問 ' + d.state.seconds + ' 秒）' }),
       names.length > 0 ? el('ul', { class: 'live-players' }, names) : el('p', { class: 'muted', text: 'まだだれも参加していません。' }),
       errorLine(r.error),
@@ -510,6 +562,7 @@
     const answered = Object.keys(d.answers[q.id] || {}).filter((pid) => d.players[pid]).length;
     const total = Object.keys(d.players).length;
     return card([
+      smallCode(r),
       el('div', { class: 'live-head' }, [questionHead(r, s), el('p', { class: 'live-timer', 'aria-label': '残り時間（秒）' }, [r.timerNode, el('span', { class: 'live-timer-unit', text: '秒' })])]),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
       optionsBox(q, false),
@@ -542,6 +595,7 @@
     const last = s.index + 1 >= r.questions.length;
     const fail = r.scoreFail && r.scoreFail.index === s.index ? r.scoreFail : null;
     return card([
+      smallCode(r),
       el('div', { class: 'live-head' }, [questionHead(r, s), el('p', { class: 'live-phase', text: '答え合わせ' })]),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
       el('div', { class: 'live-bars' }, bars),
@@ -594,7 +648,11 @@
     r.timerNode = null;
     if (r.gone) return [card([cardTitle('部屋がありません'), el('p', { text: '部屋が消されました（またはデータベースから見つかりません）。' }), button('準備に戻る', forgetRoom, 'btn-primary btn-block')])];
     const phase = r.data.state.phase;
-    const head = phase === 'lobby' ? null : el('p', { class: 'muted live-room-line' }, ['部屋コード ', el('span', { 'data-no-ruby': true, text: r.code }), '・参加者 ' + Object.keys(r.data.players).length + ' 人']);
+    // 出題・答え合わせでは参加コードを card の右上に出すので、ここは参加者の人数だけ
+    const players = '参加者 ' + Object.keys(r.data.players).length + ' 人';
+    const head = phase === 'lobby' ? null
+      : phase === 'show' || phase === 'reveal' ? el('p', { class: 'muted live-room-line', text: players })
+        : el('p', { class: 'muted live-room-line' }, ['部屋コード ', el('span', { 'data-no-ruby': true, text: r.code }), '・' + players]);
     let body;
     if (phase === 'show') body = showCard(r);
     else if (phase === 'reveal') body = revealCard(r);

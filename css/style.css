@@ -2423,6 +2423,75 @@ ruby.rq-ruby rt {
   word-break: break-all;
 }
 
+/* 参加用の QR コード（ロビー。スクリーンに映して読む。白い下地） */
+.live-qr {
+  margin: 4px auto 8px;
+  max-width: 280px;
+  padding: 0;
+  background: #fff;
+  border-radius: 8px;
+  line-height: 0;
+}
+
+.live-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.live-qr-note {
+  margin: 0 0 12px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* 出題・答え合わせの画面の右上の小さな参加コード */
+.live-code-small {
+  margin: 0 0 4px;
+  text-align: right;
+  font-size: 17px;
+  color: var(--muted);
+}
+
+.live-code-small span {
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+/* 準備の「くわしい設定」 */
+.live-advanced {
+  margin-top: 8px;
+}
+
+.live-advanced summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+/* 生徒の参加画面: アプリの中で QR コードを読む（カメラの映像） */
+.live-scan-box {
+  margin-top: 12px;
+}
+
+.live-scan {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 8px;
+  border-radius: 12px;
+  background: #000;
+}
+
+.live-scan-note {
+  margin: 12px 0 0;
+  font-size: 15px;
+}
+
 .live-code-input {
   font-size: 28px;
   letter-spacing: 0.25em;
