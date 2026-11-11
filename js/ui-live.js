@@ -1,5 +1,8 @@
 // ライブクイズの生徒の画面（ブラウザ専用。ui-live-host.js の後に読み込む）。RikaQuest.ui.screens.live を足す。設計書 14 章。
-// 参加（部屋コード。データベースの URL がなければその入力も）→ 待機 → 問題に答える → 答え合わせ → … → 最終順位。
+// 参加（部屋コード。データベースの URL はアプリに組みこみ。決まっていなければその入力も）→ 待機 → 問題に答える → 答え合わせ → … → 最終順位。
+// QR コードでの参加: 端末のカメラアプリで読んだ URL（?live=<部屋コード>）で開くと、js/app.js が覚えたコード（ctx.live.pendingCode()）を
+// 部屋コードの欄に入れる。アプリの中で読む「QR コードを読む」は BarcodeDetector と getUserMedia が使える端末だけ（読めたらそのまま参加）。
+// カメラは読めたとき・やめたとき・画面を離れたときに止める。
 // 部屋のデータの形・得点は js/live.js（RikaQuest.live）、通信は js/live-db.js（RikaQuest.liveDb）。
 // 学習記録には ctx.live.record(events, profileId)（js/app.js）で入れる。受信した部屋データから、答え合わせが済んだ問題の
 // サーバーにある自分の回答だけを入れる（live.pendingRecords。答え合わせの画面を見ていなくても、戻ったときにまとめて入れる）。1 問につき 1 回。
@@ -36,6 +39,9 @@
   const RECONNECTED = '再接続しました';
   const NOTICE_MS = 4000;         // 「再接続しました」を出しておく時間
   const BAD_URL = '先生のデータベースの URL（https:// で始まる URL）を入れてください。';
+  const SCAN_MS = 300;            // QR コードを探す間隔
+  const SCAN_UNSUPPORTED = 'この端末ではアプリの中で読めません。カメラアプリで QR コードを読むか、部屋コードを入れてください。';
+  const SCAN_DENIED = 'カメラを使う許可がありません。ブラウザの設定でカメラを許可するか、部屋コードを入れてください。';
 
   function plain(text) { return String(text || '').split('**').join(''); }
   function errMsg(e) { return e && e.message ? e.message : String(e); }
@@ -47,11 +53,18 @@
   let joinError = '';
   let joining = false;
   let editUrl = false;            // URL を入れ直す
+  // アプリの中で QR コードを読む { seq, stream, video, timer, detecting, onVisibility } | null。scanError は読めなかった理由。
+  // onVisibility は画面が裏に回ったらカメラを止める visibilitychange のリスナー（stopScan で外す）
+  let scan = null;
+  let scanSeq = 0;
+  let scanError = '';
   const typed = { code: '', url: null };   // 入力の書きかけ（描き直しても消さない。url は null なら保存した URL）
   // 参加中の部屋 { code, pid, profileId, name, db, offset, sessionId, data, gone, answering（問題 id → 送った選択肢 id。表示だけに使う）,
   //   sendFail（送れなかった答え { qid, choice, message } | null）, stop, retryTimer, timerNode, timeUpIndex,
   //   conn（'ok' | 'reconnecting' | 'gave-up'）, connError（受信が止まった理由）, notice, noticeTimer }
   let joined = null;
+  // 参加中に ?live= の URL で読んだ、今の部屋とちがう部屋コード（「部屋から出る」で参加画面の部屋コードの欄に 1 回だけ入れる）
+  let otherCode = null;
   let ticker = null;
   const memPids = {};             // sessionStorage が使えないとき
   // 学習記録（メモリ）に入れた問題（部屋のキー → 問題 id の配列）。保存の成否によらず入れる（読み込み直すまでの二重加算を防ぐ）。
@@ -231,6 +244,16 @@
     joined = null;
   }
 
+  // 生徒が押して部屋から出る。参加中に別の部屋のコードを読んでいたら、部屋コードの欄に入れておく（1 回だけ）
+  function exitRoom() {
+    leave();
+    if (otherCode) {
+      typed.code = otherCode;
+      joinError = '';
+    }
+    otherCode = null;
+  }
+
   // ---- 時間 ----
 
   function serverNow(j) {
@@ -327,18 +350,24 @@
   // ---- 参加 ----
 
   async function join(ctx, codeText, urlText) {
-    if (joining) return;
+    // カメラで読んでいる途中に手で入れて参加したときも、カメラを止める
+    const hadScan = !!scan;
+    stopScan();
+    if (joining) { if (hadScan) repaint(); return; }
     const profile = H.currentProfile(ctx.store);
-    if (!profile) return;
+    if (!profile) { if (hadScan) repaint(); return; }
     const code = normalizeCode(codeText);
     if (!L().isRoomCode(code)) {
       joinError = '部屋コードは 6 文字です（英字と数字。I・O・0・1 は使いません）。';
       repaint();
       return;
     }
-    const url = LD().normalizeUrl(urlText === null ? ctx.live.dbUrl() : urlText);
+    // URL の欄を空にして参加したら、この端末の URL を消してアプリに組みこみの URL に戻す
+    const resetUrl = urlText !== null && String(urlText).trim() === '' && !!ctx.live.builtinDbUrl && !!ctx.live.builtinDbUrl();
+    if (resetUrl) ctx.live.setDbUrl(null);
+    const url = LD().normalizeUrl(urlText === null || resetUrl ? ctx.live.dbUrl() : urlText);
     if (!url) { joinError = BAD_URL; repaint(); return; }
-    if (urlText !== null) ctx.live.setDbUrl(url);
+    if (urlText !== null && !resetUrl) ctx.live.setDbUrl(url);
     joining = true;
     joinError = '';
     // 参加を始めたときの描画の世代と生徒。通信のあいだに画面を離れた・生徒が変わったら、参加を取りやめる（何もしない）
@@ -372,6 +401,7 @@
         conn: 'ok', connError: '', notice: '', noticeTimer: null,
       };
       editUrl = false;
+      otherCode = null;
       typed.code = '';
       typed.url = null;
       if (active && active.isCurrent()) startWatch(joined);
@@ -381,6 +411,119 @@
       joining = false;
       repaint();
     }
+  }
+
+  // ---- アプリの中で QR コードを読む ----
+
+  function canScan() {
+    const nav = root.navigator;
+    return typeof root.BarcodeDetector === 'function' && !!nav && !!nav.mediaDevices && typeof nav.mediaDevices.getUserMedia === 'function';
+  }
+
+  function stopScan() {
+    scanSeq++;
+    const s = scan;
+    scan = null;
+    if (!s) return;
+    if (s.timer) clearInterval(s.timer);
+    if (s.onVisibility && root.document) {
+      try { root.document.removeEventListener('visibilitychange', s.onVisibility); } catch (e) { /* 無視 */ }
+    }
+    if (s.stream) {
+      try { s.stream.getTracks().forEach((t) => t.stop()); } catch (e) { /* 無視 */ }
+    }
+    if (s.video) {
+      try { s.video.pause(); s.video.srcObject = null; } catch (e) { /* 無視 */ }
+    }
+  }
+
+  async function startScan(ctx) {
+    if (scan || joining) return;
+    scanError = '';
+    joinError = '';
+    if (!canScan()) { scanError = SCAN_UNSUPPORTED; repaint(); return; }
+    const seq = ++scanSeq;
+    const mine = { seq, stream: null, video: null, timer: null, detecting: false, onVisibility: null };
+    scan = mine;
+    // タブを裏に回した・画面を消したら、カメラを止めて描き直す（リスナーは stopScan で外す）
+    if (root.document && typeof root.document.addEventListener === 'function') {
+      mine.onVisibility = () => {
+        if (scan !== mine || !root.document.hidden) return;
+        stopScan();
+        repaint();
+      };
+      root.document.addEventListener('visibilitychange', mine.onVisibility);
+    }
+    repaint();
+    const alive = () => scan === mine && scanSeq === seq && !!active && active.isCurrent();
+    try {
+      if (typeof root.BarcodeDetector.getSupportedFormats === 'function') {
+        const formats = await root.BarcodeDetector.getSupportedFormats();
+        if (!alive()) return;
+        if (Array.isArray(formats) && formats.indexOf('qr_code') === -1) throw Object.assign(new Error(SCAN_UNSUPPORTED), { unsupported: true });
+      }
+      const detector = new root.BarcodeDetector({ formats: ['qr_code'] });
+      const stream = await root.navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      if (!alive()) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      mine.stream = stream;
+      const video = el('video', { class: 'live-scan', autoplay: true, playsinline: true, 'aria-label': 'カメラの映像' });
+      video.muted = true;
+      video.setAttribute('playsinline', '');
+      video.srcObject = stream;
+      mine.video = video;
+      repaint();
+      try { await video.play(); } catch (e) { /* 描き直しのときにもう一度再生する */ }
+      mine.timer = setInterval(async () => {
+        if (!alive()) { if (scan === mine) stopScan(); return; }
+        // すでに参加している: 検出しても何もしない。カメラを止めて終える
+        if (joined) { stopScan(); repaint(); return; }
+        if (mine.detecting || video.readyState < 2) return;
+        mine.detecting = true;
+        try {
+          const found = await detector.detect(video);
+          if (!alive()) return;
+          if (joined) { stopScan(); repaint(); return; }
+          const code = (found || []).map((b) => RQ.qr.parseJoin(b && b.rawValue)).find(Boolean);
+          if (code) {
+            stopScan();
+            typed.code = code;
+            join(ctx, code, null);
+          }
+        } catch (e) {
+          /* 1 回の検出の失敗は無視して次を待つ */
+        } finally {
+          mine.detecting = false;
+        }
+      }, SCAN_MS);
+    } catch (e) {
+      if (scan !== mine) return;
+      stopScan();
+      const name = e && e.name;
+      if (e && e.unsupported) scanError = SCAN_UNSUPPORTED;
+      else if (name === 'NotAllowedError' || name === 'SecurityError') scanError = SCAN_DENIED;
+      else if (name === 'NotFoundError' || name === 'OverconstrainedError') scanError = 'カメラが見つかりません。部屋コードを入れてください。';
+      else scanError = 'カメラを開けませんでした（' + errMsg(e) + '）。部屋コードを入れてください。';
+      repaint();
+    }
+  }
+
+  // 「QR コードを読む」の部分（使えない端末では、その旨と、カメラアプリで読む方法）
+  function scanPart(ctx) {
+    if (!canScan()) return el('p', { class: 'muted live-scan-note', text: SCAN_UNSUPPORTED });
+    if (scan) {
+      return el('div', { class: 'live-scan-box' }, [
+        scan.video || el('p', { class: 'muted', text: 'カメラを用意しています…' }),
+        el('p', { class: 'live-status', role: 'status', text: '先生の画面の QR コードをカメラに映してね。' }),
+        button('読むのをやめる', () => { stopScan(); repaint(); }, 'btn-block live-small'),
+      ]);
+    }
+    return el('div', { class: 'live-scan-box' }, [
+      button('QR コードを読む', () => startScan(ctx), 'btn-block', { disabled: joining }),
+      errorLine(scanError),
+    ]);
   }
 
   function joinCard(ctx) {
@@ -413,7 +556,9 @@
       needUrl ? el('label', { class: 'author-field' }, [
         el('span', { class: 'field-label', text: '先生のデータベースの URL' }),
         urlInput,
-        el('span', { class: 'author-hint muted', text: '先生が黒板に書いた URL を入れてね（1 度入れたら、この端末が覚えます）。' }),
+        el('span', { class: 'author-hint muted', text: ctx.live.builtinDbUrl && ctx.live.builtinDbUrl()
+          ? '先生に言われたときだけ変えてね（空にして参加すると、アプリに組みこみの URL に戻ります）。'
+          : '先生が黒板に書いた URL を入れてね（1 度入れたら、この端末が覚えます）。' }),
       ]) : null,
       el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: '部屋コード（6 文字）' }), codeInput]),
       el('p', null, [el('span', { 'data-no-ruby': true, text: profile ? profile.nickname : '' }), ' さんとして参加します。']),
@@ -423,7 +568,8 @@
     return card([
       cardTitle('ライブクイズに参加'),
       form,
-      !needUrl ? button('データベースの URL を入れ直す', () => { editUrl = true; repaint(); }, 'btn-block live-small') : null,
+      scanPart(ctx),
+      !needUrl ? button('くわしい設定: データベースの URL を変える', () => { editUrl = true; repaint(); }, 'btn-block live-small') : null,
     ]);
   }
 
@@ -517,7 +663,15 @@
       cardTitle('最終順位'),
       me ? el('p', { class: 'live-total', text: 'あなたは ' + me.rank + ' 位（' + me.score + ' 点）' }) : null,
       rows.length > 0 ? rankTable(rows, j.pid) : null,
-      button('ホームへ', () => { leave(); ctx.go('home'); }, 'btn-primary btn-block'),
+      button('ホームへ', () => { exitRoom(); ctx.go('home'); }, 'btn-primary btn-block'),
+    ]);
+  }
+
+  // 参加中に別の部屋のコードを読んだときの一文（コードはふりがなを付けない）
+  function otherCodeLine() {
+    if (!otherCode) return null;
+    return el('p', { class: 'caution live-other-code', role: 'status' }, [
+      '別の部屋のコード ', el('span', { 'data-no-ruby': true, text: otherCode }), ' を読みました。入るときは『部屋から出る』を押してから参加してね',
     ]);
   }
 
@@ -527,7 +681,7 @@
       return [card([
         cardTitle('ライブクイズ'),
         el('p', { text: '先生が部屋を閉じました。' }),
-        button('ホームへ', () => { leave(); ctx.go('home'); }, 'btn-primary btn-block'),
+        button('ホームへ', () => { exitRoom(); ctx.go('home'); }, 'btn-primary btn-block'),
       ])];
     }
     if (!j.data) return [roomLine(j), connLine(j), card([el('p', { text: 'つないでいます…' })])];
@@ -537,7 +691,8 @@
     else if (phase === 'reveal') body = revealCard(j);
     else if (phase === 'ended') body = endedCard(j, ctx);
     else body = waitCard(j);
-    return [roomLine(j), connLine(j), body, phase === 'ended' ? null : button('部屋から出る', () => { leave(); repaint(); }, 'btn-block live-small')];
+    if (phase === 'ended') return [roomLine(j), connLine(j), body];
+    return [otherCodeLine(), roomLine(j), connLine(j), body, button('部屋から出る', () => { exitRoom(); repaint(); }, 'btn-block live-small')];
   }
 
   // ---- 画面 ----
@@ -547,7 +702,7 @@
     const isCurrent = () => mine === renderSeq && ctx.state.screen === 'live';
     const profile = H.currentProfile(ctx.store);
     // 生徒が変わっていたら、前の生徒の部屋からは出る
-    if (joined && (!profile || joined.profileId !== profile.id)) leave();
+    if (joined && (!profile || joined.profileId !== profile.id)) { leave(); otherCode = null; }
 
     function paint() {
       if (!isCurrent()) return;
@@ -557,9 +712,22 @@
       else children.push(joinCard(ctx));
       section.replaceChildren(...children.filter(Boolean));
       root.scrollTo(0, y);
+      // 描き直しで映像が DOM から外れると止まるので、もう一度再生する
+      if (scan && scan.video && scan.video.paused) scan.video.play().catch(() => {});
     }
 
     active = { ctx, isCurrent, paint };
+    // QR コードの URL で開いたとき（?live=<部屋コード>）: 部屋コードの欄に入れておく（「参加する」を押すだけ）
+    const pending = ctx.live && typeof ctx.live.pendingCode === 'function' ? ctx.live.pendingCode() : null;
+    if (pending && !joined) {
+      typed.code = normalizeCode(pending);
+      joinError = '';
+      otherCode = null;
+    } else if (pending && joined) {
+      // 参加中: 今の部屋とちがうコードなら伝える（同じ部屋なら何もしない）
+      const c = normalizeCode(pending);
+      if (c && c !== joined.code) otherCode = c;
+    }
     if (joined && !joined.gone) startWatch(joined);
     if (ticker) clearInterval(ticker);
     ticker = setInterval(tick, TICK_MS);
@@ -567,6 +735,8 @@
 
     return function cleanup() {
       if (ticker) { clearInterval(ticker); ticker = null; }
+      stopScan();
+      scanError = '';
       stopWatch(joined);
       if (joined) joined.timerNode = null;
     };

@@ -22,6 +22,9 @@
     // 先生画面の初期パスコード（値は書かず、salt と hash だけ。tools/teacher-passcode.js で作る。配付時に先生に伝える）。
     // 端末で「パスコードを変える」と、その端末の上書き（rika-quest:teacher）が優先される
     teacher: { passcode: { algo: 'fnv', salt: '66e4d15ea9429bc657a546e680b833c0', hash: '0de5ce45d9ce3ad32aaf383980637d2b' } },
+    // ライブクイズの Firebase Realtime Database の URL（アプリに組みこみ。設計書 14 章）。
+    // 端末で別の URL を保存すると（localStorage の rika-quest:live-db）そちらが優先される。規則で rooms/ 以外は守られている
+    live: { dbUrl: 'https://rika-quest-default-rtdb.firebaseio.com' },
   };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
