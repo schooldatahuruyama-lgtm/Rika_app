@@ -20,7 +20,7 @@
   }
 
   function createRecord() {
-    return { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [], badges: {} };
+    return { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [], badges: {}, liveResults: [] };
   }
 
   // id は p-<時刻>-<乱数>。万一すでにある id と重なったら作り直す
@@ -60,6 +60,8 @@
       history: rec.history.slice(),
       xpLog: rec.xpLog.slice(),
       badges: Object.assign({}, rec.badges),
+      // ライブクイズの最終順位（古い記録には無いので配列でなければ空にする）
+      liveResults: Array.isArray(rec.liveResults) ? rec.liveResults.slice() : [],
     });
   }
 
@@ -98,6 +100,14 @@
       } else if (ev.kind === 'mastery') {
         const prev = next.mastery[ev.conceptId];
         next.mastery[ev.conceptId] = { value: mastery.update(prev ? prev.value : 0, ev.change, config), lastAt: at };
+      } else if (ev.kind === 'liveResult') {
+        // ライブクイズの最終順位: 部屋コードごとに 1 つだけ。形の崩れた値は入れない
+        const okInt = (n) => typeof n === 'number' && Number.isInteger(n) && n >= 1;
+        if (typeof ev.code === 'string' && okInt(ev.rank) && okInt(ev.players)
+          && !next.liveResults.some((r) => r && r.code === ev.code)) {
+          const score = typeof ev.score === 'number' && Number.isFinite(ev.score) ? ev.score : 0;
+          next.liveResults.push({ at, code: ev.code, rank: ev.rank, players: ev.players, score });
+        }
       }
       // 知らない kind は無視する
     }

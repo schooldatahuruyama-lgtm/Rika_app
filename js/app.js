@@ -123,6 +123,7 @@
     history: Array.isArray,
     xpLog: Array.isArray,
     badges: isObject,   // 中身の各項目の形は badges.js が守る（崩れていても取り消さない）
+    liveResults: Array.isArray,   // ライブクイズの最終順位（古い記録には無いので空の配列で補う）
   };
 
   // 形の違う項目は createRecord() の同じ項目の値に置きかえる（知らない項目はそのまま残す）
@@ -684,17 +685,20 @@
 
   // ライブクイズで答えた出来事を今の生徒の記録に入れる（学習の進行と同じく、バッジの判定も通す）。
   // profileId を渡したときは、今の生徒がその生徒のときだけ入れる（参加した生徒と記録先を取りちがえない）。
-  // 戻り値 { applied, saved }: applied は記録（メモリ）に入れたか、saved は保存に成功したか（setRecord の戻り値。
-  // 保存に失敗してもメモリの記録は書きかわっていて、あとでほかの保存が成功すればいっしょに保存される）
+  // 戻り値 { applied, saved, newBadges }: applied は記録（メモリ）に入れたか、saved は保存に成功したか（setRecord の戻り値。
+  // 保存に失敗してもメモリの記録は書きかわっていて、あとでほかの保存が成功すればいっしょに保存される）。
+  // newBadges はこの呼び出しで新しく付いたバッジ id の配列（無ければ []）
   function liveRecord(events, profileId) {
     const profile = currentProfile();
-    if (!profile || !Array.isArray(events) || events.length === 0) return { applied: false, saved: false };
-    if (profileId !== undefined && profileId !== profile.id) return { applied: false, saved: false };
+    if (!profile || !Array.isArray(events) || events.length === 0) return { applied: false, saved: false, newBadges: [] };
+    if (profileId !== undefined && profileId !== profile.id) return { applied: false, saved: false, newBadges: [] };
     const now = new Date();
     let rec = RQ.record.applyEvents(currentRecord(), events, { now, multiplier: 1, stageId: null }, state.config);
+    const before = Object.keys(rec.badges || {});
     rec = awardBadges(rec, now);
+    const newBadges = Object.keys(rec.badges || {}).filter((id) => before.indexOf(id) === -1);
     const saved = setRecord(rec);
-    return { applied: true, saved };
+    return { applied: true, saved, newBadges };
   }
 
   const liveCtx = {

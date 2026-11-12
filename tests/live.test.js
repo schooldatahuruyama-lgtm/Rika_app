@@ -198,6 +198,13 @@ test('safeRoom: 崩れた値でも例外なし、questions は order 順の配�
   assert.equal(live.safeRoom({ state: { phase: 'zzz', index: 'x' } }).state.phase, 'lobby');
 });
 
+test('isEnded: state.phase が ended のときだけ true（崩れた値は false）', () => {
+  assert.equal(live.isEnded({ phase: 'ended' }), true);
+  assert.equal(live.isEnded({ phase: 'reveal' }), false);
+  assert.equal(live.isEnded(null), false);
+  assert.equal(live.isEnded('ended'), false);
+});
+
 test('isStale: 作成から 24 時間以上で古い（作成時刻がなければ古い）', () => {
   const day = 24 * 60 * 60 * 1000;
   assert.equal(live.isStale({ createdAt: 0 }, day - 1), false);
@@ -738,4 +745,18 @@ test('safeRoom: kind の無い古い問題は choice、text は選択肢なし�
   // accept が無ければ answer だけ
   const one = live.safeRoom({ questions: { t: { id: 't', kind: 'text', prompt: 'x', answer: '水' } } });
   assert.deepEqual(one.questions[0].accept, ['水']);
+});
+
+test('rankResult: ended のときだけ、自分の最終順位・参加者数・得点。同点は同じ rank', () => {
+  assert.equal(live.RANK_QID, '_rank');
+  const raw = (phase) => ({ state: { index: 1, phase }, players: { p1: { name: 'そら', score: 900 }, p2: { name: 'あおい', score: 900 }, p3: { name: 'うみ', score: 1500 } } });
+  ['lobby', 'show', 'reveal'].forEach((ph) => assert.equal(live.rankResult(live.safeRoom(raw(ph)), 'p1'), null, ph));
+  const room = live.safeRoom(raw('ended'));
+  assert.deepEqual(live.rankResult(room, 'p3'), { rank: 1, players: 3, score: 1500 });
+  assert.deepEqual(live.rankResult(room, 'p1'), { rank: 2, players: 3, score: 900 });
+  assert.deepEqual(live.rankResult(room, 'p2'), { rank: 2, players: 3, score: 900 });
+  // 自分がいなければ null
+  assert.equal(live.rankResult(room, 'p9'), null);
+  assert.equal(live.rankResult(room, ''), null);
+  assert.equal(live.rankResult(null, 'p1'), null);
 });

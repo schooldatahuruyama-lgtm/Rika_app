@@ -14,7 +14,7 @@ const hist = (over) => Object.assign({ kind: 'history', sessionId: 's1', attempt
 
 const ZERO = {
   clearedStages: 0, clearedUnits: 0, perfectStages: 0, totalStars: 0, answers: 0, retryCorrect: 0, learnback: 0,
-  lessonsRead: 0, reviewedConcepts: 0, masteredConcepts: 0, bestStreak: 0,
+  lessonsRead: 0, reviewedConcepts: 0, masteredConcepts: 0, bestStreak: 0, bestLiveRank: 0, liveResults: 0,
 };
 
 test('stats: 空の記録はすべて 0（level は 1）', () => {
@@ -178,8 +178,8 @@ test('earned: いろいろな条件', () => {
   assert.deepEqual(ids, badges.DEFS.map((d) => d.id).filter((id) => ids.includes(id)));
 });
 
-test('DEFS: 20 個、id が重複しない、title・description・glyph・color・test が全部ある、color は 5 色のどれか', () => {
-  assert.equal(badges.DEFS.length, 20);
+test('DEFS: 23 個、id が重複しない、title・description・glyph・color・test が全部ある、color は 5 色のどれか', () => {
+  assert.equal(badges.DEFS.length, 23);
   const ids = badges.DEFS.map((d) => d.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(badges.COLORS, ['blue', 'green', 'orange', 'purple', 'pink']);
@@ -211,4 +211,30 @@ test('画像: DEFS の各 id の assets/images/badges/<id>.png があり、sw.js
     assert.ok(fs.existsSync(path.join(ROOT, f)), f + ' がない');
     assert.ok(m[1].includes("'" + f + "'"), f + ' が PRECACHE にない');
   });
+});
+
+test('ライブクイズのバッジ: 参加者 2 人以上の部屋の最終順位で、5 位以内・3 位以内・1 位', () => {
+  const LIVE = ['live-top5', 'live-top3', 'live-first'];
+  const withLive = (list) => Object.assign(record.createRecord(), { liveResults: list });
+  const liveIds = (rec) => badges.earned(rec, reg, config).filter((id) => LIVE.includes(id));
+  const one = (rank, players) => ({ at: at(3).toISOString(), code: 'R' + rank + '-' + players, rank, players, score: 100 });
+  // 参加者 1 人の 1 位では付かない
+  assert.deepEqual(liveIds(withLive([one(1, 1)])), []);
+  assert.equal(badges.stats(withLive([one(1, 1)]), reg, config).bestLiveRank, 0);
+  assert.equal(badges.stats(withLive([one(1, 1)]), reg, config).liveResults, 1);
+  // 6 位は付かない、5 位は top5 だけ、3 位は top5 + top3、1 位は 3 つ（DEFS の順）
+  assert.deepEqual(liveIds(withLive([one(6, 10)])), []);
+  assert.deepEqual(liveIds(withLive([one(5, 2)])), ['live-top5']);
+  assert.deepEqual(liveIds(withLive([one(3, 8)])), ['live-top5', 'live-top3']);
+  assert.deepEqual(liveIds(withLive([one(1, 2)])), ['live-top5', 'live-top3', 'live-first']);
+  // いちばん良い順位で判定。形の崩れた項目は数えない
+  const mixed = withLive([one(4, 9), one(1, 1), 'bad', null, { rank: '1', players: 3 }, one(2, 3)]);
+  assert.equal(badges.stats(mixed, reg, config).bestLiveRank, 2);
+  // liveResults が無い・配列でない記録でも例外なし
+  assert.equal(badges.stats(Object.assign(record.createRecord(), { liveResults: 'x' }), reg, config).bestLiveRank, 0);
+  const old = record.createRecord(); delete old.liveResults;
+  assert.equal(badges.stats(old, reg, config).bestLiveRank, 0);
+  // 定義
+  assert.deepEqual(LIVE.map((id) => [badges.def(id).title, badges.def(id).glyph, badges.def(id).color]),
+    [['ライブ トップ 5', '5位', 'green'], ['ライブ トップ 3', '3位', 'orange'], ['ライブ 1 位', '1位', 'orange']]);
 });

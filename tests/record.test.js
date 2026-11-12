@@ -11,7 +11,7 @@ const hist = (over) => Object.assign({ kind: 'history', sessionId: 's1', attempt
 
 test('createStore / createRecord の初期値', () => {
   assert.deepEqual(record.createStore(), { version: 1, currentProfileId: null, profiles: [], records: {} });
-  assert.deepEqual(record.createRecord(), { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [], badges: {} });
+  assert.deepEqual(record.createRecord(), { xp: 0, level: 1, streak: { count: 0, lastDate: null }, mastery: {}, stages: {}, lessonsRead: {}, reviewDone: {}, history: [], xpLog: [], badges: {}, liveResults: [] });
 });
 
 test('createProfile / deleteProfile: records と currentProfileId を保つ', () => {
@@ -117,4 +117,23 @@ test('markReviewDone: 日付を記録し、元は変えない', () => {
   const r1 = record.markReviewDone(r0, 'c1', '2026-11-03');
   assert.deepEqual(r1.reviewDone, { c1: '2026-11-03' });
   assert.deepEqual(r0.reviewDone, {});
+});
+
+test('applyEvents liveResult: liveResults に入る。同じ code は 1 つ、形の崩れた値は無視、古い記録でも例外なし', () => {
+  const ev = (over) => Object.assign({ kind: 'liveResult', code: 'ABCD', rank: 2, players: 5, score: 1200 }, over);
+  const r0 = record.createRecord();
+  const r1 = record.applyEvents(r0, [ev()], { now: day1 }, config);
+  assert.deepEqual(r1.liveResults, [{ at: day1.toISOString(), code: 'ABCD', rank: 2, players: 5, score: 1200 }]);
+  assert.deepEqual(r0.liveResults, []);   // 元を変えない
+  assert.equal(r1.xp, 0);                 // 経験値は付けない
+  // 同じ code は足さない
+  const r2 = record.applyEvents(r1, [ev({ rank: 1 }), ev({ code: 'EFGH', score: 'x' })], { now: day2 }, config);
+  assert.deepEqual(r2.liveResults.map((x) => [x.code, x.rank, x.score]), [['ABCD', 2, 1200], ['EFGH', 2, 0]]);
+  // 形の崩れた値は無視
+  const bad = [ev({ code: 1 }), ev({ rank: 0 }), ev({ rank: 1.5 }), ev({ players: 0 }), ev({ players: '3' }), ev({ code: undefined })];
+  assert.deepEqual(record.applyEvents(r0, bad, { now: day1 }, config).liveResults, []);
+  // 古い記録（liveResults が無い）でも壊れない
+  const old = Object.assign({}, r0); delete old.liveResults;
+  assert.equal(record.applyEvents(old, [{ kind: 'answer' }], { now: day1 }, config).liveResults.length, 0);
+  assert.equal(record.applyEvents(old, [ev()], { now: day1 }, config).liveResults.length, 1);
 });

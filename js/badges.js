@@ -50,6 +50,10 @@
     { id: 'mastered-20', title: 'できたが 20', glyph: '20', color: 'purple', description: '理解度が「できた」の概念を 20 にしよう。', test: (s) => s.masteredConcepts >= 20 },
     { id: 'level-5', title: 'Lv 5', glyph: 'Lv5', color: 'orange', description: 'レベル 5 になろう。', test: (s) => s.level >= 5 },
     { id: 'level-10', title: 'Lv 10', glyph: 'Lv10', color: 'orange', description: 'レベル 10 になろう。', test: (s) => s.level >= 10 },
+    // ライブクイズの順位（参加者が 2 人以上の部屋だけ数える。bestLiveRank は無ければ 0）
+    { id: 'live-top5', title: 'ライブ トップ 5', glyph: '5位', color: 'green', description: 'ライブクイズで 5 位以内に入ろう。', test: (s) => s.bestLiveRank >= 1 && s.bestLiveRank <= 5 },
+    { id: 'live-top3', title: 'ライブ トップ 3', glyph: '3位', color: 'orange', description: 'ライブクイズで 3 位以内に入ろう。', test: (s) => s.bestLiveRank >= 1 && s.bestLiveRank <= 3 },
+    { id: 'live-first', title: 'ライブ 1 位', glyph: '1位', color: 'orange', description: 'ライブクイズで 1 位になろう。', test: (s) => s.bestLiveRank === 1 },
   ];
 
   function def(id) {
@@ -131,6 +135,11 @@
     const lessonsRead = obj(r.lessonsRead);
     const bound = masteredBound(config || defaultConfig);
     const masteryMap = obj(r.mastery);
+    // ライブクイズの最終順位（参加者 2 人以上の部屋の、いちばん良い順位）
+    const liveResults = arr(r.liveResults).filter(isObject);
+    const liveRanks = liveResults
+      .filter((x) => Number.isInteger(x.players) && x.players >= 2 && Number.isInteger(x.rank) && x.rank >= 1)
+      .map((x) => x.rank);
 
     return {
       clearedStages,
@@ -145,6 +154,8 @@
       masteredConcepts: Object.keys(masteryMap).filter((k) => isObject(masteryMap[k]) && isFiniteNumber(masteryMap[k].value) && masteryMap[k].value >= bound).length,
       bestStreak: bestStreakOf(history),
       level: isFiniteNumber(r.level) ? r.level : 0,
+      bestLiveRank: liveRanks.length > 0 ? Math.min(...liveRanks) : 0,
+      liveResults: liveResults.length,
     };
   }
 

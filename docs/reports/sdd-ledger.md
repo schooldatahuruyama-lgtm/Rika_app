@@ -217,3 +217,8 @@ implemented (opus)。controller: 実際の結果画面で、選んだアバタ�
 Ruling: 問題に kind（choice / multi / text / order）を持たせ、答えはすべて文字列に符号化する（multi 'a,c'、order 'c,a,b'、text は打った文字列）。**データベースの規則は変えない**（先生が規則を貼り直さなくてよい）。正誤は live.isCorrect に集約: multi は全部一致（部分点なし）、text は正規化（NFKC・小文字・空白除去・末尾の「。」除去）で一致、数は許容誤差、order は順の一致。 — コスト: text の採点は文字列一致なので、漢字とかなのちがいは先生が別解（2 つまで）で補う。
 Ruling: 教材からは、選択式に加えて空欄 1 つの穴埋め（図のないもの。232 問）を自由記述として取りこむ。図のある穴埋め 24 問は除外（Codex 指摘）。 — コスト: 数の穴埋めは単位を「（倍 で答える）」のように文で添える。
 implemented (opus ×2: C js/live.js ＋ tests、D js/ui-live.js・js/ui-live-host.js・css・README・設計書)。controller: 実際の Firebase で 3 つの形を先生・生徒の 2 タブで通した。Codex round1 High 2（図付き穴埋めの取りこみ、IME 変換中の描き直し保留が次の問題まで続く）/Medium 1（object のキーに生の文字列）→ fix（opus）→ Codex round2 指摘なし → complete（tests 806）。VERSION 2026-11-12-31。未確認: 実機の IME での変換中の動き。
+
+## 追加作業 2026-11-12: ライブクイズ — 答え合わせに問題文／上位 5 人にバッジ（ユーザー指示）
+Ruling: 部屋が ended になったら生徒の端末が最終順位を記録（rec.liveResults、出来事 liveResult、処理済みは回答と同じ仕組みで RANK_QID '_rank'）。バッジは 3 つ（live-top5 / live-top3 / live-first。参加者 2 人以上の部屋だけ）。1 位は 3 つとも取る。画像は ChatGPT で既存のバッジと同じ「光沢の盾」の様式（金・銀・銅）で生成し、ページ内の canvas で 160 px に切り出して base64 で取り出した（画面の取りこみは pane の拡大率でずれるため使わない）。 — コスト: 終了後に新しく入ろうとした生徒は入れない（入り直しは可）。
+implemented (opus)。controller: 実 Firebase で先生 1・生徒 2 タブを通して確認。Opus の実装に doneQids（Set）へ indexOf を使う不具合があり、live-db が onData の例外を飲むため「答え合わせ」で止まっていた → controller が修正。Codex round1 High 1（終了後の新規入室にバッジ）→ controller が isEnded で入室を止める → round2 High 1（入室と終了の競合。記録のみ）/ #2（保存失敗の再試行。回答と同じ限界として記録のみ）→ complete（tests 810）。VERSION 2026-11-12-32。
+気づき: live-db は onData の例外を黙って飲む設計なので、受信処理の例外は画面が止まるだけで分からない。次に live-db を触るときは console.error を出すよう検討。

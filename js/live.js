@@ -410,6 +410,20 @@
     });
   }
 
+  // 最終順位を処理済みの一覧に入れるときの問題 id の代わり（問題の回答と同じ仕組みで、1 回だけ記録する）
+  const RANK_QID = '_rank';
+
+  // 終わった部屋での自分の最終順位 { rank, players（参加者数）, score }。部屋コードは呼ぶ側が足す。
+  // room は safeRoom の形。段階が ended で、自分（pid）が参加者にいるときだけ。それ以外は null
+  function rankResult(room, pid) {
+    if (!isObject(room) || !isObject(room.state) || room.state.phase !== 'ended') return null;
+    if (typeof pid !== 'string' || !pid || !isObject(room.players) || !isObject(room.players[pid])) return null;
+    const rows = leaderboard(room.players);
+    const me = rows.find(r => r.pid === pid);
+    if (!me) return null;
+    return { rank: me.rank, players: rows.length, score: me.score };
+  }
+
   // 生徒の端末で学習記録に入れる出来事（record.applyEvents に渡す）。
   // 教材の問題は履歴（phase 'live'）・経験値・理解度。自作の問題は経験値だけ
   function recordEvents(question, choice, correct, sessionId) {
@@ -660,6 +674,11 @@
   }
 
   // 作成から 24 時間以上たった部屋（作成時刻がわからない部屋も古いとみなす）
+  // 部屋が終わっているか（state.phase が 'ended'）。終わった部屋には新しい生徒は入れない（順位とバッジが終了時点の参加者で決まるように）
+  function isEnded(state) {
+    return isObject(state) && state.phase === 'ended';
+  }
+
   function isStale(meta, now) {
     if (!isObject(meta) || !isNum(meta.createdAt)) return true;
     return toMs(now) - meta.createdAt >= STALE_MS;
@@ -692,8 +711,8 @@
     CODE_CHARS, STALE_MS, RECORDED_KEEP_MS, MAX_PROMPT, MAX_OPTIONS, MAX_NAME, DEFAULT_SECONDS, MIN_SECONDS, MAX_SECONDS,
     KINDS, MAX_TEXT_ANSWER, MAX_ACCEPT, kindOf, normalizeText, cleanAnswer, isCorrect,
     newRoomCode, newPlayerId, isRoomCode, questionFromProblem, customQuestion, newRoom,
-    scoreFor, tally, applyScores, scoreUpdate, leaderboard, recordEvents, recordRoomKey, recordKey, pendingRecords,
-    safeRecorded, recordedQids, addRecorded, doneQidsOf, flushState, nextDoneState, safeRoom, isStale, nextState,
+    scoreFor, tally, applyScores, scoreUpdate, leaderboard, RANK_QID, rankResult, recordEvents, recordRoomKey, recordKey, pendingRecords,
+    safeRecorded, recordedQids, addRecorded, doneQidsOf, flushState, nextDoneState, safeRoom, isStale, isEnded, nextState,
   };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
