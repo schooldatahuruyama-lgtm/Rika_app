@@ -2682,6 +2682,104 @@ ruby.rq-ruby rt {
   border-left-color: var(--text);
 }
 
+/* 出題の形の印（問題文の上・選んだ問題の一覧。choice は印なし） */
+.live-kind {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.live-picked-text .live-kind {
+  margin: 0 0 0 8px;
+  font-size: 12px;
+}
+
+.live-kind + .live-question {
+  margin-top: 6px;
+}
+
+/* 並びかえ: タップした順の番号（選択肢の左上の丸） */
+.btn.live-choice {
+  position: relative;
+}
+
+.live-order-num {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--text);
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* 複数回答の「決定」・並びかえの「やり直す」「決定」 */
+.live-decide {
+  margin-top: 14px;
+}
+
+/* 自由記述: 入力欄 ＋「送る」の 1 行 */
+.live-text-form {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.live-text-form .text-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 22px;
+}
+
+.live-text-form .btn {
+  flex: 0 0 auto;
+  min-width: 96px;
+}
+
+/* 答え合わせ: 答えごとの人数の一覧（自由記述・並びかえ。正解は緑） */
+.live-groups {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.live-groups li {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #EEF1F6;
+  font-size: 19px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.live-groups li.is-correct {
+  background: #E0F4E8;
+  color: #17683B;
+  box-shadow: inset 6px 0 0 var(--ok);
+}
+
+/* 生徒の答え合わせの「あなた: …」 */
+.live-mine {
+  margin: 8px 0 0;
+  font-size: 19px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
 /* 残り時間（残り 5 秒で赤） */
 .live-timer {
   margin: 0;

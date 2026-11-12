@@ -59,10 +59,18 @@
   let scanSeq = 0;
   let scanError = '';
   const typed = { code: '', url: null };   // 入力の書きかけ（描き直しても消さない。url は null なら保存した URL）
-  // 参加中の部屋 { code, pid, profileId, name, db, offset, sessionId, data, gone, answering（問題 id → 送った選択肢 id。表示だけに使う）,
+  // 参加中の部屋 { code, pid, profileId, name, db, offset, sessionId, data, gone, answering（問題 id → 送った答え（符号化した文字列）。表示だけに使う）,
   //   sendFail（送れなかった答え { qid, choice, message } | null）, stop, retryTimer, timerNode, timeUpIndex,
+  //   draft（問題 id → 送る前の回答の書きかけ { picked（multi の選んだ id）, text（text の入力）, seq（order のタップ順の id）}。
+  //   描き直しでは消さず、画面を離れたら捨てる）,
   //   conn（'ok' | 'reconnecting' | 'gave-up'）, connError（受信が止まった理由）, notice, noticeTimer }
+  // 答えの符号化は js/live.js と同じ: choice 'a'、multi 'a,c'（a→d 順）、order 'c,a,b'（表示順の id を並べた順）、text 文字列
   let joined = null;
+  // 自由記述の入力欄で変換（IME）の途中なら、描き直しを変換が終わるまで待つ（描き直すと変換が切れるため）
+  let composing = false;
+  let paintLater = false;
+  // 変換を始めたときの問題 { index, qid }（同じ問題の回答受付中かを確かめるため）
+  let composeAt = null;
   // 参加中に ?live= の URL で読んだ、今の部屋とちがう部屋コード（「部屋から出る」で参加画面の部屋コードの欄に 1 回だけ入れる）
   let otherCode = null;
   let ticker = null;
@@ -78,7 +86,20 @@
   let savedSource = null;         // 購読に使う ctx.live
 
   function repaint() {
+    if (holdPaint(joined)) { paintLater = true; return; }
     if (active && active.isCurrent()) active.paint();
+  }
+
+  // 描き直しを変換の終わりまで待つか。待つのは「変換を始めたのと同じ問題の回答受付中（phase が show で時間が残っている）」だけ。
+  // 問題・段階が変わった、または時間切れなら、変換中でもすぐ描き直す（古い問題の画面のまま次の問題に答えられなくなるのを防ぐ）
+  function holdPaint(j) {
+    if (!composing) return false;
+    const s = j && j.data && !j.gone ? j.data.state : null;
+    const q = s ? currentQuestion(j) : null;
+    const same = !!s && !!composeAt && s.phase === 'show' && s.index === composeAt.index
+      && !!q && q.id === composeAt.qid && remaining(j, s) > 0;
+    if (!same) { composing = false; paintLater = false; composeAt = null; }
+    return same;
   }
 
   function errorLine(text) {
@@ -289,7 +310,7 @@
     return s.index >= 0 ? j.data.questions[s.index] || null : null;
   }
 
-  // 画面に出す自分の選択肢 id（サーバーで確かめられた分。なければ送信中・送った分）。なければ null。
+  // 画面に出す自分の答え（符号化した文字列。サーバーで確かめられた分。なければ送信中・送った分）。なければ null。
   // 学習記録には使わない（記録は recordAnswers が受信した answers だけから入れる）
   function myChoice(j, q) {
     const a = (j.data.answers[q.id] || {})[j.pid];
@@ -329,8 +350,9 @@
     });
   }
 
+  // choice は符号化した答え（L().cleanAnswer を通したもの）。null・空なら送らない
   async function answer(j, q, choice) {
-    if (joined !== j) return;
+    if (joined !== j || typeof choice !== 'string' || !choice) return;
     const confirmed = (j.data.answers[q.id] || {})[j.pid];
     if (confirmed || typeof j.answering[q.id] === 'string') return;
     if (remaining(j, j.data.state) <= 0) return;
@@ -397,7 +419,7 @@
       leave();
       joined = {
         code, pid, profileId: profile.id, name, db, offset, sessionId: ctx.live.sessionId(),
-        data: null, gone: false, answering: {}, sendFail: null, stop: null, retryTimer: null, timerNode: null, timeUpIndex: -1,
+        data: null, gone: false, answering: {}, sendFail: null, draft: {}, stop: null, retryTimer: null, timerNode: null, timeUpIndex: -1,
         conn: 'ok', connError: '', notice: '', noticeTimer: null,
       };
       editUrl = false;
@@ -601,6 +623,138 @@
     ]);
   }
 
+  // ---- 出題の形 ----
+
+  // 形の印の文（choice は印なし）
+  const KIND_MARKS = { multi: 'あてはまるものを全部', text: '（記述）', order: '正しい順に並べる' };
+
+  function kindMark(q) {
+    const text = KIND_MARKS[L().kindOf(q)];
+    return text ? el('p', { class: 'live-kind', text }) : null;
+  }
+
+  // 選択肢 id のラベル（ア〜エ。options の並び＝表示順）
+  function labelOf(q, id) {
+    const i = q.options.findIndex((o) => o.id === id);
+    return LABELS[i] || '?';
+  }
+
+  // 符号化した答えを表示用の文に（choice「ア」、multi「ア・ウ」、order「ウ → ア → イ」、text はそのまま）
+  function answerText(q, value) {
+    const v = typeof value === 'string' ? value : '';
+    const kind = L().kindOf(q);
+    if (kind === 'text') return v;
+    const ids = v ? v.split(',') : [];
+    return ids.map((id) => labelOf(q, id)).join(kind === 'order' ? ' → ' : '・');
+  }
+
+  // 問題 id ごとの回答の書きかけ（描き直しでは消さない）
+  function draftOf(j, q) {
+    if (!j.draft[q.id]) j.draft[q.id] = { picked: [], text: '', seq: [] };
+    return j.draft[q.id];
+  }
+
+  // 選択肢のボタン。state: { picked, disabled, badge（ボタンの中に足す要素の配列） }
+  function choiceButton(o, i, state, onclick) {
+    return el('button', {
+      type: 'button',
+      class: 'btn live-choice live-opt ' + OPT_CLASSES[i % OPT_CLASSES.length] + (state.picked ? ' is-picked' : ''),
+      disabled: !!state.disabled,
+      'aria-pressed': state.picked ? 'true' : 'false',
+      onclick,
+    }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) })].concat(state.badge || []));
+  }
+
+  // 形ごとの答える部分 { body: [要素], hint: 答える前の案内 }。送る答えは L().cleanAnswer を通した文字列
+  function answerPart(j, q, mine, timeUp) {
+    const kind = L().kindOf(q);
+    const done = mine !== null;
+    if (kind === 'multi') {
+      // 押すたびに選ぶ／外す →「決定（N こ）」
+      const dr = draftOf(j, q);
+      const picked = done ? mine.split(',') : dr.picked;
+      const buttons = q.options.map((o, i) => choiceButton(o, i, { picked: picked.indexOf(o.id) !== -1, disabled: done || timeUp }, () => {
+        dr.picked = dr.picked.indexOf(o.id) !== -1 ? dr.picked.filter((id) => id !== o.id) : dr.picked.concat([o.id]);
+        repaint();
+      }));
+      return {
+        body: [
+          el('div', { class: 'live-options' }, buttons),
+          done ? null : button('決定（' + dr.picked.length + ' こ）', () => answer(j, q, L().cleanAnswer(q, dr.picked.join(','))),
+            'btn-primary btn-block live-decide', { disabled: timeUp || dr.picked.length === 0 }),
+        ],
+        hint: 'あてはまるものを全部えらんで「決定」',
+      };
+    }
+    if (kind === 'order') {
+      // 正しい順にタップ（タップした順に番号。タップした選択肢は押せない）→「決定」。「やり直す」で番号を消す
+      const dr = draftOf(j, q);
+      const seq = done ? mine.split(',') : dr.seq;   // 答えたあとは送った順
+      const buttons = q.options.map((o, i) => {
+        const pos = seq.indexOf(o.id);
+        return choiceButton(o, i, {
+          picked: pos !== -1,
+          disabled: done || timeUp || pos !== -1,
+          badge: pos !== -1 ? [el('span', { class: 'live-order-num', 'aria-label': (pos + 1) + ' 番目', text: String(pos + 1) })] : [],
+        }, () => {
+          if (dr.seq.indexOf(o.id) === -1) dr.seq = dr.seq.concat([o.id]);
+          repaint();
+        });
+      });
+      const full = dr.seq.length === q.options.length;
+      return {
+        body: [
+          el('div', { class: 'live-options' }, buttons),
+          done ? null : el('div', { class: 'btn-row live-decide' }, [
+            button('やり直す', () => { dr.seq = []; repaint(); }, '', { disabled: timeUp || dr.seq.length === 0 }),
+            button('決定', () => answer(j, q, L().cleanAnswer(q, dr.seq.join(','))), 'btn-primary', { disabled: timeUp || !full }),
+          ]),
+        ],
+        hint: '正しい順にタップして「決定」',
+      };
+    }
+    if (kind === 'text') {
+      // 1 行の入力欄 ＋「送る」（Enter でも送る。空なら送らない）
+      const dr = draftOf(j, q);
+      const attrs = {
+        class: 'text-input', id: 'live-text-input', type: 'text', autocomplete: 'off', spellcheck: 'false',
+        maxlength: L().MAX_TEXT_ANSWER, 'aria-label': '答え', disabled: done || timeUp,
+      };
+      if (q.number) attrs.inputmode = 'decimal';
+      const input = el('input', attrs);
+      input.value = done ? mine : dr.text;
+      input.addEventListener('input', () => { dr.text = input.value; });
+      input.addEventListener('compositionstart', () => {
+        composing = true;
+        composeAt = { index: j.data.state.index, qid: q.id };
+      });
+      input.addEventListener('compositionend', () => {
+        composing = false;
+        composeAt = null;
+        dr.text = input.value;
+        if (paintLater) { paintLater = false; repaint(); }
+      });
+      const submit = (ev) => {
+        if (ev) ev.preventDefault();
+        // いまの問題が入力を始めた問題と同じで、回答受付中のときだけ送る（古い画面から次の問題へ送らない）
+        const now = joined === j && j.data ? currentQuestion(j) : null;
+        if (!now || now.id !== q.id || j.data.state.phase !== 'show') return;
+        dr.text = input.value;
+        answer(j, q, L().cleanAnswer(q, dr.text));   // 空なら null で送らない
+      };
+      return {
+        body: [el('form', { class: 'live-text-form', onsubmit: submit }, [
+          input,
+          el('button', { type: 'submit', class: 'btn btn-primary', disabled: done || timeUp, text: '送る' }),
+        ])],
+        hint: '答えを打って「送る」',
+      };
+    }
+    // choice: 今までどおり（押したら送る）
+    const buttons = q.options.map((o, i) => choiceButton(o, i, { picked: mine === o.id, disabled: done || timeUp }, () => answer(j, q, o.id)));
+    return { body: [el('div', { class: 'live-options' }, buttons)], hint: '答えをえらぼう（1 回だけ）' };
+  }
+
   function showCard(j) {
     const s = j.data.state;
     const q = currentQuestion(j);
@@ -610,24 +764,30 @@
     const timeUp = left <= 0;
     const fail = mine === null && j.sendFail && j.sendFail.qid === q.id ? j.sendFail : null;
     j.timerNode = el('span', { class: 'live-timer-num' + (left <= 5 ? ' is-low' : ''), text: String(left) });
-    const buttons = q.options.map((o, i) => el('button', {
-      type: 'button',
-      class: 'btn live-choice live-opt ' + OPT_CLASSES[i % OPT_CLASSES.length] + (mine === o.id ? ' is-picked' : ''),
-      disabled: mine !== null || timeUp,
-      'aria-pressed': mine === o.id ? 'true' : 'false',
-      onclick: () => answer(j, q, o.id),
-    }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) })]));
+    const part = answerPart(j, q, mine, timeUp);
     return card([
       el('div', { class: 'live-head' }, [
         el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + j.data.questions.length + ' 問目' }),
         el('p', { class: 'live-timer', 'aria-label': '残り時間（秒）' }, [j.timerNode, el('span', { class: 'live-timer-unit', text: '秒' })]),
       ]),
+      kindMark(q),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
-      el('div', { class: 'live-options' }, buttons),
-      el('p', { class: 'live-status', role: 'status', text: mine !== null ? '答えた！ 答え合わせを待とう。' : timeUp ? '時間切れ' : '答えをえらぼう（1 回だけ）' }),
+    ].concat(part.body, [
+      el('p', { class: 'live-status', role: 'status', text: mine !== null ? '答えた！ 答え合わせを待とう。' : timeUp ? '時間切れ' : part.hint }),
       fail ? errorLine('送れませんでした。もう一度送ってね（' + fail.message + '）') : null,
       fail && !timeUp ? button('もう一度送る', () => answer(j, q, fail.choice), 'btn-primary btn-block') : null,
-    ]);
+    ]));
+  }
+
+  // 正解の表示用の文（choice は今までどおり「ア 文」）
+  function rightText(q) {
+    const kind = L().kindOf(q);
+    if (kind === 'choice') {
+      const ci = q.options.findIndex((o) => o.id === q.answer);
+      return (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '');
+    }
+    if (kind === 'text') return q.answer;
+    return answerText(q, L().cleanAnswer(q, q.answer) || q.answer);
   }
 
   function revealCard(j) {
@@ -636,8 +796,7 @@
     const q = currentQuestion(j);
     if (!q) return waitCard(j);
     const mine = myChoice(j, q);
-    const correct = mine !== null && mine === q.answer;
-    const ci = q.options.findIndex((o) => o.id === q.answer);
+    const correct = mine !== null && L().isCorrect(q, mine);
     const player = d.players[j.pid] || null;
     const myAnswer = (d.answers[q.id] || {})[j.pid] || null;
     const scored = !!player && player.lastQ === q.id;
@@ -648,7 +807,8 @@
     return card([
       el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + d.questions.length + ' 問目の答え合わせ' }),
       el('p', { class: 'live-result ' + (mine === null ? 'is-none' : correct ? 'is-ok' : 'is-ng'), text: mine === null ? '答えなかった' : correct ? '○ 正解！' : '× ざんねん' }),
-      el('p', { class: 'live-answer', text: '正解: ' + (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '') }),
+      el('p', { class: 'live-answer', text: '正解: ' + rightText(q) }),
+      L().kindOf(q) !== 'choice' && mine !== null ? el('p', { class: 'live-mine', text: 'あなた: ' + answerText(q, mine) }) : null,
       el('p', { class: 'live-points', text: 'この問題 ' + points + ' 点' }),
       me ? el('p', { class: 'live-total', text: 'いまの合計 ' + me.score + ' 点・' + me.rank + ' 位（' + board.length + ' 人中）' + (scored ? '' : '（計算中）') }) : null,
     ]);
@@ -706,12 +866,23 @@
 
     function paint() {
       if (!isCurrent()) return;
+      composing = false;
+      paintLater = false;
+      composeAt = null;
       const y = root.scrollY;
+      // 自由記述の入力欄で打っている途中なら、描き直したあとも入力欄にカーソルを戻す（ほかの人が答えるたびに描き直すため）
+      const doc = root.document;
+      const focused = doc && doc.activeElement && doc.activeElement.id === 'live-text-input' ? doc.activeElement : null;
+      const caret = focused ? [focused.selectionStart, focused.selectionEnd] : null;
       const children = [H.topBar('ライブクイズ', 'ホーム', () => ctx.go('home'))];
       if (joined) children.push(...roomView(joined, ctx));
       else children.push(joinCard(ctx));
       section.replaceChildren(...children.filter(Boolean));
       root.scrollTo(0, y);
+      const again = caret ? section.querySelector('#live-text-input') : null;
+      if (again && !again.disabled) {
+        try { again.focus({ preventScroll: true }); again.setSelectionRange(caret[0], caret[1]); } catch (e) { /* 無視 */ }
+      }
       // 描き直しで映像が DOM から外れると止まるので、もう一度再生する
       if (scan && scan.video && scan.video.paused) scan.video.play().catch(() => {});
     }
@@ -738,7 +909,11 @@
       stopScan();
       scanError = '';
       stopWatch(joined);
-      if (joined) joined.timerNode = null;
+      composing = false;
+      paintLater = false;
+      composeAt = null;
+      // 回答の書きかけは画面を離れたら捨てる
+      if (joined) { joined.timerNode = null; joined.draft = {}; }
     };
   }
 

@@ -27,13 +27,13 @@ test('newRoomCode: 6 文字、I・O・0・1 を使わない。newPlayerId は p�
   assert.equal(live.isRoomCode('abcdef'), false);
 });
 
-test('questionFromProblem: 選択式だけ、図は落とす、長い問題文は除く', () => {
+test('questionFromProblem: 選択式、図は落とす、長い問題文は除く', () => {
   const stage = unit.areas[0].stages[0];
   const choice = stage.problems[0];
   const q = live.questionFromProblem(choice, { unitId: 'u', stageId: stage.id });
-  assert.deepEqual(q, { id: 'p-a1-1', prompt: '光はまっすぐ進む？', options: [{ id: 'o1', text: 'はい' }, { id: 'o2', text: 'いいえ' }], answer: 'o1', conceptId: 'c-a', unitId: 'u', stageId: 's-a1', source: 'content' });
-  // fill（選択式でない）は null
-  assert.equal(live.questionFromProblem(stage.problems[1], { unitId: 'u', stageId: stage.id }), null);
+  assert.deepEqual(q, { id: 'p-a1-1', kind: 'choice', prompt: '光はまっすぐ進む？', options: [{ id: 'o1', text: 'はい' }, { id: 'o2', text: 'いいえ' }], answer: 'o1', conceptId: 'c-a', unitId: 'u', stageId: 's-a1', source: 'content' });
+  // 空欄 1 つの fill は自由記述（text）として取りこむ
+  assert.equal(live.questionFromProblem(stage.problems[1], { unitId: 'u', stageId: stage.id }).kind, 'text');
   assert.equal(live.questionFromProblem({ ...choice, type: 'figure-choice' }, {}), null);
   // 図のある choice は図を落として文だけ
   const withFigure = live.questionFromProblem({ ...choice, figure: { width: 10, height: 10, items: [] } }, { unitId: 'u', stageId: 's' });
@@ -52,7 +52,7 @@ test('questionFromProblem: 選択式だけ、図は落とす、長い問題文�
 
 test('customQuestion: 空の文・選択肢 2 未満は null、答えは a〜d', () => {
   const q = live.customQuestion({ prompt: ' 水は何度で沸とうする？ ', options: ['50 度', '100 度', '', '200 度'], answer: 1 }, 3);
-  assert.deepEqual(q, { id: 'c-3', prompt: '水は何度で沸とうする？', options: [{ id: 'a', text: '50 度' }, { id: 'b', text: '100 度' }, { id: 'c', text: '200 度' }], answer: 'b', conceptId: null, source: 'custom' });
+  assert.deepEqual(q, { id: 'c-3', kind: 'choice', prompt: '水は何度で沸とうする？', options: [{ id: 'a', text: '50 度' }, { id: 'b', text: '100 度' }, { id: 'c', text: '200 度' }], answer: 'b', conceptId: null, source: 'custom' });
   // 空の選択肢を飛ばしても答えの番号は元の並びで数える
   assert.equal(live.customQuestion({ prompt: 'x', options: ['', 'A', 'B'], answer: 2 }, 1).answer, 'b');
   assert.equal(live.customQuestion({ prompt: '', options: ['A', 'B'], answer: 0 }), null);
@@ -101,8 +101,8 @@ test('scoreFor: 即答 1000、半分で 750、時間切れ 500、不正解 0', (
 
 test('tally: 選択肢ごとの人数、合計、正解の人数（選択肢にない答えは数えない）', () => {
   const answers = { p1: { choice: 'o1', at: 1 }, p2: { choice: 'o2', at: 2 }, p3: { choice: 'o1', at: 3 }, p4: { choice: 'zz', at: 4 }, p5: null };
-  assert.deepEqual(live.tally(Q, answers), { counts: { o1: 2, o2: 1 }, total: 3, correctCount: 2 });
-  assert.deepEqual(live.tally(Q, null), { counts: { o1: 0, o2: 0 }, total: 0, correctCount: 0 });
+  assert.deepEqual(live.tally(Q, answers), { counts: { o1: 2, o2: 1 }, total: 3, correctCount: 2, groups: [] });
+  assert.deepEqual(live.tally(Q, null), { counts: { o1: 0, o2: 0 }, total: 0, correctCount: 0, groups: [] });
 });
 
 test('applyScores: 得点を足した新しい players。元を変えず、同じ問題で二重に足さない', () => {
@@ -507,4 +507,235 @@ test('処理済みのつなぎこみ: 保存成功・失敗・applied でない�
   assert.deepEqual(sim.mem, { q0: 1, q1: 1, q2: 1, q3: 1 });
   assert.deepEqual(sim.stored, { q0: 1, q1: 1, q2: 1, q3: 1 });
   assert.deepEqual(live.recordedQids(sim.session, RK), ['q0', 'q1', 'q2', 'q3']);
+});
+
+// ---- 出題の形（multi・text・order） ----
+
+const MQ = { id: 'm1', kind: 'multi', prompt: 'あてはまるものを全部', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' }, { id: 'd', text: 'D' }], answer: 'a,c', conceptId: null, source: 'custom' };
+const OQ = { id: 'o1', kind: 'order', prompt: '順に並べよう', options: [{ id: 'a', text: '二' }, { id: 'b', text: '三' }, { id: 'c', text: '一' }], answer: 'c,a,b', conceptId: null, source: 'custom' };
+const TQ = { id: 't1', kind: 'text', prompt: '器具の名前は？', options: [], answer: '双眼実体顕微鏡', accept: ['双眼実体顕微鏡', 'そうがんじったいけんびきょう'], conceptId: null, source: 'custom' };
+const NQ = { id: 'n1', kind: 'text', prompt: '何 cm？', options: [], answer: '7.5', accept: ['7.5'], number: { value: 7.5, tolerance: 0.1 }, conceptId: null, source: 'custom' };
+
+test('questionFromProblem: 空欄 1 つの fill は text（word は accept、number は number と単位の文）、空欄 2 つは null', () => {
+  const word = { id: 'f1', type: 'fill', concept: 'c-x', prompt: ' 空らんをうめよう。 ', text: '小さな生物は[b1]で観察する。', figure: null,
+    blanks: [{ id: 'b1', kind: 'word', options: ['双眼実体顕微鏡', 'ルーペ'], answer: ' 双眼実体顕微鏡 ' }] };
+  const q = live.questionFromProblem(word, { unitId: 'u', stageId: 's' });
+  assert.deepEqual(q, { id: 'f1', kind: 'text', prompt: '空らんをうめよう。 小さな生物は（　　）で観察する。', options: [], answer: '双眼実体顕微鏡', accept: ['双眼実体顕微鏡'], conceptId: 'c-x', unitId: 'u', stageId: 's', source: 'content' });
+  assert.equal(live.isCorrect(q, '双眼実体顕微鏡。'), true);
+  const num = { id: 'f2', type: 'fill', concept: 'c-y', prompt: '倍率を求めよう。', text: '10 倍の接眼レンズと 10 倍の対物レンズで[b1]', figure: null,
+    blanks: [{ id: 'b1', kind: 'number', answer: 100, tolerance: 0, unit: '倍' }] };
+  const nq = live.questionFromProblem(num, {});
+  assert.equal(nq.kind, 'text');
+  assert.deepEqual(nq.number, { value: 100, tolerance: 0 });
+  assert.deepEqual(nq.accept, ['100']);
+  assert.equal(nq.answer, '100');
+  assert.deepEqual(nq.options, []);
+  assert.ok(nq.prompt.endsWith('（　　）（倍 で答える）'));
+  assert.equal(live.isCorrect(nq, '１００'), true);
+  assert.equal(live.isCorrect(nq, '99'), false);
+  // tolerance が無ければ 0
+  assert.deepEqual(live.questionFromProblem({ ...num, blanks: [{ id: 'b1', kind: 'number', answer: 3 }] }, {}).number, { value: 3, tolerance: 0 });
+  // 空欄 2 つ・空欄なし・長すぎる文・ほかの形は null
+  assert.equal(live.questionFromProblem({ ...word, blanks: [word.blanks[0], { ...word.blanks[0], id: 'b2' }] }, {}), null);
+  assert.equal(live.questionFromProblem({ ...word, blanks: [] }, {}), null);
+  assert.equal(live.questionFromProblem({ ...word, text: 'あ'.repeat(120) }, {}), null);
+  assert.equal(live.questionFromProblem({ ...word, type: 'drag' }, {}), null);
+  // 元を変えない
+  assert.equal(word.blanks[0].answer, ' 双眼実体顕微鏡 ');
+});
+
+// 教材の問題を id で探す（areas → stages → problems）
+const contentProblem = (file, id) => require('../content/' + file).unit.areas.flatMap(a => a.stages).flatMap(s => s.problems || []).find(p => p.id === id);
+
+test('questionFromProblem: 図のある穴埋め（グラフ・目盛りを読む問題）は取りこまない。図のない穴埋めは text', () => {
+  const spring = contentProblem('force.js', 'force-3-p1');
+  const meter = contentProblem('electricity.js', 'electricity-mp3-p2');
+  assert.ok(spring && spring.type === 'fill' && spring.figure);
+  assert.ok(meter && meter.type === 'fill' && meter.figure);
+  assert.equal(live.questionFromProblem(spring, { unitId: 'force', stageId: 's' }), null);
+  assert.equal(live.questionFromProblem(meter, { unitId: 'electricity', stageId: 's' }), null);
+  // 同じ問題でも図がなければ今までどおり text（figure が undefined でも同じ）
+  assert.equal(live.questionFromProblem({ ...spring, figure: null }, {}).kind, 'text');
+  const noFig = { ...meter };
+  delete noFig.figure;
+  assert.equal(live.questionFromProblem(noFig, {}).kind, 'text');
+});
+
+test('customQuestion: multi は正解の番号の配列、answer は a→d 順に , で結ぶ', () => {
+  const q = live.customQuestion({ kind: 'multi', prompt: ' 全部選ぼう ', options: ['A', 'B', 'C', ''], answers: [2, 0] }, 1);
+  assert.deepEqual(q, { id: 'c-1', kind: 'multi', prompt: '全部選ぼう', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' }], answer: 'a,c', conceptId: null, source: 'custom' });
+  assert.equal(live.customQuestion({ kind: 'multi', prompt: 'x', options: ['A', 'B'], answers: [] }, 1), null);
+  assert.equal(live.customQuestion({ kind: 'multi', prompt: 'x', options: ['A', 'B'], answers: [2] }, 1), null);
+  assert.equal(live.customQuestion({ kind: 'multi', prompt: 'x', options: ['A', '', 'B'], answers: [1] }, 1), null);   // 文の無い選択肢
+  assert.equal(live.customQuestion({ kind: 'multi', prompt: 'x', options: ['A'], answers: [0] }, 1), null);
+  assert.equal(live.customQuestion({ kind: 'multi', prompt: '', options: ['A', 'B'], answers: [0] }, 1), null);
+  // 重なった番号は 1 つに
+  assert.equal(live.customQuestion({ kind: 'multi', prompt: 'x', options: ['A', 'B'], answers: [1, 1] }, 1).answer, 'b');
+  // kind が変なら choice
+  assert.equal(live.customQuestion({ kind: 'zzz', prompt: 'x', options: ['A', 'B'], answer: 0 }, 1).kind, 'choice');
+});
+
+test('customQuestion: order は表示順にシャッフルし、answer は正しい順の id。表示順が正しい順と同じにならない', () => {
+  const q = live.customQuestion({ kind: 'order', prompt: '順に', options: ['一', '二', '', '三'] }, 2, seq([0, 0]));
+  assert.equal(q.kind, 'order');
+  assert.deepEqual(q.options.map(o => o.id), ['a', 'b', 'c']);
+  assert.notDeepEqual(q.options.map(o => o.text), ['一', '二', '三']);
+  // answer の順に文を並べると正しい順
+  const textOf = id => q.options.find(o => o.id === id).text;
+  assert.deepEqual(q.answer.split(',').map(textOf), ['一', '二', '三']);
+  assert.equal(live.isCorrect(q, q.answer), true);
+  // シャッフルしても元の順になる乱数（いつも自分と入れかえ = 動かない）でも、表示順は変わる
+  const same = live.customQuestion({ kind: 'order', prompt: '順に', options: ['一', '二', '三'] }, 3, seq([0.999]));
+  assert.notEqual(same.answer, 'a,b,c');
+  assert.deepEqual(same.answer.split(',').map(id => same.options.find(o => o.id === id).text), ['一', '二', '三']);
+  const two = live.customQuestion({ kind: 'order', prompt: '順に', options: ['一', '二'] }, 4, seq([0.999]));
+  assert.equal(two.answer, 'b,a');
+  // 1 つだけ・空ばかりは null
+  assert.equal(live.customQuestion({ kind: 'order', prompt: '順に', options: ['一', ' '] }, 5), null);
+  assert.equal(live.customQuestion({ kind: 'order', prompt: '順に', options: [] }, 5), null);
+  // random を省いても作れる
+  assert.ok(live.customQuestion({ kind: 'order', prompt: '順に', options: ['一', '二', '三', '四'] }, 6));
+});
+
+test('customQuestion: text は accept を trim・空落とし・重なり落とし、5 つまで', () => {
+  const q = live.customQuestion({ kind: 'text', prompt: '名前は？', accept: [' 葉緑体 ', '', '葉緑体', 'ようりょくたい'] }, 7);
+  assert.deepEqual(q, { id: 'c-7', kind: 'text', prompt: '名前は？', options: [], answer: '葉緑体', accept: ['葉緑体', 'ようりょくたい'], conceptId: null, source: 'custom' });
+  assert.equal(live.customQuestion({ kind: 'text', prompt: 'x', accept: ['1', '2', '3', '4', '5', '6'] }, 8).accept.length, live.MAX_ACCEPT);
+  assert.equal(live.MAX_ACCEPT, 5);
+  assert.equal(live.customQuestion({ kind: 'text', prompt: 'x', accept: ['', '  '] }, 9), null);
+  assert.equal(live.customQuestion({ kind: 'text', prompt: 'x' }, 9), null);
+  assert.equal(live.customQuestion({ kind: 'text', prompt: ' ', accept: ['a'] }, 9), null);
+});
+
+test('normalizeText: 全角を半角、小文字、空白と末尾の句点を除く', () => {
+  assert.equal(live.normalizeText('ＡＢＣ １２'), 'abc12');
+  assert.equal(live.normalizeText('双眼実体顕微鏡。'), '双眼実体顕微鏡');
+  assert.equal(live.normalizeText(' 葉　緑 体 '), '葉緑体');
+  assert.equal(live.normalizeText('CO2'), 'co2');
+  assert.equal(live.normalizeText('7.5．'), '7.5');
+  assert.equal(live.normalizeText(null), '');
+  assert.equal(live.normalizeText(3), '');
+});
+
+test('cleanAnswer・isCorrect: multi は順を問わず全部一致、order は順まで一致、text は正規化・別解・数の許容誤差', () => {
+  assert.deepEqual(live.KINDS, ['choice', 'multi', 'text', 'order']);
+  assert.equal(live.kindOf({}), 'choice');
+  assert.equal(live.kindOf({ kind: 'order' }), 'order');
+  assert.equal(live.kindOf(null), 'choice');
+  // multi
+  assert.equal(live.cleanAnswer(MQ, 'c,a'), 'a,c');
+  assert.equal(live.isCorrect(MQ, 'c,a'), true);
+  assert.equal(live.isCorrect(MQ, { choice: 'a,c', at: 1 }), true);
+  assert.equal(live.isCorrect(MQ, 'a'), false);
+  assert.equal(live.isCorrect(MQ, 'a,b,c'), false);
+  assert.equal(live.cleanAnswer(MQ, 'a,z'), null);
+  assert.equal(live.cleanAnswer(MQ, 'a,a'), null);
+  assert.equal(live.cleanAnswer(MQ, ''), null);
+  assert.equal(live.isCorrect(MQ, 'a,z'), false);
+  // order
+  assert.equal(live.cleanAnswer(OQ, 'c,a,b'), 'c,a,b');
+  assert.equal(live.isCorrect(OQ, 'c,a,b'), true);
+  assert.equal(live.isCorrect(OQ, 'a,b,c'), false);
+  assert.equal(live.cleanAnswer(OQ, 'c,c,b'), null);
+  assert.equal(live.cleanAnswer(OQ, 'c,a'), null);
+  assert.equal(live.cleanAnswer(OQ, 'c,a,b,d'), null);
+  // choice
+  assert.equal(live.cleanAnswer(Q, 'o1'), 'o1');
+  assert.equal(live.cleanAnswer(Q, 'o9'), null);
+  assert.equal(live.isCorrect(Q, 'o1'), true);
+  assert.equal(live.isCorrect(Q, 'o2'), false);
+  // text
+  assert.equal(live.cleanAnswer(TQ, '  双眼実体顕微鏡 '), '双眼実体顕微鏡');
+  assert.equal(live.isCorrect(TQ, '双眼実体顕微鏡。'), true);
+  assert.equal(live.isCorrect(TQ, 'そうがんじったいけんびきょう'), true);
+  assert.equal(live.isCorrect(TQ, 'ルーペ'), false);
+  assert.equal(live.cleanAnswer(TQ, '   '), null);
+  assert.equal(live.cleanAnswer(TQ, 'あ'.repeat(40)), 'あ'.repeat(40));
+  assert.equal(live.cleanAnswer(TQ, 'あ'.repeat(41)), null);
+  assert.equal(live.MAX_TEXT_ANSWER, 40);
+  // 数の答え（7.5 ± 0.1）
+  assert.equal(live.isCorrect(NQ, '7.4'), true);
+  assert.equal(live.isCorrect(NQ, '７．６'), true);
+  assert.equal(live.isCorrect(NQ, '7.3'), false);
+  assert.equal(live.isCorrect(NQ, '七'), false);
+  assert.equal(live.isCorrect(NQ, '。'), false);
+  // 問題・答えが崩れていれば不正解
+  assert.equal(live.isCorrect(null, 'a'), false);
+  assert.equal(live.isCorrect(MQ, null), false);
+  assert.equal(live.isCorrect(MQ, 3), false);
+});
+
+test('scoreFor: multi・text・order も正解なら 500 以上、不正解 0', () => {
+  assert.equal(live.scoreFor(MQ, { choice: 'c,a', at: 0 }, 0, 20), 1000);
+  assert.equal(live.scoreFor(MQ, { choice: 'a', at: 0 }, 0, 20), 0);
+  assert.ok(live.scoreFor(TQ, { choice: '双眼実体顕微鏡', at: 10000 }, 0, 20) >= 500);
+  assert.equal(live.scoreFor(TQ, { choice: 'ルーペ', at: 0 }, 0, 20), 0);
+  assert.equal(live.scoreFor(OQ, 'c,a,b', 0, 20), 500);
+  assert.equal(live.scoreFor(OQ, 'a,b,c', 0, 20), 0);
+});
+
+test('tally・customQuestion: __proto__・constructor・toString も通常の答えとして扱う', () => {
+  // 2 人が __proto__ と答えたら 1 つの group で 2 人
+  const t = live.tally(TQ, { p1: { choice: '__proto__' }, p2: { choice: '__proto__' }, p3: { choice: 'toString' } });
+  assert.equal(t.total, 3);
+  assert.deepEqual(t.groups, [{ value: '__proto__', count: 2, correct: false }, { value: 'toString', count: 1, correct: false }]);
+  // 正解が constructor の問題: accept に残り、正解と判定される
+  const cq = live.customQuestion({ kind: 'text', prompt: 'x', accept: ['constructor', '__proto__', 'toString'] }, 3);
+  assert.deepEqual(cq.accept, ['constructor', '__proto__', 'toString']);
+  assert.equal(live.isCorrect(cq, 'constructor'), true);
+  const ct = live.tally(cq, { p1: { choice: 'constructor' }, p2: { choice: 'toString' }, p3: { choice: 'hasOwnProperty' } });
+  assert.equal(ct.correctCount, 2);
+  assert.equal(ct.groups.length, 3);
+  // 部屋から読み直しても accept は残る
+  const room = live.safeRoom({ meta: { status: 'lobby' }, questions: { [cq.id]: Object.assign({}, cq, { order: 0 }) }, state: { index: -1, phase: 'lobby' } });
+  assert.deepEqual(room.questions[0].accept, ['constructor', '__proto__', 'toString']);
+});
+
+test('tally: multi は選んだ id をそれぞれ数える。text・order は答えごとの groups', () => {
+  const m = live.tally(MQ, { p1: { choice: 'a,c', at: 1 }, p2: { choice: 'c,a', at: 1 }, p3: { choice: 'a,z', at: 1 } });
+  assert.deepEqual(m, { counts: { a: 2, b: 0, c: 2, d: 0 }, total: 2, correctCount: 2, groups: [] });
+  const t = live.tally(TQ, { p1: { choice: 'ルーペ' }, p2: { choice: '双眼実体顕微鏡' }, p3: { choice: '双眼実体顕微鏡。' }, p4: { choice: ' ' } });
+  assert.deepEqual(t, { counts: {}, total: 3, correctCount: 2, groups: [{ value: '双眼実体顕微鏡', count: 2, correct: true }, { value: 'ルーペ', count: 1, correct: false }] });
+  const o = live.tally(OQ, { p1: { choice: 'a,b,c' }, p2: { choice: 'c,a,b' }, p3: { choice: 'c,a,b' }, p4: { choice: 'c,c,b' } });
+  assert.equal(o.total, 3);
+  assert.equal(o.correctCount, 2);
+  assert.deepEqual(o.groups, [{ value: 'c,a,b', count: 2, correct: true }, { value: 'a,b,c', count: 1, correct: false }]);
+});
+
+test('pendingRecords: multi・text・order の答えも入り、形に合わない答えは入らない', () => {
+  const raw = {
+    meta: { createdAt: 0, status: 'lobby' },
+    questions: { m1: { ...MQ, order: 0 }, t1: { ...TQ, order: 1 }, o1: { ...OQ, order: 2 }, x1: { ...MQ, id: 'x1', order: 3 } },
+    state: { index: 3, phase: 'reveal', startedAt: 0, seconds: 20 },
+    players: { p1: { name: 'ひかり', score: 0 } },
+    answers: { m1: { p1: { choice: 'c,a', at: 1 } }, t1: { p1: { choice: 'るーぺ', at: 1 } }, o1: { p1: { choice: 'c,a,b', at: 1 } }, x1: { p1: { choice: 'a,q', at: 1 } } },
+  };
+  const list = live.pendingRecords(live.safeRoom(raw), 'p1', [], 'prof-a', 'ABCDEF');
+  assert.deepEqual(list.map(x => [x.qid, x.choice, x.correct]), [['m1', 'c,a', true], ['t1', 'るーぺ', false], ['o1', 'c,a,b', true]]);
+});
+
+test('safeRoom: kind の無い古い問題は choice、text は選択肢なしでも残る、変な kind は choice に落ちる', () => {
+  const textNoOptions = { ...TQ, order: 1 };
+  delete textNoOptions.options;   // Firebase は空の配列を保存しない
+  const s = live.safeRoom({ questions: {
+    q1: { ...Q, order: 0 },
+    t1: textNoOptions,
+    n1: { ...NQ, order: 2, accept: { 0: '7.5' } },
+    z1: { ...Q, id: 'z1', kind: 'zzz', order: 3 },
+    m1: { ...MQ, order: 4, answer: 'c,a' },
+    bad1: { ...MQ, id: 'bad1', answer: 'a,z', order: 5 },
+    bad2: { ...TQ, id: 'bad2', answer: ' ', order: 6 },
+    bad3: { ...OQ, id: 'bad3', answer: 'c,a', order: 7 },
+  } });
+  assert.deepEqual(s.questions.map(q => [q.id, q.kind]), [['q1', 'choice'], ['t1', 'text'], ['n1', 'text'], ['z1', 'choice'], ['m1', 'multi']]);
+  const t = s.questions[1];
+  assert.deepEqual(t.options, []);
+  assert.deepEqual(t.accept, TQ.accept);
+  assert.equal(t.number, null);
+  assert.deepEqual(s.questions[2].number, { value: 7.5, tolerance: 0.1 });
+  assert.deepEqual(s.questions[2].accept, ['7.5']);
+  assert.equal(s.questions[4].answer, 'a,c');
+  // accept が無ければ answer だけ
+  const one = live.safeRoom({ questions: { t: { id: 't', kind: 'text', prompt: 'x', answer: '水' } } });
+  assert.deepEqual(one.questions[0].accept, ['水']);
 });
