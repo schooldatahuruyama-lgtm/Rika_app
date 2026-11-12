@@ -53,8 +53,26 @@
   let creating = false;           // 部屋を作っている途中
   // 選んだ問題など。questions は出す順（live.questionFromProblem / customQuestion の形）
   const sel = { unitId: null, stages: [], questions: [], seconds: 20, title: '', customN: 0 };
-  // 自作の問題の書きかけ
-  const draft = { prompt: '', options: ['', '', '', ''], answer: 0 };
+  // 自作の問題の書きかけ。kind は出題の形（choice / multi / text / order）。
+  //   options: 選択肢の文（order では上から正しい順）、answer: choice の正解の番号、answers: multi の正解の番号の配列、
+  //   accept: text の正解と別解 2 つ
+  const draft = { kind: 'choice', prompt: '', options: ['', '', '', ''], answer: 0, answers: [], accept: ['', '', ''] };
+  const KIND_NAMES = [
+    ['choice', '選択式（1 つ選ぶ）'],
+    ['multi', '複数回答（あてはまるもの全部）'],
+    ['text', '自由記述（語や数を打つ）'],
+    ['order', '並びかえ（正しい順に）'],
+  ];
+  // 「足す」で作れなかったときの案内（形ごと）
+  const CUSTOM_ERRORS = {
+    choice: '問題文と、2 つ以上の選択肢を入れ、文のある選択肢を正解にしてください。',
+    multi: '問題文と 2 つ以上の選択肢を入れ、正解を 1 つ以上チェックしてください',
+    order: '問題文と、正しい順に 2 つ以上の選択肢を入れてください',
+    text: '問題文と正解を入れてください',
+  };
+  // 出題中の問題文の上の印（choice は印なし）と、選んだ問題の一覧の印
+  const KIND_MARKS = { multi: 'あてはまるものを全部', text: '（記述）', order: '正しい順に並べる' };
+  const KIND_TAGS = { multi: '複数回答', text: '記述', order: '並びかえ' };
   // いまの部屋 { code, db, questions, offset, data（safeRoom）, gone, error, busy, autoIndex, stop, retryTimer, timerNode,
   //   conn（'ok' | 'reconnecting' | 'gave-up'）, connError（受信が止まった理由）, notice, noticeTimer,
   //   scoreFail（得点を書けなかった問題 { index, message } | null） }
@@ -358,7 +376,7 @@
     ].concat(builtin ? [more] : fields, [errorLine(urlError)]));
   }
 
-  // ステージの選択式の問題（problems・retryPool の順。出せないものは入れない）
+  // ステージの選択式の問題と、空欄 1 つの穴埋め（記述）（problems・retryPool の順。出せないものは入れない）
   function stageQuestions(unitId, stage) {
     const out = [];
     list(stage.problems).concat(list(stage.retryPool)).forEach((p) => {
@@ -396,11 +414,12 @@
     const stages = sel.unitId ? ctx.reg.stagesInOrder(sel.unitId) : [];
     const rows = stages.map((stage) => {
       const qs = stageQuestions(sel.unitId, stage);
+      const texts = qs.filter((q) => L().kindOf(q) === 'text').length;
       const box = el('input', { type: 'checkbox', checked: sel.stages.indexOf(stage.id) !== -1, disabled: qs.length === 0 });
       box.addEventListener('change', () => toggleStage(sel.unitId, stage, box.checked));
       return el('li', null, [el('label', { class: 'author-check' }, [
         box,
-        el('span', { text: stage.title + '（選択式 ' + qs.length + ' 問）' }),
+        el('span', { text: stage.title + '（選択式 ' + (qs.length - texts) + ' 問' + (texts > 0 ? '・記述 ' + texts + ' 問' : '') + '）' }),
       ])]);
     });
 
@@ -408,52 +427,101 @@
       cardTitle('2. 問題を選ぶ'),
       el('label', { class: 'field-label', for: 'live-unit', text: '単元' }),
       units.length > 0 ? select : el('p', { class: 'muted', text: '教材がありません。' }),
-      el('p', { class: 'muted', text: 'ステージを選ぶと、その選択式の問題が入ります（図だけの問題と長い問題は入りません）。' }),
+      el('p', { class: 'muted', text: 'ステージを選ぶと、その選択式の問題と、空欄が 1 つの穴埋めの問題（記述）が入ります（図だけの問題と長い問題は入りません）。' }),
       el('ul', { class: 'live-stage-list' }, rows),
     ]);
   }
 
   function customCard() {
     const err = errorLine('');
+    const kind = draft.kind;
+    const kindSelect = el('select', { class: 'text-input author-select', id: 'live-custom-kind' },
+      KIND_NAMES.map(([k, name]) => el('option', { value: k, text: name, selected: k === kind })));
+    kindSelect.addEventListener('change', () => { draft.kind = kindSelect.value; repaint(); });
     const promptInput = el('textarea', { class: 'text-input author-textarea', id: 'live-custom-prompt', maxlength: L().MAX_PROMPT, rows: 2 });
     promptInput.value = draft.prompt;
     promptInput.addEventListener('input', () => { draft.prompt = promptInput.value; });
+    // 選択肢の入力 4 つ（order では「1 番目」〜「4 番目」。上から正しい順）
     const optionInputs = LABELS.map((label, i) => {
       const input = el('input', { class: 'text-input', type: 'text', id: 'live-custom-opt-' + i, autocomplete: 'off', value: draft.options[i] });
       input.addEventListener('input', () => { draft.options[i] = input.value; });
-      return el('label', { class: 'author-field live-custom-opt' }, [el('span', { class: 'field-label', text: '選択肢 ' + label }), input]);
+      return el('label', { class: 'author-field live-custom-opt' }, [el('span', { class: 'field-label', text: kind === 'order' ? (i + 1) + ' 番目' : '選択肢 ' + label }), input]);
     });
-    const answer = el('select', { class: 'text-input author-select', id: 'live-custom-answer' },
-      LABELS.map((label, i) => el('option', { value: String(i), text: label, selected: i === draft.answer })));
-    answer.addEventListener('change', () => { draft.answer = Number(answer.value); });
+    const parts = [];
+    if (kind === 'multi') {
+      // 正解のチェックボックス 4 つ（draft.answers は番号の配列）
+      const boxes = LABELS.map((label, i) => {
+        const box = el('input', { type: 'checkbox', id: 'live-custom-answers-' + i, checked: draft.answers.indexOf(i) !== -1 });
+        box.addEventListener('change', () => {
+          draft.answers = draft.answers.filter((x) => x !== i);
+          if (box.checked) draft.answers.push(i);
+          draft.answers.sort((a, b) => a - b);
+        });
+        return el('label', { class: 'author-check' }, [box, el('span', { text: label })]);
+      });
+      parts.push(
+        el('div', { class: 'live-custom-opts' }, optionInputs),
+        el('div', { class: 'author-field' }, [el('span', { class: 'field-label', text: '正解（あてはまるもの全部）' }), el('div', { class: 'btn-row' }, boxes)]),
+      );
+    } else if (kind === 'order') {
+      parts.push(
+        el('p', { class: 'field-label', text: '正しい順に 2〜4 つ' }),
+        el('div', { class: 'live-custom-opts' }, optionInputs),
+        el('p', { class: 'muted', text: '生徒には順をまぜて出します' }),
+      );
+    } else if (kind === 'text') {
+      // 正解 1 つ＋別解 2 つ（draft.accept）
+      draft.accept.forEach((v, i) => {
+        const input = el('input', { class: 'text-input', type: 'text', id: 'live-custom-accept-' + i, autocomplete: 'off', maxlength: L().MAX_TEXT_ANSWER, value: v });
+        input.addEventListener('input', () => { draft.accept[i] = input.value; });
+        parts.push(el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: i === 0 ? '正解' : '別解（なくてもよい）' }), input]));
+      });
+      parts.push(el('p', { class: 'muted', text: '空白・全角半角・大文字小文字・末尾の「。」はちがっていても正解になります' }));
+    } else {
+      const answer = el('select', { class: 'text-input author-select', id: 'live-custom-answer' },
+        LABELS.map((label, i) => el('option', { value: String(i), text: label, selected: i === draft.answer })));
+      answer.addEventListener('change', () => { draft.answer = Number(answer.value); });
+      parts.push(
+        el('div', { class: 'live-custom-opts' }, optionInputs),
+        el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: '正解' }), answer]),
+      );
+    }
     const add = () => {
-      const q = L().customQuestion({ prompt: draft.prompt, options: draft.options.slice(), answer: draft.answer }, sel.customN + 1);
+      const q = L().customQuestion({
+        kind, prompt: draft.prompt, options: draft.options.slice(), answer: draft.answer, answers: draft.answers.slice(), accept: draft.accept.slice(),
+      }, sel.customN + 1);
       if (!q) {
-        err.textContent = '問題文と、2 つ以上の選択肢を入れ、文のある選択肢を正解にしてください。';
+        err.textContent = CUSTOM_ERRORS[kind] || CUSTOM_ERRORS.choice;
         return;
       }
       sel.customN++;
       sel.questions.push(q);
+      // 形はそのまま、書いた中身だけ消す
       draft.prompt = '';
       draft.options = ['', '', '', ''];
       draft.answer = 0;
+      draft.answers = [];
+      draft.accept = ['', '', ''];
       repaint();
     };
     return card([
       cardTitle('自分で書く'),
       el('div', { class: 'author-form' }, [
+        el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: '出題の形' }), kindSelect]),
         el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: '問題文' }), promptInput]),
-        el('div', { class: 'live-custom-opts' }, optionInputs),
-        el('label', { class: 'author-field' }, [el('span', { class: 'field-label', text: '正解' }), answer]),
+      ].concat(parts, [
         button('足す', add, 'btn-block'),
         err,
-      ]),
+      ])),
     ]);
   }
 
   function selectedCard() {
     const items = sel.questions.map((q, i) => el('li', { class: 'live-picked' }, [
-      el('span', { class: 'live-picked-text', text: (i + 1) + '. ' + plain(q.prompt) + (q.source === 'custom' ? '（自作）' : '') }),
+      el('span', { class: 'live-picked-text' }, [
+        (i + 1) + '. ' + plain(q.prompt) + (q.source === 'custom' ? '（自作）' : ''),
+        KIND_TAGS[L().kindOf(q)] ? el('span', { class: 'live-kind', text: KIND_TAGS[L().kindOf(q)] }) : null,
+      ]),
       button('消す', () => { sel.questions = sel.questions.filter((x) => x.id !== q.id); repaint(); }),
     ]));
     const seconds = el('select', { class: 'text-input author-select', id: 'live-seconds' },
@@ -511,10 +579,47 @@
     return el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + r.questions.length + ' 問目' });
   }
 
-  function optionsBox(q, correctOnly) {
+  // 選択肢（表示順にア〜エ）。自由記述は選択肢がないので出さない
+  function optionsBox(q) {
+    if (L().kindOf(q) === 'text' || q.options.length === 0) return null;
     return el('div', { class: 'live-options' }, q.options.map((o, i) => el('div', {
-      class: 'live-opt ' + OPT_CLASSES[i % OPT_CLASSES.length] + (correctOnly && o.id === q.answer ? ' is-correct' : ''),
+      class: 'live-opt ' + OPT_CLASSES[i % OPT_CLASSES.length],
     }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) })])));
+  }
+
+  // 問題文の上の小さな印（choice は印なし）
+  function kindMark(q) {
+    const text = KIND_MARKS[L().kindOf(q)];
+    return text ? el('p', { class: 'live-kind', text }) : null;
+  }
+
+  // 選択肢 id のラベル（ア〜エ。options の並び＝表示順）
+  function labelOf(q, id) {
+    const i = q.options.findIndex((o) => o.id === id);
+    return LABELS[i] || '?';
+  }
+
+  // 符号化した答えを表示用の文に（choice「ア」、multi「ア・ウ」、order「ウ → ア → イ」、text はそのまま）
+  function answerText(q, value) {
+    const v = typeof value === 'string' ? value : '';
+    const kind = L().kindOf(q);
+    if (kind === 'text') return v;
+    const ids = v ? v.split(',') : [];
+    return ids.map((id) => labelOf(q, id)).join(kind === 'order' ? ' → ' : '・');
+  }
+
+  // 正解の 1 行の文（人数の前まで）。choice は今までどおり「ア 文」、text は別解も
+  function rightText(q) {
+    const kind = L().kindOf(q);
+    if (kind === 'choice') {
+      const ci = q.options.findIndex((o) => o.id === q.answer);
+      return (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '');
+    }
+    if (kind === 'text') {
+      const others = list(q.accept).filter((a) => typeof a === 'string' && a.trim() && a !== q.answer);
+      return q.answer + (others.length > 0 ? '（別解: ' + others.join('、') + '）' : '');
+    }
+    return answerText(q, L().cleanAnswer(q, q.answer) || q.answer);
   }
 
   function rankTable(rows, highlightPid) {
@@ -564,8 +669,9 @@
     return card([
       smallCode(r),
       el('div', { class: 'live-head' }, [questionHead(r, s), el('p', { class: 'live-timer', 'aria-label': '残り時間（秒）' }, [r.timerNode, el('span', { class: 'live-timer-unit', text: '秒' })])]),
+      kindMark(q),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
-      optionsBox(q, false),
+      optionsBox(q),
       el('p', { class: 'live-joined', text: '答えた人 ' + answered + ' / ' + total + ' 人' }),
       errorLine(r.error),
       el('div', { class: 'btn-row' }, [
@@ -581,25 +687,37 @@
     const q = r.questions[s.index];
     if (!q) return errorCard(r, '問題が見つかりません。');
     const t = L().tally(q, d.answers[q.id]);
-    const max = Math.max(1, ...q.options.map((o) => t.counts[o.id] || 0));
-    const bars = q.options.map((o, i) => {
-      const n = t.counts[o.id] || 0;
-      const bar = el('div', { class: 'live-bar' + (o.id === q.answer ? ' is-correct' : '') });
-      bar.style.width = Math.round(n / max * 100) + '%';
-      return el('div', { class: 'live-bar-row' }, [
-        el('div', { class: 'live-bar-label' }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) }), el('span', { class: 'live-bar-num', text: n + ' 人' })]),
-        el('div', { class: 'live-bar-track' }, [bar]),
+    const kind = L().kindOf(q);
+    let spread;
+    if (kind === 'choice' || kind === 'multi') {
+      // 選択肢ごとの横棒（multi は正解の選択肢が全部緑）
+      const right = (kind === 'multi' ? L().cleanAnswer(q, q.answer) || '' : q.answer).split(',');
+      const max = Math.max(1, ...q.options.map((o) => t.counts[o.id] || 0));
+      spread = el('div', { class: 'live-bars' }, q.options.map((o, i) => {
+        const n = t.counts[o.id] || 0;
+        const bar = el('div', { class: 'live-bar' + (right.indexOf(o.id) !== -1 ? ' is-correct' : '') });
+        bar.style.width = Math.round(n / max * 100) + '%';
+        return el('div', { class: 'live-bar-row' }, [
+          el('div', { class: 'live-bar-label' }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) }), el('span', { class: 'live-bar-num', text: n + ' 人' })]),
+          el('div', { class: 'live-bar-track' }, [bar]),
+        ]);
+      }));
+    } else {
+      // 自由記述・並びかえ: 答えごとの人数の上位 5 件（正解は緑）。order は選択肢も出しておく（ア〜エの対応のため）
+      const rows = list(t.groups).slice(0, TOP).map((g) => el('li', { class: g.correct ? 'is-correct' : null, text: answerText(q, g.value) + ' — ' + g.count + ' 人' }));
+      spread = el('div', null, [
+        kind === 'order' ? optionsBox(q) : null,
+        rows.length > 0 ? el('ul', { class: 'live-groups' }, rows) : el('p', { class: 'muted', text: 'だれも答えていません。' }),
       ]);
-    });
-    const ci = q.options.findIndex((o) => o.id === q.answer);
+    }
     const last = s.index + 1 >= r.questions.length;
     const fail = r.scoreFail && r.scoreFail.index === s.index ? r.scoreFail : null;
     return card([
       smallCode(r),
       el('div', { class: 'live-head' }, [questionHead(r, s), el('p', { class: 'live-phase', text: '答え合わせ' })]),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
-      el('div', { class: 'live-bars' }, bars),
-      el('p', { class: 'live-answer', text: '正解: ' + (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '') + '（正解 ' + t.correctCount + ' / ' + t.total + ' 人）' }),
+      spread,
+      el('p', { class: 'live-answer', text: '正解: ' + rightText(q) + '（正解 ' + t.correctCount + ' / ' + t.total + ' 人）' }),
       el('h3', { class: 'live-sub', text: '上位 ' + TOP + ' 人' }),
       rankTable(L().leaderboard(d.players).slice(0, TOP)),
       fail ? errorLine(fail.message + '。「もう一度」を押してください。') : null,

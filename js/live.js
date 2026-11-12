@@ -21,6 +21,13 @@
   const SPEED_POINTS = 500;        // 速さの点の上限（残り時間の割合をかける）
   const PHASES = ['lobby', 'show', 'reveal', 'ended'];
   const CUSTOM_IDS = 'abcd';
+  // 出題の形: choice（選択式）・multi（複数回答）・text（自由記述）・order（並びかえ）。kind の無い古い問題は choice
+  // 答えはどれも文字列（データベースの規則を変えないため）:
+  //   choice: 選択肢の id、multi: 選んだ id を選択肢の順に ',' で結ぶ、order: 並べた順の id を ',' で結ぶ、text: 打った文字列
+  const KINDS = ['choice', 'multi', 'text', 'order'];
+  const MAX_TEXT_ANSWER = 40;      // 自由記述の答えの長さ
+  const MAX_ACCEPT = 5;            // 自由記述の正解（別解をふくむ）の数
+  const NUM_EPS = 1e-9;            // 数の答えの許容誤差の比べで足す小さな値
 
   let customCount = 0;
 
@@ -71,29 +78,158 @@
     return out.length >= 2 ? out : null;
   }
 
-  // 教材の問題から出題用の形へ。選択式だけ。図は落として文だけ。問題文が長いものは出さない
+  // 問題の形。KINDS に無ければ choice
+  function kindOf(q) {
+    return isObject(q) && KINDS.indexOf(q.kind) !== -1 ? q.kind : 'choice';
+  }
+
+  // 自由記述の比べ用: NFKC（全角の英数・記号を半角に）→ 小文字 → 空白をすべて除く → 末尾の「。」「．」「.」を除く
+  function normalizeText(s) {
+    if (typeof s !== 'string') return '';
+    return s.normalize('NFKC').toLowerCase().replace(/\s+/g, '').replace(/[。．.]+$/, '');
+  }
+
+  function optionIds(question) {
+    return valuesOf(isObject(question) ? question.options : null)
+      .filter(o => isObject(o) && typeof o.id === 'string' && o.id)
+      .map(o => o.id);
+  }
+
+  // 答えの文字列を問題の形に合わせて整える。合わなければ null
+  //   choice: 選択肢の id。multi: 選択肢の id を 1 つ以上・重なりなしで、選択肢の順に並べ直す
+  //   order: 選択肢の id のちょうど並べかえ。text: 前後の空白を取り、空や MAX_TEXT_ANSWER 文字を超えるものは null
+  function cleanAnswer(question, value) {
+    if (!isObject(question) || typeof value !== 'string') return null;
+    const kind = kindOf(question);
+    if (kind === 'text') {
+      const t = value.trim();
+      return t && t.length <= MAX_TEXT_ANSWER ? t : null;
+    }
+    const ids = optionIds(question);
+    if (kind === 'choice') return ids.indexOf(value) !== -1 ? value : null;
+    const parts = value.split(',');
+    const seen = {};
+    for (const p of parts) {
+      if (ids.indexOf(p) === -1 || seen[p]) return null;
+      seen[p] = true;
+    }
+    if (kind === 'multi') return ids.filter(id => seen[id]).join(',');
+    return parts.length === ids.length ? parts.join(',') : null;   // order
+  }
+
+  // 自由記述の正解の一覧（accept が無ければ answer）
+  function acceptOf(question) {
+    const list = valuesOf(question.accept).filter(a => typeof a === 'string' && a.trim());
+    return list.length > 0 ? list : typeof question.answer === 'string' && question.answer.trim() ? [question.answer] : [];
+  }
+
+  // 正誤。answer は文字列か { choice, at }。形に合わない答えは不正解
+  //   choice・order: 一致。multi: 選択肢の順に並べ直して一致（部分点なし）
+  //   text: number があれば数にして value ± tolerance、無ければ accept のどれかと normalizeText が一致
+  function isCorrect(question, answer) {
+    const c = cleanAnswer(question, choiceOf(answer));
+    if (c === null) return false;
+    const kind = kindOf(question);
+    if (kind === 'text') {
+      const n = isObject(question.number) ? question.number : null;
+      if (n && isNum(n.value)) {
+        const t = normalizeText(c);
+        const v = t ? Number(t) : NaN;
+        const tol = isNum(n.tolerance) && n.tolerance >= 0 ? n.tolerance : 0;
+        return Number.isFinite(v) && Math.abs(v - n.value) <= tol + NUM_EPS;
+      }
+      const t = normalizeText(c);
+      return !!t && acceptOf(question).some(a => normalizeText(a) === t);
+    }
+    const right = cleanAnswer(question, str(question.answer));
+    return right !== null && c === right;
+  }
+
+  // 教材の問題から出題用の形へ。図は落として文だけ。問題文が長いものは出さない
+  //   choice: 選択式。fill: 空欄が 1 つだけのとき自由記述（text）として。ほかの形は null
   function questionFromProblem(problem, where) {
-    if (!isObject(problem) || problem.type !== 'choice' || typeof problem.id !== 'string' || !problem.id) return null;
-    const prompt = str(problem.prompt).trim();
-    if (!prompt || prompt.length > MAX_PROMPT) return null;
-    const options = cleanOptions(problem.options);
-    if (!options || !options.some(o => o.id === problem.answer)) return null;
+    if (!isObject(problem) || typeof problem.id !== 'string' || !problem.id) return null;
     const w = isObject(where) ? where : {};
-    return {
-      id: problem.id, prompt, options, answer: problem.answer,
+    const common = {
       conceptId: typeof problem.concept === 'string' && problem.concept ? problem.concept : null,
       unitId: typeof w.unitId === 'string' ? w.unitId : null,
       stageId: typeof w.stageId === 'string' ? w.stageId : null,
       source: 'content',
     };
+    // 図のある穴埋め（グラフや目盛りを読む問題）は、図を出さないライブでは答えられないので取りこまない
+    if (problem.type === 'fill') return problem.figure === null || problem.figure === undefined ? textFromFill(problem, common) : null;
+    if (problem.type !== 'choice') return null;
+    const prompt = str(problem.prompt).trim();
+    if (!prompt || prompt.length > MAX_PROMPT) return null;
+    const options = cleanOptions(problem.options);
+    if (!options || !options.some(o => o.id === problem.answer)) return null;
+    return Object.assign({ id: problem.id, kind: 'choice', prompt, options, answer: problem.answer }, common);
   }
 
-  // 先生が書く短い問題。options は文の配列（4 つまで。空の文は落とす）、answer は 0〜3 の番号
-  // n は id の番号（省略時はこのページで数えた番号）
-  function customQuestion(input, n) {
+  // 空欄 1 つの穴埋めを自由記述に。問題文の [<id>] を（　　）に。'**' はそのまま（画面側で外す）
+  function textFromFill(problem, common) {
+    const blanks = valuesOf(problem.blanks);
+    if (blanks.length !== 1) return null;
+    const b = blanks[0];
+    if (!isObject(b) || typeof b.id !== 'string' || !b.id) return null;
+    const body = str(problem.text).split('[' + b.id + ']').join('（　　）');
+    let prompt = [str(problem.prompt).trim(), body.trim()].filter(Boolean).join(' ');
+    let accept;
+    let number = null;
+    if (b.kind === 'word') {
+      const a = b.answer === null || b.answer === undefined ? '' : String(b.answer).trim();
+      if (!a) return null;
+      accept = [a];
+    } else if (b.kind === 'number') {
+      if (!isNum(b.answer)) return null;
+      number = { value: b.answer, tolerance: isNum(b.tolerance) ? b.tolerance : 0 };
+      accept = [String(b.answer)];
+      if (typeof b.unit === 'string' && b.unit.trim()) prompt += '（' + b.unit.trim() + ' で答える）';
+    } else {
+      return null;
+    }
+    if (!prompt || prompt.length > MAX_PROMPT) return null;
+    const q = { id: problem.id, kind: 'text', prompt, options: [], answer: accept[0], accept };
+    if (number) q.number = number;
+    return Object.assign(q, common);
+  }
+
+  // 0〜1 の乱数で表示順（元の番号の並び）を作る。正しい順と同じになったら末尾を先頭に回す
+  function shuffledOrder(len, random) {
+    const r = typeof random === 'function' ? random : Math.random;
+    const idx = [];
+    for (let i = 0; i < len; i++) idx.push(i);
+    for (let i = len - 1; i > 0; i--) {
+      const v = r();
+      const j = Math.min(i, Math.max(0, Math.floor((isNum(v) ? v : 0) * (i + 1))));
+      const t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+    }
+    if (len >= 2 && idx.every((v, i) => v === i)) idx.unshift(idx.pop());
+    return idx;
+  }
+
+  // 先生が書く短い問題。input.kind（無ければ choice）で分ける。n は id の番号（省略時はこのページで数えた番号）。
+  // random は 0〜1 の関数（並びかえのシャッフル用。省略時 Math.random）
+  //   choice: options は文の配列（4 つまで。空の文は落とす）、answer は 0〜3 の番号
+  //   multi: options は choice と同じ、answers は正解の番号の配列（1 つ以上、文のある選択肢だけ）
+  //   order: options は正しい順の文（4 つまで。空は落とし 2 つ以上）。表示順にシャッフルして id を a, b, c… と付ける
+  //   text: accept は正解の文字列の配列（空・重なりを落として 1〜MAX_ACCEPT）
+  function customQuestion(input, n, random) {
     if (!isObject(input)) return null;
     const prompt = str(input.prompt).trim();
     if (!prompt) return null;
+    const kind = kindOf(input);
+    let body = null;
+    if (kind === 'text') body = customText(input);
+    else if (kind === 'order') body = customOrder(input, random);
+    else if (kind === 'multi') body = customMulti(input);
+    else body = customChoice(input);
+    if (!body) return null;
+    const num = Number.isInteger(n) && n >= 0 ? n : ++customCount;
+    return Object.assign({ id: 'c-' + num, kind, prompt }, body, { conceptId: null, source: 'custom' });
+  }
+
+  function customChoice(input) {
     const texts = valuesOf(input.options).slice(0, MAX_OPTIONS);
     if (!Number.isInteger(input.answer) || input.answer < 0 || input.answer >= texts.length) return null;
     const options = [];
@@ -106,8 +242,50 @@
       options.push({ id, text });
     });
     if (options.length < 2 || answer === null) return null;
-    const num = Number.isInteger(n) && n >= 0 ? n : ++customCount;
-    return { id: 'c-' + num, prompt, options, answer, conceptId: null, source: 'custom' };
+    return { options, answer };
+  }
+
+  function customMulti(input) {
+    const texts = valuesOf(input.options).slice(0, MAX_OPTIONS);
+    const picks = valuesOf(input.answers);
+    if (picks.length === 0 || !picks.every(i => Number.isInteger(i) && i >= 0 && i < texts.length)) return null;
+    const options = [];
+    const chosen = [];
+    texts.forEach((t, i) => {
+      const text = str(t).trim();
+      if (!text) return;
+      const id = CUSTOM_IDS[options.length];
+      if (picks.indexOf(i) !== -1) chosen.push(id);
+      options.push({ id, text });
+    });
+    // 選んだ番号の文が空なら chosen が足りない
+    const want = picks.filter((v, i) => picks.indexOf(v) === i).length;
+    if (options.length < 2 || chosen.length === 0 || chosen.length !== want) return null;
+    return { options, answer: chosen.join(',') };
+  }
+
+  function customOrder(input, random) {
+    const texts = valuesOf(input.options).slice(0, MAX_OPTIONS).map(t => str(t).trim()).filter(Boolean);
+    if (texts.length < 2) return null;
+    const shown = shuffledOrder(texts.length, random);   // 表示の位置 → 正しい順の番号
+    const options = shown.map((k, pos) => ({ id: CUSTOM_IDS[pos], text: texts[k] }));
+    const answer = texts.map((t, k) => CUSTOM_IDS[shown.indexOf(k)]).join(',');
+    return { options, answer };
+  }
+
+  function customText(input) {
+    const accept = [];
+    const seen = new Set();   // 答えの文字列をキーにするので object ではなく Set（'__proto__' や 'constructor' も通常の答えとして扱う）
+    valuesOf(input.accept).forEach(a => {
+      const t = str(a).trim();
+      const key = normalizeText(t);
+      if (!t || !key || seen.has(key)) return;
+      seen.add(key);
+      accept.push(t);
+    });
+    if (accept.length === 0) return null;
+    const list = accept.slice(0, MAX_ACCEPT);
+    return { options: [], answer: list[0], accept: list };
   }
 
   // 部屋の初期データ。questions は出す順の配列（id の重なりは先のものを残す）
@@ -135,7 +313,7 @@
 
   // 正解 500 ＋ round(500 × 残り時間の割合)。不正解 0。時刻がわからないときは速さの点なし
   function scoreFor(question, answer, startedAt, seconds) {
-    if (!isObject(question) || choiceOf(answer) === null || choiceOf(answer) !== question.answer) return 0;
+    if (!isObject(question) || !isCorrect(question, answer)) return 0;
     const at = isObject(answer) ? answer.at : null;
     const total = isNum(seconds) && seconds > 0 ? seconds : null;
     if (!isNum(at) || !isNum(startedAt) || total === null) return BASE_POINTS;
@@ -143,23 +321,41 @@
     return BASE_POINTS + Math.round(SPEED_POINTS * left / total);
   }
 
-  // 1 問ぶんの集計。選択肢にない答えは数えない
+  // 1 問ぶんの集計。形に合わない答え（cleanAnswer が null）は数えない。
+  //   counts: 選択肢 id → 人数（choice・multi。multi は選んだ id をそれぞれ数える）
+  //   groups: 答えごとの [{ value, count, correct }] を人数の多い順に（text・order。text は normalizeText が同じものを
+  //   まとめ、最初に出た答えを代表に）。choice・multi では []
   function tally(question, answers) {
     const counts = {};
-    const options = isObject(question) ? valuesOf(question.options) : [];
-    options.forEach(o => { if (isObject(o) && typeof o.id === 'string') counts[o.id] = 0; });
+    optionIds(question).forEach(id => { counts[id] = 0; });
+    const kind = kindOf(question);
+    const groups = [];
+    const byKey = new Map();   // 答えの文字列をキーにするので object ではなく Map（'__proto__' なども通常の答え）
     let total = 0;
     let correctCount = 0;
-    if (isObject(answers)) {
+    if (isObject(question) && isObject(answers)) {
       Object.keys(answers).forEach(pid => {
-        const c = choiceOf(answers[pid]);
-        if (c === null || !Object.prototype.hasOwnProperty.call(counts, c)) return;
-        counts[c]++;
+        const c = cleanAnswer(question, choiceOf(answers[pid]));
+        if (c === null) return;
         total++;
-        if (c === question.answer) correctCount++;
+        const ok = isCorrect(question, c);
+        if (ok) correctCount++;
+        if (kind === 'choice' || kind === 'multi') {
+          c.split(',').forEach(id => { counts[id]++; });
+          return;
+        }
+        const key = kind === 'text' ? normalizeText(c) : c;
+        let g = byKey.get(key);
+        if (!g) {
+          g = { value: c, count: 0, correct: ok };
+          byKey.set(key, g);
+          groups.push(g);
+        }
+        g.count++;
       });
     }
-    return { counts, total, correctCount };
+    groups.sort((a, b) => b.count - a.count);
+    return { counts, total, correctCount, groups };
   }
 
   // 得点を足した新しい players。足した問題は lastQ に残し、同じ問題で二重に足さない（lastPoints はその問題の点）
@@ -232,16 +428,30 @@
     if (!isObject(q)) return null;
     const id = typeof q.id === 'string' && q.id ? q.id : typeof key === 'string' ? key : null;
     const prompt = str(q.prompt);
-    const options = cleanOptions(q.options);
-    if (!id || !prompt || !options || !options.some(o => o.id === q.answer)) return null;
-    return {
-      id, prompt, options, answer: q.answer,
+    if (!id || !prompt) return null;
+    const kind = kindOf(q);
+    const common = {
       conceptId: typeof q.conceptId === 'string' && q.conceptId ? q.conceptId : null,
       unitId: typeof q.unitId === 'string' ? q.unitId : null,
       stageId: typeof q.stageId === 'string' ? q.stageId : null,
       source: q.source === 'content' ? 'content' : 'custom',
       order: isNum(q.order) ? q.order : 0,
     };
+    if (kind === 'text') {
+      // 自由記述: 選択肢なし（Firebase は空の配列を保存しないので届かない）
+      const answer = typeof q.answer === 'string' ? q.answer.trim() : '';
+      if (!answer) return null;
+      let accept = valuesOf(q.accept).filter(a => typeof a === 'string' && a.trim()).slice(0, MAX_ACCEPT);
+      if (accept.length === 0) accept = [answer];
+      const n = isObject(q.number) && isNum(q.number.value) && isNum(q.number.tolerance)
+        ? { value: q.number.value, tolerance: q.number.tolerance } : null;
+      return Object.assign({ id, kind, prompt, options: [], answer, accept, number: n }, common);
+    }
+    const options = cleanOptions(q.options);
+    if (!options) return null;
+    const answer = cleanAnswer({ kind, options }, q.answer);
+    if (answer === null) return null;
+    return Object.assign({ id, kind, prompt, options, answer }, common);
   }
 
   function safeState(s) {
@@ -313,7 +523,7 @@
   // room は safeRoom の形（受信した部屋データ）。答え合わせが済んだ問題（いまより前の問題と、
   // いまの問題で段階が reveal か ended のもの）のうち、サーバーにある自分の回答（answers[qid][pid]）で、
   // まだ記録していない（doneQids にこの部屋の問題 id がない）もの。doneQids は profileId・pid・code の部屋で処理済みの問題 id の配列か Set。
-  // 送信中の回答は受信に入らないので入らない。選択肢にない答えは入れない
+  // 送信中の回答は受信に入らないので入らない。問題の形に合わない答え（cleanAnswer が null）は入れない
   function pendingRecords(room, pid, doneQids, profileId, code) {
     if (!isObject(room) || !isObject(room.state) || typeof pid !== 'string' || !pid) return [];
     const questions = Array.isArray(room.questions) ? room.questions : [];
@@ -326,9 +536,9 @@
       const revealed = i < s.index || (i === s.index && (s.phase === 'reveal' || s.phase === 'ended'));
       if (!revealed) return;
       const choice = choiceOf(isObject(answers[q.id]) ? answers[q.id][pid] : null);
-      if (choice === null || !valuesOf(q.options).some(o => isObject(o) && o.id === choice)) return;
+      if (choice === null || cleanAnswer(q, choice) === null) return;
       if (done.has(q.id)) return;
-      out.push({ key: recordKey(profileId, pid, code, q.id), qid: q.id, question: q, choice, correct: choice === q.answer });
+      out.push({ key: recordKey(profileId, pid, code, q.id), qid: q.id, question: q, choice, correct: isCorrect(q, choice) });
     });
     return out;
   }
@@ -480,6 +690,7 @@
 
   const api = {
     CODE_CHARS, STALE_MS, RECORDED_KEEP_MS, MAX_PROMPT, MAX_OPTIONS, MAX_NAME, DEFAULT_SECONDS, MIN_SECONDS, MAX_SECONDS,
+    KINDS, MAX_TEXT_ANSWER, MAX_ACCEPT, kindOf, normalizeText, cleanAnswer, isCorrect,
     newRoomCode, newPlayerId, isRoomCode, questionFromProblem, customQuestion, newRoom,
     scoreFor, tally, applyScores, scoreUpdate, leaderboard, recordEvents, recordRoomKey, recordKey, pendingRecords,
     safeRecorded, recordedQids, addRecorded, doneQidsOf, flushState, nextDoneState, safeRoom, isStale, nextState,
