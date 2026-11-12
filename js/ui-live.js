@@ -262,6 +262,7 @@
 
   function leave() {
     stopWatch(joined);
+    if (joined) joined.newBadges = [];   // 最終順位で取ったバッジの表示も捨てる
     joined = null;
   }
 
@@ -348,6 +349,29 @@
         try { RQ.sfx.play(item.correct ? 'correct' : 'wrong'); } catch (e) { console.error(e); }
       }
     });
+    recordRank(j, ctx, roomKey, createdAt);
+  }
+
+  // 部屋が終わったら、自分の最終順位を学習記録に 1 回だけ入れる（処理済みの管理は回答と同じ。問題 id の代わりに RANK_QID）。
+  // 新しく取ったバッジは j.newBadges に足して、最終順位の画面に出す
+  function recordRank(j, ctx, roomKey, createdAt) {
+    if (j.data.state.phase !== 'ended') return;
+    // doneQidsOf は Set を返す（配列の indexOf は使えない。使うと例外になり、live-db が黙って飲むので画面も切りかわらない）
+    const done = doneQids(roomKey);
+    if (done instanceof Set ? done.has(L().RANK_QID) : Array.isArray(done) && done.indexOf(L().RANK_QID) !== -1) return;
+    const r = L().rankResult(j.data, j.pid);
+    if (!r) return;
+    let result = { applied: false, saved: false };
+    try {
+      const out = ctx.live.record([{ kind: 'liveResult', code: j.code, rank: r.rank, players: r.players, score: r.score }], j.profileId);
+      if (out && typeof out === 'object') {
+        result = { applied: out.applied === true, saved: out.applied === true && out.saved === true };
+        if (Array.isArray(out.newBadges)) j.newBadges = (j.newBadges || []).concat(out.newBadges.filter((id) => (j.newBadges || []).indexOf(id) === -1));
+      }
+    } catch (e) {
+      console.error(e);   // 例外は記録に入らなかったものとみなす（次の受信で取り直す）
+    }
+    applyDone({ key: roomKey, qid: L().RANK_QID, createdAt, now: Date.now() + (j.offset || 0), result });
   }
 
   // choice は符号化した答え（L().cleanAnswer を通したもの）。null・空なら送らない
@@ -413,6 +437,10 @@
       const existing = await db.get('rooms/' + code + '/players/' + pid);
       if (stale()) return;
       if (!existing || typeof existing !== 'object') {
+        // 終わった部屋に新しく入ることはできない（入れると、答えていない生徒が順位に入りバッジが付く）。参加していた生徒の入り直しはよい
+        const st = await db.get('rooms/' + code + '/state');
+        if (stale()) return;
+        if (L().isEnded(st)) throw new Error('このライブクイズはもう終わっています。先生に新しい部屋コードを聞いてね。');
         await db.put('rooms/' + code + '/players/' + pid, { name, joinedAt: { '.sv': 'timestamp' }, score: 0 });
         if (stale()) return;
       }
@@ -420,7 +448,7 @@
       joined = {
         code, pid, profileId: profile.id, name, db, offset, sessionId: ctx.live.sessionId(),
         data: null, gone: false, answering: {}, sendFail: null, draft: {}, stop: null, retryTimer: null, timerNode: null, timeUpIndex: -1,
-        conn: 'ok', connError: '', notice: '', noticeTimer: null,
+        conn: 'ok', connError: '', notice: '', noticeTimer: null, newBadges: [], badgeSfxPlayed: false,
       };
       editUrl = false;
       otherCode = null;
@@ -806,6 +834,8 @@
     const me = board.find((r) => r.pid === j.pid) || null;
     return card([
       el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + d.questions.length + ' 問目の答え合わせ' }),
+      kindMark(q),
+      el('p', { class: 'live-question', text: plain(q.prompt) }),
       el('p', { class: 'live-result ' + (mine === null ? 'is-none' : correct ? 'is-ok' : 'is-ng'), text: mine === null ? '答えなかった' : correct ? '○ 正解！' : '× ざんねん' }),
       el('p', { class: 'live-answer', text: '正解: ' + rightText(q) }),
       L().kindOf(q) !== 'choice' && mine !== null ? el('p', { class: 'live-mine', text: 'あなた: ' + answerText(q, mine) }) : null,
@@ -819,12 +849,36 @@
     const top = board.slice(0, TOP);
     const me = board.find((r) => r.pid === j.pid) || null;
     const rows = me && !top.some((r) => r.pid === me.pid) ? top.concat([me]) : top;
-    return card([
+    return [card([
       cardTitle('最終順位'),
       me ? el('p', { class: 'live-total', text: 'あなたは ' + me.rank + ' 位（' + me.score + ' 点）' }) : null,
       rows.length > 0 ? rankTable(rows, j.pid) : null,
       button('ホームへ', () => { exitRoom(); ctx.go('home'); }, 'btn-primary btn-block'),
-    ]);
+    ]), newBadgesCard(j, ctx)];
+  }
+
+  // 最終順位で新しく取ったバッジ（結果画面と同じ見た目）。表示したら「見た」にする。効果音は 1 回だけ
+  function newBadgesCard(j, ctx) {
+    const defs = (j.newBadges || []).map((id) => RQ.badges.def(id)).filter(Boolean);
+    if (defs.length === 0) return null;
+    const node = card([
+      cardTitle('新しいバッジ！'),
+      el('ul', { class: 'badge-new-list' }, defs.map((d) => el('li', { class: 'badge-item' }, [
+        H.badgeMedal(d, true, 64),
+        el('div', { class: 'badge-text' }, [
+          el('span', { class: 'badge-title', text: d.title }),
+          el('span', { class: 'badge-sub', text: d.description }),
+        ]),
+      ]))),
+    ], 'badge-new');
+    if (typeof ctx.markBadgesSeen === 'function') ctx.markBadgesSeen(defs.map((d) => d.id));
+    if (!j.badgeSfxPlayed) {
+      j.badgeSfxPlayed = true;
+      if (RQ.sfx && typeof RQ.sfx.play === 'function') {
+        try { RQ.sfx.play('badge'); } catch (e) { console.error(e); }
+      }
+    }
+    return node;
   }
 
   // 参加中に別の部屋のコードを読んだときの一文（コードはふりがなを付けない）
@@ -851,7 +905,7 @@
     else if (phase === 'reveal') body = revealCard(j);
     else if (phase === 'ended') body = endedCard(j, ctx);
     else body = waitCard(j);
-    if (phase === 'ended') return [roomLine(j), connLine(j), body];
+    if (phase === 'ended') return [roomLine(j), connLine(j)].concat(body);
     return [otherCodeLine(), roomLine(j), connLine(j), body, button('部屋から出る', () => { exitRoom(); repaint(); }, 'btn-block live-small')];
   }
 
