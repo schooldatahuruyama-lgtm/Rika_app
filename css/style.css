@@ -2615,6 +2615,22 @@ ruby.rq-ruby rt {
   line-height: 1.5;
 }
 
+/* 問題の図（figures.sceneSvg）。上下に少し余白。広い画面では横に広がりすぎないよう 480px まで
+   （スマホ幅では .card .figure-box のとおりカードの余白まで広げる） */
+.live-figure {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 480px) {
+  #screen-live .figure-box,
+  #screen-live-host .figure-box {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* 選択肢: 2 列（スマホ幅では 1 列） */
 .live-options {
   display: grid;

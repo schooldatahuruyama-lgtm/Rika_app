@@ -28,6 +28,11 @@
   const MAX_TEXT_ANSWER = 40;      // 自由記述の答えの長さ
   const MAX_ACCEPT = 5;            // 自由記述の正解（別解をふくむ）の数
   const NUM_EPS = 1e-9;            // 数の答えの許容誤差の比べで足す小さな値
+  const MAX_FIGURE_JSON = 20000;   // 図 1 つの JSON の文字数の上限（教材でいちばん大きい図は約 8,700 字）
+  const MAX_FIGURE_ITEMS = 200;    // 図 1 つの部品の数の上限
+  const MAX_REGIONS = 8;           // 図から選ぶ問題の「選ぶ場所」（region）の数の上限（教材では最大 8）
+  const MAX_FIGURE_COORD = 10000;  // 図の中の数（座標・長さなど）の絶対値の上限（教材は 330 まで。巨大な線は描画のループを止めるため）
+  const MAX_FIGURE_DEPTH = 6;      // 図の部品の中の入れ子の深さの上限
 
   let customCount = 0;
 
@@ -145,8 +150,64 @@
     return right !== null && c === right;
   }
 
-  // 教材の問題から出題用の形へ。図は落として文だけ。問題文が長いものは出さない
-  //   choice: 選択式。fill: 空欄が 1 つだけのとき自由記述（text）として。ほかの形は null
+  // 図（js/figures.js の scene）の守り。{ width, height, items } か null（大きすぎる・部品が多すぎる・オブジェクトでない）。
+  // Firebase は配列をキー 0,1,2… のオブジェクトで返すことがあるので、items と points は配列に戻す（points は [[x, y], …]）。
+  // type のない部品は落とす。部品の中の数は有限で絶対値 MAX_FIGURE_COORD までに限る（巨大な線は js/figures.js の
+  // 鏡の斜線のように長さに比例して回る描画を止めるため）。文字・画像の src はここでは調べない（js/figures.js が安全に描く）
+  function numbersOk(v, depth) {
+    if (typeof v === 'number') return Number.isFinite(v) && Math.abs(v) <= MAX_FIGURE_COORD;
+    // 数に見える文字列（'1e12'・'Infinity' など）も描画側で数に変わるので、数と同じに扱う（'ア' のような文字は通す）
+    if (typeof v === 'string') { const n = v.trim() === '' ? 0 : Number(v); return Number.isNaN(n) || (Number.isFinite(n) && Math.abs(n) <= MAX_FIGURE_COORD); }
+    if (v === null || typeof v !== 'object') return true;
+    if (depth >= MAX_FIGURE_DEPTH) return false;
+    return valuesOf(v).every(x => numbersOk(x, depth + 1));
+  }
+
+  function safeFigure(raw) {
+    if (!isObject(raw)) return null;
+    const size = (v, d) => isNum(v) && v >= 1 && v <= 2000 ? v : d;
+    const items = [];
+    for (const it of valuesOf(raw.items)) {
+      if (!isObject(it) || typeof it.type !== 'string' || !it.type) continue;
+      if (items.length >= MAX_FIGURE_ITEMS) return null;
+      const copy = Object.assign({}, it);
+      if (copy.points !== undefined) copy.points = valuesOf(copy.points).map(p => valuesOf(p));
+      if (!numbersOk(copy, 0)) return null;
+      items.push(copy);
+    }
+    const figure = { width: size(raw.width, 320), height: size(raw.height, 240), items };
+    return JSON.stringify(figure).length > MAX_FIGURE_JSON ? null : figure;
+  }
+
+  // 図の「選ぶ場所」（region）を選択肢 [{ id, text }] に。text は label → name → id。
+  // 2 個未満・MAX_REGIONS を超える・id が重なるときは null。figure は safeFigure を通したもの
+  function regionOptions(figure) {
+    if (!isObject(figure)) return null;
+    const out = [];
+    const seen = {};
+    for (const it of valuesOf(figure.items)) {
+      if (!isObject(it) || it.type !== 'region' || typeof it.id !== 'string' || !it.id) continue;
+      if (seen[it.id]) return null;
+      seen[it.id] = true;
+      const text = [it.label, it.name, it.id].find(v => typeof v === 'string' && v.trim());
+      out.push({ id: it.id, text });
+    }
+    return out.length >= 2 && out.length <= MAX_REGIONS ? out : null;
+  }
+
+  // 図の中をタップして答える問題か（choice で図があり、選択肢の id がすべて図の region の id）
+  function isFigurePick(question) {
+    if (!isObject(question) || kindOf(question) !== 'choice' || !isObject(question.figure)) return false;
+    const regions = valuesOf(question.figure.items)
+      .filter(it => isObject(it) && it.type === 'region' && typeof it.id === 'string' && it.id)
+      .map(it => it.id);
+    const ids = optionIds(question);
+    return ids.length > 0 && ids.every(id => regions.indexOf(id) !== -1);
+  }
+
+  // 教材の問題から出題用の形へ。図は scene のまま持つ（大きすぎる図の問題は出さない）。問題文が長いものは出さない
+  //   choice: 選択式。fill: 空欄が 1 つだけのとき自由記述（text）として。
+  //   figure-choice: 図の region を選択肢にした選択式（図の中をタップして答える）。ほかの形（ray-draw・drag など）は null
   function questionFromProblem(problem, where) {
     if (!isObject(problem) || typeof problem.id !== 'string' || !problem.id) return null;
     const w = isObject(where) ? where : {};
@@ -156,14 +217,23 @@
       stageId: typeof w.stageId === 'string' ? w.stageId : null,
       source: 'content',
     };
-    // 図のある穴埋め（グラフや目盛りを読む問題）は、図を出さないライブでは答えられないので取りこまない
-    if (problem.type === 'fill') return problem.figure === null || problem.figure === undefined ? textFromFill(problem, common) : null;
-    if (problem.type !== 'choice') return null;
+    if (problem.type !== 'fill' && problem.type !== 'choice' && problem.type !== 'figure-choice') return null;
+    let figure = null;
+    if (problem.figure !== null && problem.figure !== undefined) {
+      figure = safeFigure(problem.figure);
+      if (!figure) return null;
+    }
+    const withFigure = (q) => {
+      if (!q) return null;
+      if (figure) q.figure = figure;
+      return q;
+    };
+    if (problem.type === 'fill') return withFigure(textFromFill(problem, common));
     const prompt = str(problem.prompt).trim();
     if (!prompt || prompt.length > MAX_PROMPT) return null;
-    const options = cleanOptions(problem.options);
+    const options = problem.type === 'figure-choice' ? regionOptions(figure) : cleanOptions(problem.options);
     if (!options || !options.some(o => o.id === problem.answer)) return null;
-    return Object.assign({ id: problem.id, kind: 'choice', prompt, options, answer: problem.answer }, common);
+    return withFigure(Object.assign({ id: problem.id, kind: 'choice', prompt, options, answer: problem.answer }, common));
   }
 
   // 空欄 1 つの穴埋めを自由記述に。問題文の [<id>] を（　　）に。'**' はそのまま（画面側で外す）
@@ -459,13 +529,20 @@
       if (accept.length === 0) accept = [answer];
       const n = isObject(q.number) && isNum(q.number.value) && isNum(q.number.tolerance)
         ? { value: q.number.value, tolerance: q.number.tolerance } : null;
-      return Object.assign({ id, kind, prompt, options: [], answer, accept, number: n }, common);
+      return withSafeFigure(Object.assign({ id, kind, prompt, options: [], answer, accept, number: n }, common), q.figure);
     }
     const options = cleanOptions(q.options);
     if (!options) return null;
     const answer = cleanAnswer({ kind, options }, q.answer);
     if (answer === null) return null;
-    return Object.assign({ id, kind, prompt, options, answer }, common);
+    return withSafeFigure(Object.assign({ id, kind, prompt, options, answer }, common), q.figure);
+  }
+
+  // 受信した問題の図（あれば safeFigure を通して入れる。無効・無しならキーを入れない）
+  function withSafeFigure(out, raw) {
+    const figure = raw === null || raw === undefined ? null : safeFigure(raw);
+    if (figure) out.figure = figure;
+    return out;
   }
 
   function safeState(s) {
@@ -709,7 +786,7 @@
 
   const api = {
     CODE_CHARS, STALE_MS, RECORDED_KEEP_MS, MAX_PROMPT, MAX_OPTIONS, MAX_NAME, DEFAULT_SECONDS, MIN_SECONDS, MAX_SECONDS,
-    KINDS, MAX_TEXT_ANSWER, MAX_ACCEPT, kindOf, normalizeText, cleanAnswer, isCorrect,
+    KINDS, MAX_TEXT_ANSWER, MAX_ACCEPT, MAX_FIGURE_JSON, MAX_REGIONS, MAX_FIGURE_COORD, safeFigure, regionOptions, isFigurePick, kindOf, normalizeText, cleanAnswer, isCorrect,
     newRoomCode, newPlayerId, isRoomCode, questionFromProblem, customQuestion, newRoom,
     scoreFor, tally, applyScores, scoreUpdate, leaderboard, RANK_QID, rankResult, recordEvents, recordRoomKey, recordKey, pendingRecords,
     safeRecorded, recordedQids, addRecorded, doneQidsOf, flushState, nextDoneState, safeRoom, isStale, isEnded, nextState,

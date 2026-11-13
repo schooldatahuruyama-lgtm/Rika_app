@@ -24,8 +24,10 @@
 
   function L() { return RQ.live; }
   function LD() { return RQ.liveDb; }
+  function figures() { return RQ.figures; }
 
-  const LABELS = ['ア', 'イ', 'ウ', 'エ'];
+  // 選択肢のラベル（図から選ぶ問題は選ぶ場所が 8 つまで。色は OPT_CLASSES の 4 色を回す）
+  const LABELS = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク'];
   const OPT_CLASSES = ['live-opt-a', 'live-opt-b', 'live-opt-c', 'live-opt-d'];
   const TOP = 5;
   const TICK_MS = 250;
@@ -46,6 +48,13 @@
   function plain(text) { return String(text || '').split('**').join(''); }
   function errMsg(e) { return e && e.message ? e.message : String(e); }
 
+  // 図を入れる箱（js/ui-problems.js の figureBox と同じ）。innerHTML に入れるのは figures().sceneSvg の SVG 文字列だけ
+  function figureBox(scene, opts, cls) {
+    const box = el('div', { class: 'figure-box live-figure ' + (cls || '') });
+    box.innerHTML = figures().sceneSvg(scene, opts || {});
+    return box;
+  }
+
   // ---- 画面をまたいで持つ状態（ページを読み込み直すまで） ----
 
   let renderSeq = 0;
@@ -61,7 +70,8 @@
   const typed = { code: '', url: null };   // 入力の書きかけ（描き直しても消さない。url は null なら保存した URL）
   // 参加中の部屋 { code, pid, profileId, name, db, offset, sessionId, data, gone, answering（問題 id → 送った答え（符号化した文字列）。表示だけに使う）,
   //   sendFail（送れなかった答え { qid, choice, message } | null）, stop, retryTimer, timerNode, timeUpIndex,
-  //   draft（問題 id → 送る前の回答の書きかけ { picked（multi の選んだ id）, text（text の入力）, seq（order のタップ順の id）}。
+  //   draft（問題 id → 送る前の回答の書きかけ { picked（multi の選んだ id）, text（text の入力）, seq（order のタップ順の id）,
+  //   region（図の中をタップして答える問題で選んでいる場所の id）}。
   //   描き直しでは消さず、画面を離れたら捨てる）,
   //   conn（'ok' | 'reconnecting' | 'gave-up'）, connError（受信が止まった理由）, notice, noticeTimer }
   // 答えの符号化は js/live.js と同じ: choice 'a'、multi 'a,c'（a→d 順）、order 'c,a,b'（表示順の id を並べた順）、text 文字列
@@ -664,6 +674,8 @@
   // 選択肢 id のラベル（ア〜エ。options の並び＝表示順）
   function labelOf(q, id) {
     const i = q.options.findIndex((o) => o.id === id);
+    // 図の中をタップして答える問題は、図に描かれた名前（選択肢の text）がラベル（並び順のア〜クとは限らない）
+    if (L().isFigurePick(q)) return i >= 0 ? plain(q.options[i].text) : '?';
     return LABELS[i] || '?';
   }
 
@@ -678,7 +690,7 @@
 
   // 問題 id ごとの回答の書きかけ（描き直しでは消さない）
   function draftOf(j, q) {
-    if (!j.draft[q.id]) j.draft[q.id] = { picked: [], text: '', seq: [] };
+    if (!j.draft[q.id]) j.draft[q.id] = { picked: [], text: '', seq: [], region: null };
     return j.draft[q.id];
   }
 
@@ -778,6 +790,47 @@
         hint: '答えを打って「送る」',
       };
     }
+    if (L().isFigurePick(q)) {
+      // 図の中の場所（region）をタップして選ぶ →「決定」。ア〜クは図の中に描かれているので選択肢のボタンは出さない
+      const dr = draftOf(j, q);
+      const locked = done || timeUp;
+      const selected = done ? mine : dr.region;
+      const box = figureBox(q.figure, { highlightRegion: selected }, locked ? '' : 'is-tappable live-figure-pick');
+      box.querySelectorAll('g[data-item-type="region"]').forEach((g) => {
+        const id = g.getAttribute('data-item-id');
+        const o = q.options.find((x) => x.id === id);
+        g.setAttribute('role', 'button');
+        g.setAttribute('tabindex', locked ? '-1' : '0');
+        g.setAttribute('aria-label', o ? plain(o.text) : labelOf(q, id));
+        g.setAttribute('aria-pressed', id === selected ? 'true' : 'false');
+        if (locked) g.setAttribute('aria-disabled', 'true');
+      });
+      const pick = (g) => {
+        if (locked || !g) return;
+        const id = g.getAttribute('data-item-id');
+        if (!q.options.some((o) => o.id === id)) return;
+        dr.region = id;
+        repaint();
+      };
+      box.addEventListener('click', (e) => {
+        pick(e.target.closest && e.target.closest('g[data-item-type="region"]'));
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const g = e.target.closest && e.target.closest('g[data-item-type="region"]');
+        if (!g) return;
+        e.preventDefault();
+        pick(g);
+      });
+      return {
+        body: [
+          box,
+          done ? null : button('決定', () => answer(j, q, L().cleanAnswer(q, dr.region || '')),
+            'btn-primary btn-block live-decide', { disabled: timeUp || !dr.region }),
+        ],
+        hint: '図の中の場所をタップして「決定」',
+      };
+    }
     // choice: 今までどおり（押したら送る）
     const buttons = q.options.map((o, i) => choiceButton(o, i, { picked: mine === o.id, disabled: done || timeUp }, () => answer(j, q, o.id)));
     return { body: [el('div', { class: 'live-options' }, buttons)], hint: '答えをえらぼう（1 回だけ）' };
@@ -800,6 +853,8 @@
       ]),
       kindMark(q),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
+      // 図（図の中をタップして答える問題では、答える部分の中に出す）
+      q.figure && !L().isFigurePick(q) ? figureBox(q.figure) : null,
     ].concat(part.body, [
       el('p', { class: 'live-status', role: 'status', text: mine !== null ? '答えた！ 答え合わせを待とう。' : timeUp ? '時間切れ' : part.hint }),
       fail ? errorLine('送れませんでした。もう一度送ってね（' + fail.message + '）') : null,
@@ -807,9 +862,10 @@
     ]));
   }
 
-  // 正解の表示用の文（choice は今までどおり「ア 文」）
+  // 正解の表示用の文（choice は今までどおり「ア 文」。図の中をタップして答える問題はラベルだけ）
   function rightText(q) {
     const kind = L().kindOf(q);
+    if (L().isFigurePick(q)) return labelOf(q, q.answer);
     if (kind === 'choice') {
       const ci = q.options.findIndex((o) => o.id === q.answer);
       return (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '');
@@ -836,6 +892,8 @@
       el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + d.questions.length + ' 問目の答え合わせ' }),
       kindMark(q),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
+      // 図（図の中をタップして答える問題は正解の場所を濃くする）
+      q.figure ? figureBox(q.figure, L().isFigurePick(q) ? { highlightRegion: q.answer } : {}) : null,
       el('p', { class: 'live-result ' + (mine === null ? 'is-none' : correct ? 'is-ok' : 'is-ng'), text: mine === null ? '答えなかった' : correct ? '○ 正解！' : '× ざんねん' }),
       el('p', { class: 'live-answer', text: '正解: ' + rightText(q) }),
       L().kindOf(q) !== 'choice' && mine !== null ? el('p', { class: 'live-mine', text: 'あなた: ' + answerText(q, mine) }) : null,
@@ -928,6 +986,10 @@
       const doc = root.document;
       const focused = doc && doc.activeElement && doc.activeElement.id === 'live-text-input' ? doc.activeElement : null;
       const caret = focused ? [focused.selectionStart, focused.selectionEnd] : null;
+      // 図の選ぶ場所（region）にフォーカスがあれば、描き直したあとも同じ場所に戻す（キーボードで選ぶとき）
+      const act = doc && doc.activeElement;
+      const regionFocus = act && act.getAttribute && act.getAttribute('data-item-type') === 'region' && act.closest && act.closest('.live-figure-pick')
+        ? act.getAttribute('data-item-id') : null;
       const children = [H.topBar('ライブクイズ', 'ホーム', () => ctx.go('home'))];
       if (joined) children.push(...roomView(joined, ctx));
       else children.push(joinCard(ctx));
@@ -936,6 +998,13 @@
       const again = caret ? section.querySelector('#live-text-input') : null;
       if (again && !again.disabled) {
         try { again.focus({ preventScroll: true }); again.setSelectionRange(caret[0], caret[1]); } catch (e) { /* 無視 */ }
+      }
+      if (regionFocus !== null) {
+        const g = Array.from(section.querySelectorAll('.live-figure-pick g[data-item-type="region"]'))
+          .find((x) => x.getAttribute('data-item-id') === regionFocus);
+        if (g && typeof g.focus === 'function') {
+          try { g.focus({ preventScroll: true }); } catch (e) { /* 無視 */ }
+        }
       }
       // 描き直しで映像が DOM から外れると止まるので、もう一度再生する
       if (scan && scan.video && scan.video.paused) scan.video.play().catch(() => {});

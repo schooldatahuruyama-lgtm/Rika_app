@@ -6,7 +6,7 @@
 // データベースの URL は ctx.live.dbUrl()（この端末に保存した URL か、アプリに組みこみの config.live.dbUrl）/ setDbUrl(url|null)
 // （js/app.js。この端末の localStorage。null で組みこみに戻す）。別の URL に変える入力は「くわしい設定」にしまっておく。
 // 開けるのは先生画面を解錠しているときだけ（app.go が teacher に回す。teacher ↔ live-host の行き来では解錠は消えない）。
-// 利用者の文字はすべて textContent で入れる（innerHTML は QR コードの SVG だけ）。先生の画面なので、ふりがなは付けない（section に data-no-ruby）。
+// 利用者の文字はすべて textContent で入れる（innerHTML は QR コードの SVG と、問題の図の figures.sceneSvg の SVG だけ）。先生の画面なので、ふりがなは付けない（section に data-no-ruby）。
 // 部屋の受信（watch）は画面を離れたら止める（後片付けの関数を返す）。部屋と選んだ問題はページを読み込み直すまで残し、
 // 戻ってきたら受信をつなぎ直す。非同期の処理は ui-teacher.js の renderSeq と同じ守りで、いまの画面のときだけ描く。
 (function (root) {
@@ -22,9 +22,11 @@
   // 読み込み順に頼らないよう、使うときに取る（確認では createDb を差しかえることもある）
   function L() { return RQ.live; }
   function LD() { return RQ.liveDb; }
+  function figures() { return RQ.figures; }
 
   const SECONDS = [10, 20, 30, 60];
-  const LABELS = ['ア', 'イ', 'ウ', 'エ'];
+  // 選択肢のラベル（図から選ぶ問題は選ぶ場所が 8 つまで。色は OPT_CLASSES の 4 色を回す）
+  const LABELS = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク'];
   const OPT_CLASSES = ['live-opt-a', 'live-opt-b', 'live-opt-c', 'live-opt-d'];
   const TOP = 5;                  // 答え合わせに出す上位の人数
   const TICK_MS = 250;            // 残り時間を描き直す間隔
@@ -42,6 +44,13 @@
   // 文の **語句** 記法は外して、文だけを出す（スクリーンに映すため）
   function plain(text) { return String(text || '').split('**').join(''); }
   function pad2(n) { return String(n).padStart(2, '0'); }
+
+  // 図を入れる箱（js/ui-problems.js の figureBox と同じ）。innerHTML に入れるのは figures().sceneSvg の SVG 文字列だけ
+  function figureBox(scene, opts, cls) {
+    const box = el('div', { class: 'figure-box live-figure ' + (cls || '') });
+    box.innerHTML = figures().sceneSvg(scene, opts || {});
+    return box;
+  }
 
   // ---- 画面をまたいで持つ状態（ページを読み込み直すまで） ----
 
@@ -427,7 +436,7 @@
       cardTitle('2. 問題を選ぶ'),
       el('label', { class: 'field-label', for: 'live-unit', text: '単元' }),
       units.length > 0 ? select : el('p', { class: 'muted', text: '教材がありません。' }),
-      el('p', { class: 'muted', text: 'ステージを選ぶと、その選択式の問題と、空欄が 1 つの穴埋めの問題（記述）が入ります（図だけの問題と長い問題は入りません）。' }),
+      el('p', { class: 'muted', text: 'ステージを選ぶと、その選択式の問題（図から選ぶ問題もふくむ）と、空欄が 1 つの穴埋めの問題（記述）が入ります（線を引く問題・動かす問題と、長い問題は入りません）。' }),
       el('ul', { class: 'live-stage-list' }, rows),
     ]);
   }
@@ -442,7 +451,7 @@
     promptInput.value = draft.prompt;
     promptInput.addEventListener('input', () => { draft.prompt = promptInput.value; });
     // 選択肢の入力 4 つ（order では「1 番目」〜「4 番目」。上から正しい順）
-    const optionInputs = LABELS.map((label, i) => {
+    const optionInputs = LABELS.slice(0, L().MAX_OPTIONS).map((label, i) => {
       const input = el('input', { class: 'text-input', type: 'text', id: 'live-custom-opt-' + i, autocomplete: 'off', value: draft.options[i] });
       input.addEventListener('input', () => { draft.options[i] = input.value; });
       return el('label', { class: 'author-field live-custom-opt' }, [el('span', { class: 'field-label', text: kind === 'order' ? (i + 1) + ' 番目' : '選択肢 ' + label }), input]);
@@ -450,7 +459,7 @@
     const parts = [];
     if (kind === 'multi') {
       // 正解のチェックボックス 4 つ（draft.answers は番号の配列）
-      const boxes = LABELS.map((label, i) => {
+      const boxes = LABELS.slice(0, L().MAX_OPTIONS).map((label, i) => {
         const box = el('input', { type: 'checkbox', id: 'live-custom-answers-' + i, checked: draft.answers.indexOf(i) !== -1 });
         box.addEventListener('change', () => {
           draft.answers = draft.answers.filter((x) => x !== i);
@@ -479,7 +488,7 @@
       parts.push(el('p', { class: 'muted', text: '空白・全角半角・大文字小文字・末尾の「。」はちがっていても正解になります' }));
     } else {
       const answer = el('select', { class: 'text-input author-select', id: 'live-custom-answer' },
-        LABELS.map((label, i) => el('option', { value: String(i), text: label, selected: i === draft.answer })));
+        LABELS.slice(0, L().MAX_OPTIONS).map((label, i) => el('option', { value: String(i), text: label, selected: i === draft.answer })));
       answer.addEventListener('change', () => { draft.answer = Number(answer.value); });
       parts.push(
         el('div', { class: 'live-custom-opts' }, optionInputs),
@@ -521,6 +530,7 @@
       el('span', { class: 'live-picked-text' }, [
         (i + 1) + '. ' + plain(q.prompt) + (q.source === 'custom' ? '（自作）' : ''),
         KIND_TAGS[L().kindOf(q)] ? el('span', { class: 'live-kind', text: KIND_TAGS[L().kindOf(q)] }) : null,
+        q.figure ? el('span', { class: 'live-kind', text: '図' }) : null,
       ]),
       button('消す', () => { sel.questions = sel.questions.filter((x) => x.id !== q.id); repaint(); }),
     ]));
@@ -579,9 +589,9 @@
     return el('p', { class: 'live-count', text: (s.index + 1) + ' / ' + r.questions.length + ' 問目' });
   }
 
-  // 選択肢（表示順にア〜エ）。自由記述は選択肢がないので出さない
+  // 選択肢（表示順にア〜）。自由記述と、図の中をタップして答える問題（ラベルは図の中にある）は出さない
   function optionsBox(q) {
-    if (L().kindOf(q) === 'text' || q.options.length === 0) return null;
+    if (L().kindOf(q) === 'text' || q.options.length === 0 || L().isFigurePick(q)) return null;
     return el('div', { class: 'live-options' }, q.options.map((o, i) => el('div', {
       class: 'live-opt ' + OPT_CLASSES[i % OPT_CLASSES.length],
     }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) })])));
@@ -596,6 +606,8 @@
   // 選択肢 id のラベル（ア〜エ。options の並び＝表示順）
   function labelOf(q, id) {
     const i = q.options.findIndex((o) => o.id === id);
+    // 図の中をタップして答える問題は、図に描かれた名前（選択肢の text）がラベル（並び順のア〜クとは限らない）
+    if (L().isFigurePick(q)) return i >= 0 ? plain(q.options[i].text) : '?';
     return LABELS[i] || '?';
   }
 
@@ -608,9 +620,10 @@
     return ids.map((id) => labelOf(q, id)).join(kind === 'order' ? ' → ' : '・');
   }
 
-  // 正解の 1 行の文（人数の前まで）。choice は今までどおり「ア 文」、text は別解も
+  // 正解の 1 行の文（人数の前まで）。choice は今までどおり「ア 文」（図の中をタップして答える問題はラベルだけ）、text は別解も
   function rightText(q) {
     const kind = L().kindOf(q);
+    if (L().isFigurePick(q)) return labelOf(q, q.answer);
     if (kind === 'choice') {
       const ci = q.options.findIndex((o) => o.id === q.answer);
       return (LABELS[ci] || '') + ' ' + plain(ci >= 0 ? q.options[ci].text : '');
@@ -671,6 +684,7 @@
       el('div', { class: 'live-head' }, [questionHead(r, s), el('p', { class: 'live-timer', 'aria-label': '残り時間（秒）' }, [r.timerNode, el('span', { class: 'live-timer-unit', text: '秒' })])]),
       kindMark(q),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
+      q.figure ? figureBox(q.figure) : null,
       optionsBox(q),
       el('p', { class: 'live-joined', text: '答えた人 ' + answered + ' / ' + total + ' 人' }),
       errorLine(r.error),
@@ -688,6 +702,7 @@
     if (!q) return errorCard(r, '問題が見つかりません。');
     const t = L().tally(q, d.answers[q.id]);
     const kind = L().kindOf(q);
+    const figurePick = L().isFigurePick(q);
     let spread;
     if (kind === 'choice' || kind === 'multi') {
       // 選択肢ごとの横棒（multi は正解の選択肢が全部緑）
@@ -698,7 +713,8 @@
         const bar = el('div', { class: 'live-bar' + (right.indexOf(o.id) !== -1 ? ' is-correct' : '') });
         bar.style.width = Math.round(n / max * 100) + '%';
         return el('div', { class: 'live-bar-row' }, [
-          el('div', { class: 'live-bar-label' }, [el('span', { class: 'live-opt-label', text: LABELS[i] || '' }), el('span', { text: plain(o.text) }), el('span', { class: 'live-bar-num', text: n + ' 人' })]),
+          // 図の中をタップして答える問題は図に描かれた名前（text）をラベルにし、文は出さない
+          el('div', { class: 'live-bar-label' }, [el('span', { class: 'live-opt-label', text: figurePick ? plain(o.text) : LABELS[i] || '' }), figurePick ? null : el('span', { text: plain(o.text) }), el('span', { class: 'live-bar-num', text: n + ' 人' })]),
           el('div', { class: 'live-bar-track' }, [bar]),
         ]);
       }));
@@ -716,6 +732,8 @@
       smallCode(r),
       el('div', { class: 'live-head' }, [questionHead(r, s), el('p', { class: 'live-phase', text: '答え合わせ' })]),
       el('p', { class: 'live-question', text: plain(q.prompt) }),
+      // 図（図の中をタップして答える問題は正解の場所を濃くする）
+      q.figure ? figureBox(q.figure, figurePick ? { highlightRegion: q.answer } : {}) : null,
       spread,
       el('p', { class: 'live-answer', text: '正解: ' + rightText(q) + '（正解 ' + t.correctCount + ' / ' + t.total + ' 人）' }),
       el('h3', { class: 'live-sub', text: '上位 ' + TOP + ' 人' }),
