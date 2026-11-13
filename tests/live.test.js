@@ -27,18 +27,31 @@ test('newRoomCode: 6 文字、I・O・0・1 を使わない。newPlayerId は p�
   assert.equal(live.isRoomCode('abcdef'), false);
 });
 
-test('questionFromProblem: 選択式、図は落とす、長い問題文は除く', () => {
+test('questionFromProblem: 選択式、図は scene のまま持つ、長い問題文は除く', () => {
   const stage = unit.areas[0].stages[0];
   const choice = stage.problems[0];
   const q = live.questionFromProblem(choice, { unitId: 'u', stageId: stage.id });
   assert.deepEqual(q, { id: 'p-a1-1', kind: 'choice', prompt: '光はまっすぐ進む？', options: [{ id: 'o1', text: 'はい' }, { id: 'o2', text: 'いいえ' }], answer: 'o1', conceptId: 'c-a', unitId: 'u', stageId: 's-a1', source: 'content' });
   // 空欄 1 つの fill は自由記述（text）として取りこむ
   assert.equal(live.questionFromProblem(stage.problems[1], { unitId: 'u', stageId: stage.id }).kind, 'text');
+  // 図のない figure-choice は選ぶ場所がないので null
   assert.equal(live.questionFromProblem({ ...choice, type: 'figure-choice' }, {}), null);
-  // 図のある choice は図を落として文だけ
-  const withFigure = live.questionFromProblem({ ...choice, figure: { width: 10, height: 10, items: [] } }, { unitId: 'u', stageId: 's' });
-  assert.equal('figure' in withFigure, false);
+  // 図のない choice の戻り値には figure のキーがない
+  assert.equal('figure' in q, false);
+  // 図のある choice は図（safeFigure の形）を持つ
+  const withFigure = live.questionFromProblem({ ...choice, figure: { width: 10, height: 10, items: [{ type: 'line', x1: 0, y1: 0, x2: 5, y2: 5 }] } }, { unitId: 'u', stageId: 's' });
+  assert.deepEqual(withFigure.figure, { width: 10, height: 10, items: [{ type: 'line', x1: 0, y1: 0, x2: 5, y2: 5 }] });
   assert.equal(withFigure.prompt, '光はまっすぐ進む？');
+  assert.equal(live.isFigurePick(withFigure), false);
+  // figure-choice は region が選択肢になる
+  const fc = live.questionFromProblem({ id: 'fc1', type: 'figure-choice', prompt: 'どこ？', answer: 'r2',
+    figure: { items: [{ type: 'region', id: 'r1', x: 1, y: 1, r: 5, label: 'ア' }, { type: 'region', id: 'r2', x: 9, y: 9, r: 5, label: 'イ' }] } }, {});
+  assert.equal(fc.kind, 'choice');
+  assert.deepEqual(fc.options, [{ id: 'r1', text: 'ア' }, { id: 'r2', text: 'イ' }]);
+  assert.equal(fc.answer, 'r2');
+  assert.equal(live.isFigurePick(fc), true);
+  // 大きすぎる図の問題は出さない
+  assert.equal(live.questionFromProblem({ ...choice, figure: { items: [{ type: 'text', text: 'あ'.repeat(live.MAX_FIGURE_JSON) }] } }, {}), null);
   // 120 字までは出せる、121 字は除く
   assert.ok(live.questionFromProblem({ ...choice, prompt: 'あ'.repeat(120) }, {}));
   assert.equal(live.questionFromProblem({ ...choice, prompt: 'あ'.repeat(121) }, {}), null);
@@ -554,18 +567,174 @@ test('questionFromProblem: 空欄 1 つの fill は text（word は accept、num
 // 教材の問題を id で探す（areas → stages → problems）
 const contentProblem = (file, id) => require('../content/' + file).unit.areas.flatMap(a => a.stages).flatMap(s => s.problems || []).find(p => p.id === id);
 
-test('questionFromProblem: 図のある穴埋め（グラフ・目盛りを読む問題）は取りこまない。図のない穴埋めは text', () => {
+test('questionFromProblem: 図のある穴埋めは text として取りこみ、figure を持つ。図のない穴埋めは figure のキーなし', () => {
   const spring = contentProblem('force.js', 'force-3-p1');
   const meter = contentProblem('electricity.js', 'electricity-mp3-p2');
   assert.ok(spring && spring.type === 'fill' && spring.figure);
   assert.ok(meter && meter.type === 'fill' && meter.figure);
-  assert.equal(live.questionFromProblem(spring, { unitId: 'force', stageId: 's' }), null);
-  assert.equal(live.questionFromProblem(meter, { unitId: 'electricity', stageId: 's' }), null);
-  // 同じ問題でも図がなければ今までどおり text（figure が undefined でも同じ）
-  assert.equal(live.questionFromProblem({ ...spring, figure: null }, {}).kind, 'text');
+  const sq = live.questionFromProblem(spring, { unitId: 'force', stageId: 's' });
+  const mq = live.questionFromProblem(meter, { unitId: 'electricity', stageId: 's' });
+  assert.equal(sq.kind, 'text');
+  assert.equal(mq.kind, 'text');
+  assert.deepEqual(sq.figure, live.safeFigure(spring.figure));
+  assert.deepEqual(mq.figure, live.safeFigure(meter.figure));
+  assert.equal(sq.figure.items.length, spring.figure.items.length);
+  assert.equal(live.isFigurePick(sq), false);
+  // 同じ問題でも図がなければ今までどおり text（figure が undefined でも同じ）で、figure のキーなし
+  const a = live.questionFromProblem({ ...spring, figure: null }, {});
+  assert.equal(a.kind, 'text');
+  assert.equal('figure' in a, false);
   const noFig = { ...meter };
   delete noFig.figure;
   assert.equal(live.questionFromProblem(noFig, {}).kind, 'text');
+});
+
+test('safeFigure: オブジェクト以外は null、Firebase のオブジェクトの形を配列に戻す、type のない部品は落とす、上限で null', () => {
+  assert.equal(live.safeFigure(null), null);
+  assert.equal(live.safeFigure('x'), null);
+  assert.equal(live.safeFigure([]), null);
+  // width・height の既定値（範囲外・数でないものも既定値）
+  assert.deepEqual(live.safeFigure({}), { width: 320, height: 240, items: [] });
+  assert.deepEqual(live.safeFigure({ width: 0, height: 2001, items: [] }), { width: 320, height: 240, items: [] });
+  assert.deepEqual(live.safeFigure({ width: '100', height: NaN }), { width: 320, height: 240, items: [] });
+  assert.deepEqual(live.safeFigure({ width: 1, height: 2000 }), { width: 1, height: 2000, items: [] });
+  // items がキー 0,1,… のオブジェクトでも配列に。points も [[x, y], …] に
+  const f = live.safeFigure({ width: 100, height: 50, items: { 0: { type: 'line', x1: 1 }, 1: { type: 'polyline', points: { 0: { 0: 1, 1: 2 }, 1: [3, 4] } } } });
+  assert.deepEqual(f, { width: 100, height: 50, items: [{ type: 'line', x1: 1 }, { type: 'polyline', points: [[1, 2], [3, 4]] }] });
+  // type のない・空の・文字列でない部品は落とす
+  assert.deepEqual(live.safeFigure({ items: [{ x: 1 }, { type: '' }, { type: 3 }, null, 'x', { type: 'circle' }] }).items, [{ type: 'circle' }]);
+  // 部品は浅いコピー（元を変えない）
+  const raw = { items: [{ type: 'region', id: 'r1' }] };
+  const g = live.safeFigure(raw);
+  g.items[0].id = 'zz';
+  assert.equal(raw.items[0].id, 'r1');
+  // 部品 200 個までは通り、201 個は null
+  const many = (n) => ({ items: Array.from({ length: n }, () => ({ type: 'circle' })) });
+  assert.equal(live.safeFigure(many(200)).items.length, 200);
+  assert.equal(live.safeFigure(many(201)), null);
+  // JSON が MAX_FIGURE_JSON を超えたら null
+  assert.equal(live.safeFigure({ items: [{ type: 'text', text: 'あ'.repeat(live.MAX_FIGURE_JSON) }] }), null);
+  assert.ok(live.safeFigure({ items: [{ type: 'text', text: 'あ'.repeat(1000) }] }));
+  // 部品の中の数は有限で絶対値 MAX_FIGURE_COORD まで（巨大な鏡は描画のループが止まらないので図ごと null）。入れ子（points）の中も見る
+  assert.equal(live.MAX_FIGURE_COORD, 10000);
+  assert.equal(live.safeFigure({ items: [{ type: 'mirror', x1: 0, y1: 0, x2: 1e12, y2: 0 }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'mirror', x1: 0, y1: 0, x2: -10001, y2: 0 }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'circle', x: Infinity }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'polyline', points: [[1, 2], [3, 1e9]] }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'circle', x: 10000, y: -10000, r: 0.5, extra: { deep: { n: 5 } } }] }).items.length, 1);
+  // 数に見える文字列も同じ（描画側で数に変わる）。文字のラベルは通す
+  assert.equal(live.safeFigure({ items: [{ type: 'mirror', x1: 0, y1: 0, x2: '1e12', y2: 0 }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'mirror', x1: 0, y1: 0, x2: 'Infinity', y2: 0 }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'mirror', x1: 0, y1: 0, x2: ' -20000 ', y2: 0 }] }), null);
+  assert.equal(live.safeFigure({ items: [{ type: 'label', x: '100', y: 0, text: 'ア', bg: '' }] }).items.length, 1);
+  // 入れ子が深すぎる部品は null
+  let deep = { n: 1 };
+  for (let i = 0; i < 8; i++) deep = { inner: deep };
+  assert.equal(live.safeFigure({ items: [Object.assign({ type: 'circle' }, deep)] }), null);
+});
+
+test('regionOptions: 図の中の名前の並びがア〜ク順でなくても text は図のまま（画面のラベルは text を使う）', () => {
+  const fig = live.safeFigure({ items: [{ type: 'region', id: 'r1', label: 'イ' }, { type: 'region', id: 'r2', label: 'ア' }] });
+  assert.deepEqual(live.regionOptions(fig), [{ id: 'r1', text: 'イ' }, { id: 'r2', text: 'ア' }]);
+  const q = live.questionFromProblem({ id: 'x', type: 'figure-choice', prompt: 'どこ？', figure: fig, answer: 'r1' }, {});
+  assert.equal(q.options[0].text, 'イ');
+  assert.ok(live.isFigurePick(q));
+});
+
+test('regionOptions: label → name → id の順。2 個未満・9 個以上・id の重なりは null', () => {
+  const fig = (regions) => live.safeFigure({ items: [{ type: 'lamp' }].concat(regions) });
+  assert.deepEqual(live.regionOptions(fig([
+    { type: 'region', id: 'r1', label: 'ア', name: 'X' },
+    { type: 'region', id: 'r2', name: 'イ' },
+    { type: 'region', id: 'r3' },
+    { type: 'region', id: '' },
+    { type: 'label', id: 'r4', text: 'ウ' },
+  ])), [{ id: 'r1', text: 'ア' }, { id: 'r2', text: 'イ' }, { id: 'r3', text: 'r3' }]);
+  assert.equal(live.regionOptions(fig([{ type: 'region', id: 'r1' }])), null);
+  assert.equal(live.regionOptions(fig([{ type: 'region', id: 'r1' }, { type: 'region', id: 'r1' }])), null);
+  const n = (k) => Array.from({ length: k }, (_, i) => ({ type: 'region', id: 'r' + (i + 1) }));
+  assert.equal(live.regionOptions(fig(n(8))).length, live.MAX_REGIONS);
+  assert.equal(live.regionOptions(fig(n(9))), null);
+  assert.equal(live.regionOptions(null), null);
+});
+
+test('isFigurePick: 選択肢が図の region と一致すれば true。図のない choice・text・region でない選択肢は false', () => {
+  const figure = live.safeFigure({ items: [{ type: 'region', id: 'r1' }, { type: 'region', id: 'r2' }] });
+  const pick = { id: 'x', kind: 'choice', prompt: 'どこ', options: [{ id: 'r1', text: 'ア' }, { id: 'r2', text: 'イ' }], answer: 'r1', figure };
+  assert.equal(live.isFigurePick(pick), true);
+  assert.equal(live.isFigurePick({ ...pick, figure: undefined }), false);
+  assert.equal(live.isFigurePick(Q), false);
+  assert.equal(live.isFigurePick({ ...Q, figure }), false);
+  assert.equal(live.isFigurePick({ ...TQ, figure }), false);
+  assert.equal(live.isFigurePick({ ...pick, options: [{ id: 'r1', text: 'ア' }, { id: 'r9', text: 'イ' }] }), false);
+  assert.equal(live.isFigurePick(null), false);
+});
+
+test('questionFromProblem: 教材の figure-choice は region が選択肢の choice。ray-draw・drag は null', () => {
+  const p = contentProblem('light.js', 'straight-1-p3');
+  assert.ok(p && p.type === 'figure-choice');
+  const q = live.questionFromProblem(p, { unitId: 'light', stageId: 's' });
+  assert.equal(q.kind, 'choice');
+  assert.deepEqual(q.options, [{ id: 'r1', text: 'ア' }, { id: 'r2', text: 'イ' }, { id: 'r3', text: 'ウ' }]);
+  assert.equal(q.answer, 'r2');
+  assert.deepEqual(q.figure, live.safeFigure(p.figure));
+  assert.equal(live.isFigurePick(q), true);
+  assert.equal(live.isCorrect(q, 'r2'), true);
+  assert.equal(live.isCorrect(q, 'r1'), false);
+  // 答えが region にない・region が 1 つは null
+  assert.equal(live.questionFromProblem({ ...p, answer: 'r9' }, {}), null);
+  assert.equal(live.questionFromProblem({ ...p, figure: { items: p.figure.items.filter(it => it.type !== 'region' || it.id === 'r2') } }, {}), null);
+  assert.equal(live.questionFromProblem({ ...p, type: 'ray-draw' }, {}), null);
+  assert.equal(live.questionFromProblem({ ...p, type: 'drag' }, {}), null);
+});
+
+test('safeQuestion（safeRoom 経由）: 有効な figure は残り、壊れた figure はキーごと落ちる。newRoom → safeRoom の往復でも残る', () => {
+  const p = contentProblem('light.js', 'straight-1-p3');
+  const q = live.questionFromProblem(p, { unitId: 'light', stageId: 's' });
+  const spring = live.questionFromProblem(contentProblem('force.js', 'force-3-p1'), { unitId: 'force', stageId: 's' });
+  const room = live.safeRoom(JSON.parse(JSON.stringify(live.newRoom({ questions: [q, spring, Q] }, 0))));
+  assert.deepEqual(room.questions[0].figure, q.figure);
+  assert.equal(live.isFigurePick(room.questions[0]), true);
+  assert.deepEqual(room.questions[1].figure, spring.figure);
+  assert.equal(room.questions[1].kind, 'text');
+  assert.equal('figure' in room.questions[2], false);
+  // Firebase の形（配列がキー 0,1,… のオブジェクト）でも図が戻る
+  const asObj = (arr) => Object.assign({}, arr);
+  const fbQ = { ...q, options: asObj(q.options), figure: { ...q.figure, items: asObj(q.figure.items) } };
+  const fromFb = live.safeRoom({ questions: { [q.id]: fbQ } }).questions[0];
+  assert.deepEqual(fromFb.figure, q.figure);
+  // 壊れた figure（オブジェクトでない・大きすぎる）はキーごと落ち、問題は残る
+  const broken = live.safeRoom({ questions: {
+    a: { ...Q, id: 'a', figure: 'x' },
+    b: { ...TQ, id: 'b', figure: { items: [{ type: 'text', text: 'あ'.repeat(live.MAX_FIGURE_JSON) }] } },
+  } }).questions;
+  assert.equal(broken.length, 2);
+  assert.ok(broken.every(x => !('figure' in x)));
+});
+
+test('教材全体: figure-choice のうち questionFromProblem が null になるのは問題文が MAX_PROMPT を超えるものだけ', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const dir = path.join(__dirname, '..', 'content');
+  let total = 0;
+  let longCount = 0;
+  const bad = [];
+  fs.readdirSync(dir).filter(f => f.endsWith('.js')).forEach(f => {
+    const u = require(path.join(dir, f)).unit;
+    if (!u || !Array.isArray(u.areas)) return;
+    u.areas.flatMap(a => a.stages).forEach(s => (s.problems || []).concat(s.retryPool || []).forEach(p => {
+      if (p.type !== 'figure-choice') return;
+      total++;
+      const long = String(p.prompt || '').trim().length > live.MAX_PROMPT;
+      if (long) longCount++;
+      const q = live.questionFromProblem(p, { unitId: u.id, stageId: s.id });
+      if ((q === null) !== long) bad.push(p.id);
+    }));
+  });
+  assert.ok(total > 0);
+  // region が 9 個以上の問題はない（あれば bad に入る）
+  assert.deepEqual(bad, []);
+  assert.ok(longCount < total);
 });
 
 test('customQuestion: multi は正解の番号の配列、answer は a→d 順に , で結ぶ', () => {

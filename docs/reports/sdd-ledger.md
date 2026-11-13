@@ -222,3 +222,10 @@ implemented (opus ×2: C js/live.js ＋ tests、D js/ui-live.js・js/ui-live-hos
 Ruling: 部屋が ended になったら生徒の端末が最終順位を記録（rec.liveResults、出来事 liveResult、処理済みは回答と同じ仕組みで RANK_QID '_rank'）。バッジは 3 つ（live-top5 / live-top3 / live-first。参加者 2 人以上の部屋だけ）。1 位は 3 つとも取る。画像は ChatGPT で既存のバッジと同じ「光沢の盾」の様式（金・銀・銅）で生成し、ページ内の canvas で 160 px に切り出して base64 で取り出した（画面の取りこみは pane の拡大率でずれるため使わない）。 — コスト: 終了後に新しく入ろうとした生徒は入れない（入り直しは可）。
 implemented (opus)。controller: 実 Firebase で先生 1・生徒 2 タブを通して確認。Opus の実装に doneQids（Set）へ indexOf を使う不具合があり、live-db が onData の例外を飲むため「答え合わせ」で止まっていた → controller が修正。Codex round1 High 1（終了後の新規入室にバッジ）→ controller が isEnded で入室を止める → round2 High 1（入室と終了の競合。記録のみ）/ #2（保存失敗の再試行。回答と同じ限界として記録のみ）→ complete（tests 810）。VERSION 2026-11-12-32。
 気づき: live-db は onData の例外を黙って飲む設計なので、受信処理の例外は画面が止まるだけで分からない。次に live-db を触るときは console.error を出すよう検討。
+
+## 追加作業 2026-11-13: ライブクイズ — 図（SVG）つきの問題（ユーザー指示）
+Ruling: 図は `js/figures.js` の scene をそのまま部屋のデータ `questions/<id>/figure` に入れ、生徒・先生の画面で `figures.sceneSvg` で描く（生徒の端末にない AI 製の教材の図も出せる。規則は `questions` の形を見ないので変えない）。受信側は `live.safeFigure` で守る（JSON 20,000 字・部品 200 個まで。Firebase が配列をオブジェクトで返すことがあるので items と points は配列に戻す）。取りこむのは図のある選択式 58 問・図のある穴埋め（空欄 1 つ）54 問・図から選ぶ 416 問（うち問題文が長い 15 問は除く）。`ray-draw`・`drag` は出さない。 — コスト: 部屋のデータが 1 問あたり最大約 9 KB 増える（生徒の初回受信が少し重くなる）。
+Ruling: 図から選ぶは kind を増やさず `choice` のまま、選択肢を図の region（最大 8 → ラベルをア〜クに）にする。「図の中をタップして答える」かは `live.isFigurePick`（選択肢の id がすべて region の id）で判定し、生徒は region をタップ →「決定」で送る（選択式の「押したら送る」より誤タップに強い）。答え合わせは正解の場所を濃くする。 — コスト: 古い版のアプリの生徒には選択肢のボタンだけが出て図は出ない（版が切りかわるまで）。
+implemented (opus)。controller: 教材全体で newRoom → JSON → safeRoom の往復で図が同一であること、図つきの通常の選択式が誤って「図をタップ」にならないことを node で確認。実 Firebase で先生 1・生徒 1 タブを通し、出題・タップ・決定・答え合わせ（両画面に図、正解の場所が濃い、横棒はラベルだけ）とスマホ幅（375px）の見え方を確認。
+レビュー: Codex サイクル 1 round1 High 2（巨大な座標で鏡の斜線の描画が止まる／図のラベルを並び順のア〜クで出していて図の名前と食い違う）→ controller が修正（`safeFigure` の `numbersOk` で数を有限・絶対値 10,000 まで、`labelOf` を選択肢の text に）→ round2 High 1（数に見える文字列 '1e12' ですり抜け）→ controller が修正（文字列も数と同じ検査）→ サイクル 2 round1 へ。
+サイクル 2 round1 指摘なし → complete（tests 817）。VERSION 2026-11-13-33。
