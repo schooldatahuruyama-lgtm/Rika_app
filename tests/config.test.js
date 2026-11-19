@@ -3,12 +3,12 @@ const test = require('node:test'); const assert = require('node:assert/strict');
 
 test('授業ログとのつながりの設定は、文字列・https の URL・正の時間を持つ', () => {
   const c = require('../js/config.js').link;
-  ['authKey', 'apiKey', 'tokenUrl', 'jugyoUrl'].forEach((key) => {
+  ['authKey', 'apiKey', 'tokenUrl', 'jugyoUrl', 'dbUrl', 'acctKeyPrefix', 'syncKeyPrefix'].forEach((key) => {
     assert.equal(typeof c[key], 'string');
     assert.ok(c[key].trim().length > 0);
   });
-  ['tokenUrl', 'jugyoUrl'].forEach((key) => assert.ok(c[key].startsWith('https://')));
-  ['timeoutMs', 'recheckMs'].forEach((key) => {
+  ['tokenUrl', 'jugyoUrl', 'dbUrl'].forEach((key) => assert.ok(c[key].startsWith('https://')));
+  ['timeoutMs', 'recheckMs', 'pushDelayMs', 'pullMinMs', 'stateMaxChars', 'chunkMaxChars'].forEach((key) => {
     assert.equal(typeof c[key], 'number');
     assert.ok(Number.isFinite(c[key]) && c[key] > 0);
   });

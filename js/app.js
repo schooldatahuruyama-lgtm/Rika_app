@@ -45,6 +45,16 @@
 
   const RQ = root.RikaQuest;
 
+  // 同期情報は端末内だけのもの。既存の書き出し経路からも取り除く。
+  if (RQ.storage && typeof RQ.storage.exportJson === 'function') {
+    const exportJson = RQ.storage.exportJson;
+    RQ.storage.exportJson = (store) => {
+      const exported = Object.assign({}, store);
+      delete exported.sync;
+      return exportJson(exported);
+    };
+  }
+
   const NOTICE_QUARANTINED = '前回の記録が読み込めなかったため、別の場所に残してあります';
   const NOTICE_KEPT = '読み込めない記録が残っているため、新しい記録は保存されません。設定画面から対処してください';
   const NOTICE_FILE = 'このまま使えますが、オフライン対応は http で開いたときだけ有効です';
@@ -53,7 +63,7 @@
   const OFFLINE_KEY = 'rika-quest:offline';
 
   // プロフィールがなくても開ける画面
-  const NO_PROFILE_SCREENS = ['profile', 'settings', 'teacher', 'author', 'live-host'];
+  const NO_PROFILE_SCREENS = ['profile', 'claim', 'settings', 'teacher', 'author', 'live-host'];
   // 先生画面の解錠を保つ画面（このあいだの行き来ではパスコードを聞き直さない）
   const TEACHER_SCREENS = ['teacher', 'author', 'live-host'];
   // AI 教材作成の API キー（この端末だけ。学習記録 rika-quest:v1 とは別のキー）
@@ -80,10 +90,18 @@
     screen: null,
     params: null,
     session: null,          // いま進めている学習（session.js の形）
+    sessionOwner: null,     // 学習を始めたときの { uid, profileId }
     lastResult: null,       // 終わった学習の結果 { session, summary, celebrated, newBadges }（結果画面が使う。newBadges はまだ見せていないバッジの id。
                             // 結果画面が sfxPlayed を足す: レベルアップ・バッジの効果音を鳴らしたか）
     offline: null,          // Task 14: オフライン教材の状態
-    link: null,             // 授業ログのログインの確認（記録はこの端末に保存する）
+    link: null,
+    account: null,
+    sync: null,
+    syncStatus: null,
+    syncReady: false,
+    switchBlocked: false,
+    linkLoading: false,
+    claimStore: null,
     protectedStorage: false,
     contentErrors: [],
     storageObj: null,       // 読み書きに使う storage（ふつうは localStorage）
@@ -93,6 +111,15 @@
 
   let cleanup = null;   // 今の画面の描画関数が返した後片付け
   let builtinUnitIds = new Set();   // 起動時に登録されていた公開版の教材（「この端末でためす」で置きかえない・外さない）
+  let pushTimer = null;
+  let syncJob = null;
+  let lastPull = null;
+  let initialUid = null;
+  let starting = true;
+  let reloading = false;
+  let pendingSwitch = null;
+  let accountReloadPending = false;
+  const savedStores = new WeakMap();
 
   function byId(id) { return document.getElementById(id); }
 
@@ -161,6 +188,12 @@
 
   // ---- 保存 ----
 
+  function storeSnapshot(store) {
+    const saved = Object.assign({}, store);
+    delete saved.sync;
+    return JSON.stringify(saved);
+  }
+
   function setSaveStatus(ok) {
     const status = byId('save-status');
     if (!status) return;
@@ -189,15 +222,24 @@
 
   function save(options) {
     let ok = false;
+    if (state.sync && currentRecord()) state.sync.capture(state.store);
     try {
-      ok = RQ.storage.save(state.storageObj, state.store, state.config, options || {});
+      ok = RQ.storage.save(state.storageObj, state.store, storeConfig(), options || {});
     } catch (e) {
       console.error(e);
       ok = false;
     }
     if (ok && options && options.allowOverwrite) state.protectedStorage = false;
     setSaveStatus(ok);
-    if (ok) notifySaved();
+    if (state.sync && currentRecord()) {
+      if (!ok) state.syncStatus = 'offline';
+      schedulePush();
+    }
+    if (ok) {
+      savedStores.set(state.store, storeSnapshot(state.store));
+      notifySaved();
+      if (state.switchBlocked) finishSwitch();
+    }
     return ok;
   }
 
@@ -209,6 +251,7 @@
   }
 
   function replaceStore(newStore) {
+    if (state.account) return false;
     state.store = normalizeStore(newStore);
     updateHeader();
     return save();
@@ -216,6 +259,7 @@
 
   // 「すべて削除」: 保存データを消して読み込み直す
   function clearAll() {
+    if (state.account) return;
     try {
       state.storageObj.removeItem(state.config.storageKey);
       state.storageObj.removeItem('rika-quest:teacher');   // 先生画面のパスコードも消す（忘れたときに戻す唯一の方法）
@@ -271,12 +315,29 @@
     if (!box || !state.link) return;
     const bands = {
       none: { kind: 'off', text: 'ログインしていません。記録は、この端末の中だけに残ります。', link: '授業ログにログインする' },
-      checking: { kind: 'off', text: '授業ログとのつながりを確かめています…' },
-      ok: { kind: 'ok', text: '授業ログのアカウントで つながっています。記録は、まだこの端末の中だけに残ります。', link: '授業ログへもどる' },
-      unknown: { kind: 'wait', text: '通信できないので、授業ログとのつながりを確かめられません。学習は、このまま続けられます。', link: '授業ログへもどる' },
+      checking: { kind: 'off', text: '授業ログの記録を読みこんでいます…' },
+      ok: { kind: 'ok', text: '授業ログのアカウントで つながっています。記録は保存しました。', link: '授業ログへもどる' },
+      sending: { kind: 'ok', text: '授業ログのアカウントで つながっています。記録を送っています…', link: '授業ログへもどる' },
+      offline: { kind: 'wait', text: state.sync && state.sync.isDirty()
+        ? 'まだ送れていない記録が' + (state.sync.pendingCount() ? ' ' + state.sync.pendingCount() + ' 件' : '') + 'あります。電波のよい所で開くと、自動で送ります。'
+        : '通信できません。送っていない記録はありません。学習は、このまま続けられます。', link: '授業ログへもどる' },
+      denied: { kind: 'wait', text: '記録を授業ログに保存できませんでした。先生に知らせてください。学習は、この端末で続けられます。', link: '授業ログへもどる' },
+      broken: { kind: 'wait', text: '授業ログの記録を読みこめませんでした。先生に知らせてください。この端末の記録は、そのままです。', link: '授業ログへもどる' },
+      'too-big': { kind: 'wait', text: '記録が大きすぎて、授業ログに保存できませんでした。先生に知らせてください。', link: '授業ログへもどる' },
+      unknown: { kind: 'wait', text: '通信できないので、授業ログの記録を読みこめません。今は、この端末の記録を使います。', link: '授業ログへもどる' },
       expired: { kind: 'off', text: '授業ログのログインが切れています。記録は、この端末の中だけに残ります。', link: '授業ログでログインし直す' },
+      blocked: { kind: 'wait', text: '記録をこの端末に保存できませんでした。設定の『記録を書き出す』でファイルに残してから、ページを読みこみ直してください。' },
     };
-    const band = bands[state.link.status()];
+    const status = state.link.status();
+    let kind = status;
+    if (state.linkLoading || status === 'checking') kind = 'checking';
+    else if (status !== 'none' && status !== 'expired') {
+      if (['denied', 'broken', 'too-big'].includes(state.syncStatus)) kind = state.syncStatus;
+      else if (!state.account) kind = 'unknown';
+      else if (state.syncStatus === 'offline' || status === 'unknown') kind = 'offline';
+      else kind = syncJob || state.sync && state.sync.isDirty() ? 'sending' : 'ok';
+    }
+    const band = bands[state.switchBlocked ? 'blocked' : kind];
     const text = document.createElement('span');
     text.className = 'link-band-text';
     text.textContent = band.text;
@@ -291,6 +352,287 @@
     box.className = 'link-band is-' + band.kind;
     box.replaceChildren(...children);
     box.hidden = false;
+  }
+
+  // ---- アカウントの入れ物と同期 ----
+
+  function storeConfig(uid) {
+    const accountUid = uid || state.account && state.account.uid;
+    return accountUid ? Object.assign({}, state.config, { storageKey: state.config.link.acctKeyPrefix + accountUid }) : state.config;
+  }
+
+  function validUid(uid) { return typeof uid === 'string' && uid.length > 0 && !/[/.#$\[\]]/.test(uid); }
+
+  function loadStore(config) {
+    const loaded = RQ.storage.load(state.storageObj, config);
+    state.protectedStorage = loaded.originalKept === false;
+    if (loaded.error) {
+      if (state.protectedStorage) showNotice('load-notice', NOTICE_KEPT);
+      else if (loaded.quarantinedKey) showNotice('load-notice', NOTICE_QUARANTINED);
+    }
+    const store = normalizeStore(loaded.store || RQ.record.createStore());
+    savedStores.set(store, storeSnapshot(store));
+    return store;
+  }
+
+  function singleStore(store) {
+    const profile = store.profiles.find((p) => p.id === store.currentProfileId) || store.profiles[0];
+    const next = profile ? { version: 1, currentProfileId: profile.id, profiles: [profile], records: { [profile.id]: store.records[profile.id] } } : RQ.record.createStore();
+    if (Object.prototype.hasOwnProperty.call(store, 'sync')) next.sync = store.sync;
+    return next;
+  }
+
+  function cleanAccounts(uid) {
+    const c = state.config.link;
+    try {
+      const keys = [];
+      for (let i = 0; i < state.storageObj.length; i++) keys.push(state.storageObj.key(i));
+      keys.forEach((key) => {
+        if (key && key.startsWith(c.syncKeyPrefix)) { state.storageObj.removeItem(key); return; }
+        if (!key || !key.startsWith(c.acctKeyPrefix) || key === c.acctKeyPrefix + uid) return;
+        let meta;
+        try {
+          const store = JSON.parse(state.storageObj.getItem(key));
+          if (!store || store.version !== 1 || !Array.isArray(store.profiles) || !isObject(store.records)) return;
+          meta = store.sync;
+        } catch (e) { return; }
+        if (!RQ.sync.validMeta(meta) || meta.dirty || meta.pending.h.length || meta.pending.x.length || meta.sending !== null) return;
+        state.storageObj.removeItem(key);
+      });
+    } catch (e) {}
+  }
+
+  function saveSyncedStore(store, uid) {
+    if (state.switchBlocked || reloading) return false;
+    const ok = RQ.storage.save(state.storageObj, store, storeConfig(uid));
+    if (ok) savedStores.set(store, storeSnapshot(store));
+    if (state.account && state.account.uid === uid) setSaveStatus(ok);
+    return ok;
+  }
+
+  function makeSync(uid, store) {
+    return RQ.sync.createSync({ uid, store, link: state.link, storage: state.storageObj, config: state.config.link,
+      save: (next) => saveSyncedStore(next, uid),
+      fetch: async (...args) => {
+        if (state.switchBlocked || reloading || typeof root.fetch !== 'function') throw new Error('通信できません');
+        const response = await root.fetch(...args);
+        if (state.switchBlocked || reloading) throw new Error('通信できません');
+        return response;
+      },
+      now: () => Date.now(), random: () => Math.random(), levelFor: (xp) => RQ.xp.levelFor(xp, state.config) });
+  }
+
+  function enterAccount(uid, store, sync, initial) {
+    return switchStore({ kind: 'account', uid, store, sync, status: state.syncStatus }, initial);
+  }
+
+  async function finishAccount(next) {
+    const { uid, store, sync } = next;
+    const device = state.store;
+    const saved = savedStores.get(store) === storeSnapshot(store);
+    state.account = { uid };
+    state.store = singleStore(normalizeStore(store));
+    if (saved) savedStores.set(state.store, storeSnapshot(state.store));
+    state.sync = sync || makeSync(uid, state.store);
+    state.syncReady = !!sync;
+    state.syncStatus = next.status;
+    state.linkLoading = false;
+    state.claimStore = null;
+    lastPull = null;
+    cleanAccounts(uid);
+    applyPrefs();
+    updateHeader();
+    if (!sync) {
+      go(currentProfile() ? 'home' : 'profile');
+      const status = await state.link.check();
+      if (loginChanged()) return;
+      if (status === 'none' || status === 'expired') useDevice(null);
+      else await syncAccount(true);
+    } else if (next.status === 'none') {
+      state.claimStore = device.profiles.length ? device : null;
+      go(state.claimStore ? 'claim' : 'profile');
+    } else {
+      save();
+      go('home');
+      syncAccount(false);
+    }
+    updateLinkBand();
+  }
+
+  function schedulePush() {
+    if (pushTimer !== null) root.clearTimeout(pushTimer);
+    pushTimer = null;
+    if (reloading || state.switchBlocked || pendingSwitch) { updateLinkBand(); return; }
+    pushTimer = root.setTimeout(() => { pushTimer = null; syncAccount(false); }, state.config.link.pushDelayMs);
+    updateLinkBand();
+  }
+
+  function syncAccount(pullFirst) {
+    if (state.switchBlocked || pendingSwitch || reloading) return Promise.resolve();
+    if (syncJob) return syncJob;
+    if (!state.sync || reloading) return Promise.resolve();
+    const sync = state.sync;
+    syncJob = Promise.resolve().then(async () => {
+      if (reloading || state.switchBlocked || state.sync !== sync) return;
+      if (!state.syncReady || pullFirst && (lastPull === null || Date.now() - lastPull >= state.config.link.pullMinMs)) {
+        lastPull = Date.now();
+        const pulled = await sync.pull(state.store);
+        if (reloading || state.switchBlocked || state.sync !== sync) return;
+        state.syncStatus = pulled.status;
+        if (pulled.changed) {
+          state.store = normalizeStore(pulled.store);
+          // 取りこんだ履歴の長さは sync が進めてあるので、再送しない。
+          if (!saveSyncedStore(state.store, state.account.uid)) state.syncStatus = 'offline';
+          if (['home', 'map', 'record', 'settings', 'units'].includes(state.screen)) go(state.screen, state.params);
+        }
+        if (!['ok', 'none'].includes(pulled.status)) return;
+        state.syncReady = true;
+      }
+      if (reloading || state.switchBlocked || state.sync !== sync) return;
+      const pushed = await sync.push(state.store);
+      if (reloading || state.switchBlocked || state.sync !== sync) return;
+      state.syncStatus = pushed.status;
+      if (pushed.changed) {
+        state.store = normalizeStore(pushed.store);
+        if (!saveSyncedStore(state.store, state.account.uid)) state.syncStatus = 'offline';
+        if (['home', 'map', 'record', 'settings', 'units'].includes(state.screen)) go(state.screen, state.params);
+      }
+    }).catch(() => { state.syncStatus = 'offline'; }).then(() => {
+      syncJob = null;
+      updateLinkBand();
+      if (!reloading && !state.switchBlocked && state.sync === sync && state.syncStatus === 'ok' && sync.isDirty()) schedulePush();
+    });
+    updateLinkBand();
+    return syncJob;
+  }
+
+  function saveBeforeReload(onlyUnsaved) {
+    const owner = state.sessionOwner;
+    if (state.session && state.session.kind === 'stage' && currentRecord() && owner &&
+        owner.uid === (state.account ? state.account.uid : null) && owner.profileId === state.store.currentProfileId) {
+      state.store.records[state.store.currentProfileId] = RQ.record.setResume(currentRecord(), state.session.stageId, state.session);
+    }
+    // 別タブの更新を読むだけなら、保存済みの古い内容で新しい入れ物を上書きしない。
+    if (onlyUnsaved && savedStores.get(state.store) === storeSnapshot(state.store)) return true;
+    return state.store ? save() : true;
+  }
+
+  function clearSession() {
+    state.session = null;
+    state.sessionOwner = null;
+    state.lastResult = null;
+  }
+
+  function loginChanged() {
+    if (reloading) return true;
+    if (!state.link) return false;
+    if (state.link.savedUid() === initialUid) return state.switchBlocked;
+    switchStore({ kind: 'reload' });
+    return true;
+  }
+
+  function reloadAccount() {
+    if (reloading || state.switchBlocked || pendingSwitch) return;
+    switchStore({ kind: 'reload', onlyUnsaved: true });
+  }
+
+  function useDevice(status) {
+    switchStore({ kind: 'device', status });
+  }
+
+  function switchStore(next, initial) {
+    if (reloading) return;
+    pendingSwitch = next;
+    if (state.switchBlocked) return;
+    if (pushTimer !== null) root.clearTimeout(pushTimer);
+    pushTimer = null;
+    if (!initial && !saveBeforeReload(next.onlyUnsaved)) {
+      state.switchBlocked = true;
+      state.linkLoading = false;
+      updateLinkBand();
+      return;
+    }
+    return finishSwitch();
+  }
+
+  function finishSwitch() {
+    const next = pendingSwitch;
+    if (!next) return;
+    pendingSwitch = null;
+    state.switchBlocked = false;
+    accountReloadPending = false;
+    clearSession();
+    if (next.kind === 'reload') {
+      reloading = true;
+      if (pushTimer !== null) root.clearTimeout(pushTimer);
+      pushTimer = null;
+      root.location.reload();
+      return;
+    }
+    if (next.kind === 'account') return finishAccount(next);
+    state.account = null;
+    state.sync = null;
+    state.syncReady = false;
+    lastPull = null;
+    state.claimStore = null;
+    state.linkLoading = false;
+    state.syncStatus = next.status;
+    state.store = loadStore(state.config);
+    go(currentProfile() ? 'home' : 'profile');
+    updateLinkBand();
+  }
+
+  async function startAccount(initial) {
+    const uid = state.link.savedUid();
+    if (!RQ.sync || !validUid(uid)) return false;
+    let cached = false;
+    try { cached = state.storageObj.getItem(storeConfig(uid).storageKey) !== null; } catch (e) {}
+    if (cached) {
+      await enterAccount(uid, loadStore(storeConfig(uid)), null, initial);
+      return true;
+    }
+    state.linkLoading = !!initial;
+    if (initial) go('claim', { loading: true });
+    updateLinkBand();
+    const status = await state.link.check();
+    if (loginChanged()) return true;
+    if (status !== 'ok') { useDevice(status === 'unknown' ? 'offline' : null); return true; }
+    const sync = makeSync(uid);
+    const pulled = await sync.pull(RQ.record.createStore());
+    if (loginChanged()) return true;
+    state.linkLoading = false;
+    state.syncStatus = pulled.status;
+    if (['ok', 'none'].includes(pulled.status)) await enterAccount(uid, pulled.store, sync, initial);
+    else useDevice(pulled.status);
+    updateLinkBand();
+    return true;
+  }
+
+  function claimRecord(id) {
+    const device = state.claimStore;
+    if (!state.account || !device) return false;
+    if (id === null) { state.claimStore = null; go('profile'); return true; }
+    const profile = device.profiles.find((p) => p.id === id);
+    if (!profile) return false;
+    const rec = device.records[id];
+    const next = JSON.parse(JSON.stringify({ version: 1, currentProfileId: id, profiles: [profile], records: { [id]: rec }, sync: state.store.sync }));
+    // 保存できず選び直した場合に、前に選んだ人の送信待ちを残さない。
+    const sync = makeSync(state.account.uid, next);
+    sync.capture(next);
+    if (!RQ.storage.save(state.storageObj, next, storeConfig())) {
+      message('保存できませんでした。ブラウザの設定を確かめてください。', 'warn');
+      return false;
+    }
+    state.store = next;
+    state.sync = sync;
+    const remaining = JSON.parse(JSON.stringify(device));
+    RQ.record.deleteProfile(remaining, id);
+    const removed = RQ.storage.save(state.storageObj, remaining, state.config);
+    state.claimStore = null;
+    go('home');
+    if (!removed) message('端末にある前の記録は、消せませんでした。', 'warn');
+    syncAccount(false);
+    return true;
   }
 
   // ---- 学習の進行（session.js を動かし、出来事を記録に入れて保存する） ----
@@ -326,6 +668,7 @@
       return false;
     }
     state.lastResult = null;
+    state.sessionOwner = { uid: state.account ? state.account.uid : null, profileId: state.store.currentProfileId };
     return true;
   }
 
@@ -745,6 +1088,8 @@
 
   function makeCtx() {
     return {
+      get account() { return state.account; },
+      claimRecord,
       get store() { return state.store; },
       get record() { return currentRecord(); },
       reg: state.reg,
@@ -771,6 +1116,9 @@
   }
 
   function go(name, params) {
+    if (!state.switchBlocked && state.linkLoading) { name = 'claim'; params = { loading: true }; }
+    else if (!state.switchBlocked && state.claimStore) { name = 'claim'; params = {}; }
+    else if (state.account && name === 'profile' && currentProfile()) name = 'home';
     // 先生画面（と教材を作る画面）を離れたら、次はパスコードの入り口から
     if (TEACHER_SCREENS.indexOf(name) === -1) state.teacherUnlocked = false;
     // 教材を作る画面・ライブクイズの出題はパスコードの先。解錠していなければ先生画面の入り口へ
@@ -796,6 +1144,10 @@
     if ((SESSION_SCREENS.indexOf(screen) !== -1 && !state.session) || (screen === 'result' && !state.lastResult)) {
       screen = 'home';
       p = {};
+    }
+    if (screen === 'home' && accountReloadPending && !state.switchBlocked && !pendingSwitch) {
+      reloadAccount();
+      return;
     }
     // 生徒ごとの見た目の設定（プロフィールの切りかえ・削除・読み込みで変わるため、画面を描く前に毎回）
     applyPrefs();
@@ -849,7 +1201,7 @@
     if (screen !== 'home' && currentProfile()) box.append(btn('ホームへ', () => go('home'), true));
     if (screen !== 'settings') {
       box.append(btn('設定へ', () => go('settings'), screen === 'home' || !currentProfile()));
-    } else {
+    } else if (!state.account) {
       // 設定画面そのものが描けないときは、すべて削除だけはできるようにする
       box.append(btn('すべて削除', () => {
         const ask = RQ.ui && RQ.ui.helpers && RQ.ui.helpers.confirm
@@ -1037,19 +1389,9 @@
     }
   }
 
-  function start() {
+  async function start() {
     state.storageObj = openStorage();
-    const loaded = RQ.storage.load(state.storageObj, state.config);
-    state.store = normalizeStore(loaded.store || RQ.record.createStore());
-    if (loaded.error) {
-      console.error(loaded.error);
-      if (loaded.originalKept === false) {
-        state.protectedStorage = true;
-        showNotice('load-notice', NOTICE_KEPT);
-      } else if (loaded.quarantinedKey) {
-        showNotice('load-notice', NOTICE_QUARANTINED);
-      }
-    }
+    state.store = loadStore(state.config);
 
     // 公開版の教材を覚えてから、ためし中の下書きを登録する（そのあとで教材を検査する）
     builtinUnitIds = new Set(state.reg.units().map((u) => u.id));
@@ -1059,6 +1401,7 @@
 
     if (root.location.protocol === 'file:') showNotice('file-notice', NOTICE_FILE);
     setupOffline();
+    readJoinParam();
 
     const linkConfig = state.config.link;
     if (RQ.link && typeof RQ.link.createLink === 'function' && linkConfig &&
@@ -1072,22 +1415,50 @@
         setTimeout: (fn, ms) => root.setTimeout(fn, ms),
         clearTimeout: (id) => root.clearTimeout(id),
       });
-      state.link.onChange(updateLinkBand);
+      initialUid = state.link.savedUid();
+      state.link.onChange(() => {
+        if (loginChanged()) return;
+        if (!starting && state.account && state.link.status() === 'expired') {
+          useDevice(null);
+        }
+        updateLinkBand();
+      });
       updateLinkBand();
-      state.link.check();
-      root.addEventListener('online', () => state.link.check());
+      const refresh = async (options) => {
+        if (loginChanged()) return;
+        await state.link.check(options);
+        if (loginChanged() || starting) return;
+        if (!state.account && state.link.status() === 'ok' && validUid(state.link.savedUid())) {
+          starting = true;
+          try { await startAccount(); } finally { starting = false; }
+        } else await syncAccount(true);
+        updateLinkBand();
+      };
+      root.addEventListener('online', () => refresh());
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') state.link.check();
+        if (document.visibilityState === 'visible') refresh();
       });
       root.addEventListener('storage', (event) => {
-        if (event.key === linkConfig.authKey || event.key === null) state.link.check({ force: true });
+        if (state.account && event.key === linkConfig.acctKeyPrefix + state.account.uid) {
+          accountReloadPending = true;
+          if (!(state.session && SESSION_SCREENS.includes(state.screen)) && state.screen !== 'live' && !TEACHER_SCREENS.includes(state.screen)) reloadAccount();
+          return;
+        }
+        if (event.key === linkConfig.authKey || event.key === null) refresh({ force: true });
       });
+      root.addEventListener('pagehide', () => {
+        if (pushTimer !== null) root.clearTimeout(pushTimer);
+        pushTimer = null;
+        syncAccount(false);
+      });
+      if (RQ.sync && validUid(initialUid) && await startAccount(true)) { starting = false; return; }
+      state.link.check();
     }
 
     // QR コードの参加用の URL（?live=<部屋コード>）で開いたら、コードを覚えて URL から消す（読み込み直しで入り直さない）。
     // 最初の画面は参加画面（プロフィールがなければプロフィール作成のあと。go の home → live）
-    readJoinParam();
     go(currentProfile() ? 'home' : 'profile');
+    starting = false;
   }
 
   const app = {

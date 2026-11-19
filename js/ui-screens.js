@@ -35,6 +35,7 @@
   // プロフィール画面の注意書き（別のブラウザ・別の URL では別の記録になることも伝える）
   const PROFILE_STORAGE_NOTICE = '記録はこの端末の、いま使っているブラウザの中にだけ保存されます。いつも同じブラウザ・同じ URL で開いてください（別のブラウザで開くと、別の記録になります）。ブラウザのデータを消すと記録も消えます。';
   const DATA_LOSS_NOTICE = '記録はこの端末のブラウザ内だけに保存され、ブラウザのデータ削除や端末の変更で消えることがあります。';
+  const ACCOUNT_NOTICE = '授業ログのアカウントで使っているあいだは、プロフィールは 1 人だけです。記録は授業ログのアカウントに保存されます。';
 
   // ---- DOM を組み立てる道具 ----
 
@@ -283,6 +284,7 @@
 
   function renderProfile(section, ctx) {
     const store = ctx.store;
+    if (ctx.account && store.profiles.length) { ctx.go('home'); return; }
     const hasProfiles = store.profiles.length > 0;
     let chosenAvatar = AVATARS[0].id;
 
@@ -348,12 +350,37 @@
         ]),
         el('p', { class: 'caution', text: '実名（本当の名前）は入れないでください。ニックネームにしよう。' }),
         el('div', {}, [el('span', { class: 'field-label', text: 'アバター' }), grid]),
-        el('p', { class: 'caution', text: PROFILE_STORAGE_NOTICE }),
+        el('p', { class: 'caution', text: ctx.account ? ACCOUNT_NOTICE : PROFILE_STORAGE_NOTICE }),
         createBtn,
       ]),
     ]));
 
     section.append(button('設定', () => ctx.go('settings'), 'btn-block'));
+  }
+
+  function renderClaim(section, ctx, params) {
+    if (params && params.loading) {
+      section.append(el('p', { role: 'status', text: '授業ログの記録を読みこんでいます…' }));
+      return;
+    }
+    section.append(topBar('この端末に、前の記録があります'));
+    const store = ctx.state.claimStore;
+    if (!store) return;
+    store.profiles.forEach((p) => {
+      const rec = store.records[p.id];
+      const cleared = Object.values(rec.stages).filter((s) => s && s.status === 'cleared').length;
+      const dates = rec.history.concat(rec.xpLog).map((e) => e && e.at).filter((at) => typeof at === 'string').sort();
+      const last = dates.length ? badgeDate(dates[dates.length - 1]) : null;
+      section.append(card([
+        avatarBadge(p.avatar),
+        el('h2', { class: 'card-title', 'data-no-ruby': true, text: p.nickname }),
+        el('p', { text: 'レベル ' + rec.level + '・クリアしたステージ ' + cleared + ' 個' }),
+        el('p', { text: '最後に学習した日: ' + (last || 'まだ') }),
+        button('わたしの記録です', () => ctx.claimRecord(p.id), 'btn-primary btn-block'),
+      ]));
+    });
+    section.append(button('ちがいます（新しく始める）', () => ctx.claimRecord(null), 'btn-block'),
+      el('p', { text: '「ちがいます」を選んでも、前の記録は端末に残ります。消えません。' }));
   }
 
   // ---- ホーム ----
@@ -797,13 +824,13 @@
       list.append(el('li', { class: 'profile-item' }, [
         avatarBadge(p.avatar),
         el('span', { class: 'profile-name', 'data-no-ruby': true, text: p.nickname }),
-        isCurrent ? el('span', { class: 'tag', text: '使用中' }) : button('切り替え', () => {
+        isCurrent ? el('span', { class: 'tag', text: '使用中' }) : ctx.account ? null : button('切り替え', () => {
           store.currentProfileId = p.id;
           const saved = ctx.save();
           ctx.go('settings');
           reportSave(ctx, saved, p.nickname + ' に切り替えました。', { noRuby: true });
         }),
-        button('削除', async () => {
+        ctx.account ? null : button('削除', async () => {
           const ok = await ctx.confirm('「' + p.nickname + '」の記録をすべて削除します。元に戻せません。よろしいですか？', '削除する', { noRuby: true });
           if (!ok) return;
           RQ.record.deleteProfile(ctx.store, p.id);
@@ -816,8 +843,39 @@
     section.append(card([
       cardTitle('プロフィール'),
       store.profiles.length > 0 ? list : el('p', { class: 'muted', text: 'まだプロフィールがありません。' }),
-      button('新しいプロフィールを作る', () => ctx.go('profile'), 'btn-block', { style: 'margin-top:12px' }),
+      ctx.account ? el('p', { text: ACCOUNT_NOTICE }) : button('新しいプロフィールを作る', () => ctx.go('profile'), 'btn-block', { style: 'margin-top:12px' }),
     ]));
+
+    if (ctx.account && currentProfile(store)) {
+      const profile = currentProfile(store);
+      const input = el('input', { class: 'text-input', type: 'text', maxlength: 12, autocomplete: 'off',
+        id: 'account-nickname', value: profile.nickname, 'data-no-ruby': true });
+      input.addEventListener('change', () => {
+        const before = profile.nickname;
+        const nickname = input.value.trim().slice(0, 12);
+        if (!nickname) { input.value = before; return; }
+        profile.nickname = nickname;
+        const saved = ctx.save();
+        if (!saved) { profile.nickname = before; input.value = before; }
+        ctx.go('settings');
+        reportSave(ctx, saved, null);
+      });
+      const avatars = AVATARS.map((a) => button('', () => {
+        const before = profile.avatar;
+        profile.avatar = a.id;
+        const saved = ctx.save();
+        if (!saved) profile.avatar = before;
+        ctx.go('settings');
+        reportSave(ctx, saved, null);
+      }, 'avatar-choice', { 'aria-pressed': a.id === profile.avatar ? 'true' : 'false' }));
+      avatars.forEach((b, i) => b.append(avatarBadge(AVATARS[i].id), el('span', { text: AVATARS[i].label })));
+      section.append(card([
+        el('label', { class: 'field-label', for: 'account-nickname', text: 'ニックネーム（12 文字まで）' }), input,
+        el('p', { class: 'caution', text: '実名（本当の名前）は入れないでください。ニックネームにしよう。' }),
+        el('span', { class: 'field-label', text: 'アバター' }),
+        el('div', { class: 'avatar-grid', role: 'group', 'aria-label': 'アバターを選ぶ' }, avatars),
+      ], 'stack'));
+    }
 
     section.append(prefsCard(ctx));
 
@@ -837,9 +895,9 @@
           downloadText(name, RQ.storage.exportJson(ctx.store));
           ctx.message(name + ' を書き出しました。', 'ok');
         }, 'btn-primary'),
-        button('記録を読み込む', () => fileInput.click()),
+        ctx.account ? null : button('記録を読み込む', () => fileInput.click()),
       ]),
-      fileInput,
+      ctx.account ? null : fileInput,
     ]));
 
     // 先生用の確認画面（js/ui-teacher.js。プロフィールがなくても開ける）
@@ -849,7 +907,7 @@
       button('先生用の確認画面を開く（パスコード）', () => ctx.go('teacher'), 'btn-block'),
     ]));
 
-    section.append(card([cardTitle('記録の保存について'), el('p', { class: 'caution', text: DATA_LOSS_NOTICE })]));
+    section.append(card([cardTitle('記録の保存について'), el('p', { class: 'caution', text: ctx.account ? ACCOUNT_NOTICE : DATA_LOSS_NOTICE })]));
 
     // オフライン教材の状態。ctx.state.offline（app.js が書く）を使い、なければ localStorage の印を読む。
     // sw.js の知らせで状態が変わると app.js が 'rika-quest:offline' を送るので、この箱だけ描き直す
@@ -903,7 +961,7 @@
     document.addEventListener('rika-quest:offline', onOffline);
     section.append(card([cardTitle('オフラインで使える教材'), offlineBox]));
 
-    section.append(card([
+    if (!ctx.account) section.append(card([
       cardTitle('すべて削除'),
       el('p', { text: 'この端末に保存した、すべてのプロフィールと記録を削除します。' }),
       button('すべて削除', async () => {
@@ -1537,6 +1595,7 @@
   }
 
   const screens = {
+    claim: renderClaim,
     profile: renderProfile,
     home: renderHome,
     units: renderUnits,

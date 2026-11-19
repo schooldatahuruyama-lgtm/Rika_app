@@ -30,7 +30,7 @@
     const clearTimer = opts.clearTimeout || ((id) => clearTimeout(id));
     const listeners = new Set();
     let current = 'none';
-    let last = null;   // 確認結果とトークン・期限はメモリだけ。外には返さない
+    let last = null;   // 確認結果とトークン・期限はメモリだけ。保存はしない
     let pending = null;
 
     function change(next) {
@@ -135,7 +135,25 @@
       return () => listeners.delete(fn);
     }
 
-    return { status: () => current, uid: () => current === 'ok' && last ? last.saved.uid : null, check, onChange };
+    function savedUid() {
+      const saved = readSaved(opts.storage, config.authKey);
+      return saved ? saved.uid : null;
+    }
+
+    function usableToken() {
+      return current === 'ok' && last && sameSaved(readSaved(opts.storage, config.authKey), last.saved) &&
+        last.expiresAt !== null && last.expiresAt - now() >= 5 * 60 * 1000 ? last.idToken : null;
+    }
+
+    async function getToken() {
+      if (pending) await pending;
+      const token = usableToken();
+      if (token) return token;
+      await check({ force: true });
+      return usableToken();
+    }
+
+    return { status: () => current, uid: () => current === 'ok' && last ? last.saved.uid : null, savedUid, getToken, check, onChange };
   }
 
   const api = { readSaved, createLink };
