@@ -83,6 +83,7 @@
     lastResult: null,       // 終わった学習の結果 { session, summary, celebrated, newBadges }（結果画面が使う。newBadges はまだ見せていないバッジの id。
                             // 結果画面が sfxPlayed を足す: レベルアップ・バッジの効果音を鳴らしたか）
     offline: null,          // Task 14: オフライン教材の状態
+    link: null,             // 授業ログのログインの確認（記録はこの端末に保存する）
     protectedStorage: false,
     contentErrors: [],
     storageObj: null,       // 読み書きに使う storage（ふつうは localStorage）
@@ -263,6 +264,33 @@
     name.setAttribute('data-no-ruby', '');
     name.textContent = p.nickname;
     box.append(name);
+  }
+
+  function updateLinkBand() {
+    const box = byId('link-band');
+    if (!box || !state.link) return;
+    const bands = {
+      none: { kind: 'off', text: 'ログインしていません。記録は、この端末の中だけに残ります。', link: '授業ログにログインする' },
+      checking: { kind: 'off', text: '授業ログとのつながりを確かめています…' },
+      ok: { kind: 'ok', text: '授業ログのアカウントで つながっています。記録は、まだこの端末の中だけに残ります。', link: '授業ログへもどる' },
+      unknown: { kind: 'wait', text: '通信できないので、授業ログとのつながりを確かめられません。学習は、このまま続けられます。', link: '授業ログへもどる' },
+      expired: { kind: 'off', text: '授業ログのログインが切れています。記録は、この端末の中だけに残ります。', link: '授業ログでログインし直す' },
+    };
+    const band = bands[state.link.status()];
+    const text = document.createElement('span');
+    text.className = 'link-band-text';
+    text.textContent = band.text;
+    const children = [text];
+    if (band.link) {
+      const link = document.createElement('a');
+      link.className = 'link-band-link';
+      link.href = state.config.link.jugyoUrl;
+      link.textContent = band.link;
+      children.push(link);
+    }
+    box.className = 'link-band is-' + band.kind;
+    box.replaceChildren(...children);
+    box.hidden = false;
   }
 
   // ---- 学習の進行（session.js を動かし、出来事を記録に入れて保存する） ----
@@ -1031,6 +1059,30 @@
 
     if (root.location.protocol === 'file:') showNotice('file-notice', NOTICE_FILE);
     setupOffline();
+
+    const linkConfig = state.config.link;
+    if (RQ.link && typeof RQ.link.createLink === 'function' && linkConfig &&
+        typeof linkConfig.apiKey === 'string' && linkConfig.apiKey.trim() &&
+        typeof linkConfig.tokenUrl === 'string' && linkConfig.tokenUrl.trim()) {
+      state.link = RQ.link.createLink({
+        storage: state.storageObj,
+        fetch: typeof root.fetch === 'function' ? root.fetch.bind(root) : () => Promise.reject(new Error('通信できません')),
+        config: linkConfig,
+        now: () => Date.now(),
+        setTimeout: (fn, ms) => root.setTimeout(fn, ms),
+        clearTimeout: (id) => root.clearTimeout(id),
+      });
+      state.link.onChange(updateLinkBand);
+      updateLinkBand();
+      state.link.check();
+      root.addEventListener('online', () => state.link.check());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') state.link.check();
+      });
+      root.addEventListener('storage', (event) => {
+        if (event.key === linkConfig.authKey || event.key === null) state.link.check({ force: true });
+      });
+    }
 
     // QR コードの参加用の URL（?live=<部屋コード>）で開いたら、コードを覚えて URL から消す（読み込み直しで入り直さない）。
     // 最初の画面は参加画面（プロフィールがなければプロフィール作成のあと。go の home → live）
