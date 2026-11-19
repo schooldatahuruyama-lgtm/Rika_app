@@ -34,6 +34,13 @@
       jugyoUrl: 'https://schooldatahuruyama-lgtm.github.io/jugyo-log/',
       timeoutMs: 10000,
       recheckMs: 60000,
+      dbUrl: 'https://jyugyolog-default-rtdb.firebaseio.com',
+      acctKeyPrefix: 'rika-quest:acct:',
+      syncKeyPrefix: 'rika-quest:sync:',
+      pushDelayMs: 3000,
+      pullMinMs: 60000,
+      stateMaxChars: 500000,
+      chunkMaxChars: 150000,
     },
   };
 
