@@ -107,6 +107,35 @@ p {
   color: #fff;
 }
 
+.link-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 6px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.link-band.is-ok { background: #E3F5EA; color: #14694B; }
+.link-band.is-wait { background: #FFF3D6; color: #6B5200; }
+.link-band.is-off { background: #F1F2F6; color: #3A4353; }
+
+.link-band-text,
+.link-band-link {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.link-band-link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .header-inner {
   max-width: 720px;
   margin: 0 auto;

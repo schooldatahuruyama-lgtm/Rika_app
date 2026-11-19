@@ -25,6 +25,16 @@
     // ライブクイズの Firebase Realtime Database の URL（アプリに組みこみ。設計書 14 章）。
     // 端末で別の URL を保存すると（localStorage の rika-quest:live-db）そちらが優先される。規則で rooms/ 以外は守られている
     live: { dbUrl: 'https://rika-quest-default-rtdb.firebaseio.com' },
+    // 授業ログ（別のアプリ）とのつながり。apiKey は授業ログの Firebase の公開してよい値（鍵ではない）。
+    // 授業ログのログイン（localStorage の jugyolog:auth）は読むだけで、書きかえない
+    link: {
+      authKey: 'jugyolog:auth',
+      apiKey: 'AIzaSyCW_I68hG8F41aVs7cm673af9GnV2Hwkp0',
+      tokenUrl: 'https://securetoken.googleapis.com/v1/token',
+      jugyoUrl: 'https://schooldatahuruyama-lgtm.github.io/jugyo-log/',
+      timeoutMs: 10000,
+      recheckMs: 60000,
+    },
   };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
