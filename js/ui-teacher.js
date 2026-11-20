@@ -2,6 +2,7 @@
 // この端末の記録（ctx.store）と、読みこんだ記録ファイルの store（ctx.state.teacherImports。この端末の記録には入れない）を
 // teacher.summarizeAll でまとめ、生徒の一覧・生徒の詳細・クラスのまとめを出す。CSV で書き出せる。
 // 利用者の文字はすべて textContent で入れる。先生の画面なので、ふりがなは付けない（section に data-no-ruby）。
+// 授業ログの先生と確かめられたらパスコードを省き、クラスの今の状態をメモリの中だけに読みこめる。
 // 入り口はパスコード（js/teacher-gate.js）。ctx.state.teacherUnlocked が真でなければ、中身の代わりに入り口を出す。
 //   入り口はいつも「パスコードを入力」だけ（生徒が決める画面はない）。端末の上書き（rika-quest:teacher）があればそれ、
 //   なければ js/config.js の初期パスコード（teacher.passcode）と照合する。合えば teacherUnlocked = true にして描き直す。
@@ -124,6 +125,7 @@
   // メモリの記録を捨ててページを読み込み直す
   function reloadPage(ctx, section) {
     ctx.state.teacherUnlocked = false;
+    ctx.state.teacherClass = null;
     ctx.state.teacherImports = [];
     pendingLock = null;
     section.replaceChildren();
@@ -141,6 +143,7 @@
   // 学習記録のキーがないのに、メモリに生徒がいる（ほかのタブで「すべて削除」された）なら、読み込み直す。
   // 先生画面をまだ一度も開いていないタブでも、開くときに確かめる。読み込み直すなら true
   function reloadIfStoreGone(ctx, section) {
+    if (ctx.state.account) return false;
     let raw;
     try {
       raw = ctx.state.storageObj ? ctx.state.storageObj.getItem(ctx.config.storageKey) : undefined;
@@ -342,7 +345,7 @@
   // 読みこんだ store を、端末の記録と同じ形に整える（app.normalizeStore）。整えられなければ null。
   // ニックネームが文字列でないもの（{ toString: null } など）は先に空にする（normalizeStore の String() が例外になるため）。
   // 空のニックネームは画面・CSV で「（名前なし）」になる（teacher.nicknameOf）
-  function prepareImport(ctx, store) {
+  function prepareImport(ctx, store, quiet) {
     try {
       (Array.isArray(store.profiles) ? store.profiles : []).forEach((p) => {
         if (p && typeof p === 'object' && typeof p.nickname !== 'string') p.nickname = '';
@@ -350,7 +353,7 @@
       const normalize = ctx.app && typeof ctx.app.normalizeStore === 'function' ? ctx.app.normalizeStore : null;
       return normalize ? normalize(store) : store;
     } catch (e) {
-      console.error(e);
+      if (!quiet) console.error(e);
       return null;
     }
   }
@@ -380,16 +383,118 @@
 
   // ---- 画面 ----
 
+  function classError(status) {
+    if (status === 'offline') return 'つながりません。電波を確かめて、もう一度ためしてください。';
+    if (status === 'denied' || status === 'not-teacher') return '先生のアカウントで、授業ログにログインしているときだけ読みこめます。';
+    return 'クラスの記録を読みこめませんでした。';
+  }
+
+  function classNotices(loaded) {
+    if (!loaded) return [];
+    const label = (r) => (r.number === null ? '番号なし ' : r.number + ' 番 ') + r.sid +
+      (r.kind === 'no-account' ? '（まだログインしていません）' : r.kind === 'dup' ? '（同じ ID のアカウントが 2 つあります）' : '');
+    const empty = loaded.rows.filter((r) => r.kind === 'empty' || r.kind === 'no-account');
+    const failed = loaded.rows.filter((r) => ['failed', 'broken', 'dup'].includes(r.kind));
+    const lines = [];
+    if (!loaded.rows.length) lines.push(el('p', { text: 'このクラスには、まだ生徒がいません。' }));
+    if (empty.length) lines.push(el('p', { text: 'まだ始めていない生徒（' + empty.length + ' 人）: ' + empty.map(label).join('、') }));
+    if (failed.length) lines.push(el('p', { class: 'gate-error', text: '読みこめなかった生徒（' + failed.length + ' 人）: ' + failed.map(label).join('、') }));
+    if (loaded.truncated) lines.push(el('p', { class: 'gate-error', text: '61 人目からは読みこんでいません。' }));
+    return lines;
+  }
+
   function renderTeacher(section, ctx) {
     section.setAttribute('data-no-ruby', '');
     const mine = ++renderSeq;
-    const isCurrent = () => mine === renderSeq && ctx.state.screen === 'teacher';
+    const account = ctx.state.account;
+    const link = ctx.state.link;
+    const isCurrent = () => mine === renderSeq && ctx.state.screen === 'teacher' && ctx.state.account === account &&
+      ctx.state.link === link && !ctx.state.switchBlocked && (!account || !link || link.savedUid() === account.uid);
     if (reloadIfStoreGone(ctx, section)) return;
-    if (!ctx.state.teacherUnlocked) {
-      renderGate(section, ctx, () => renderTeacher(section, ctx), isCurrent);
-      return;
-    }
     let selectedId = null;
+    let client = null;
+    let verifiedTeacher = false;
+    let classes = [];
+    let chosenClass = ctx.state.teacherClass ? ctx.state.teacherClass.classId : '';
+    let classBusy = false;
+    let classStatus = '';
+    let classFailed = false;
+    try {
+      if (account && link && RQ.classProgress && typeof RQ.classProgress.createClassProgress === 'function' && RQ.sync) {
+        client = RQ.classProgress.createClassProgress({ link, fetch: (...a) => root.fetch(...a), config: ctx.config.link, unpackState: RQ.sync.unpackState });
+      }
+    } catch (e) { client = null; }
+
+    async function loadClass() {
+      if (!isCurrent() || !verifiedTeacher || classBusy || !ctx.state.teacherUnlocked) return;
+      const chosen = classes.find((c) => c.id === chosenClass);
+      if (!chosen) return;
+      classBusy = true;
+      classFailed = false;
+      classStatus = '読みこんでいます…';
+      paint();
+      const result = await client.load(chosen.id);
+      if (!isCurrent() || !ctx.state.teacherUnlocked) return;
+      classBusy = false;
+      if (result.status === 'ok') {
+        ctx.state.teacherClass = { classId: chosen.id, name: chosen.name, classUnit: result.classUnit,
+          truncated: result.truncated, rows: result.rows, loadedAt: ctx.now().getTime() };
+        classStatus = '';
+        selectedId = null;
+      } else {
+        if (result.status === 'none') verifiedTeacher = false;
+        classFailed = true;
+        classStatus = classError(result.status);
+      }
+      paint();
+    }
+
+    async function readClasses() {
+      classBusy = true;
+      classFailed = false;
+      classStatus = '読みこんでいます…';
+      paint();
+      const result = await client.listClasses();
+      if (!isCurrent() || !ctx.state.teacherUnlocked) return;
+      classBusy = false;
+      if (result.status !== 'ok') {
+        if (result.status === 'none') verifiedTeacher = false;
+        classFailed = true;
+        classStatus = classError(result.status);
+        paint();
+        return;
+      }
+      classes = result.classes;
+      classStatus = classes.length ? '' : '授業ログにクラスがありません。';
+      const wanted = classes.find((c) => c.id === ctx.state.teacherClassWanted);
+      if (wanted) {
+        chosenClass = wanted.id;
+        ctx.state.teacherClassWanted = null;
+      } else if (!classes.some((c) => c.id === chosenClass)) chosenClass = classes.length ? classes[0].id : '';
+      paint();
+      if (wanted) await loadClass();
+    }
+
+    function progressCard() {
+      if (!verifiedTeacher) return null;
+      const select = el('select', { id: 'teacher-class', class: 'text-input', disabled: classBusy || !classes.length },
+        classes.map((c) => el('option', { value: c.id, text: c.year + ' 年度 ' + c.name })));
+      select.value = chosenClass;
+      select.addEventListener('change', () => { chosenClass = select.value; });
+      return card([
+        cardTitle('授業ログのクラスから読みこむ'),
+        el('label', { class: 'field-label', for: 'teacher-class', text: 'クラス' }), select,
+        el('div', { class: 'btn-row teacher-class-actions' }, [
+          button('読みこむ', () => classes.length ? loadClass() : readClasses(), 'btn-primary', { disabled: classBusy || !classes.length && !classFailed }),
+          ctx.state.teacherClass ? button('クラスの一覧を消す', () => {
+            ctx.state.teacherClass = null;
+            selectedId = null;
+            paint();
+          }, '', { disabled: classBusy }) : null,
+        ]),
+        el('p', { role: 'status', class: classFailed ? 'gate-error' : 'muted', text: classStatus }),
+      ]);
+    }
 
     const fileInput = el('input', { type: 'file', accept: '.json,application/json', multiple: true, hidden: true });
     fileInput.addEventListener('change', async () => {
@@ -412,10 +517,19 @@
       }
       if (reloadIfGone(ctx, section, G.load(gateStorage(ctx))) || reloadIfStoreGone(ctx, section)) return false;
       const now = ctx.now();
-      const stores = [ctx.store].concat(importsOf(ctx));
+      const loaded = verifiedTeacher ? ctx.state.teacherClass : null;
+      const stores = loaded ? loaded.rows.filter((r) => r.kind === 'ok').map((r) => {
+        const store = prepareImport(ctx, RQ.teacher.storeFromState(r.profile, r.record, r.uid), true);
+        if (!store) r.kind = 'broken';
+        return store;
+      }).filter(Boolean) : [ctx.store].concat(importsOf(ctx));
       const summary = RQ.teacher.summarizeAll(stores, ctx.reg, ctx.config, now);
       const entries = RQ.teacher.latestEntries(stores);
       fillUnitTitles(ctx, summary, entries);
+      if (loaded) {
+        const order = new Map(loaded.rows.map((r, i) => ['acct-' + r.uid, i]));
+        summary.students.sort((a, b) => order.get(a.id) - order.get(b.id));
+      }
       if (selectedId && !summary.students.some((s) => s.id === selectedId)) selectedId = null;
 
       const detailBox = el('div', { class: 'teacher-detail-box', 'aria-live': 'polite' });
@@ -429,7 +543,7 @@
         });
         const s = summary.students.find((x) => x.id === selectedId);
         const entry = entries.find((e) => e.profile.id === selectedId);
-        detailBox.replaceChildren(...(s && entry ? [detailCard(ctx, s, entry.rec, now)] : []));
+        detailBox.replaceChildren(...(s && entry ? [detailCard(ctx, s, entry.rec, now, !!loaded)] : []));
       };
       const select = (id) => {
         selectedId = selectedId === id ? null : id;
@@ -440,7 +554,8 @@
       const imports = importsOf(ctx);
       const children = [
         H.topBar('先生用の確認画面', '設定', () => ctx.go('settings')),
-        el('p', { class: 'caution', text: CAUTION }),
+        el('p', { class: 'caution', text: loaded ? 'クラスの今の状態を表示します。読みこんだ一覧は、この端末に保存しません。' : CAUTION }),
+        progressCard(),
         card([
           cardTitle('記録を合わせて見る'),
           el('p', { text: imports.length > 0 ? '読みこんだ記録ファイル: ' + imports.length + ' 件' : '読みこんだ記録ファイルはありません。' }),
@@ -454,7 +569,7 @@
           ]),
           fileInput,
         ]),
-        studentsCard(ctx, summary, rows, select),
+        studentsCard(ctx, summary, rows, select, loaded),
         detailBox,
         classCard(summary),
         card([
@@ -479,6 +594,7 @@
         passcodeCard(ctx, isCurrent),
         button('先生画面を閉じる', () => {
           ctx.state.teacherUnlocked = false;
+          ctx.state.teacherClass = null;
           ctx.go('settings');
         }, 'btn-block'),
       ];
@@ -487,18 +603,51 @@
       return true;
     }
 
-    paint();
+    function open() {
+      if (!isCurrent()) return;
+      if (!ctx.state.teacherUnlocked) renderGate(section, ctx, paint, isCurrent);
+      else paint();
+    }
+    if (client) {
+      section.replaceChildren(H.topBar('先生用の確認画面', '設定', () => ctx.go('settings')),
+        el('p', { role: 'status', text: '確かめています…' }));
+      Promise.resolve().then(() => client.isTeacher()).catch(() => ({ status: 'offline' })).then((result) => {
+        if (!isCurrent()) return;
+        verifiedTeacher = result.status === 'ok' && result.teacher === true;
+        ctx.state.teacherUnlocked = verifiedTeacher;
+        if (!verifiedTeacher) ctx.state.teacherClass = null;
+        open();
+        if (verifiedTeacher) void readClasses();
+      });
+    } else {
+      if (account) {
+        ctx.state.teacherUnlocked = false;
+        ctx.state.teacherClass = null;
+      }
+      open();
+    }
+    return () => {
+      if (mine === renderSeq) renderSeq++;
+      section.replaceChildren();
+    };
   }
 
   // 生徒の一覧の表。行（またはニックネームのボタン）を押すと詳細を出す
-  function studentsCard(ctx, summary, rows, select) {
-    const children = [cardTitle('生徒の一覧（' + summary.students.length + ' 人）')];
+  function studentsCard(ctx, summary, rows, select, loaded) {
+    const children = [cardTitle(loaded ? loaded.name + 'の進み具合（' + loaded.rows.length + ' 人）' : '生徒の一覧（' + summary.students.length + ' 人）')];
+    if (loaded) {
+      children.push(el('p', { class: 'muted', text: '読みこんだ時刻: ' + new Date(loaded.loadedAt).toLocaleString('ja-JP') }));
+      const unit = RQ.units.list(ctx.reg, ctx.curriculum).find((u) => u.id === loaded.classUnit && u.ready);
+      if (unit) children.push(el('p', { text: '先生が決めた単元: ' + unit.title }));
+    }
     if (summary.students.length === 0) {
-      children.push(el('p', { class: 'muted', text: 'まだ生徒の記録がありません。' }));
+      if (!loaded) children.push(el('p', { class: 'muted', text: 'まだ生徒の記録がありません。' }));
+      children.push(...classNotices(loaded));
       return card(children);
     }
     children.push(el('p', { class: 'muted', text: '行を押すと、その生徒の詳細が下に出ます。' }));
-    const head = el('tr', null, ['ニックネーム', '単元', 'Lv', '連続', '最終学習', 'クリア', 'バッジ', '理解度', '苦手'].map((t) => el('th', { scope: 'col', text: t })));
+    const columns = (loaded ? ['番号', 'ID'] : []).concat(['ニックネーム', '単元', 'Lv', '連続', '最終学習', 'クリア', 'バッジ', '理解度', '苦手']);
+    const head = el('tr', null, columns.map((t) => el('th', { scope: 'col', text: t })));
     const body = el('tbody');
     summary.students.forEach((s) => {
       const btn = el('button', { type: 'button', class: 'teacher-name', 'aria-expanded': 'false' }, [
@@ -506,7 +655,11 @@
         el('span', { text: s.nickname }),
       ]);
       const weak = s.weak.slice(0, TABLE_WEAK_LIMIT).map((w) => w.title).join('・');
-      const tr = el('tr', { class: 'teacher-row' }, [
+      const member = loaded && loaded.rows.find((r) => 'acct-' + r.uid === s.id);
+      const tr = el('tr', { class: 'teacher-row' }, (member ? [
+        el('td', { class: 'num', text: member.number === null ? '—' : String(member.number) }),
+        el('td', { text: member.sid }),
+      ] : []).concat([
         el('th', { scope: 'row' }, btn),
         el('td', { text: s.unitTitle || '—' }),
         el('td', { class: 'num', text: String(s.level) }),
@@ -516,7 +669,7 @@
         el('td', { class: 'num', text: String(s.badges || 0) }),
         el('td', null, masteryCounts(ctx, s)),
         el('td', { class: 'teacher-weak', text: weak || '—' }),
-      ]);
+      ]));
       // ボタンの押下は行の押下でも拾うので、ここでは行だけに付ける
       tr.addEventListener('click', () => select(s.id));
       rows.push({ tr, btn, id: s.id });
@@ -529,11 +682,14 @@
       el('span', { class: 'teacher-m level-1', text: 'もう少し' }), ' ',
       el('span', { class: 'teacher-m level-0', text: 'まだ' }),
     ]));
+    children.push(...classNotices(loaded));
     return card(children);
   }
 
   // 生徒 1 人の詳細: 単元ごとの進捗と理解度（取り組んだ単元と、選んでいる単元）、苦手、最近の取り組み
-  function detailCard(ctx, s, rec, now) {
+  function detailCard(ctx, s, rec, now, fromClass) {
+    const noHistory = fromClass && rec.history.length === 0;
+    const historyNotice = '答えの履歴は、クラスの読みこみでは出ません。';
     const children = [el('h2', { class: 'card-title teacher-detail-title' }, [H.avatarBadge(s.avatar, true), ' ', s.nickname, ' さんの詳細'])];
     children.push(el('p', { class: 'muted', text: 'Lv ' + s.level + '・経験値 ' + s.xp + '・連続 ' + s.streak + ' 日・最終学習 ' + lastLabel(s) + (s.lastAt ? '（' + RQ.xp.localDate(s.lastAt) + '）' : '') }));
 
@@ -565,7 +721,7 @@
       children.push(el('ul', { class: 'teacher-weak-list' }, s.weak.map((w) => el('li', null, [
         el('span', { class: 'teacher-weak-name', text: w.title }),
         el('span', { class: 'muted', text: w.unitTitle }),
-        el('span', { class: 'teacher-weak-count', text: '誤答 ' + w.wrong + ' / 解答 ' + w.total }),
+        el('span', { class: noHistory ? 'muted' : 'teacher-weak-count', text: noHistory ? historyNotice : '誤答 ' + w.wrong + ' / 解答 ' + w.total }),
       ]))));
     }
 
@@ -576,7 +732,7 @@
       .sort((a, b) => (b.at ? b.at.getTime() : -Infinity) - (a.at ? a.at.getTime() : -Infinity) || b.i - a.i)
       .slice(0, RECENT_LIMIT);
     if (recent.length === 0) {
-      children.push(el('p', { class: 'muted', text: 'まだ取り組んだ記録がありません。' }));
+      children.push(el('p', { class: 'muted', text: noHistory ? historyNotice : 'まだ取り組んだ記録がありません。' }));
     } else {
       children.push(el('ol', { class: 'history-list' }, recent.map(({ h, at }) => {
         let result;

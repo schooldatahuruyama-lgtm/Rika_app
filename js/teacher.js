@@ -131,7 +131,15 @@
     const names = labelNames(config);
     const weakNames = names.slice(0, -1);   // いちばん上（できた）以外 = まだ・もう少し
 
-    const last = lastEntry(r);
+    let last = lastEntry(r);
+    if (r.history.length === 0) {
+      const dates = Object.values(r.mastery).filter(isObject).map((m) => m.lastAt);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(r.streak.lastDate)) dates.push(r.streak.lastDate + 'T00:00:00');
+      dates.forEach((at) => {
+        const t = timeOf(at);
+        if (t !== null && (!last || t > last.t)) last = { t, at };
+      });
+    }
     const lastAt = last ? new Date(last.t).toISOString() : null;
     const daysSince = last ? xp.daysBetween(xp.localDate(new Date(last.t)), today) : null;
 
@@ -258,7 +266,12 @@
     return '﻿' + rows.map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
   }
 
-  const api = { summarizeStudent, summarizeAll, latestEntries, safeRecord, parseAt, nicknameOf, toCsv };
+  function storeFromState(profile, record, key) {
+    const id = 'acct-' + key;
+    return { version: 1, currentProfileId: id, profiles: [Object.assign({}, profile, { id })], records: { [id]: record } };
+  }
+
+  const api = { summarizeStudent, summarizeAll, latestEntries, safeRecord, parseAt, nicknameOf, toCsv, storeFromState };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.RikaQuest = Object.assign(root.RikaQuest || {}, { teacher: api });

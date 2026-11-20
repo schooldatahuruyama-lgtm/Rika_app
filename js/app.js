@@ -101,6 +101,9 @@
     syncReady: false,
     classUnit: null,
     classUnitSeen: null,
+    teacherUnlocked: false,
+    teacherClass: null,
+    teacherClassWanted: null,
     switchBlocked: false,
     linkLoading: false,
     claimStore: null,
@@ -572,6 +575,13 @@
 
   function switchStore(next, initial) {
     if (reloading) return;
+    state.teacherUnlocked = false;
+    state.teacherClass = null;
+    state.teacherClassWanted = null;
+    if (state.screen === 'teacher' && typeof cleanup === 'function') {
+      cleanup();
+      cleanup = null;
+    }
     pendingSwitch = next;
     state.classUnit = null;
     state.classUnitSeen = null;
@@ -1201,7 +1211,10 @@
     else if (!state.switchBlocked && state.claimStore) { name = 'claim'; params = {}; }
     else if (state.account && name === 'profile' && currentProfile()) name = 'home';
     // 先生画面（と教材を作る画面）を離れたら、次はパスコードの入り口から
-    if (TEACHER_SCREENS.indexOf(name) === -1) state.teacherUnlocked = false;
+    if (TEACHER_SCREENS.indexOf(name) === -1) {
+      state.teacherUnlocked = false;
+      state.teacherClass = null;
+    }
     // 教材を作る画面・ライブクイズの出題はパスコードの先。解錠していなければ先生画面の入り口へ
     if ((name === 'author' || name === 'live-host') && !state.teacherUnlocked) {
       go('teacher');
@@ -1470,6 +1483,22 @@
     }
   }
 
+  function openTeacherParam() {
+    try {
+      const params = new URLSearchParams(root.location.search || '');
+      if (params.get('teacher') !== '1') return;
+      const classId = params.get('class');
+      state.teacherClassWanted = typeof classId === 'string' && /^[A-Za-z0-9]+$/.test(classId) ? classId : null;
+      params.delete('teacher');
+      params.delete('class');
+      if (root.history && typeof root.history.replaceState === 'function') {
+        const rest = params.toString();
+        root.history.replaceState(root.history.state, '', root.location.pathname + (rest ? '?' + rest : '') + root.location.hash);
+      }
+      go('teacher');
+    } catch (e) {}
+  }
+
   async function start() {
     state.storageObj = openStorage();
     state.store = loadStore(state.config);
@@ -1532,7 +1561,11 @@
         pushTimer = null;
         syncAccount(false);
       });
-      if (RQ.sync && validUid(initialUid) && await startAccount(true)) { starting = false; return; }
+      if (RQ.sync && validUid(initialUid) && await startAccount(true)) {
+        starting = false;
+        openTeacherParam();
+        return;
+      }
       state.link.check();
     }
 
@@ -1540,6 +1573,7 @@
     // 最初の画面は参加画面（プロフィールがなければプロフィール作成のあと。go の home → live）
     go(currentProfile() ? 'home' : 'profile');
     starting = false;
+    openTeacherParam();
   }
 
   const app = {

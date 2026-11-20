@@ -1276,6 +1276,10 @@ svg.scene .scene-label {
   margin: 0 -4px;
 }
 
+.teacher-class-actions {
+  margin-top: 12px;
+}
+
 .teacher-table {
   width: 100%;
   min-width: 680px;   /* 列（バッジ）を足したので広げた。狭い画面ではこの表だけ横にスクロールする */
