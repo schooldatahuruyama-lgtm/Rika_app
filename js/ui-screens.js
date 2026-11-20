@@ -339,6 +339,7 @@
       const saved = ctx.save();
       ctx.go('home');
       reportSave(ctx, saved, null);
+      if (ctx.account) ctx.applyClassUnit();
     });
 
     section.append(card([
@@ -406,10 +407,23 @@
 
     // いまの単元（単元一覧の表に項目があれば「1年・物理」のように学年と分野も出す）
     const item = unitId ? curriculumItem(ctx, unitId) : null;
+    const classUnit = ctx.classUnitId ? ctx.reg.unit(ctx.classUnitId) : null;
     section.append(card([
       cardTitle('いまの単元'),
       el('p', { class: 'unit-current', text: unit ? unit.title : '単元がえらばれていません' }),
+      classUnit && ctx.classUnitId === unitId ? el('span', { class: 'tag tag-ok', text: '先生が決めた単元' }) : null,
       item ? el('p', { class: 'muted', text: gradeLabel(ctx, item.grade) + '・' + item.field }) : null,
+      classUnit && ctx.classUnitId !== unitId ? el('div', { class: 'stack' }, [
+        el('p', { text: '先生が決めた単元は「' + classUnit.title + '」です。' }),
+        button('この単元にする', () => {
+          if (!ctx.setUnit(ctx.classUnitId)) {
+            ctx.message('単元を変えられませんでした。', 'warn');
+            return;
+          }
+          ctx.go('home');
+          ctx.message('単元を「' + classUnit.title + '」にしました。', 'ok');
+        }, 'btn-block'),
+      ]) : null,
       button('単元をえらぶ', () => ctx.go('units'), 'btn-block'),
     ]));
 
@@ -568,7 +582,7 @@
       class: 'unit-card' + (item.ready ? '' : ' is-soon'),
       disabled: !item.ready,
       'aria-current': isCurrent ? 'true' : null,
-      'aria-label': title + '（' + meta + (isCurrent ? '、いまの単元' : '') + '）',
+      'aria-label': title + '（' + meta + (isCurrent ? '、いまの単元' : '') + (item.id === ctx.classUnitId ? '、先生が決めた単元' : '') + '）',
       onclick: item.ready ? () => {
         if (!ctx.setUnit(item.id)) {
           ctx.message('単元を変えられませんでした。', 'warn');
@@ -582,8 +596,12 @@
       el('span', { class: 'unit-body' }, [
         el('span', { class: 'unit-title', text: title }),
         el('span', { class: 'unit-meta muted', text: meta }),
+        item.id === ctx.classUnitId ? el('span', { class: 'unit-tags' }, [
+          el('span', { class: 'tag tag-ok unit-now', text: '先生が決めた単元' }),
+          isCurrent ? el('span', { class: 'tag tag-ok unit-now', text: 'いまの単元' }) : null,
+        ]) : null,
       ]),
-      isCurrent ? el('span', { class: 'tag tag-ok unit-now', text: 'いまの単元' }) : null,
+      isCurrent && item.id !== ctx.classUnitId ? el('span', { class: 'tag tag-ok unit-now', text: 'いまの単元' }) : null,
     ]);
   }
 
