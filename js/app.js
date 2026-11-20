@@ -439,8 +439,14 @@
     state.store = singleStore(normalizeStore(store));
     if (saved) savedStores.set(state.store, storeSnapshot(state.store));
     state.sync = sync || makeSync(uid, state.store);
-    state.classUnit = RQ.classUnit.createClassUnit({ uid, link: state.link, config: state.config.link,
-      fetch: (...args) => root.fetch(...args) });
+    state.classUnit = null;
+    // 更新途中で単元の部品がそろわなくても、アカウントの学習と同期は続ける。
+    try {
+      if (RQ.classUnit && typeof RQ.classUnit.createClassUnit === 'function') {
+        state.classUnit = RQ.classUnit.createClassUnit({ uid, link: state.link, config: state.config.link,
+          fetch: (...args) => root.fetch(...args) });
+      }
+    } catch (e) { state.classUnit = null; }
     state.classUnitSeen = null;
     lastClassUnit = null;
     state.syncReady = !!sync;

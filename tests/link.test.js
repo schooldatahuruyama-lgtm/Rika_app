@@ -598,7 +598,8 @@ function accountApp(t, opts = {}) {
       storage: require('../js/storage.js'), link, sync: require('../js/sync.js'),
     },
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/class-unit.js'), 'utf8'), context);
+  if (Object.hasOwn(opts, 'classUnit')) context.RikaQuest.classUnit = opts.classUnit;
+  else vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/class-unit.js'), 'utf8'), context);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/ui-screens.js'), 'utf8'), context);
   const ui = context.RikaQuest.ui;
   for (const name of Object.keys(ids).filter((k) => k.startsWith('screen-')).map((k) => k.slice(7))) {
@@ -634,6 +635,56 @@ async function refreshClass(f, unitId) {
   f.classData['rika/classUnit/ClassA'] = unitId;
   f.tick(60000); f.events.root.online(); await f.settle();
 }
+
+for (const sample of [
+  { name: 'undefined', value: undefined }, { name: 'null', value: null },
+  { name: '空のオブジェクト', value: {} }, { name: '関数でない createClassUnit', value: { createClassUnit: true } },
+  { name: 'createClassUnit の例外', value: { createClassUnit() { throw new Error('test class unit failed'); } } },
+]) {
+  for (const cached of [true, false]) {
+    test('class unit app: ' + sample.name + ' でもアカウントで起動・保存・同期する（キャッシュ' + (cached ? 'あり' : 'なし') + '）', async (t) => {
+      const store = accountStore(); store.profiles[0].unitId = 'sound';
+      const f = classApp(t, { classUnit: sample.value, data: cached ? { [ACCT + AUTH.uid]: store } : {} });
+      await f.ready; await f.settle();
+      assert.equal(f.app.state.account.uid, AUTH.uid); assert.equal(f.app.state.syncReady, true);
+      assert.equal(f.app.state.screen, cached ? 'home' : 'profile');
+      assert.ok(f.renders.includes(cached ? 'home' : 'profile'));
+      assert.equal(f.app.state.classUnit, null); assert.equal(f.app.state.classUnitSeen, null);
+      assert.equal(f.ids.message.textContent, ''); assert.equal(f.app.state.linkLoading, false);
+      assert.ok(f.calls.some((c) => c.init.method === 'GET' && c.url.includes('/rika/state/')));
+      if (cached) assert.equal(profileOf(f).unitId, 'sound');
+      else {
+        const input = f.nodes(f.ids['screen-profile']).find((e) => e.attrs.id === 'nickname-input');
+        input.value = 'テスト'; input.events.input(); f.find('profile', 'プロフィールを作る').events.click();
+        await f.settle();
+      }
+      assert.equal(f.app.state.screen, 'home');
+      f.app.record.lessonsRead['test-lesson'] = true;
+      f.app.record.history.push({ at: '2026-11-20', problemId: 'without-class-unit' });
+      assert.equal(f.app.save(), true); f.events.root.pagehide(); await f.settle();
+      assert.equal(f.app.state.syncStatus, 'ok'); assert.equal(f.app.state.sync.isDirty(), false);
+      assert.ok(f.calls.some((c) => c.init.method === 'PUT' && c.url.includes('/rika/state/')));
+      assert.equal(JSON.parse(f.remote.value.json).record.lessonsRead['test-lesson'], true);
+      const history = Object.values(f.remote.logs).flatMap((chunk) => require('../js/sync.js').unpackChunk(chunk).h);
+      assert.deepEqual(history.map((entry) => entry.problemId), ['without-class-unit']);
+      f.tick(60000); f.events.root.online(); await f.settle();
+      assert.equal(f.calls.some((c) => /\/(accounts|memberOf|classes|rika\/classUnit)\//.test(c.url)), false);
+      assert.equal(f.app.state.classUnitSeen, null); assert.equal(profileOf(f).classUnitApplied, undefined);
+      assert.equal(f.ids.message.textContent, '');
+    });
+  }
+}
+
+test('class unit app: 部品がないまま保存しても、次の起動で部品がそろえば単元を読みこむ', async (t) => {
+  const f = classApp(t, { classUnit: undefined }); await f.ready; await f.settle();
+  f.app.record.lessonsRead['test-lesson'] = true;
+  assert.equal(f.app.save(), true); f.events.root.pagehide(); await f.settle();
+  const reopened = classApp(t, { data: Object.fromEntries(f.data), remote: f.remote.value });
+  await reopened.ready; await reopened.settle();
+  assert.equal(reopened.app.state.screen, 'home'); assert.equal(reopened.app.record.lessonsRead['test-lesson'], true);
+  assert.equal(profileOf(reopened).unitId, 'light'); assert.equal(profileOf(reopened).classUnitApplied, 'light');
+  assert.ok(reopened.calls.some((c) => c.url.includes('/rika/classUnit/')));
+});
 
 test('class unit app: 初回は先生の単元を保存し、生徒の選び直しを保つ。先生の変更は再び適用する', async (t) => {
   const f = classApp(t); await f.ready; await f.settle();
