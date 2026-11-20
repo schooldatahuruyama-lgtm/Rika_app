@@ -99,6 +99,8 @@
     sync: null,
     syncStatus: null,
     syncReady: false,
+    classUnit: null,
+    classUnitSeen: null,
     switchBlocked: false,
     linkLoading: false,
     claimStore: null,
@@ -114,6 +116,7 @@
   let pushTimer = null;
   let syncJob = null;
   let lastPull = null;
+  let lastClassUnit = null;
   let initialUid = null;
   let starting = true;
   let reloading = false;
@@ -173,6 +176,8 @@
       if (typeof p.nickname !== 'string') p.nickname = p.nickname === undefined || p.nickname === null ? '' : String(p.nickname);
       // 選んだ単元: 文字列でなければ消す（知らない単元 id は残す。表示のときに units.currentId が既定へ戻す）
       if (p.unitId !== undefined && typeof p.unitId !== 'string') delete p.unitId;
+      if (p.classUnitApplied !== undefined && typeof p.classUnitApplied !== 'string') delete p.classUnitApplied;
+      if (!Number.isFinite(p.classUnitAppliedAt) || p.classUnitAppliedAt < 0) delete p.classUnitAppliedAt;
       // 見た目の設定: 知らない値は消す（既定の色・ふりがななしに戻る）
       // 文字列かを先に見る（配列や toString のないオブジェクトを、キーの検査で文字列に変えないように）
       if (p.theme !== undefined && !isTheme(p.theme)) delete p.theme;
@@ -434,6 +439,10 @@
     state.store = singleStore(normalizeStore(store));
     if (saved) savedStores.set(state.store, storeSnapshot(state.store));
     state.sync = sync || makeSync(uid, state.store);
+    state.classUnit = RQ.classUnit.createClassUnit({ uid, link: state.link, config: state.config.link,
+      fetch: (...args) => root.fetch(...args) });
+    state.classUnitSeen = null;
+    lastClassUnit = null;
     state.syncReady = !!sync;
     state.syncStatus = next.status;
     state.linkLoading = false;
@@ -451,6 +460,7 @@
     } else if (next.status === 'none') {
       state.claimStore = device.profiles.length ? device : null;
       go(state.claimStore ? 'claim' : 'profile');
+      syncAccount(false);
     } else {
       save();
       go('home');
@@ -471,6 +481,14 @@
     if (state.switchBlocked || pendingSwitch || reloading) return Promise.resolve();
     if (syncJob) return syncJob;
     if (!state.sync || reloading) return Promise.resolve();
+    // 作成・引き継ぎ待ちの単元取得で、最初のプロフィールの送信を待たせない。
+    if (!currentProfile() && state.syncReady && !pullFirst) {
+      if (lastClassUnit === null || pullFirst && Date.now() - lastClassUnit >= state.config.link.pullMinMs) {
+        lastClassUnit = Date.now();
+        return loadClassUnit();
+      }
+      return Promise.resolve();
+    }
     const sync = state.sync;
     syncJob = Promise.resolve().then(async () => {
       if (reloading || state.switchBlocked || state.sync !== sync) return;
@@ -501,6 +519,12 @@
       syncJob = null;
       updateLinkBand();
       if (!reloading && !state.switchBlocked && state.sync === sync && state.syncStatus === 'ok' && sync.isDirty()) schedulePush();
+      // プロフィールの取りこみ後に当てる。記録の通信が失敗しても単元は読む。
+      if (!reloading && !state.switchBlocked && state.sync === sync &&
+          (lastClassUnit === null || pullFirst && Date.now() - lastClassUnit >= state.config.link.pullMinMs)) {
+        lastClassUnit = Date.now();
+        void loadClassUnit();
+      }
     });
     updateLinkBand();
     return syncJob;
@@ -543,6 +567,9 @@
   function switchStore(next, initial) {
     if (reloading) return;
     pendingSwitch = next;
+    state.classUnit = null;
+    state.classUnitSeen = null;
+    lastClassUnit = null;
     if (state.switchBlocked) return;
     if (pushTimer !== null) root.clearTimeout(pushTimer);
     pushTimer = null;
@@ -630,6 +657,7 @@
     const removed = RQ.storage.save(state.storageObj, remaining, state.config);
     state.claimStore = null;
     go('home');
+    applyClassUnit();
     if (!removed) message('端末にある前の記録は、消せませんでした。', 'warn');
     syncAccount(false);
     return true;
@@ -822,6 +850,47 @@
   }
 
   // ---- 単元 ----
+
+  function applyClassUnit() {
+    const profile = currentProfile();
+    if (!state.account || !profile || !state.classUnitSeen) return;
+    const unitId = state.classUnitSeen.unitId;
+    const unit = unitId && state.reg.unit(unitId);
+    const before = { unitId: profile.unitId, classUnitApplied: profile.classUnitApplied, classUnitAppliedAt: profile.classUnitAppliedAt };
+    if (!unit) {
+      if (profile.classUnitApplied === undefined) return;
+      delete profile.classUnitApplied;
+      profile.classUnitAppliedAt = Date.now();
+    } else {
+      if (profile.classUnitApplied === unitId) return;
+      profile.unitId = unitId;
+      profile.classUnitApplied = unitId;
+      profile.classUnitAppliedAt = Date.now();
+    }
+    if (!save()) {
+      Object.keys(before).forEach((key) => {
+        if (before[key] === undefined) delete profile[key]; else profile[key] = before[key];
+      });
+      return;
+    }
+    if (['home', 'map', 'record', 'settings', 'units'].includes(state.screen)) {
+      go(state.screen, state.params);
+      if (unit) message('先生が決めた単元「' + unit.title + '」にしました。', 'ok');
+    }
+  }
+
+  async function loadClassUnit() {
+    const client = state.classUnit;
+    const account = state.account;
+    if (!client || !account || state.switchBlocked || pendingSwitch || reloading) return;
+    const result = await client.load();
+    if (state.classUnit !== client || state.account !== account || state.switchBlocked || pendingSwitch || reloading ||
+        state.link.savedUid() !== account.uid) return;
+    if (result.status === 'ok') {
+      state.classUnitSeen = { unitId: result.unitId, classId: result.classId };
+      applyClassUnit();
+    }
+  }
 
   // 今の生徒の単元を変えて保存する。教材のない id・プロフィールがないときは false
   function setUnit(id) {
@@ -1096,6 +1165,12 @@
       config: state.config,
       curriculum: RQ.curriculum || null,
       get unitId() { return RQ.units.currentId(state.reg, RQ.curriculum || null, currentProfile()); },
+      get classUnitId() {
+        const profile = currentProfile();
+        const id = state.account && profile && profile.classUnitApplied;
+        return typeof id === 'string' && state.reg.unit(id) ? id : null;
+      },
+      applyClassUnit,
       setUnit,
       get prefs() { return currentPrefs(); },
       setPrefs,

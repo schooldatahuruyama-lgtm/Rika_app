@@ -522,6 +522,8 @@ test('app: fetch がなくても学習画面の起動を止めず、黄色の帯
 // 同期も含めた起動。実際の app・link・sync・プロフィール/設定画面を小さな DOM で動かす。
 function accountApp(t, opts = {}) {
   const R = require('../js/record.js');
+  const reg = require('../js/content-registry.js').createRegistry();
+  ['light', 'sound', 'force'].forEach((id) => reg.register(require('../content/' + id + '.js').unit));
   const config = Object.assign({}, require('../js/config.js'), { link: Object.assign({}, require('../js/config.js').link, CONFIG, { dbUrl: 'https://account.example.invalid' }) });
   const data = new Map(Object.entries(opts.data || {}).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)]));
   if (opts.auth !== null) data.set(CONFIG.authKey, JSON.stringify(opts.auth || AUTH));
@@ -535,7 +537,8 @@ function accountApp(t, opts = {}) {
   function element(tag) {
     let text = '';
     const e = {
-      tag, children: [], attrs: {}, dataset: {}, events: {}, hidden: true, value: '', isConnected: true,
+      tag, children: [], attrs: {}, dataset: {}, events: {}, style: {}, hidden: true, value: '', isConnected: true,
+      get firstChild() { return this.children[0]; },
       classList: { toggle() {} },
       get textContent() { return text + this.children.map((c) => typeof c === 'string' ? c : c.textContent || '').join(''); },
       set textContent(v) { text = String(v); this.children = []; },
@@ -557,6 +560,7 @@ function accountApp(t, opts = {}) {
     addEventListener(type, fn) { events.document[type] = fn; }, removeEventListener() {}, dispatchEvent() {},
   };
   const remote = { value: opts.remote === undefined ? null : opts.remote, logs: {}, http: 200 }; const calls = [];
+  const classData = Object.assign({ ['accounts/' + AUTH.uid]: null }, opts.classData);
   const context = {
     document, console: { error: (...args) => errors.push(args), warn: (...args) => errors.push(args) },
     Blob, URL: { createObjectURL(blob) { downloads.push(blob); return 'blob:test-download'; }, revokeObjectURL() {} },
@@ -567,6 +571,12 @@ function accountApp(t, opts = {}) {
     async fetch(url, init) {
       if (url.startsWith(CONFIG.tokenUrl)) return opts.authFetch ? opts.authFetch() : success(opts.auth || AUTH);
       calls.push({ url, init });
+      const classPath = new URL(url).pathname.slice(1, -5);
+      if (/^(accounts|memberOf|classes|rika\/classUnit)\//.test(classPath)) {
+        assert.equal(init.method, 'GET'); assert.equal(init.redirect, 'error');
+        if (opts.classFetch) return opts.classFetch(classPath, init);
+        return response(200, Object.hasOwn(classData, classPath) ? classData[classPath] : null);
+      }
       if (opts.dbFetch) return opts.dbFetch(url, init);
       if (remote.http !== 200) return response(remote.http, null);
       const state = url.includes('/state/'); const id = url.split('.json')[0].split('/').at(-1);
@@ -582,18 +592,20 @@ function accountApp(t, opts = {}) {
       return response(200, state ? remote.value : url.includes('shallow=true') ? Object.fromEntries(Object.keys(remote.logs).map((k) => [k, true])) : remote.logs[id] || null);
     },
     RikaQuest: {
-      config, content: { units: () => [], unit: () => null }, contentRegistry: { validateUnit: () => [] },
-      record: R, xp: require('../js/xp.js'), units: { currentId: () => null },
+      config, content: reg, contentRegistry: { validateUnit: () => [] },
+      record: R, xp: require('../js/xp.js'), units: require('../js/units.js'), curriculum: require('../content/curriculum.js'),
+      mascot: require('../js/mascot.js'), badges: require('../js/badges.js'), recommend: require('../js/recommend.js'),
       storage: require('../js/storage.js'), link, sync: require('../js/sync.js'),
     },
   };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/class-unit.js'), 'utf8'), context);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/ui-screens.js'), 'utf8'), context);
   const ui = context.RikaQuest.ui;
   for (const name of Object.keys(ids).filter((k) => k.startsWith('screen-')).map((k) => k.slice(7))) {
     const actual = ui.screens[name];
     ui.screens[name] = (section, ctx, params) => {
       renders.push(name); contexts[name] = ctx;
-      if (['profile', 'claim', 'settings'].includes(name)) return actual(section, ctx, params);
+      if (['profile', 'claim', 'settings'].includes(name) || opts.unitScreens && ['home', 'units'].includes(name)) return actual(section, ctx, params);
     };
   }
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/app.js'), 'utf8'), context);
@@ -601,14 +613,432 @@ function accountApp(t, opts = {}) {
   t.after(() => { assert.deepEqual(errors, []); assert.equal(writes.some(([, key]) => key === CONFIG.authKey), false); });
   function nodes(node) { return [node].concat((node.children || []).filter((c) => typeof c === 'object').flatMap(nodes)); }
   const find = (screen, label) => nodes(ids['screen-' + screen]).find((e) => e.tag === 'button' && e.textContent === label);
-  const settle = async () => { for (let i = 0; i < 80; i++) await Promise.resolve(); };
-  return { ready, app: context.RikaQuest.app, context, data, writes, ids, events, timers, remote, calls, renders, contexts, find, nodes, settle, downloads,
+  const settle = async () => { for (let i = 0; i < 200; i++) await Promise.resolve(); };
+  return { ready, app: context.RikaQuest.app, context, data, writes, ids, events, timers, remote, classData, calls, renders, contexts, find, nodes, settle, downloads,
     tick: (ms) => { clock += ms; }, reloads: () => reloads };
 }
 function accountStore(name = 'テスト', id = 'p-test') {
   return { version: 1, currentProfileId: id, profiles: [{ id, nickname: name, avatar: 'fox' }], records: { [id]: require('../js/record.js').createRecord() } };
 }
 const ACCT = 'rika-quest:acct:'; const SYNC = 'rika-quest:sync:';
+
+function classApp(t, opts = {}) {
+  return accountApp(t, Object.assign({ data: { [ACCT + AUTH.uid]: accountStore() } }, opts, {
+    classData: Object.assign({ ['accounts/' + AUTH.uid]: 'test-student',
+      'memberOf/test-student': { ClassA: true }, 'classes/ClassA': { year: 2026, name: '1組' },
+      'rika/classUnit/ClassA': 'light' }, opts.classData),
+  }));
+}
+const profileOf = (f) => f.app.state.store.profiles[0];
+async function refreshClass(f, unitId) {
+  f.classData['rika/classUnit/ClassA'] = unitId;
+  f.tick(60000); f.events.root.online(); await f.settle();
+}
+
+test('class unit app: 初回は先生の単元を保存し、生徒の選び直しを保つ。先生の変更は再び適用する', async (t) => {
+  const f = classApp(t); await f.ready; await f.settle();
+  assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+  const appliedAt = profileOf(f).classUnitAppliedAt; assert.equal(appliedAt, 100000);
+  const saved = JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0];
+  assert.equal(saved.unitId, 'light'); assert.equal(saved.classUnitApplied, 'light');
+  assert.equal(saved.classUnitAppliedAt, appliedAt);
+  assert.equal(f.contexts.home.classUnitId, 'light');
+  assert.equal(f.ids.message.textContent, '先生が決めた単元「光の世界」にしました。');
+  f.events.root.pagehide(); await f.settle();
+  f.tick(1000);
+  assert.equal(f.contexts.home.setUnit('sound'), true);
+  assert.equal(profileOf(f).classUnitAppliedAt, appliedAt);
+  await refreshClass(f, 'light');
+  assert.equal(profileOf(f).unitId, 'sound'); assert.equal(profileOf(f).classUnitApplied, 'light');
+  assert.equal(profileOf(f).classUnitAppliedAt, appliedAt);
+  await refreshClass(f, 'force');
+  assert.equal(profileOf(f).unitId, 'force'); assert.equal(profileOf(f).classUnitApplied, 'force');
+  assert.equal(profileOf(f).classUnitAppliedAt, f.context.Date.now());
+  assert.equal(f.ids.message.textContent, '先生が決めた単元「力のはたらき」にしました。');
+});
+
+test('class unit app: 指定解除・教材にないidは選択を保って印を消し、時刻は開き直しても残る。再指定はもう一度適用する', async (t) => {
+  const f = classApp(t, { unitScreens: true }); await f.ready; await f.settle();
+  for (const unitId of [null, 'unknown-unit']) {
+    const before = profileOf(f).classUnitAppliedAt;
+    f.contexts.home.setUnit('sound'); await refreshClass(f, unitId);
+    assert.equal(profileOf(f).unitId, 'sound'); assert.equal(Object.hasOwn(profileOf(f), 'classUnitApplied'), false);
+    const appliedAt = f.context.Date.now();
+    assert.equal(profileOf(f).classUnitAppliedAt, appliedAt); assert.ok(appliedAt > before);
+    assert.equal(f.contexts.home.classUnitId, null);
+    const saved = JSON.parse(f.data.get(ACCT + AUTH.uid));
+    assert.equal(Object.hasOwn(saved.profiles[0], 'classUnitApplied'), false);
+    assert.equal(saved.profiles[0].classUnitAppliedAt, appliedAt);
+    assert.equal(f.ids['screen-home'].textContent.includes('先生が決めた単元'), false);
+    const reopened = classApp(t, { data: { [ACCT + AUTH.uid]: saved }, remote: f.remote.value,
+      classData: { 'rika/classUnit/ClassA': unitId } });
+    await reopened.ready; await reopened.settle();
+    assert.equal(profileOf(reopened).unitId, 'sound'); assert.equal(Object.hasOwn(profileOf(reopened), 'classUnitApplied'), false);
+    assert.equal(profileOf(reopened).classUnitAppliedAt, appliedAt);
+    assert.equal(JSON.parse(reopened.data.get(ACCT + AUTH.uid)).profiles[0].classUnitAppliedAt, appliedAt);
+    await refreshClass(f, 'light');
+    assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+    assert.equal(profileOf(f).classUnitAppliedAt, f.context.Date.now());
+  }
+});
+
+test('class unit app: 印がなければ「決めない」・教材にないidを読んでも保存せず、時刻も変えない', async (t) => {
+  for (const unitId of [null, 'unknown-unit']) {
+    for (const appliedAt of [undefined, 300]) {
+      const gate = deferred(); const store = accountStore(); store.profiles[0].unitId = 'sound';
+      if (appliedAt !== undefined) store.profiles[0].classUnitAppliedAt = appliedAt;
+      const f = classApp(t, { data: { [ACCT + AUTH.uid]: store },
+        classFetch: (path) => path.startsWith('rika/classUnit/') ? gate.promise : response(200, f.classData[path]) });
+      await f.settle(); assert.ok(f.calls.some((c) => c.url.includes('/classUnit/')));
+      const writes = f.writes.length; const before = JSON.stringify(profileOf(f));
+      gate.resolve(response(200, unitId)); await f.ready; await f.settle();
+      assert.equal(f.writes.length, writes); assert.equal(JSON.stringify(profileOf(f)), before);
+      f.tick(1000); f.contexts.home.applyClassUnit(); await f.settle();
+      assert.equal(f.writes.length, writes); assert.equal(JSON.stringify(profileOf(f)), before);
+      assert.equal(Object.hasOwn(profileOf(f), 'classUnitAppliedAt'), appliedAt !== undefined);
+    }
+  }
+});
+
+test('class unit app: 読みこみ失敗でも単元・印・最後の結果・帯を変えない', async (t) => {
+  let fail = null;
+  const f = classApp(t, { classFetch: (path) => fail ? fail() : response(200, f.classData[path]) });
+  await f.ready; await f.settle(); f.events.root.pagehide(); await f.settle();
+  const before = f.app.state.classUnitSeen; const band = f.ids['link-band'].textContent;
+  for (const reply of [() => response(401, null), () => response(500, null),
+    () => ({ status: 200, json: async () => { throw new Error('not json'); } })]) {
+    fail = reply; await refreshClass(f, 'force');
+    assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+    assert.equal(f.app.state.classUnitSeen, before); assert.equal(f.ids['link-band'].textContent, band);
+  }
+});
+
+test('class unit app: 端末モードは読みに行かず、プロフィールに印が残っていても表示しない', async (t) => {
+  const device = accountStore(); device.profiles[0].unitId = 'sound'; device.profiles[0].classUnitApplied = 'light';
+  const f = classApp(t, { auth: null, data: { 'rika-quest:v1': device }, unitScreens: true });
+  await f.ready; await f.settle();
+  assert.equal(f.calls.length, 0); assert.equal(f.contexts.home.classUnitId, null);
+  assert.equal(f.app.state.classUnit, null); assert.equal(f.app.state.classUnitSeen, null);
+  assert.equal(f.ids['screen-home'].textContent.includes('先生が決めた単元'), false);
+});
+
+test('class unit app: 記録のpullが失敗しても単元を読む。単元の失敗も記録送信を妨げない', async (t) => {
+  const f = classApp(t, { dbFetch: () => response(500, null) }); await f.ready; await f.settle();
+  assert.equal(profileOf(f).unitId, 'light'); assert.equal(f.app.state.syncStatus, 'offline');
+  const g = classApp(t, { classFetch: () => response(403, null) }); await g.ready; await g.settle();
+  g.app.record.lessonsRead['test-lesson'] = true; g.app.save(); g.events.root.pagehide(); await g.settle();
+  assert.equal(g.app.state.syncStatus, 'ok');
+  assert.equal(JSON.parse(g.remote.value.json).record.lessonsRead['test-lesson'], true);
+});
+
+test('class unit app: 初回は必ず読み、online・visibleの再取得はpullMinMsを守る。保存だけでは読まない', async (t) => {
+  const f = classApp(t); await f.ready; await f.settle();
+  const loads = () => f.calls.filter((c) => c.url.includes('/accounts/')).length;
+  assert.equal(loads(), 1);
+  f.events.root.online(); await f.settle();
+  f.tick(59999); f.events.document.visibilitychange(); await f.settle(); assert.equal(loads(), 1);
+  f.tick(1); f.events.document.visibilitychange(); await f.settle(); assert.equal(loads(), 2);
+  f.tick(60000); f.app.save(); f.events.root.pagehide(); await f.settle(); assert.equal(loads(), 2);
+});
+
+test('class unit app: プロフィールがない間に読んだ単元を作成直後に適用する', async (t) => {
+  const f = classApp(t, { data: {} }); await f.ready; await f.settle();
+  assert.equal(f.app.state.screen, 'profile'); assert.equal(f.app.state.classUnitSeen.unitId, 'light');
+  const input = f.nodes(f.ids['screen-profile']).find((e) => e.attrs.id === 'nickname-input');
+  input.value = 'テスト'; input.events.input(); f.find('profile', 'プロフィールを作る').events.click();
+  assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+  assert.equal(JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0].classUnitApplied, 'light');
+});
+
+test('class unit app: 端末から前のプロフィールを引き継いだ直後にも単元を適用する', async (t) => {
+  const f = classApp(t, { data: { 'rika-quest:v1': accountStore() } }); await f.ready; await f.settle();
+  f.find('claim', 'わたしの記録です').click();
+  assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+});
+
+test('class unit app: 初回単元の返事を待つ間も引き継いだ記録を送信し、返事が来たら適用する', async (t) => {
+  const gate = deferred(); const device = accountStore();
+  device.records['p-test'].history.push({ at: '2026-11-20', problemId: 'test-problem' });
+  const f = classApp(t, { data: { 'rika-quest:v1': device },
+    classFetch: (path) => path.startsWith('rika/classUnit/') ? gate.promise : response(200, f.classData[path]) });
+  await f.ready; await f.settle();
+  assert.equal(f.app.state.classUnitSeen, null); f.find('claim', 'わたしの記録です').click(); await f.settle();
+  assert.equal(Object.keys(f.remote.logs).length, 1); assert.equal(profileOf(f).classUnitApplied, undefined);
+  gate.resolve(response(200, 'light')); await f.settle();
+  assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+});
+
+for (const trigger of ['save', 'pagehide']) {
+  test('class unit app: 既存プロフィールの単元取得待ちでも ' + trigger + ' で記録を送信する', async (t) => {
+    const gate = deferred(); const store = accountStore(); store.profiles[0].unitId = 'sound';
+    const f = classApp(t, { data: { [ACCT + AUTH.uid]: store },
+      classFetch: (path) => path.startsWith('rika/classUnit/') ? gate.promise : response(200, f.classData[path]) });
+    try {
+      await f.settle();
+      const loads = () => f.calls.filter((c) => c.url.includes('/classUnit/')).length;
+      const puts = () => f.calls.filter((c) => c.init.method === 'PUT' && c.url.includes('/rika/state/')).length;
+      assert.equal(loads(), 1); assert.equal(f.app.state.classUnitSeen, null);
+      const before = puts();
+      f.app.record.history.push({ at: '2026-11-20', problemId: 'during-class-load' });
+      f.app.record.lessonsRead['test-lesson'] = true; assert.equal(f.app.save(), true);
+      if (trigger === 'pagehide') f.events.root.pagehide();
+      else {
+        const delay = f.context.RikaQuest.config.link.pushDelayMs;
+        const scheduled = [...f.timers.pending].find(([, timer]) => timer.ms === delay);
+        assert.ok(scheduled); f.timers.pending.delete(scheduled[0]); scheduled[1].fn();
+      }
+      await f.settle();
+      assert.equal(puts(), before + 1); assert.equal(f.app.state.sync.isDirty(), false);
+      assert.equal(JSON.parse(f.remote.value.json).record.lessonsRead['test-lesson'], true);
+      const history = Object.values(f.remote.logs).flatMap((chunk) => require('../js/sync.js').unpackChunk(chunk).h);
+      assert.deepEqual(history.map((entry) => entry.problemId), ['during-class-load']);
+      assert.equal(profileOf(f).unitId, 'sound'); assert.equal(profileOf(f).classUnitApplied, undefined);
+      assert.equal(f.app.state.classUnitSeen, null);
+      f.tick(60000); f.events.root.online(); await f.settle();
+      f.events.document.visibilitychange(); await f.settle(); assert.equal(loads(), 1);
+    } finally {
+      gate.resolve(response(200, 'light')); await f.ready; await f.settle();
+    }
+    assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+    assert.equal(JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0].classUnitApplied, 'light');
+    assert.equal(f.app.state.sync.isDirty(), true);
+    f.timers.run(); await f.settle();
+    assert.equal(JSON.parse(f.remote.value.json).profile.classUnitApplied, 'light');
+    assert.equal(f.app.state.sync.isDirty(), false);
+  });
+}
+
+test('class unit app: 空のキャッシュや作成待ちでも、ほかの端末にできたプロフィールをpullする', async (t) => {
+  const store = accountStore(); store.profiles[0].unitId = 'sound'; store.profiles[0].classUnitApplied = 'light';
+  const remote = { v: 1, updatedAt: 2, json: require('../js/sync.js').packState(store.profiles[0], store.records['p-test']) };
+  const cached = classApp(t, { data: { [ACCT + AUTH.uid]: require('../js/record.js').createStore() }, remote });
+  await cached.ready; await cached.settle(); assert.equal(profileOf(cached).unitId, 'sound');
+  const waiting = classApp(t, { data: {} }); await waiting.ready; await waiting.settle();
+  waiting.remote.value = remote; await refreshClass(waiting, 'light');
+  assert.equal(profileOf(waiting).unitId, 'sound'); assert.equal(profileOf(waiting).classUnitApplied, 'light');
+});
+
+test('class unit app: 保存失敗なら単元・印・時刻を戻し、成功メッセージを出さず、次の取得で再試行する', async (t) => {
+  for (const previous of [{}, { unitId: 'sound', classUnitApplied: 'force' },
+    { unitId: 'sound', classUnitApplied: 'force', classUnitAppliedAt: 123 }, { unitId: 'sound', classUnitAppliedAt: 300 }]) {
+    let fail = true; const store = accountStore();
+    Object.assign(store.profiles[0], previous);
+    const before = JSON.stringify(store.profiles[0]);
+    const f = classApp(t, { data: { [ACCT + AUTH.uid]: store }, failWrite: (key) => fail && key.startsWith(ACCT) });
+    await f.ready; await f.settle();
+    assert.equal(JSON.stringify(profileOf(f)), before); assert.equal(f.ids.message.textContent, '');
+    assert.equal(JSON.stringify(JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0]), before);
+    fail = false; await refreshClass(f, 'light');
+    assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+    assert.equal(profileOf(f).classUnitAppliedAt, f.context.Date.now());
+    assert.equal(JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0].classUnitAppliedAt, f.context.Date.now());
+  }
+});
+
+test('class unit app: 印の削除と時刻の更新の保存に失敗した場合も戻し、次の読みこみで再試行する', async (t) => {
+  for (const unitId of [null, 'unknown-unit']) {
+    let fail = false;
+    const f = classApp(t, { failWrite: (key) => fail && key.startsWith(ACCT) }); await f.ready; await f.settle();
+    const before = JSON.parse(JSON.stringify(profileOf(f)));
+    fail = true; await refreshClass(f, unitId);
+    assert.deepEqual(JSON.parse(JSON.stringify(profileOf(f))), before);
+    assert.deepEqual(JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0], before);
+    fail = false; await refreshClass(f, unitId);
+    assert.equal(Object.hasOwn(profileOf(f), 'classUnitApplied'), false);
+    assert.equal(profileOf(f).classUnitAppliedAt, f.context.Date.now());
+    assert.ok(profileOf(f).classUnitAppliedAt > before.classUnitAppliedAt);
+    const saved = JSON.parse(f.data.get(ACCT + AUTH.uid)).profiles[0];
+    assert.equal(Object.hasOwn(saved, 'classUnitApplied'), false); assert.equal(saved.classUnitAppliedAt, f.context.Date.now());
+    assert.equal(profileOf(f).unitId, 'light');
+  }
+});
+
+test('class unit app: 別端末の適用済みプロフィールを先に取りこみ、生徒が選んだ単元を保つ', async (t) => {
+  const first = classApp(t); await first.ready; await first.settle();
+  first.contexts.home.setUnit('sound'); first.events.root.pagehide(); await first.settle();
+  const remote = first.remote.value;
+  assert.equal(JSON.parse(remote.json).profile.classUnitApplied, 'light');
+  assert.equal(JSON.parse(remote.json).profile.classUnitAppliedAt, 100000);
+  for (const data of [{}, { [ACCT + AUTH.uid]: accountStore() }]) {
+    const second = classApp(t, { data, remote }); await second.ready; await second.settle();
+    assert.equal(profileOf(second).unitId, 'sound'); assert.equal(profileOf(second).classUnitApplied, 'light');
+    assert.equal(profileOf(second).classUnitAppliedAt, 100000);
+    assert.equal(second.ids.message.textContent.includes('先生が決めた単元「'), false);
+  }
+});
+
+for (const teacherUnit of ['light', 'force']) {
+  test('class unit app: 未送信の記録がある別端末で適用済みの印を取りこむ: ' + teacherUnit, async (t) => {
+    const S = require('../js/sync.js'); const remote = accountStore();
+    remote.profiles[0].unitId = 'sound'; remote.profiles[0].classUnitApplied = 'light';
+    remote.profiles[0].classUnitAppliedAt = 100;
+    const store = accountStore('端末B', 'p-old'); store.profiles[0].unitId = 'light';
+    const record = store.records['p-old'];
+    record.history.push({ eid: 'local-history', at: '2026-11-20', problemId: 'unsent' });
+    record.xpLog.push({ eid: 'local-xp', at: '2026-11-20', kind: 'correct', amount: 25 }); record.xp = 25;
+    store.sync = { v: 1, seenRev: 1, chunks: [], len: { h: 1, x: 1 },
+      pending: { h: record.history.slice(), x: record.xpLog.slice() }, sending: null, dirty: true };
+    const f = classApp(t, { data: { [ACCT + AUTH.uid]: store },
+      remote: { v: 1, updatedAt: 2, json: S.packState(remote.profiles[0], remote.records['p-test']) },
+      classData: { 'rika/classUnit/ClassA': teacherUnit } });
+    await f.ready; await f.settle();
+    const expected = teacherUnit === 'light' ? 'sound' : 'force';
+    const appliedAt = teacherUnit === 'light' ? 100 : f.context.Date.now();
+    assert.equal(profileOf(f).id, 'p-old'); assert.equal(profileOf(f).nickname, '端末B');
+    assert.equal(profileOf(f).unitId, expected); assert.equal(profileOf(f).classUnitApplied, teacherUnit);
+    assert.equal(profileOf(f).classUnitAppliedAt, appliedAt);
+    const saved = JSON.parse(f.data.get(ACCT + AUTH.uid));
+    assert.equal(saved.profiles[0].unitId, expected); assert.equal(saved.profiles[0].classUnitApplied, teacherUnit);
+    assert.equal(saved.profiles[0].classUnitAppliedAt, appliedAt);
+    assert.equal(f.app.record.history.length, 1); assert.equal(f.app.record.xpLog.length, 1); assert.equal(f.app.record.xp, 25);
+    const chunks = Object.values(f.remote.logs).map(S.unpackChunk);
+    assert.deepEqual(chunks.flatMap((chunk) => chunk.h), record.history);
+    assert.deepEqual(chunks.flatMap((chunk) => chunk.x), record.xpLog);
+    assert.equal(S.unpackState(f.remote.value.json).profile.unitId, 'sound');
+    assert.equal(S.unpackState(f.remote.value.json).profile.classUnitApplied, 'light');
+    assert.equal(S.unpackState(f.remote.value.json).profile.classUnitAppliedAt, 100);
+    assert.equal(f.app.state.sync.pendingCount(), 0);
+    if (teacherUnit === 'light') assert.equal(f.ids.message.textContent.includes('先生が決めた単元「'), false);
+    else {
+      f.timers.run(); await f.settle();
+      assert.equal(S.unpackState(f.remote.value.json).profile.classUnitApplied, 'force');
+      assert.equal(S.unpackState(f.remote.value.json).profile.classUnitAppliedAt, appliedAt);
+      f.contexts.home.setUnit('sound'); f.events.root.pagehide(); await f.settle();
+      await refreshClass(f, 'force');
+      assert.equal(profileOf(f).unitId, 'sound'); assert.equal(profileOf(f).classUnitApplied, 'force');
+      assert.equal(profileOf(f).classUnitAppliedAt, appliedAt);
+    }
+  });
+}
+
+for (const sample of [
+  { name: '端末の印が新しい', applied: 'force', appliedAt: 200, teacherUnit: 'force' },
+  { name: '端末は「決めない」を受け取りずみ', applied: undefined, appliedAt: 300, teacherUnit: null },
+]) {
+  test('class unit app: ' + sample.name + 'なら古い印の記録と同期しても選び直した単元を保つ', async (t) => {
+    const S = require('../js/sync.js'); const remote = accountStore();
+    Object.assign(remote.profiles[0], { unitId: 'light', classUnitApplied: 'light', classUnitAppliedAt: 100 });
+    remote.records['p-test'].lessonsRead['remote-lesson'] = true;
+    const store = accountStore('端末A', 'p-local');
+    Object.assign(store.profiles[0], { unitId: 'sound', classUnitAppliedAt: sample.appliedAt });
+    if (sample.applied !== undefined) store.profiles[0].classUnitApplied = sample.applied;
+    const record = store.records['p-local'];
+    record.history.push({ eid: 'local-history', at: '2026-11-20T01:00:00Z', problemId: 'unsent' });
+    record.xpLog.push({ eid: 'local-xp', at: '2026-11-20T01:00:00Z', kind: 'correct', amount: 25 }); record.xp = 25;
+    store.sync = { v: 1, seenRev: 1, chunks: [], len: { h: 1, x: 1 },
+      pending: { h: record.history.slice(), x: record.xpLog.slice() }, sending: null, dirty: true };
+    const remoteHistory = [{ eid: 'remote-history', at: '2026-11-20T02:00:00Z', problemId: 'remote-update' }];
+    const remoteXp = [{ eid: 'remote-xp', at: '2026-11-20T02:00:00Z', kind: 'correct', amount: 50 }];
+    const f = classApp(t, { data: { [ACCT + AUTH.uid]: store },
+      remote: { v: 1, updatedAt: 300, json: S.packState(remote.profiles[0], remote.records['p-test']) },
+      classData: { 'rika/classUnit/ClassA': sample.teacherUnit } });
+    f.remote.logs.remote_chunk = S.packChunk(remoteHistory, remoteXp);
+    await f.ready; await f.settle();
+    assert.equal(profileOf(f).id, 'p-local'); assert.equal(profileOf(f).nickname, '端末A');
+    assert.equal(profileOf(f).unitId, 'sound'); assert.equal(profileOf(f).classUnitApplied, sample.applied);
+    assert.equal(Object.hasOwn(profileOf(f), 'classUnitApplied'), sample.applied !== undefined);
+    assert.equal(profileOf(f).classUnitAppliedAt, sample.appliedAt); assert.equal(f.app.state.classUnitSeen.unitId, sample.teacherUnit);
+    const saved = JSON.parse(f.data.get(ACCT + AUTH.uid));
+    assert.deepEqual(saved.profiles[0], store.profiles[0]);
+    assert.deepEqual(saved.records['p-local'].history, record.history.concat(remoteHistory));
+    assert.deepEqual(saved.records['p-local'].xpLog, record.xpLog.concat(remoteXp));
+    assert.equal(f.app.record.xp, 75); assert.equal(f.app.record.lessonsRead['remote-lesson'], true);
+    assert.deepEqual(S.unpackState(f.remote.value.json).profile, store.profiles[0]);
+    const chunks = Object.values(f.remote.logs).map(S.unpackChunk);
+    assert.deepEqual(chunks.flatMap((chunk) => chunk.h), remoteHistory.concat(record.history));
+    assert.deepEqual(chunks.flatMap((chunk) => chunk.x), remoteXp.concat(record.xpLog));
+    assert.equal(f.app.state.sync.pendingCount(), 0); assert.equal(f.app.state.sync.isDirty(), false);
+    assert.equal(f.ids.message.textContent.includes('先生が決めた単元「'), false);
+    await refreshClass(f, sample.teacherUnit);
+    assert.equal(profileOf(f).unitId, 'sound'); assert.equal(profileOf(f).classUnitApplied, sample.applied);
+    assert.equal(Object.hasOwn(profileOf(f), 'classUnitApplied'), sample.applied !== undefined);
+    assert.equal(profileOf(f).classUnitAppliedAt, sample.appliedAt); assert.equal(f.app.record.history.length, 2);
+  });
+}
+
+test('class unit app: 学習中は単元を保存しても画面・セッション・お知らせを変えない', async (t) => {
+  const f = classApp(t); await f.ready; await f.settle(); f.events.root.pagehide(); await f.settle();
+  for (const screen of ['problem', 'lesson', 'offer', 'result', 'live', 'teacher']) {
+    f.app.go(screen); f.app.state.screen = screen;
+    const session = { kind: 'review' }; f.app.state.session = session;
+    f.app.message('テストのお知らせ'); const count = f.renders.length;
+    await refreshClass(f, profileOf(f).unitId === 'force' ? 'light' : 'force');
+    assert.equal(f.renders.length, count); assert.equal(f.app.state.session, session);
+    assert.equal(f.ids.message.textContent, 'テストのお知らせ');
+  }
+});
+
+test('class unit app: 読みこみ中のログイン変更・保存で止まった切りかえでは結果を捨てる', async (t) => {
+  for (const blocked of [false, true]) {
+    const gate = deferred(); let fail = false;
+    const f = classApp(t, { failWrite: (key) => fail && key.startsWith(ACCT),
+      classFetch: (path) => path.startsWith('rika/classUnit/') ? gate.promise : response(200, f.classData[path]) });
+    await f.settle(); assert.ok(f.calls.some((c) => c.url.includes('/classUnit/')));
+    fail = blocked; f.data.set(CONFIG.authKey, JSON.stringify(OTHER)); f.events.root.storage({ key: CONFIG.authKey });
+    assert.equal(f.app.state.switchBlocked, blocked); assert.equal(f.reloads(), blocked ? 0 : 1);
+    gate.resolve(response(200, 'force')); await f.ready; await f.settle();
+    assert.equal(profileOf(f).classUnitApplied, undefined); assert.equal(profileOf(f).unitId, undefined);
+    assert.equal(f.app.state.classUnit, null); assert.equal(f.app.state.classUnitSeen, null);
+    const count = f.calls.length; f.events.root.online(); f.events.root.pagehide(); await f.settle();
+    assert.equal(f.calls.length, count);
+  }
+});
+
+test('class unit app: 正規化では文字列以外の印を消し、未知の文字列は表示時だけ無視する', async (t) => {
+  const f = classApp(t, { auth: null }); await f.ready;
+  for (const value of [null, 1, {}, [], true]) {
+    const store = accountStore(); store.profiles[0].classUnitApplied = value; store.profiles[0].classUnitAppliedAt = 100;
+    assert.equal(Object.hasOwn(f.app.normalizeStore(store).profiles[0], 'classUnitApplied'), false);
+    assert.equal(store.profiles[0].classUnitAppliedAt, 100);
+  }
+  const store = accountStore(); store.profiles[0].classUnitApplied = 'unknown-unit'; store.profiles[0].classUnitAppliedAt = 100;
+  assert.equal(f.app.normalizeStore(store).profiles[0].classUnitApplied, 'unknown-unit');
+  assert.equal(store.profiles[0].classUnitAppliedAt, 100);
+  f.app.state.store = store; f.app.state.account = { uid: AUTH.uid }; f.app.go('home');
+  assert.equal(f.contexts.home.classUnitId, null);
+});
+
+test('class unit app: 正規化で不正な時刻を消し、印のない時刻も0以上の有限の数なら保つ', async (t) => {
+  const f = classApp(t, { auth: null }); await f.ready;
+  for (const applied of [undefined, 'light']) {
+    for (const value of [undefined, null, '100', -1, NaN, Infinity, -Infinity, true, [], {}]) {
+      const store = accountStore();
+      Object.assign(store.profiles[0], { classUnitApplied: applied, classUnitAppliedAt: value });
+      const profile = f.app.normalizeStore(store).profiles[0];
+      assert.equal(Object.hasOwn(profile, 'classUnitAppliedAt'), false);
+      assert.equal(profile.classUnitApplied, applied);
+    }
+  }
+  for (const value of [0, 100, Number.MAX_VALUE]) {
+    const store = accountStore();
+    Object.assign(store.profiles[0], { classUnitApplied: 'light', classUnitAppliedAt: value });
+    assert.equal(f.app.normalizeStore(store).profiles[0].classUnitAppliedAt, value);
+    delete store.profiles[0].classUnitApplied;
+    assert.equal(f.app.normalizeStore(store).profiles[0].classUnitAppliedAt, value);
+  }
+});
+
+test('class unit screens: ホームと一覧に文字の印、ほかの単元から戻るボタンと保存失敗の文', async (t) => {
+  let fail = false;
+  const f = classApp(t, { unitScreens: true, failWrite: (key) => fail && key.startsWith(ACCT) }); await f.ready; await f.settle();
+  const home = () => f.ids['screen-home'].textContent;
+  assert.match(home(), /いまの単元光の世界先生が決めた単元/);
+  assert.equal(f.find('home', 'この単元にする'), undefined);
+  f.app.go('units');
+  const unitButton = (id) => f.nodes(f.ids['screen-units']).find((e) => e.tag === 'button' &&
+    e.attrs['aria-label'] && e.attrs['aria-label'].startsWith(f.context.RikaQuest.curriculum.unit(id).title + '（'));
+  assert.match(unitButton('light').textContent, /先生が決めた単元いまの単元/);
+  assert.match(unitButton('light').attrs['aria-label'], /いまの単元、先生が決めた単元/);
+  assert.equal(unitButton('sound').textContent.includes('先生が決めた単元'), false);
+  unitButton('sound').click();
+  assert.equal(profileOf(f).unitId, 'sound'); assert.equal(profileOf(f).classUnitApplied, 'light');
+  assert.match(home(), /先生が決めた単元は「光の世界」です。/);
+  fail = true; f.find('home', 'この単元にする').click();
+  assert.equal(profileOf(f).unitId, 'sound'); assert.equal(f.ids.message.textContent, '単元を変えられませんでした。');
+  fail = false; f.find('home', 'この単元にする').click();
+  assert.equal(profileOf(f).unitId, 'light'); assert.equal(profileOf(f).classUnitApplied, 'light');
+  assert.equal(f.find('home', 'この単元にする'), undefined);
+});
 
 test('account app: 今のアカウントの storage イベントは保存せず再読込し、端末・別 uid のキーは無視する', async (t) => {
   const f = accountApp(t, { data: { [ACCT + AUTH.uid]: accountStore() } }); await f.ready; await f.settle();
@@ -920,7 +1350,7 @@ test('account app: 同期済みの別アカウントだけ片付け、未送信�
   assert.equal([...f.data.keys()].some((key) => key.startsWith(SYNC)), false);
 });
 test('account app: 保存の待ち時間を取り直す。pagehide はすぐ送信し、visible の pull は間隔を守る', async (t) => {
-  const f = accountApp(t, { data: { [ACCT + AUTH.uid]: accountStore() } }); await f.ready;
+  const f = accountApp(t, { data: { [ACCT + AUTH.uid]: accountStore() } }); await f.ready; await f.settle();
   f.app.save(); const first = [...f.timers.pending.keys()]; f.app.save();
   assert.equal(f.timers.pending.size, 1); assert.notDeepEqual([...f.timers.pending.keys()], first);
   assert.match(f.ids['link-band'].textContent, /送っています/);

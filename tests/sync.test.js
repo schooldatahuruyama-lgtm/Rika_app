@@ -303,11 +303,113 @@ test('pull: 未取得のかたまりを安定した日時順で統合し、二�
   assert.equal(f.meta().pending.h.length, 1);
 });
 test('pull: 未編集のプロフィールはリモートを使い、id は端末のまま。初回はリモートの id', async () => {
-  const f = fixture(); f.db.data.state = { v: 1, updatedAt: 3, json: S.packState({ id: 'remote', nickname: 'リモート' }, R.createRecord()) };
+  const f = fixture(); f.store.profiles[0].unitId = 'force'; f.store.profiles[0].classUnitApplied = 'force';
+  f.store.profiles[0].classUnitAppliedAt = 200;
+  f.db.data.state = { v: 1, updatedAt: 3, json: S.packState({ id: 'remote', nickname: 'リモート', unitId: 'sound', classUnitApplied: 'light', classUnitAppliedAt: 100 }, R.createRecord()) };
   const r = await f.client.pull(f.store); assert.equal(r.store.profiles[0].nickname, 'リモート'); assert.equal(r.store.currentProfileId, 'p-test');
+  assert.equal(r.store.profiles[0].unitId, 'sound'); assert.equal(r.store.profiles[0].classUnitApplied, 'light');
+  assert.equal(r.store.profiles[0].classUnitAppliedAt, 100);
   const fresh = fixture({ db: f.db, store: R.createStore() }); const first = await fresh.client.pull(fresh.store);
   assert.equal(first.store.currentProfileId, 'remote');
+  assert.equal(first.store.profiles[0].unitId, 'sound'); assert.equal(first.store.profiles[0].classUnitApplied, 'light');
+  assert.equal(first.store.profiles[0].classUnitAppliedAt, 100);
 });
+for (const sample of [
+  { name: '印が違って端末が新しい', local: { classUnitApplied: 'force', classUnitAppliedAt: 200, unitId: 'sound' },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'light' }, expected: {} },
+  { name: '印が違ってリモートが新しい', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 200, unitId: 'sound' }, expected: { classUnitApplied: 'light', classUnitAppliedAt: 200, unitId: 'sound' } },
+  { name: '印が違って時刻が同じ', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: '印が違って両方とも時刻なし', local: { classUnitApplied: 'force' },
+    remote: { classUnitApplied: 'light', unitId: 'sound' }, expected: {} },
+  { name: '印が違ってリモートの時刻なし', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', unitId: 'sound' }, expected: {} },
+  { name: '時刻なしと0は同じ', local: { classUnitApplied: 'force' },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 0, unitId: 'sound' }, expected: {} },
+  { name: '時刻0より1が新しい', local: { classUnitApplied: 'force', classUnitAppliedAt: 0 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 1, unitId: 'sound' }, expected: { classUnitApplied: 'light', classUnitAppliedAt: 1, unitId: 'sound' } },
+  { name: '端末に印がない', local: {}, remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' },
+    expected: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' } },
+  { name: '端末は印なしで時刻だけ新しい', local: { classUnitAppliedAt: 300, unitId: 'sound' },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'light' }, expected: {} },
+  { name: '端末は印なしでリモートの時刻が新しい', local: { classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 300, unitId: 'sound' }, expected: { classUnitApplied: 'light', classUnitAppliedAt: 300, unitId: 'sound' } },
+  { name: '端末は印なしで時刻が同じ', local: { classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: '端末に印なしでリモートは時刻なし', local: {}, remote: { classUnitApplied: 'light', unitId: 'sound' }, expected: {} },
+  { name: 'リモートに印がない', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 }, remote: { unitId: 'sound' }, expected: {} },
+  { name: 'リモートは印なしで時刻だけ新しい', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitAppliedAt: 300, unitId: 'sound' }, expected: { classUnitApplied: undefined, classUnitAppliedAt: 300, unitId: 'sound' } },
+  { name: 'リモートは印なしで端末の時刻が新しい', local: { classUnitApplied: 'force', classUnitAppliedAt: 300 },
+    remote: { classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: 'リモートは印なしで時刻が同じ', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: 'リモートは印なしで時刻だけ新しく単元がない', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitAppliedAt: 300 }, expected: { classUnitApplied: undefined, classUnitAppliedAt: 300 } },
+  { name: '両方とも印なし', local: {}, remote: { unitId: 'sound' }, expected: {} },
+  { name: '両方とも印なしでリモートに時刻だけある', local: {}, remote: { classUnitAppliedAt: 300, unitId: 'sound' }, expected: { classUnitAppliedAt: 300 } },
+  { name: '両方とも印なしで端末に時刻だけある', local: { classUnitAppliedAt: 300 }, remote: { unitId: 'sound' }, expected: {} },
+  { name: '両方とも印なしで端末の時刻が新しい', local: { classUnitAppliedAt: 300 },
+    remote: { classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: '両方とも印なしでリモートの時刻が新しい', local: { classUnitAppliedAt: 100 },
+    remote: { classUnitAppliedAt: 300, unitId: 'sound' }, expected: { classUnitAppliedAt: 300 } },
+  { name: '両方とも印なしで時刻が同じ', local: { classUnitAppliedAt: 300 },
+    remote: { classUnitAppliedAt: 300, unitId: 'sound' }, expected: {} },
+  { name: '両方とも印なしでリモートだけ時刻0', local: {}, remote: { classUnitAppliedAt: 0, unitId: 'sound' }, expected: { classUnitAppliedAt: 0 } },
+  { name: '印が同じで端末が新しい', local: { classUnitApplied: 'light', classUnitAppliedAt: 200 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: '印が同じでリモートが新しい', local: { classUnitApplied: 'light', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 200, unitId: 'sound' }, expected: { classUnitAppliedAt: 200 } },
+  { name: '印も時刻も同じ', local: { classUnitApplied: 'light', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' }, expected: {} },
+  { name: '印が同じで両方とも時刻なし', local: { classUnitApplied: 'light' }, remote: { classUnitApplied: 'light', unitId: 'sound' }, expected: {} },
+  { name: '印が同じで端末だけ時刻あり', local: { classUnitApplied: 'light', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', unitId: 'sound' }, expected: {} },
+  { name: '印が同じでリモートだけ時刻あり', local: { classUnitApplied: 'light' },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 200, unitId: 'sound' }, expected: { classUnitAppliedAt: 200 } },
+  { name: 'リモートに単元がない', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: 'light', classUnitAppliedAt: 200 }, expected: { classUnitApplied: 'light', classUnitAppliedAt: 200 } },
+  { name: 'リモートの印が空文字列', local: { classUnitApplied: 'force', classUnitAppliedAt: 100 },
+    remote: { classUnitApplied: '', classUnitAppliedAt: 200, unitId: 'sound' }, expected: { classUnitApplied: '', classUnitAppliedAt: 200, unitId: 'sound' } },
+  ...[null, 1, true, [], {}].map((value) => ({ name: 'リモートの印が文字列でない: ' + JSON.stringify(value),
+    local: { classUnitApplied: 'force', classUnitAppliedAt: 100 }, remote: { classUnitApplied: value, classUnitAppliedAt: 200, unitId: 'sound' },
+    expected: { classUnitApplied: undefined, classUnitAppliedAt: 200, unitId: 'sound' } })),
+  ...[undefined, 'force'].flatMap((applied) => [undefined, null, '300', -1, NaN, Infinity, -Infinity, true, [], {}].map((value) => ({ name: '端末の印が' + applied + 'で時刻がない・不正: ' + String(value),
+    local: { classUnitApplied: applied, classUnitAppliedAt: value }, remote: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' },
+    expected: { classUnitApplied: 'light', classUnitAppliedAt: 100, unitId: 'sound' } }))),
+  ...['force', 'light'].flatMap((applied) => [null, '300', -1, NaN, Infinity, -Infinity, true, [], {}].map((value) => ({ name: '端末の印が' + applied + 'でリモートの時刻が不正: ' + String(value),
+    local: { classUnitApplied: applied, classUnitAppliedAt: 0 }, remote: { classUnitApplied: 'light', classUnitAppliedAt: value, unitId: 'sound' }, expected: {} }))),
+  ...[undefined, 'force'].flatMap((applied) => [undefined, null, '300', -1, NaN, Infinity, -Infinity, true, [], {}].map((value) => ({ name: '端末の印が' + applied + 'でリモートは印なし・時刻がないか不正: ' + String(value),
+    local: { classUnitApplied: applied, classUnitAppliedAt: 0 }, remote: { classUnitAppliedAt: value, unitId: 'sound' }, expected: {} }))),
+]) {
+  test('pull: 未送信ありの classUnitApplied — ' + sample.name, async () => {
+    const f = fixture();
+    Object.assign(f.store.profiles[0], { unitId: 'force', theme: 'teal' }, sample.local);
+    if (f.store.profiles[0].classUnitApplied === undefined) delete f.store.profiles[0].classUnitApplied;
+    learn(f.store, 'local', '2026-11-20'); f.client.capture(f.store);
+    const before = clone(f.store); const pending = clone(f.store.sync.pending);
+    const beforeProfile = Object.assign({}, f.store.profiles[0]);
+    const expected = Object.assign({}, beforeProfile, sample.expected);
+    if (expected.classUnitApplied === undefined) delete expected.classUnitApplied;
+    const remote = Object.assign({ id: 'remote', nickname: 'リモート', avatar: 'cat', theme: 'blue' }, sample.remote);
+    f.db.data.state = { v: 1, updatedAt: 3, json: S.packState(remote, R.createRecord()) };
+    const pulled = await f.client.pull(f.store);
+    assert.equal(pulled.status, 'ok'); assert.equal(pulled.changed, true);
+    assert.equal(pulled.store.currentProfileId, 'p-test'); assert.deepEqual(pulled.store.profiles[0], expected);
+    assert.deepEqual(f.store.profiles[0], beforeProfile);
+    assert.deepEqual(rec(pulled.store), rec(before)); assert.deepEqual(pulled.store.sync.pending, pending);
+    assert.deepEqual(JSON.parse(f.storage.getItem(CONFIG.acctKeyPrefix + UID)).profiles[0], expected);
+    assert.equal(f.client.isDirty(), true); assert.equal(f.client.pendingCount(), 1);
+    assert.equal((await f.client.push(pulled.store)).status, 'ok');
+    assert.deepEqual(S.unpackState(f.db.data.state.json).profile, expected);
+    const chunks = Object.values(f.db.data.chunks).map(S.unpackChunk);
+    assert.deepEqual(chunks.flatMap((chunk) => chunk.h), pending.h);
+    assert.deepEqual(chunks.flatMap((chunk) => chunk.x), pending.x);
+    assert.equal(f.client.isDirty(), false); assert.equal(f.client.pendingCount(), 0);
+  });
+}
+
 test('pull: 読めないかたまりを飛ばし、同じ state の版でも次に再試行する', async () => {
   const f = fixture(); f.db.data.state = { v: 1, updatedAt: 1, json: S.packState(f.store.profiles[0], rec(f.store)) };
   f.db.data.chunks.chunk_bad1 = 'bad'; f.db.data.chunks.chunk_good = S.packChunk([{ at: 'a' }], []);

@@ -266,6 +266,22 @@
       const rec = mergeRecord(combined, remote.record, { levelFor });
       const localProfile = store.profiles.find((p) => p.id === store.currentProfileId);
       const profile = local && localProfile ? Object.assign({}, profileDirty ? localProfile : remote.profile, { id: localProfile.id }) : copy(remote.profile);
+      // 印が違うときは、受け取った時刻が新しい方の印と生徒が選んだ単元を残す。
+      if (local && localProfile && profileDirty) {
+        const localApplied = typeof localProfile.classUnitApplied === 'string' ? localProfile.classUnitApplied : undefined;
+        const remoteApplied = typeof remote.profile.classUnitApplied === 'string' ? remote.profile.classUnitApplied : undefined;
+        const appliedAt = (p) => Number.isFinite(p.classUnitAppliedAt) && p.classUnitAppliedAt >= 0
+          ? p.classUnitAppliedAt : undefined;
+        const localAt = appliedAt(localProfile);
+        const remoteAt = appliedAt(remote.profile);
+        if (localApplied === remoteApplied) {
+          if (localAt !== undefined || remoteAt !== undefined) profile.classUnitAppliedAt = Math.max(localAt || 0, remoteAt || 0);
+        } else if ((remoteAt || 0) > (localAt || 0)) {
+          if (remoteApplied === undefined) delete profile.classUnitApplied; else profile.classUnitApplied = remoteApplied;
+          profile.classUnitAppliedAt = remoteAt;
+          if (Object.prototype.hasOwnProperty.call(remote.profile, 'unitId')) profile.unitId = remote.profile.unitId;
+        }
+      }
       const next = { version: 1, currentProfileId: profile.id, profiles: [profile], records: { [profile.id]: rec }, sync: meta };
       meta.chunks = [...new Set(knownChunks.concat(seen))];
       if (meta.sending && seen.includes(meta.sending.id)) meta.sending = null;

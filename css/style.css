@@ -858,6 +858,12 @@ p {
   flex: none;
 }
 
+.unit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .unit-current {
   font-size: 20px;
   font-weight: bold;
