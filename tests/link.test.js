@@ -545,7 +545,7 @@ function accountApp(t, opts = {}) {
       replaceChildren(...children) { text = ''; this.children = children; }, append(...children) { this.children.push(...children); },
       setAttribute(k, v) { this.attrs[k] = String(v); }, removeAttribute(k) { delete this.attrs[k]; },
       addEventListener(type, fn) { this.events[type] = fn; }, removeEventListener() {},
-      remove() { this.isConnected = false; },
+      remove() { this.isConnected = false; }, focus() {}, scrollIntoView() {},
       click() { if (!this.disabled && this.attrs.disabled === undefined && this.events.click) return this.events.click(); },
     }; return e;
   }
@@ -564,7 +564,13 @@ function accountApp(t, opts = {}) {
   const context = {
     document, console: { error: (...args) => errors.push(args), warn: (...args) => errors.push(args) },
     Blob, URL: { createObjectURL(blob) { downloads.push(blob); return 'blob:test-download'; }, revokeObjectURL() {} },
-    localStorage: storage, location: { protocol: 'https:', search: '', reload() { reloads++; } },
+    URLSearchParams,
+    localStorage: storage, location: { protocol: 'https:', pathname: '/rika/', hash: opts.hash || '', search: opts.search || '', reload() { reloads++; } },
+    history: { state: { test: true }, replaceState(state, unused, url) {
+      const next = new URL(url, 'https://account.example.invalid');
+      context.location.search = next.search; context.location.hash = next.hash; context.location.pathname = next.pathname;
+      this.replaced = url;
+    } },
     setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout, scrollTo() {}, CustomEvent: class {},
     Date: class extends Date { static now() { return clock; } },
     addEventListener(type, fn) { events.root[type] = fn; },
@@ -572,7 +578,8 @@ function accountApp(t, opts = {}) {
       if (url.startsWith(CONFIG.tokenUrl)) return opts.authFetch ? opts.authFetch() : success(opts.auth || AUTH);
       calls.push({ url, init });
       const classPath = new URL(url).pathname.slice(1, -5);
-      if (/^(accounts|memberOf|classes|rika\/classUnit)\//.test(classPath)) {
+      if (/^(accounts|memberOf|classes|rika\/classUnit|teacherList|members)\//.test(classPath) ||
+          ['accounts', 'classes'].includes(classPath) || classPath.startsWith('rika/state/') && classPath !== 'rika/state/' + AUTH.uid) {
         assert.equal(init.method, 'GET'); assert.equal(init.redirect, 'error');
         if (opts.classFetch) return opts.classFetch(classPath, init);
         return response(200, Object.hasOwn(classData, classPath) ? classData[classPath] : null);
@@ -601,12 +608,20 @@ function accountApp(t, opts = {}) {
   if (Object.hasOwn(opts, 'classUnit')) context.RikaQuest.classUnit = opts.classUnit;
   else vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/class-unit.js'), 'utf8'), context);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/ui-screens.js'), 'utf8'), context);
+  if (opts.teacherScreens) {
+    context.RikaQuest.teacher = require('../js/teacher.js');
+    context.RikaQuest.teacherGate = require('../js/teacher-gate.js');
+    context.RikaQuest.mastery = require('../js/mastery.js');
+    if (Object.hasOwn(opts, 'classProgress')) context.RikaQuest.classProgress = opts.classProgress;
+    else vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/class-progress.js'), 'utf8'), context);
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/ui-teacher.js'), 'utf8'), context);
+  }
   const ui = context.RikaQuest.ui;
   for (const name of Object.keys(ids).filter((k) => k.startsWith('screen-')).map((k) => k.slice(7))) {
     const actual = ui.screens[name];
     ui.screens[name] = (section, ctx, params) => {
       renders.push(name); contexts[name] = ctx;
-      if (['profile', 'claim', 'settings'].includes(name) || opts.unitScreens && ['home', 'units'].includes(name)) return actual(section, ctx, params);
+      if (['profile', 'claim', 'settings'].includes(name) || opts.unitScreens && ['home', 'units'].includes(name) || opts.teacherScreens && name === 'teacher') return actual(section, ctx, params);
     };
   }
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js/app.js'), 'utf8'), context);
@@ -622,6 +637,229 @@ function accountStore(name = 'テスト', id = 'p-test') {
   return { version: 1, currentProfileId: id, profiles: [{ id, nickname: name, avatar: 'fox' }], records: { [id]: require('../js/record.js').createRecord() } };
 }
 const ACCT = 'rika-quest:acct:'; const SYNC = 'rika-quest:sync:';
+
+function teacherApp(t, opts = {}) {
+  const rec = require('../js/record.js').createRecord();
+  rec.mastery = { 'light-reflection': { value: 0, lastAt: '2026-11-19T10:00:00Z' } };
+  const unit = require('../content/light.js').unit;
+  rec.mastery[unit.concepts[0].id] = { value: 0, lastAt: '2026-11-19T10:00:00Z' };
+  const packed = (nickname) => ({ v: 1, updatedAt: 123, json: require('../js/sync.js').packState({ id: 'same', nickname, unitId: 'light' }, rec) });
+  return accountApp(t, Object.assign({ teacherScreens: true, data: { [ACCT + AUTH.uid]: accountStore('先生テスト') } }, opts, {
+    classData: Object.assign({ ['teacherList/' + AUTH.uid]: true,
+      classes: { ClassA: { year: 2026, name: 'テスト1組' }, ClassB: { year: 2025, name: 'テスト2組' } },
+      'members/ClassA': { 'test-003': 3, 'test-002': 2, 'test-001': 1, 'test-004': 4, 'test-005': 5, 'test-006': 6, 'test-007': null },
+      'members/ClassB': { 'test-008': 8 },
+      accounts: { testUid1: 'test-001', testUid2: 'test-002', testUid4: 'test-004', testUid5a: 'test-005', testUid5b: 'test-005', testUid6: 'test-006', testUid7: 'test-007', testUid8: 'test-008' },
+      'rika/state/testUid1': packed('あおテスト'), 'rika/state/testUid2': null,
+      'rika/state/testUid4': { v: 2 }, 'rika/state/testUid6': packed('そらテスト'),
+      'rika/state/testUid7': packed('いろテスト'), 'rika/state/testUid8': packed('別クラステスト'),
+      'rika/classUnit/ClassA': 'light' }, opts.classData),
+  }));
+}
+const teacherText = (f) => f.ids['screen-teacher'].textContent;
+const teacherNodes = (f) => f.nodes(f.ids['screen-teacher']);
+const classReads = (f) => f.calls.filter((c) => /\/(classes|members|accounts)(\/|\.json)/.test(c.url));
+const gateVisible = (f) => teacherNodes(f).some((e) => e.attrs.id === 'teacher-code');
+async function openTeacher(f) { await f.ready; await f.settle(); f.app.go('teacher'); await f.settle(); }
+
+test('class progress UI: 先生はパスコードなし。番号・ID・ニックネームと未開始・失敗を表示、保存なし', async (t) => {
+  let f;
+  f = teacherApp(t, { classFetch: (p) => response(p === 'rika/state/testUid6' ? 503 : 200, f.classData[p] ?? null) });
+  await f.ready; await f.settle();
+  const writes = f.writes.length; const calls = f.calls.length;
+  f.app.go('teacher'); assert.ok(teacherText(f).includes('確かめています…')); await f.settle();
+  assert.equal(f.app.state.teacherUnlocked, true); assert.equal(gateVisible(f), false);
+  assert.ok(teacherText(f).includes('授業ログのクラスから読みこむ')); assert.equal(f.reloads(), 0);
+  const options = teacherNodes(f).filter((e) => e.tag === 'option');
+  assert.deepEqual(options.map((e) => e.textContent), ['2026 年度 テスト1組', '2025 年度 テスト2組']);
+  await f.find('teacher', '読みこむ').click();
+  const text = teacherText(f);
+  assert.ok(text.includes('テスト1組の進み具合（7 人）')); assert.ok(text.includes('読みこんだ時刻:'));
+  assert.ok(text.includes('先生が決めた単元:')); assert.equal(text.includes('先生テスト'), false);
+  const table = teacherNodes(f).find((e) => e.tag === 'table');
+  const rows = f.nodes(table).filter((e) => e.tag === 'tr');
+  assert.deepEqual(rows[0].children.slice(0, 3).map((e) => e.textContent), ['番号', 'ID', 'ニックネーム']);
+  assert.deepEqual(rows.slice(1).map((r) => r.children.slice(0, 3).map((e) => e.textContent)), [
+    ['1', 'test-001', 'あおテスト'], ['—', 'test-007', 'いろテスト'],
+  ]);
+  assert.ok(text.includes('まだ始めていない生徒（2 人）: 2 番 test-002、3 番 test-003（まだログインしていません）'));
+  assert.ok(teacherNodes(f).some((e) => e.className === 'gate-error' && e.textContent.includes('読みこめなかった生徒（3 人）')));
+  assert.ok(text.includes('test-005（同じ ID のアカウントが 2 つあります）'));
+  rows[1].click();
+  assert.ok(teacherText(f).includes('答えの履歴は、クラスの読みこみでは出ません。'));
+  assert.equal(teacherText(f).includes('誤答 0 / 解答 0'), false);
+  assert.equal(f.writes.length, writes); assert.equal(f.reloads(), 0);
+  assert.ok(f.calls.slice(calls).every((c) => c.init.method === 'GET' && c.init.redirect === 'error'));
+  assert.equal(f.calls.slice(calls).some((c) => c.url.includes('/rika/log/')), false);
+  assert.equal(f.ids['screen-teacher'].attrs['data-no-ruby'], '');
+  const snapshot = [...f.data.values()].join('');
+  assert.equal(snapshot.includes('test-001'), false); assert.equal(snapshot.includes('あおテスト'), false);
+  f.find('teacher', 'CSV で書き出す').click();
+  const csv = await f.downloads[0].text(); assert.ok(csv.includes('あおテスト')); assert.equal(csv.includes('先生テスト'), false);
+});
+
+test('class progress UI: 生徒・ログインなしはパスコード、クラスのデータを読まない', async (t) => {
+  for (const opts of [{ classData: { ['teacherList/' + AUTH.uid]: false } }, { auth: null, data: {} }]) {
+    const f = teacherApp(t, opts); await f.ready; await f.settle(); const calls = f.calls.length;
+    f.app.go('teacher'); await f.settle();
+    assert.equal(gateVisible(f), true); assert.equal(f.app.state.teacherUnlocked, false);
+    assert.equal(teacherText(f).includes('授業ログのクラスから読みこむ'), false);
+    assert.equal(classReads({ calls: f.calls.slice(calls) }).length, 0);
+  }
+});
+
+test('class progress UI: 確認の失敗・部品なし・linkなしでもパスコードに戻り止まらない', async (t) => {
+  for (const opts of [{ classProgress: undefined }, { classProgress: {} },
+    { classProgress: { createClassProgress() { throw new Error('missing'); } } },
+    { classFetch: () => response(503, null) }]) {
+    const f = teacherApp(t, opts); await openTeacher(f);
+    assert.equal(gateVisible(f), true); assert.equal(teacherText(f).includes('授業ログのクラスから読みこむ'), false);
+    assert.equal(f.reloads(), 0);
+  }
+  const f = teacherApp(t); await f.ready; await f.settle(); f.app.state.link = null; f.app.go('teacher');
+  assert.equal(gateVisible(f), true);
+});
+
+test('class progress UI: URLで先生画面を開き、指定クラスを一度だけ読む。ほかのURL部分は残す', async (t) => {
+  const f = teacherApp(t, { search: '?keep=yes&teacher=1&class=ClassB', hash: '#note' });
+  await f.ready; await f.settle();
+  assert.equal(f.app.state.screen, 'teacher'); assert.equal(f.app.state.teacherClass.classId, 'ClassB');
+  assert.equal(f.app.state.teacherClassWanted, null); assert.equal(f.context.history.replaced, '/rika/?keep=yes#note');
+  assert.equal(f.context.location.search, '?keep=yes'); assert.deepEqual(f.context.history.state, { test: true });
+  assert.equal(f.calls.filter((c) => c.url.includes('/members/ClassB.')).length, 1);
+  f.app.go('teacher'); await f.settle();
+  assert.equal(f.calls.filter((c) => c.url.includes('/members/ClassB.')).length, 1);
+  assert.ok(teacherText(f).includes('別クラステスト'));
+});
+
+test('class progress UI: 不正・一覧にないclassは自動取得しない。先生でないURLはパスコード', async (t) => {
+  for (const id of ['bad%2Fid', 'Missing']) {
+    const f = teacherApp(t, { search: '?teacher=1&class=' + id }); await f.ready; await f.settle();
+    assert.equal(f.app.state.screen, 'teacher'); assert.equal(f.app.state.teacherClass, null);
+    assert.equal(f.calls.some((c) => c.url.includes('/members/')), false);
+    assert.equal(f.context.location.search, '');
+    assert.equal(f.app.state.teacherClassWanted, id === 'Missing' ? 'Missing' : null);
+  }
+  const f = teacherApp(t, { auth: null, data: {}, search: '?teacher=1&class=ClassA' }); await f.ready; await f.settle();
+  assert.equal(gateVisible(f), true); assert.equal(f.context.location.search, ''); assert.equal(classReads(f).length, 0);
+});
+
+test('class progress UI: URLで開いても引き継ぎ中はclaimが優先', async (t) => {
+  const f = teacherApp(t, { data: { 'rika-quest:v1': accountStore('端末テスト') }, search: '?teacher=1&class=ClassA' });
+  await f.ready; await f.settle();
+  assert.equal(f.app.state.screen, 'claim'); assert.equal(f.app.state.teacherClass, null);
+  assert.equal(f.calls.some((c) => c.url.includes('/teacherList/')), false); assert.equal(f.context.location.search, '');
+});
+
+test('class progress UI: 読みこみ失敗は赤い文、前の一覧を残す。再取得と別クラスで入れかわる', async (t) => {
+  let http = 200; let f;
+  f = teacherApp(t, { classFetch: (p) => response(p === 'members/ClassA' ? http : 200, f.classData[p] ?? null) });
+  await openTeacher(f); await f.find('teacher', '読みこむ').click(); const previous = f.app.state.teacherClass;
+  for (const [status, message] of [[503, 'つながりません。'], [403, '先生のアカウントで、'], [404, 'クラスの記録を読みこめませんでした。']]) {
+    http = status; await f.find('teacher', '読みこむ').click();
+    assert.equal(f.app.state.teacherClass, previous); assert.ok(teacherText(f).includes('あおテスト'));
+    assert.ok(teacherNodes(f).some((e) => e.attrs.role === 'status' && e.className === 'gate-error' && e.textContent.includes(message)));
+  }
+  http = 200; f.classData['members/ClassA'] = {}; await f.find('teacher', '読みこむ').click();
+  assert.notEqual(f.app.state.teacherClass, previous); assert.ok(teacherText(f).includes('このクラスには、まだ生徒がいません。'));
+  const select = teacherNodes(f).find((e) => e.tag === 'select'); select.value = 'ClassB'; select.events.change();
+  await f.find('teacher', '読みこむ').click(); assert.ok(teacherText(f).includes('別クラステスト'));
+  f.find('teacher', 'クラスの一覧を消す').click(); assert.equal(f.app.state.teacherClass, null);
+  assert.ok(teacherText(f).includes('先生テスト')); assert.equal(teacherText(f).includes('別クラステスト'), false);
+});
+
+test('class progress UI: 一覧0件・取得失敗・none。未知単元は表示しない', async (t) => {
+  const empty = teacherApp(t, { classData: { classes: [] } }); await openTeacher(empty);
+  assert.ok(teacherText(empty).includes('授業ログにクラスがありません。'));
+  assert.equal(empty.find('teacher', '読みこむ').attrs.disabled, '');
+  let fail = true; let f;
+  f = teacherApp(t, { classFetch: (p) => response(p === 'classes' && fail ? 503 : 200, f.classData[p] ?? null),
+    classData: { 'rika/classUnit/ClassA': 'not-registered' } });
+  await openTeacher(f); assert.ok(teacherNodes(f).some((e) => e.attrs.role === 'status' && e.className === 'gate-error'));
+  fail = false; await f.find('teacher', '読みこむ').click(); await f.find('teacher', '読みこむ').click();
+  assert.equal(teacherText(f).includes('先生が決めた単元:'), false); assert.equal(teacherText(f).includes('not-registered'), false);
+  const none = teacherApp(t, { classProgress: { createClassProgress: () => ({ isTeacher: async () => ({ status: 'ok', teacher: true }), listClasses: async () => ({ status: 'none' }) }) } });
+  await openTeacher(none); assert.equal(teacherText(none).includes('授業ログのクラスから読みこむ'), false);
+});
+
+test('class progress UI: 読みこみ中はボタン無効、画面を離れた応答は捨てる', async (t) => {
+  const gate = deferred(); let f;
+  f = teacherApp(t, { classFetch: (p) => p === 'members/ClassA' ? gate.promise : response(200, f.classData[p] ?? null) });
+  await openTeacher(f); const loading = f.find('teacher', '読みこむ').click(); await f.settle();
+  assert.equal(f.find('teacher', '読みこむ').attrs.disabled, ''); assert.ok(teacherText(f).includes('読みこんでいます…'));
+  f.app.go('settings'); assert.equal(f.app.state.teacherUnlocked, false); assert.equal(f.app.state.teacherClass, null);
+  gate.resolve(response(200, f.classData['members/ClassA'])); await loading; await f.settle();
+  assert.equal(f.app.state.teacherClass, null); assert.equal(f.app.state.screen, 'settings');
+});
+
+test('class progress UI: 確認中に画面を往復しても古い先生の応答は描かない', async (t) => {
+  const gate = deferred(); let checks = 0; let f;
+  f = teacherApp(t, { classFetch: (p) => p.startsWith('teacherList/') ? ++checks === 1 ? gate.promise : response(200, false) : response(200, f.classData[p] ?? null) });
+  await f.ready; await f.settle(); f.app.go('teacher'); await f.settle();
+  f.app.go('settings'); f.app.go('teacher'); await f.settle(); assert.equal(gateVisible(f), true);
+  gate.resolve(response(200, true)); await f.settle();
+  assert.equal(f.app.state.teacherUnlocked, false); assert.equal(gateVisible(f), true);
+  assert.equal(f.calls.some((c) => c.url.includes('/classes.json')), false);
+});
+
+test('class progress UI: アカウント切り替え・端末への移動・再読みこみはクラスを消す', async (t) => {
+  for (const mode of ['changed', 'expired', 'reload']) {
+    let expired = false;
+    const f = teacherApp(t, { authFetch: () => expired ? response(400, { error: { message: 'TOKEN_EXPIRED' } }) : success(AUTH) });
+    await openTeacher(f); await f.find('teacher', '読みこむ').click(); assert.ok(f.app.state.teacherClass);
+    if (mode === 'changed') { f.data.set(CONFIG.authKey, JSON.stringify(OTHER)); f.events.root.storage({ key: CONFIG.authKey }); }
+    if (mode === 'expired') { expired = true; f.tick(4000000); f.events.root.storage({ key: CONFIG.authKey }); }
+    if (mode === 'reload') { f.events.root.storage({ key: ACCT + AUTH.uid }); f.app.go('home'); }
+    await f.settle(); assert.equal(f.app.state.teacherClass, null); assert.equal(f.app.state.teacherUnlocked, false);
+    if (mode === 'expired') assert.equal(f.app.state.account, null);
+  }
+});
+
+test('class progress UI: クラス読込中のアカウント変更で遅い応答は捨てる', async (t) => {
+  const gate = deferred(); let f;
+  f = teacherApp(t, { classFetch: (p) => p === 'members/ClassA' ? gate.promise : response(200, f.classData[p] ?? null) });
+  await openTeacher(f); const loading = f.find('teacher', '読みこむ').click(); await f.settle();
+  f.data.set(CONFIG.authKey, JSON.stringify(OTHER)); f.events.root.storage({ key: CONFIG.authKey });
+  gate.resolve(response(200, f.classData['members/ClassA'])); await loading; await f.settle();
+  assert.equal(f.app.state.teacherClass, null); assert.equal(f.app.state.teacherUnlocked, false);
+});
+
+test('class progress UI: 61人の切り捨てを赤い文で知らせ、閉じると一覧を消す', async (t) => {
+  const members = Object.fromEntries(Array.from({ length: 61 }, (_, i) => ['test-' + i, i + 1]));
+  const f = teacherApp(t, { classData: { 'members/ClassA': members, accounts: {} } }); await openTeacher(f);
+  await f.find('teacher', '読みこむ').click();
+  assert.ok(teacherNodes(f).some((e) => e.className === 'gate-error' && e.textContent === '61 人目からは読みこんでいません。'));
+  assert.ok(teacherText(f).includes('まだ始めていない生徒（60 人）'));
+  f.find('teacher', '先生画面を閉じる').click(); assert.equal(f.app.state.teacherClass, null); assert.equal(f.app.state.teacherUnlocked, false);
+});
+
+test('class progress UI: 先生と確かめられなくなれば解錠を戻す。パスコードでは従来画面だけ開く', async (t) => {
+  const f = teacherApp(t); await openTeacher(f); await f.find('teacher', '読みこむ').click();
+  f.classData['teacherList/' + AUTH.uid] = false;
+  f.app.go('teacher'); await f.settle();
+  assert.equal(gateVisible(f), true); assert.equal(f.app.state.teacherUnlocked, false); assert.equal(f.app.state.teacherClass, null);
+  const G = require('../js/teacher-gate.js');
+  f.app.state.config.teacher = { passcode: { algo: 'fnv', salt: 'test-salt', hash: G.fnvHash('test-salt:2468') } };
+  f.app.go('teacher'); await f.settle();
+  teacherNodes(f).find((e) => e.attrs.id === 'teacher-code').value = '2468';
+  await teacherNodes(f).find((e) => e.tag === 'form').events.submit({ preventDefault() {} });
+  assert.equal(f.app.state.teacherUnlocked, true); assert.equal(gateVisible(f), false);
+  assert.ok(teacherText(f).includes('先生テスト')); assert.equal(teacherText(f).includes('授業ログのクラスから読みこむ'), false);
+  f.context.RikaQuest.classProgress = undefined; f.app.go('teacher'); await f.settle();
+  assert.equal(gateVisible(f), true); assert.equal(f.app.state.teacherUnlocked, false);
+});
+
+test('class progress UI: 再読みこみ要求後に元のアカウントに戻っても古い確認を捨てる', async (t) => {
+  const gate = deferred(); let f;
+  f = teacherApp(t, { classFetch: (p) => p.startsWith('teacherList/') ? gate.promise : response(200, f.classData[p] ?? null) });
+  await f.ready; await f.settle(); f.app.go('teacher'); await f.settle();
+  // 先生画面のままで再読みこみを要求する経路を、保存先の変更で確かめる。
+  f.data.set(CONFIG.authKey, JSON.stringify(OTHER)); f.events.root.storage({ key: CONFIG.authKey });
+  f.data.set(CONFIG.authKey, JSON.stringify(AUTH));
+  gate.resolve(response(200, true)); await f.settle();
+  assert.equal(f.reloads(), 1); assert.equal(f.app.state.teacherUnlocked, false);
+  assert.equal(f.app.state.teacherClass, null); assert.equal(f.calls.some((c) => c.url.includes('/classes.json')), false);
+});
 
 function classApp(t, opts = {}) {
   return accountApp(t, Object.assign({ data: { [ACCT + AUTH.uid]: accountStore() } }, opts, {

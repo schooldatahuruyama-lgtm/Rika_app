@@ -22,6 +22,40 @@ const storeOf = (pairs) => {
   return store;
 };
 
+test('summarizeStudent: 履歴なしならmasteryとstreakの最新日、streakは端末の0時', () => {
+  const p = profile('p1', 'テスト'); const rec = record.createRecord();
+  rec.mastery = { a: { lastAt: day1.toISOString() }, b: { lastAt: day2.toISOString() }, c: { lastAt: 'bad' }, d: null };
+  const before = JSON.stringify(rec);
+  assert.equal(teacher.summarizeStudent(p, rec, reg, config, now).lastAt, day2.toISOString());
+  assert.equal(JSON.stringify(rec), before);
+  rec.streak.lastDate = '2026-11-05';
+  assert.equal(teacher.summarizeStudent(p, rec, reg, config, now).lastAt, new Date(2026, 10, 5).toISOString());
+  rec.mastery = {}; rec.streak.lastDate = 'bad';
+  assert.equal(teacher.summarizeStudent(p, rec, reg, config, now).lastAt, null);
+  rec.streak.lastDate = null;
+  assert.equal(teacher.summarizeStudent(p, rec, reg, config, now).lastAt, null);
+});
+
+test('summarizeStudent: 履歴があれば状態の日付は使わない（履歴の日付不明も同じ）', () => {
+  const rec = record.createRecord(); rec.streak.lastDate = '2026-11-05';
+  rec.mastery = { a: { lastAt: now.toISOString() } };
+  rec.history = [hist({ at: day1.toISOString() })];
+  assert.equal(teacher.summarizeStudent(profile('p', 'テスト'), rec, reg, config, now).lastAt, day1.toISOString());
+  rec.history = [hist({ at: 'bad' })];
+  assert.equal(teacher.summarizeStudent(profile('p', 'テスト'), rec, reg, config, now).lastAt, null);
+});
+
+test('storeFromState: idをアカウント別に置きかえ、元の入力は変えず履歴なしで集計できる', () => {
+  const p = profile('same', 'テスト'); const rec = { xp: 10, mastery: { 'c-a': { value: 0, lastAt: day1.toISOString() } } };
+  const before = JSON.stringify({ p, rec });
+  const a = teacher.storeFromState(p, rec, 'test-a'); const b = teacher.storeFromState(p, rec, 'test-b');
+  assert.equal(a.version, 1); assert.equal(a.currentProfileId, 'acct-test-a');
+  assert.equal(a.profiles[0].id, 'acct-test-a'); assert.notEqual(a.profiles[0], p); assert.equal(a.records['acct-test-a'], rec);
+  const summary = teacher.summarizeAll([a, b], reg, config, now);
+  assert.equal(summary.students.length, 2); assert.equal(summary.students[0].lastAt, day1.toISOString());
+  assert.equal(summary.weakConcepts[0].wrongRate, null); assert.equal(JSON.stringify({ p, rec }), before);
+});
+
 // c-b: 誤答 2・正解 1（理解度 もう少し）、c-a: 誤答 1・正解 1（まだ）、c-c: 未学習
 function sampleRecord(at) {
   let r = record.createRecord();
