@@ -877,7 +877,7 @@
 
   // ---- ステージ substance-mp1: プリント 1（白い粉・有機物と無機物・金属の性質・プラスチック） ----
   const substanceMp1 = {
-    id: 'substance-mp1', areaId: 'substance-miniprint', title: 'プリント 1: 白い粉・有機物・金属・プラスチック', minutes: 7, concepts: ['su-organic', 'su-metal'],
+    id: 'substance-mp1', areaId: 'props', free: true, title: 'プリント 1: 白い粉・有機物・金属・プラスチック', minutes: 7, concepts: ['su-organic', 'su-metal'],
     lessons: [
       {
         id: 'substance-mp1-c1',
@@ -1072,7 +1072,7 @@
 
   // ---- ステージ substance-mp2: プリント 2（上皿てんびん・メスシリンダー） ----
   const substanceMp2 = {
-    id: 'substance-mp2', areaId: 'substance-miniprint', title: 'プリント 2: 上皿てんびんとメスシリンダー', minutes: 6, concepts: ['su-measure'],
+    id: 'substance-mp2', areaId: 'props', free: true, title: 'プリント 2: 上皿てんびんとメスシリンダー', minutes: 6, concepts: ['su-measure'],
     lessons: [
       {
         id: 'substance-mp2-c1',
@@ -1193,7 +1193,7 @@
 
   // ---- ステージ substance-mp3: プリント 3（密度・密度 2） ----
   const substanceMp3 = {
-    id: 'substance-mp3', areaId: 'substance-miniprint', title: 'プリント 3: 密度の計算', minutes: 6, concepts: ['su-density'],
+    id: 'substance-mp3', areaId: 'props', free: true, title: 'プリント 3: 密度の計算', minutes: 6, concepts: ['su-density'],
     lessons: [
       {
         id: 'substance-mp3-c1',
@@ -1321,7 +1321,7 @@
 
   // ---- ステージ substance-mp4: プリント 4（気体の集め方・二酸化炭素と酸素・酸素の発生・気体の発生について） ----
   const substanceMp4 = {
-    id: 'substance-mp4', areaId: 'substance-miniprint', title: 'プリント 4: 気体の発生と集め方', minutes: 7, concepts: ['su-collection', 'su-gases'],
+    id: 'substance-mp4', areaId: 'gas', free: true, title: 'プリント 4: 気体の発生と集め方', minutes: 7, concepts: ['su-collection', 'su-gases'],
     lessons: [
       {
         id: 'substance-mp4-c1',
@@ -1501,7 +1501,7 @@
 
   // ---- ステージ substance-mp5: プリント 5（気体の性質まとめ・水素とアンモニア・アンモニア噴水実験・いろいろな気体） ----
   const substanceMp5 = {
-    id: 'substance-mp5', areaId: 'substance-miniprint', title: 'プリント 5: いろいろな気体の性質', minutes: 7, concepts: ['su-gases'],
+    id: 'substance-mp5', areaId: 'gas', free: true, title: 'プリント 5: いろいろな気体の性質', minutes: 7, concepts: ['su-gases'],
     lessons: [
       {
         id: 'substance-mp5-c1',
@@ -1903,6 +1903,326 @@
   ];
 
   // ================================================================
+  // 領域: ドリル（中学 1 年のテーマ「身の回りの物質とその性質」「気体の発生と性質」に合わせた自作の練習問題）
+  // ================================================================
+
+  // 4 つのものの名前を横に並べ、下にア〜エの選ぶ場所を置く図（names は左から。「／」で 2 行）
+  function drFourItems(caption, names) {
+    const items = [{ type: 'text', x: 160, y: 34, text: caption, size: 14, anchor: 'middle' }];
+    names.forEach((name, i) => {
+      const x = 44 + 77 * i;
+      items.push({ type: 'rect', x: x - 34, y: 70, width: 68, height: 70, fill: 'white', rx: 8 });
+      // 「／」で 2 行に分ける
+      const lines = name.split('／');
+      lines.forEach((t, k) => items.push({ type: 'text', x, y: (lines.length === 1 ? 112 : 102) + 22 * k, text: t, size: 13, anchor: 'middle' }));
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 186, r: 24, label: 'アイウエ'[i] });
+    });
+    return scene(items);
+  }
+
+  // 3 つの物体の質量と体積の表（左にア〜ウの選ぶ場所）
+  const DR_DENSITY_TABLE = scene([
+    { type: 'text', x: 160, y: 28, text: '3 つの物体の質量と体積', size: 14, anchor: 'middle' },
+    { type: 'line', points: [[60, 44], [300, 44]], width: 2 },
+    { type: 'text', x: 130, y: 66, text: '質量〔g〕', size: 14, anchor: 'middle' },
+    { type: 'text', x: 240, y: 66, text: '体積〔cm³〕', size: 14, anchor: 'middle' },
+    { type: 'line', points: [[60, 78], [300, 78]], width: 1, color: 'line' },
+    { type: 'text', x: 130, y: 116, text: '24', size: 16, anchor: 'middle' },
+    { type: 'text', x: 240, y: 116, text: '30', size: 16, anchor: 'middle' },
+    { type: 'text', x: 130, y: 168, text: '54', size: 16, anchor: 'middle' },
+    { type: 'text', x: 240, y: 168, text: '20', size: 16, anchor: 'middle' },
+    { type: 'text', x: 130, y: 220, text: '30', size: 16, anchor: 'middle' },
+    { type: 'text', x: 240, y: 220, text: '20', size: 16, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 32, y: 110, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 32, y: 162, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 32, y: 214, r: 22, label: 'ウ' },
+  ]);
+
+  // ---- ステージ substance-dr1: ドリル 1（身の回りの物質とその性質） ----
+  const substanceDr1 = {
+    id: 'substance-dr1', areaId: 'props', free: true, title: 'ドリル 1: 身の回りの物質とその性質', minutes: 7,
+    concepts: ['su-metal', 'su-organic', 'su-density'],
+    lessons: [
+      {
+        id: 'substance-dr1-c1',
+        text: '物質は、炭素をふくみ燃やすと二酸化炭素と水ができる**有機物**と、それ以外の**無機物**に分けられます。また、金属かどうかで分けると、金属以外の物質は**非金属**とよばれます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '物質の分け方（2 つの見方）', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 20, y: 50, width: 130, height: 80, fill: 'lightgreen', rx: 8, label: '有機物' },
+          { type: 'text', x: 85, y: 150, text: '砂糖・ろう・木', size: 13, anchor: 'middle' },
+          { type: 'rect', x: 170, y: 50, width: 130, height: 80, fill: 'white', rx: 8, label: '無機物' },
+          { type: 'text', x: 235, y: 150, text: '食塩・ガラス・鉄', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 192, text: '金属 … 鉄・銅・アルミニウム', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 220, text: '非金属 … ガラス・木・プラスチック', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-dr1-c2',
+        text: '**密度**は物質ごとにほぼ決まっています。密度＝質量÷体積の式を変えると、質量＝密度×体積、体積＝質量÷密度でも求められます。液体より密度が小さい物体は、その液体に浮きます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 60, text: '密度 ＝ 質量 ÷ 体積', size: 18, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 110, text: '質量 ＝ 密度 × 体積', size: 16, anchor: 'middle' },
+          { type: 'text', x: 160, y: 150, text: '体積 ＝ 質量 ÷ 密度', size: 16, anchor: 'middle' },
+          { type: 'text', x: 160, y: 200, text: '水（1.0 g/cm³）より小さい → 水に浮く', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-dr1-w1', concept: 'su-metal',
+      prompt: '予想しよう。空き缶を、スチール缶（鉄）とアルミ缶に分けたい。いちばん手早く分けられる方法は？',
+      options: ['磁石を近づける', '電気を通すか調べる', 'みがいて光るか見る'],
+      answer: 'a',
+      explanation: '鉄は磁石につきますが、アルミニウムはつきません。電気を通す・みがくと光るは、どちらの金属にもある性質なので、分けるのには使えません。',
+      hint: 'どちらか一方の金属にだけある性質をさがそう。',
+    }),
+    problems: [
+      choice({
+        id: 'substance-dr1-p1', concept: 'su-organic',
+        prompt: 'ろうそく・木・エタノールを燃やしたとき、どれにも共通してできる物質の組み合わせはどれ？',
+        options: ['酸素と水', '二酸化炭素と水', '二酸化炭素と窒素'],
+        answer: 'b',
+        explanation: 'どれも炭素と水素をふくむ有機物です。燃えると炭素から二酸化炭素が、水素から水ができます。集気びんの内側がくもるのは、できた水のためです。',
+        hint: '有機物は炭素のほかに水素もふくんでいるよ。',
+      }),
+      fill({
+        id: 'substance-dr1-t1', concept: 'su-metal', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ガラスや木やプラスチックのように、金属ではない物質をまとめて[b1]という。',
+        blanks: [word('b1', ['無機物', '非金属', '有機物'], '非金属')],
+        explanation: '金属以外の物質を**非金属**といいます。木やプラスチックは有機物、ガラスは無機物ですが、どれも非金属です。',
+        hint: '「金属に非ず（あらず）」という意味の言葉だよ。',
+      }),
+      figureChoice({
+        id: 'substance-dr1-p2', concept: 'su-organic',
+        prompt: 'ア 紙、イ ろう、ウ スチールウール（鉄）、エ 砂糖 を燃やし、石灰水の入った集気びんに入れてふった。石灰水が白くにごらないのはどれ？',
+        figure: drFourItems('燃やしたあと、石灰水を入れてふる', ['紙', 'ろう', 'スチール／ウール', '砂糖']),
+        answer: 'r3',
+        explanation: 'スチールウールは鉄なので、燃えても二酸化炭素はできず、石灰水はにごりません。紙・ろう・砂糖は有機物なので、燃えると二酸化炭素ができます。',
+        hint: '燃えるものでも、炭素をふくまないものはどれかな。',
+      }),
+      fill({
+        id: 'substance-dr1-p3', concept: 'su-density',
+        prompt: '空らんに入る数を入れよう。',
+        text: '密度 2.7 g/cm³ のアルミニウムが 81 g ある。このアルミニウムの体積は[b1]である。',
+        blanks: [number('b1', 30, 0, 'cm³')],
+        explanation: '体積＝質量÷密度なので、81 ÷ 2.7 ＝ 30 cm³ です。1 cm³ で 2.7 g だから、81 g には 30 cm³ 分ある、と考えることもできます。',
+        hint: '81 g の中に、2.7 g が何こ分あるかを考えよう。',
+      }),
+      figureChoice({
+        id: 'substance-dr1-p4', concept: 'su-density',
+        prompt: '表のア〜ウの物体を水（1.0 g/cm³）に入れる。水に浮くのはどれ？ 密度を計算して選ぼう。',
+        figure: DR_DENSITY_TABLE,
+        answer: 'r1',
+        explanation: 'アは 24 ÷ 30 ＝ 0.8 g/cm³、イは 54 ÷ 20 ＝ 2.7 g/cm³、ウは 30 ÷ 20 ＝ 1.5 g/cm³ です。水より密度が小さいアだけが浮きます。',
+        hint: 'それぞれ質量を体積でわって、1.0 とくらべよう。',
+      }),
+      choice({
+        id: 'substance-dr1-p5', concept: 'su-density',
+        prompt: '同じ 100 g の鉄（7.9 g/cm³）とアルミニウム（2.7 g/cm³）がある。体積が大きいのはどっち？',
+        options: ['鉄', 'アルミニウム', 'どちらも同じ'],
+        answer: 'b',
+        explanation: '質量が同じなら、密度が小さいほど体積は大きくなります。アルミニウムは鉄より密度が小さいので、同じ 100 g でもかさばります。',
+        hint: '体積＝質量÷密度。わる数が小さいと、答えは大きくなるね。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'substance-dr1-r1', concept: 'su-organic',
+        prompt: '炭素をふくむが、ふつう有機物には入れず無機物とするものはどれ？',
+        options: ['砂糖', 'エタノール', '二酸化炭素'],
+        answer: 'c',
+        explanation: '二酸化炭素や炭素そのもの（木炭など）は炭素をふくみますが、無機物として分けます。砂糖とエタノールは有機物です。',
+        hint: '燃えたあとにできる気体にも炭素がふくまれているね。',
+      }),
+      fill({
+        id: 'substance-dr1-r2', concept: 'su-organic',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ろうを燃やした集気びんの内側がくもった。これは、ろうが燃えて[b1]ができたからである。',
+        blanks: [word('b1', ['二酸化炭素', '酸素', '水'], '水')],
+        explanation: 'ろうには水素がふくまれていて、燃えると水ができます。その水が冷えて、びんの内側がくもります。二酸化炭素は無色の気体なので、くもりにはなりません。',
+        hint: '冷たいガラスがくもるのは、何がついたからかな。',
+      }),
+      choice({
+        id: 'substance-dr1-r3', concept: 'su-metal',
+        prompt: '電気を通すが、金属ではない物質はどれ？',
+        options: ['鉛筆のしん（黒鉛）', '銅線', 'ガラス'],
+        answer: 'a',
+        explanation: '鉛筆のしんの黒鉛は炭素でできた非金属ですが、電気を通します。電気を通すことだけでは、金属かどうかは決められません。',
+        hint: '銅は金属、ガラスは電気を通さないね。',
+      }),
+      choice({
+        id: 'substance-dr1-t2', concept: 'su-metal', term: true,
+        prompt: '次の説明に合う言葉はどれ？「金属ではない物質。ガラス・木・プラスチックなど」',
+        options: ['無機物', '非金属', '有機物'],
+        answer: 'b',
+        explanation: '金属以外の物質をまとめて**非金属**といいます。有機物・無機物は、炭素をふくむかどうかで分けたときの言葉です。',
+        hint: '金属かどうかで分けたときの言葉だよ。',
+      }),
+      fill({
+        id: 'substance-dr1-r4', concept: 'su-density',
+        prompt: '空らんに入る数を入れよう。',
+        text: '密度 0.8 g/cm³ のエタノール 50 cm³ の質量は[b1]である。',
+        blanks: [number('b1', 40, 0, 'g')],
+        explanation: '質量＝密度×体積なので、0.8 × 50 ＝ 40 g です。',
+        hint: '1 cm³ で 0.8 g。50 cm³ では？',
+      }),
+      choice({
+        id: 'substance-dr1-r5', concept: 'su-density',
+        prompt: '水（1.0 g/cm³）に入れると沈む物体はどれ？',
+        options: ['体積 20 cm³ で 18 g', '体積 10 cm³ で 12 g', '体積 50 cm³ で 40 g'],
+        answer: 'b',
+        explanation: '密度は順に 0.9、1.2、0.8 g/cm³ です。水より密度が大きい 1.2 g/cm³ の物体だけが沈みます。',
+        hint: 'それぞれの密度を出して、1.0 とくらべよう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-dr2: ドリル 2（気体の発生と性質） ----
+  const substanceDr2 = {
+    id: 'substance-dr2', areaId: 'gas', free: true, title: 'ドリル 2: 気体の発生と性質', minutes: 7,
+    concepts: ['su-collection', 'su-gases'],
+    lessons: [
+      {
+        id: 'substance-dr2-c1',
+        text: '気体は薬品の組み合わせで決まります。酸素は二酸化マンガンにうすい過酸化水素水、二酸化炭素は石灰石にうすい塩酸、アンモニアは**塩化アンモニウム**と水酸化カルシウムを混ぜて加熱します。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '気体の発生のさせ方', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 20, y: 76, text: '酸素', size: 14, bold: true },
+          { type: 'text', x: 100, y: 76, text: '二酸化マンガン ＋ 過酸化水素水', size: 13 },
+          { type: 'text', x: 20, y: 126, text: '二酸化炭素', size: 14, bold: true },
+          { type: 'text', x: 100, y: 126, text: '石灰石 ＋ うすい塩酸', size: 13 },
+          { type: 'text', x: 20, y: 176, text: 'アンモニア', size: 14, bold: true },
+          { type: 'text', x: 100, y: 176, text: '塩化アンモニウム ＋', size: 13 },
+          { type: 'text', x: 100, y: 198, text: '水酸化カルシウム（加熱）', size: 13 },
+        ]),
+      },
+      {
+        id: 'substance-dr2-c2',
+        text: '気体は、におい、水へのとけ方、石灰水、火の近づけ方、リトマス紙などで見分けます。空気の体積の約 78% をしめる**窒素**は、色もにおいもなく、燃えない気体です。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '空気の成分（体積の割合）', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 20, y: 70, width: 218, height: 50, fill: 'sky', label: '窒素 約 78%' },
+          { type: 'rect', x: 238, y: 70, width: 58, height: 50, fill: 'lightgreen', label: '酸素' },
+          { type: 'rect', x: 296, y: 70, width: 6, height: 50, fill: 'gray' },
+          { type: 'text', x: 267, y: 146, text: '約 21%', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 196, text: 'のこり約 1%: アルゴン・二酸化炭素など', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-dr2-w1', concept: 'su-gases',
+      prompt: '予想しよう。ベーキングパウダーを入れて焼くと、ケーキがふくらむ。このとき出ている気体は何だと思う？',
+      options: ['酸素', '水素', '二酸化炭素'],
+      answer: 'c',
+      explanation: 'ベーキングパウダーにふくまれる物質が熱などで変化して、二酸化炭素が出ます。その気体の泡で生地がふくらみます。',
+      hint: '石灰水を白くにごらせる気体だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'substance-dr2-p1', concept: 'su-gases',
+        prompt: '図は、塩化アンモニウムと水酸化カルシウムを入れた試験管を加熱する置き方です。ア 口を上げる、イ 口を少し下げる、ウ 水平。正しい置き方はどれ？ ア〜ウから選ぼう。',
+        // tube の tilt: 70 は口が上がる、100 は口が少し下がる、90 は水平
+        figure: scene([
+          { type: 'tube', x: 15, y: 100, height: 90, tilt: 70, level: 0.2, liquid: 'sand' },
+          { type: 'tube', x: 120, y: 100, height: 90, tilt: 100, level: 0.2, liquid: 'sand' },
+          { type: 'tube', x: 218, y: 100, height: 90, tilt: 90, level: 0.2, liquid: 'sand' },
+          { type: 'flame', x: 30, y: 150 },
+          { type: 'flame', x: 135, y: 150 },
+          { type: 'flame', x: 233, y: 150 },
+          { type: 'region', id: 'r1', x: 60, y: 200, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 165, y: 200, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 270, y: 200, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: 'この反応では水もできます。口を上げたり水平にしたりすると、水が熱い底に流れて試験管が割れることがあるので、イのように口を少し下げておきます。',
+        hint: '熱いガラスに冷たい水がつくと、どうなるかな。',
+      }),
+      fill({
+        id: 'substance-dr2-t1', concept: 'su-gases', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'アンモニアは、[b1]と水酸化カルシウムを混ぜて加熱すると発生する。',
+        blanks: [word('b1', ['塩化アンモニウム', '石灰石', '二酸化マンガン'], '塩化アンモニウム')],
+        explanation: '**塩化アンモニウム**と水酸化カルシウムを混ぜて加熱すると、アンモニアが発生します。石灰石は二酸化炭素、二酸化マンガンは酸素を発生させるときに使います。',
+        hint: '名前に「アンモニウム」が入っている薬品だよ。',
+      }),
+      figureChoice({
+        id: 'substance-dr2-p2', concept: 'su-collection',
+        prompt: '塩化水素は、水にとてもとけやすく、空気より重い気体。集める方法はア（水上置換法）・イ（上方置換法）・ウ（下方置換法）のどれ？',
+        figure: collectScene(),
+        answer: 'r3',
+        explanation: '水にとけやすいので水上置換法は使えません。空気より重いので、試験管の下にたまる下方置換法（ウ）で集めます。',
+        hint: '重い気体は、試験管のどちらにたまるかな。',
+      }),
+      fill({
+        id: 'substance-dr2-p3', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ある気体にマッチの火を近づけると、ポンと音を立てて燃え、試験管の内側に水てきがついた。この気体は[b1]である。',
+        blanks: [word('b1', ['酸素', '水素', '二酸化炭素'], '水素')],
+        explanation: '水素は音を立てて燃え、燃えると水ができます。酸素は自分は燃えず、ものを燃やすはたらきがある気体です。',
+        hint: '燃えると水ができる気体だよ。',
+      }),
+      fill({
+        id: 'substance-dr2-p4', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '空気の成分のうち、体積の割合がいちばん大きい気体は[b1]である。',
+        blanks: [word('b1', ['酸素', '窒素', '二酸化炭素'], '窒素')],
+        explanation: '空気の約 78% は窒素、約 21% が酸素です。二酸化炭素は約 0.04% しかありません。',
+        hint: '酸素は約 5 分の 1 だよ。のこりの大部分は？',
+      }),
+      choice({
+        id: 'substance-dr2-p5', concept: 'su-collection',
+        prompt: '水上置換法で、気体を集めている試験管がいっぱいになったことは、どうすれば分かる？',
+        options: ['試験管の内側がくもる', '水そうの水があたたかくなる', '試験管の口から泡があふれ出る'],
+        answer: 'c',
+        explanation: '試験管の中の水がすべて気体と置きかわると、入りきらない気体が口から泡になって出てきます。そうなったら、水の中でゴム栓をします。',
+        hint: '試験管の中の水がなくなると、気体はどこへ行くかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'substance-dr2-r1', concept: 'su-collection',
+        prompt: '水素は空気より軽いが、ふつう水上置換法で集める。その主な理由はどれ？',
+        options: ['水にとけにくく、空気がまじりにくいから', '水素は空気より重いから', '水素は水によくとけるから'],
+        answer: 'a',
+        explanation: '水にとけにくい気体は、水上置換法で集めると空気がまじりにくく、集まった量も目で見て分かります。',
+        hint: '水上置換法のよいところを思い出そう。',
+      }),
+      fill({
+        id: 'substance-dr2-r2', concept: 'su-collection',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '上方置換法でアンモニアを集めるとき、試験管の口は[b1]向きにする。',
+        blanks: [word('b1', ['上', '横', '下'], '下')],
+        explanation: 'アンモニアは空気より軽いので、試験管の上のほうにたまります。口を下に向けた試験管に、ガラス管を奥まで入れて集めます。',
+        hint: '軽い気体は上にたまる。にげないようにするには？',
+      }),
+      choice({
+        id: 'substance-dr2-t2', concept: 'su-gases', term: true,
+        prompt: '次の説明に合う言葉はどれ？「水酸化カルシウムと混ぜて加熱すると、アンモニアが発生する物質」',
+        options: ['石灰石', '塩化アンモニウム', '亜鉛'],
+        answer: 'b',
+        explanation: '**塩化アンモニウム**と水酸化カルシウムを混ぜて加熱すると、アンモニアが発生します。',
+        hint: '名前の中に、発生する気体の名前に近い言葉があるよ。',
+      }),
+      choice({
+        id: 'substance-dr2-r3', concept: 'su-gases',
+        prompt: '石灰石のかわりに使っても、うすい塩酸を加えると二酸化炭素が出るものはどれ？',
+        options: ['亜鉛', '銅', '貝がら'],
+        answer: 'c',
+        explanation: '貝がらや卵のからは、石灰石と同じ炭酸カルシウムをふくむので、うすい塩酸で二酸化炭素が出ます。亜鉛からは水素が出て、銅はうすい塩酸と反応しません。',
+        hint: '石灰石と同じ成分をふくむものをさがそう。',
+      }),
+      choice({
+        id: 'substance-dr2-r4', concept: 'su-gases',
+        prompt: '二酸化炭素を水にとかした液に、青色リトマス紙をつけるとどうなる？',
+        options: ['赤色に変わる', '変化しない', '白くにごる'],
+        answer: 'a',
+        explanation: '二酸化炭素の水溶液（炭酸水）は酸性なので、青色リトマス紙が赤色に変わります。',
+        hint: '炭酸水は、酸性・中性・アルカリ性のどれかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1912,9 +2232,8 @@
     mascot: 'C',   // 担当の先生（ぷにカプセル。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'props', title: '物質の性質', order: 1, stages: [sub1, sub2] },
-      { id: 'gas', title: '気体の性質', order: 2, stages: [sub3, sub4] },
-      { id: 'substance-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [substanceMp1, substanceMp2, substanceMp3, substanceMp4, substanceMp5] },
+      { id: 'props', title: '物質の性質', order: 1, stages: [sub1, sub2, substanceMp1, substanceMp2, substanceMp3, substanceDr1] },
+      { id: 'gas', title: '気体の性質', order: 2, stages: [sub3, sub4, substanceMp4, substanceMp5, substanceDr2] },
     ],
   };
 

@@ -61,14 +61,16 @@
   }
 
   // 登録済みの単元ごとのステージ（教材の順）。reg が使えなければ空
-  // 各ステージは { id, free }。free は free: true の領域（ミニプリント）のステージなら true
+  // 各ステージは { id, free }。free は free: true の領域のステージか、ステージ自身が free: true なら true
   function unitStages(reg) {
     if (!reg || typeof reg.units !== 'function') return [];
     return arr(reg.units()).filter((u) => isObject(u) && typeof u.id === 'string').map((u) => {
       const freeIds = new Set();
       arr(u.areas).forEach((a) => {
-        if (!isObject(a) || a.free !== true) return;
-        arr(a.stages).forEach((s) => { if (isObject(s) && typeof s.id === 'string') freeIds.add(s.id); });
+        if (!isObject(a)) return;
+        arr(a.stages).forEach((s) => {
+          if (isObject(s) && typeof s.id === 'string' && (a.free === true || s.free === true)) freeIds.add(s.id);
+        });
       });
       const list = typeof reg.stagesInOrder === 'function' ? arr(reg.stagesInOrder(u.id)) : [];
       return list.filter((s) => isObject(s) && typeof s.id === 'string').map((s) => ({ id: s.id, free: freeIds.has(s.id) }));
@@ -114,8 +116,8 @@
     let perfectStages = 0;
     let totalStars = 0;
     let clearedUnits = 0;
-    // clearedStages・totalStars・perfectStages はミニプリント（free の領域）も数える。
-    // clearedUnits（単元マスター）は free の領域を除いた基本のステージが全部クリアなら数える
+    // clearedStages・totalStars・perfectStages は free のステージ（プリント・ドリルなど）も数える。
+    // clearedUnits（単元マスター）は free のステージ（領域 free かステージ free）を除いた基本のステージが全部クリアなら数える
     units.forEach((list) => {
       let all = list.some((x) => !x.free);
       list.forEach(({ id, free }) => {

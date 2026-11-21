@@ -514,6 +514,8 @@ p {
 
 .tag-ok { background: #DDF2E5; color: #1D6E3E; }
 .tag-warn { background: #FFE6CC; color: #8A4A0B; }
+/* 学習マップの「いつでも」（プリント・ドリルなど free のステージ） */
+.tag-free { background: #E9E1FA; color: #4E3A8C; }
 
 /* ---- ホーム ---- */
 

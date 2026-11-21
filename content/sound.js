@@ -858,7 +858,7 @@
 
   // ---- ステージ sound-mp1: プリント 1（おんさ・音の伝わり方・真空にする） ----
   const soundMp1 = {
-    id: 'sound-mp1', areaId: 'sound-miniprint', title: 'プリント 1: おんさと音の伝わり方', minutes: 5, concepts: ['so-vibration', 'so-medium'],
+    id: 'sound-mp1', areaId: 'travel', free: true, title: 'プリント 1: おんさと音の伝わり方', minutes: 5, concepts: ['so-vibration', 'so-medium'],
     lessons: [
       {
         id: 'sound-mp1-c1',
@@ -1008,7 +1008,7 @@
 
   // ---- ステージ sound-mp2: プリント 2（音の速さ・音の速さ 2） ----
   const soundMp2 = {
-    id: 'sound-mp2', areaId: 'sound-miniprint', title: 'プリント 2: 音の速さの計算', minutes: 5, concepts: ['so-speed'],
+    id: 'sound-mp2', areaId: 'travel', free: true, title: 'プリント 2: 音の速さの計算', minutes: 5, concepts: ['so-speed'],
     lessons: [
       {
         id: 'sound-mp2-c1',
@@ -1136,7 +1136,7 @@
 
   // ---- ステージ sound-mp3: プリント 3（音の大小と高低・モノコード 2・モノコード） ----
   const soundMp3 = {
-    id: 'sound-mp3', areaId: 'sound-miniprint', title: 'プリント 3: 波形とモノコード', minutes: 6, concepts: ['so-waveform', 'so-amplitude', 'so-frequency'],
+    id: 'sound-mp3', areaId: 'pitch', free: true, title: 'プリント 3: 波形とモノコード', minutes: 6, concepts: ['so-waveform', 'so-amplitude', 'so-frequency'],
     lessons: [
       {
         id: 'sound-mp3-c1',
@@ -1460,6 +1460,178 @@
   ];
 
   // ================================================================
+  // 領域: ドリル（中学 1 年のテーマ「音の性質」に合わせた自作の練習問題）
+  // ================================================================
+
+  // 4 つの波形（ア〜エ。横はばは同じ時間）。アとイは同じ振幅で、イは振動数が半分
+  const DR_WAVES = scene([
+    ...waveRow('r1', 'ア', 34, 20, 4),
+    ...waveRow('r2', 'イ', 89, 20, 2),
+    ...waveRow('r3', 'ウ', 144, 10, 2),
+    ...waveRow('r4', 'エ', 199, 20, 6),
+  ]);
+  // 4 つの波形（ア〜エ）の 2 組目。ア 小さく高い、イ 大きく低い、ウ 小さく低い、エ 大きく高い
+  const DR_WAVES2 = scene([
+    ...waveRow('r1', 'ア', 34, 10, 6),
+    ...waveRow('r2', 'イ', 89, 20, 2),
+    ...waveRow('r3', 'ウ', 144, 10, 2),
+    ...waveRow('r4', 'エ', 199, 20, 6),
+  ]);
+
+  // ---- ステージ sound-dr1: ドリル 1（音の性質） ----
+  const soundDr1 = {
+    id: 'sound-dr1', areaId: 'pitch', free: true, title: 'ドリル 1: 音の性質', minutes: 7,
+    concepts: ['so-medium', 'so-speed', 'so-waveform'],
+    lessons: [
+      {
+        id: 'sound-dr1-c1',
+        text: '音は、**音源**の振動がまわりの物質を次々にゆらして伝わります。空気中の音の速さは約 340 m/s ですが、水中では約 1500 m/s と、液体や固体の中のほうが速く伝わります。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '音の伝わる速さ（およそ）', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 110, y: 50, width: 34, height: 40, fill: 'sky' },
+          { type: 'text', x: 20, y: 76, text: '空気', size: 14 },
+          { type: 'text', x: 156, y: 76, text: '340 m/s', size: 14 },
+          { type: 'rect', x: 110, y: 105, width: 150, height: 40, fill: 'water' },
+          { type: 'text', x: 20, y: 131, text: '水', size: 14 },
+          { type: 'text', x: 185, y: 131, text: '1500 m/s', size: 14, anchor: 'middle' },
+          { type: 'text', x: 20, y: 190, text: '鉄などの固体では、さらに速い', size: 14 },
+        ]),
+      },
+      {
+        id: 'sound-dr1-c2',
+        text: '音の速さ〔m/s〕＝距離〔m〕÷時間〔s〕です。音が山やかべで**反射**して返ってくるこだま（やまびこ）では、音は行きと帰りで 2 倍の距離を進んでいます。',
+        figure: scene([
+          { type: 'rect', x: 270, y: 40, width: 30, height: 160, fill: 'rock', label: 'がけ' },
+          { type: 'circle', x: 40, y: 150, r: 14, fill: 'pink' },
+          { type: 'arrow', x1: 60, y1: 110, x2: 262, y2: 110, color: 'blue', label: '行き' },
+          { type: 'arrow', x1: 262, y1: 150, x2: 60, y2: 150, color: 'blue', label: '帰り' },
+          { type: 'text', x: 160, y: 210, text: '進んだ距離 ＝ がけまでの距離 × 2', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'sound-dr1-c3',
+        anim: 'so-frequency',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
+        text: '音の**波形**では、山の高さ（振幅）が大きいほど大きな音、同じ時間の中の波の数（振動数）が多いほど高い音です。',
+        figure: scene([
+          ...waveRow('r1', 'A', 60, 30, 2).slice(0, 2),
+          ...waveRow('r2', 'B', 170, 30, 5).slice(0, 2),
+          { type: 'text', x: 10, y: 66, text: '低い', size: 13 },
+          { type: 'text', x: 10, y: 176, text: '高い', size: 13 },
+          { type: 'text', x: 185, y: 232, text: '横はばは同じ時間', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'sound-dr1-w1', concept: 'so-medium',
+      prompt: '予想しよう。長い鉄の手すりのはしを軽くたたく。反対のはしに耳をつけて聞くと、空気中で聞くのとくらべてどうなると思う？',
+      options: ['早く、はっきり聞こえる', 'まったく聞こえない', 'おそく聞こえる'],
+      answer: 'a',
+      explanation: '音は、空気より鉄のような固体の中のほうが速く、よく伝わります。耳をつけると、空気中を伝わる音より先に聞こえます。',
+      hint: '音は、固体の中も伝わるね。',
+    }),
+    problems: [
+      fill({
+        id: 'sound-dr1-p1', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。音の速さは 340 m/s とする。',
+        text: 'がけに向かって手をたたくと、1.2 秒後にこだまが聞こえた。がけまでの距離は[b1]である。',
+        blanks: [number('b1', 204, 0, 'm')],
+        explanation: '音は 1.2 秒で 340 × 1.2 ＝ 408 m 進みました。これはがけまでの行きと帰りの合計なので、がけまでは 408 ÷ 2 ＝ 204 m です。',
+        hint: '音が往復していることを忘れずに。',
+      }),
+      fill({
+        id: 'sound-dr1-t1', concept: 'so-medium', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'こだまのように、音がかべや山に当たってはね返ることを、音の[b1]という。',
+        blanks: [word('b1', ['反射', '屈折', '振動'], '反射')],
+        explanation: '音も光と同じように、かべや山に当たって**反射**します。こだまは、反射した音が遅れて聞こえる現象です。',
+        hint: '鏡で光がはね返ることと同じ言葉だよ。',
+      }),
+      figureChoice({
+        id: 'sound-dr1-p2', concept: 'so-waveform',
+        prompt: 'ア〜エは同じ時間の波形です。アと同じ大きさで、アより低い音はどれ？',
+        figure: DR_WAVES,
+        answer: 'r2',
+        explanation: 'イはアと山の高さ（振幅）が同じなので同じ大きさで、波の数が少ない（振動数が少ない）ので低い音です。ウは小さい音、エは高い音です。',
+        hint: '山の高さが同じで、波の数が少ないものをさがそう。',
+      }),
+      fill({
+        id: 'sound-dr1-p3', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '水中で、3000 m はなれた所で出した音が 2.0 秒で届いた。水中の音の速さは[b1]である。',
+        blanks: [number('b1', 1500, 0, 'm/s')],
+        explanation: '音の速さ＝距離÷時間なので、3000 ÷ 2.0 ＝ 1500 m/s です。空気中（約 340 m/s）の 4 倍以上の速さです。',
+        hint: '距離を時間でわろう。',
+      }),
+      choice({
+        id: 'sound-dr1-p4', concept: 'so-medium',
+        prompt: '空気のない月面で、2 人の宇宙飛行士がヘルメットをくっつけると、声が聞こえた。なぜ？',
+        options: ['月面には空気が多いから', 'ヘルメット（固体）が振動を伝えるから', '光が声を運ぶから'],
+        answer: 'b',
+        explanation: '月面には空気がないので、はなれていると声は伝わりません。ヘルメットどうしをくっつけると、固体のヘルメットが振動を伝えるので聞こえます。',
+        hint: '音を伝えるものは、空気だけではないね。',
+      }),
+      choice({
+        id: 'sound-dr1-p5', concept: 'so-waveform',
+        prompt: '振動数 500 Hz の音を出す音源は、0.01 秒間に何回振動する？',
+        options: ['50 回', '500 回', '5 回'],
+        answer: 'c',
+        explanation: '500 Hz は 1 秒間に 500 回振動することです。0.01 秒間はその 100 分の 1 なので、500 × 0.01 ＝ 5 回です。',
+        hint: '0.01 秒は、1 秒の何分の 1 かな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'sound-dr1-t2', concept: 'so-medium', term: true,
+        prompt: '次の説明に合う言葉はどれ？「音が、かべや山に当たってはね返ること」',
+        options: ['反射', '屈折', '振幅'],
+        answer: 'a',
+        explanation: '音がはね返ることを、音の**反射**といいます。',
+        hint: 'こだまのしくみだよ。',
+      }),
+      choice({
+        id: 'sound-dr1-r1', concept: 'so-medium',
+        prompt: '音の伝わる速さが、速い順に並んでいるのはどれ？',
+        options: ['鉄 → 水 → 空気', '空気 → 水 → 鉄', '水 → 空気 → 鉄'],
+        answer: 'a',
+        explanation: '音は、ふつう固体の中がいちばん速く、次に液体、気体の順におそくなります。',
+        hint: '空気中は約 340 m/s、水中は約 1500 m/s だったね。',
+      }),
+      choice({
+        id: 'sound-dr1-r2', concept: 'so-speed',
+        prompt: 'かみなりが光ってから音が聞こえるまでの時間が、6 秒から 3 秒に短くなった。かみなりはどうなっている？',
+        options: ['遠ざかっている', '近づいている', '同じ所にある'],
+        answer: 'b',
+        explanation: '音が届くまでの時間が短いほど、音源は近くにあります。6 秒（約 2 km）から 3 秒（約 1 km）になったので、近づいています。',
+        hint: '時間が半分になると、距離はどうなるかな。',
+      }),
+      fill({
+        id: 'sound-dr1-r3', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。音の速さは 340 m/s とする。',
+        text: '音を出してから 0.5 秒後に、かべではね返った音が聞こえた。かべまでの距離は[b1]である。',
+        blanks: [number('b1', 85, 0, 'm')],
+        explanation: '音は 0.5 秒で 340 × 0.5 ＝ 170 m 進みました。往復なので、かべまでは 170 ÷ 2 ＝ 85 m です。',
+        hint: '進んだ距離を 2 でわろう。',
+      }),
+      figureChoice({
+        id: 'sound-dr1-r4', concept: 'so-waveform',
+        prompt: 'ア〜エは同じ時間の波形です。小さくて低い音はどれ？',
+        figure: DR_WAVES2,
+        answer: 'r3',
+        explanation: 'ウは山が低い（振幅が小さい）ので小さい音、波の数が少ない（振動数が少ない）ので低い音です。アは小さくて高い音、イは大きくて低い音、エは大きくて高い音です。',
+        hint: '山の高さは大きさ、波の数は高さを表すよ。',
+      }),
+      fill({
+        id: 'sound-dr1-r5', concept: 'so-waveform',
+        prompt: '空らんに入る数を入れよう。',
+        text: '0.02 秒間に 6 回振動している音の振動数は[b1]である。',
+        blanks: [number('b1', 300, 0, 'Hz')],
+        explanation: '1 秒は 0.02 秒の 50 倍なので、1 秒間の振動の回数は 6 × 50 ＝ 300 回、つまり 300 Hz です。',
+        hint: '1 秒間に何回振動するかを求めよう。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1469,9 +1641,8 @@
     mascot: 'E',   // 担当の先生（キューブ先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'travel', title: '音の伝わり方', order: 1, stages: [sound1, sound2] },
-      { id: 'pitch', title: '音の大きさと高さ', order: 2, stages: [sound3, sound4] },
-      { id: 'sound-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [soundMp1, soundMp2, soundMp3] },
+      { id: 'travel', title: '音の伝わり方', order: 1, stages: [sound1, sound2, soundMp1, soundMp2] },
+      { id: 'pitch', title: '音の大きさと高さ', order: 2, stages: [sound3, sound4, soundMp3, soundDr1] },
     ],
   };
 

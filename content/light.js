@@ -1740,7 +1740,7 @@
 
   // ---- ステージ light-mp1: プリント 1（ものが見えるとは・光の反射の法則・光の反射の作図） ----
   const lightMp1 = {
-    id: 'light-mp1', areaId: 'light-miniprint', title: 'プリント 1: ものの見え方と光の反射', minutes: 6, concepts: ['straight', 'reflect-law'],
+    id: 'light-mp1', areaId: 'reflect', free: true, title: 'プリント 1: ものの見え方と光の反射', minutes: 6, concepts: ['straight', 'reflect-law'],
     lessons: [
       {
         id: 'light-mp1-c1',
@@ -1915,7 +1915,7 @@
 
   // ---- ステージ light-mp2: プリント 2（光の屈折・カップの中のコイン） ----
   const lightMp2 = {
-    id: 'light-mp2', areaId: 'light-miniprint', title: 'プリント 2: 光の屈折とコインの見え方', minutes: 6, concepts: ['refract-dir', 'refract-view'],
+    id: 'light-mp2', areaId: 'refract', free: true, title: 'プリント 2: 光の屈折とコインの見え方', minutes: 6, concepts: ['refract-dir', 'refract-view'],
     lessons: [
       {
         id: 'light-mp2-c1',
@@ -2070,7 +2070,7 @@
 
   // ---- ステージ light-mp3: プリント 3（凸レンズ・像のまとめ・光学台） ----
   const lightMp3 = {
-    id: 'light-mp3', areaId: 'light-miniprint', title: 'プリント 3: 凸レンズと像', minutes: 6, concepts: ['focus', 'lens-image'],
+    id: 'light-mp3', areaId: 'lens', free: true, title: 'プリント 3: 凸レンズと像', minutes: 6, concepts: ['focus', 'lens-image'],
     lessons: [
       {
         id: 'light-mp3-c1',
@@ -2245,7 +2245,7 @@
 
   // ---- ステージ light-mp4: プリント 4（凸レンズとろうそく・実像の作図・実像と虚像の作図・光の進み方の作図・方眼の作図） ----
   const lightMp4 = {
-    id: 'light-mp4', areaId: 'light-miniprint', title: 'プリント 4: 凸レンズの作図と像の変化', minutes: 7, concepts: ['lens-image', 'focus'],
+    id: 'light-mp4', areaId: 'lens', free: true, title: 'プリント 4: 凸レンズの作図と像の変化', minutes: 7, concepts: ['lens-image', 'focus'],
     lessons: [
       {
         id: 'light-mp4-c1',
@@ -2676,6 +2676,363 @@
   ];
 
   // ================================================================
+  // 領域: ドリル（中学 1 年のテーマ「光の反射・屈折」「凸レンズの働き」に合わせた自作の練習問題）
+  // ================================================================
+
+  // 厚いガラス板を通りぬける光。ガラスから出たあとの向きの候補ア〜ウ（イが入る前の光と平行）
+  const DR_GLASS_BLOCK = scene([
+    { type: 'rect', x: 20, y: 80, width: 280, height: 80, fill: 'glass' },
+    { type: 'label', x: 250, y: 126, text: 'ガラス', size: 14 },
+    { type: 'label', x: 250, y: 60, text: '空気', size: 14 },
+    { type: 'ray', x1: 40, y1: 20, x2: 120, y2: 80, arrow: true },
+    { type: 'ray', x1: 120, y1: 80, x2: 160, y2: 160, arrow: true },
+    { type: 'ray', x1: 160, y1: 160, x2: 172, y2: 214, dashed: true },
+    { type: 'ray', x1: 160, y1: 160, x2: 227, y2: 210, dashed: true },
+    { type: 'ray', x1: 160, y1: 160, x2: 290, y2: 200, dashed: true },
+    { type: 'region', id: 'r1', x: 160, y: 216, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 230, y: 216, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 290, y: 176, r: 22, label: 'ウ' },
+  ]);
+
+  // 凸レンズ（焦点距離 15 cm）で、物体の位置を変えたときの像の位置の表。withRegions で左にア〜ウ
+  function drLensTable(withRegions) {
+    const items = [
+      { type: 'label', x: 160, y: 24, text: '凸レンズと物体・像の距離', size: 14, anchor: 'middle' },
+      { type: 'line', points: [[60, 38], [312, 38]], width: 2 },
+      { type: 'label', x: 130, y: 62, text: 'レンズ〜物体', size: 13, anchor: 'middle' },
+      { type: 'label', x: 250, y: 62, text: 'レンズ〜像', size: 13, anchor: 'middle' },
+      { type: 'line', points: [[60, 74], [312, 74]], width: 1, color: 'line' },
+    ];
+    [['20 cm', '60 cm'], ['30 cm', '30 cm'], ['60 cm', '20 cm']].forEach((row, i) => {
+      const y = 116 + 50 * i;
+      items.push({ type: 'label', x: 130, y, text: row[0], size: 16, anchor: 'middle' });
+      items.push({ type: 'label', x: 250, y, text: row[1], size: 16, anchor: 'middle' });
+      if (withRegions) items.push({ type: 'region', id: 'r' + (i + 1), x: 32, y: y - 6, r: 22, label: 'アイウ'[i] });
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ light-dr1: ドリル 1（光の反射・屈折） ----
+  const lightDr1 = {
+    id: 'light-dr1', areaId: 'refract', free: true, title: 'ドリル 1: 光の反射・屈折', minutes: 7,
+    concepts: ['mirror-image', 'refract-dir', 'total-reflect'],
+    lessons: [
+      {
+        id: 'light-dr1-c1',
+        anim: 'image-behind-mirror',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
+        text: '鏡に映る**像**は、鏡をはさんで物体と対称の位置に見えます。目に届く光は鏡で反射していますが、鏡の奥の像からまっすぐ来たように見えます。',
+        figure: scene([
+          { type: 'mirror', x1: 160, y1: 30, x2: 160, y2: 210 },
+          { type: 'point', x: 90, y: 90, label: '物体' },
+          { type: 'point', x: 230, y: 90, label: '像' },
+          { type: 'line', points: [[90, 90], [230, 90]], color: 'gray', width: 1, dashed: true },
+          { type: 'ray', x1: 90, y1: 90, x2: 160, y2: 150, arrow: true },
+          { type: 'ray', x1: 160, y1: 150, x2: 90, y2: 210, arrow: true },
+          { type: 'ray', x1: 160, y1: 150, x2: 230, y2: 90, dashed: true },
+          { type: 'eye', x: 80, y: 214 },
+        ]),
+      },
+      {
+        id: 'light-dr1-c2',
+        anim: 'refract-in',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
+        text: '光が空気から水やガラスへ、または水やガラスから空気へ、ななめに進むと、境目で折れ曲がります。これが**屈折**です。角は、いつも空気側のほうが大きくなります。',
+        figure: scene([
+          { type: 'boundary', y: 120, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 160, y: 120 },
+          { type: 'ray', x1: 60, y1: 30, x2: 160, y2: 120, arrow: true },
+          { type: 'ray', x1: 160, y1: 120, x2: 215, y2: 220, arrow: true },
+          { type: 'label', x: 40, y: 104, text: '空気側の角が大きい', size: 13 },
+        ]),
+      },
+      {
+        id: 'light-dr1-c3',
+        text: '水やガラスから空気へ進む光は、入射角が大きくなると、空気中へ出ずにすべて境界面で反射します。これを**全反射**といいます。光ファイバーはこの性質を使っています。',
+        figure: scene([
+          { type: 'boundary', y: 90, upper: 'air', lower: 'water' },
+          { type: 'normal', x: 160, y: 90 },
+          { type: 'ray', x1: 40, y1: 190, x2: 160, y2: 90, arrow: true },
+          { type: 'ray', x1: 160, y1: 90, x2: 280, y2: 190, arrow: true },
+          { type: 'label', x: 160, y: 228, text: '空気中へ出ずに、すべて反射', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'light-dr1-w1', concept: 'mirror-image',
+      prompt: '予想しよう。かべにかけた鏡で、自分の全身を映したい。鏡のたての長さは、少なくとも身長のどのくらい必要だと思う？',
+      options: ['身長と同じ', '身長の 2 倍', '身長の半分'],
+      answer: 'c',
+      explanation: '頭の先と足の先からの光は、目と頭の先・目と足の先のそれぞれ中間の高さで鏡に反射して目に届きます。だから、身長の半分の長さがあれば全身が映ります。',
+      hint: '反射の法則で、光が鏡に当たる高さを考えよう。',
+    }),
+    problems: [
+      fill({
+        id: 'light-dr1-p1', concept: 'mirror-image',
+        prompt: '空らんに入る数を入れよう。',
+        text: '鏡から 1.5 m はなれて立った。自分と、鏡に映った自分の像との距離は[b1]である。',
+        blanks: [number('b1', 3, 0, 'm')],
+        explanation: '像は、鏡の奥の、鏡から 1.5 m のところに見えます。自分から像までは 1.5 ＋ 1.5 ＝ 3 m です。',
+        hint: '像は鏡の向こう側の、どれだけ奥に見えるかな。',
+      }),
+      fill({
+        id: 'light-dr1-t1', concept: 'mirror-image', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '鏡の前の物体と、鏡をはさんで対称な位置に見えるものを、物体の[b1]という。',
+        blanks: [word('b1', ['像', '影', '光源'], '像')],
+        explanation: '鏡の奥に見えるものを**像**といいます。像は、鏡をはさんで物体と対称な位置にあります。',
+        hint: '鏡の中に見える「もう 1 つの物体」のことだよ。',
+      }),
+      fill({
+        id: 'light-dr1-p2', concept: 'mirror-image',
+        prompt: '空らんに入る数を入れよう。',
+        text: '数字のない時計を鏡に映すと、短い針が 3 時、長い針が 12 を指しているように見えた。本当の時刻は[b1]である。',
+        blanks: [number('b1', 9, 0, '時')],
+        explanation: '鏡に映る像は左右が逆になります。短い針が右（3 の向き）に見えるとき、本当は左（9 の向き）を指しているので、9 時です。',
+        hint: '鏡の像では、右と左が入れかわるね。',
+      }),
+      figureChoice({
+        id: 'light-dr1-p3', concept: 'refract-dir',
+        prompt: '光が厚いガラス板に入り、下の面から空気中へ出る。出たあとの光の進む向きは、点線ア〜ウのどれ？',
+        figure: DR_GLASS_BLOCK,
+        answer: 'r2',
+        explanation: '空気からガラスに入るときは境界面に近づくように、ガラスから空気へ出るときは同じだけもどるように曲がります。だから、出た光は入る前の光と平行なイの向きに進みます。',
+        hint: '入るときと出るときで、曲がり方は逆になるね。',
+      }),
+      choice({
+        id: 'light-dr1-p4', concept: 'refract-dir',
+        prompt: '光が空気中から水中へ進むとき、入射角を大きくしていくと、屈折角はどうなる？',
+        options: ['小さくなる', '大きくなる', '変わらない'],
+        answer: 'b',
+        explanation: '入射角を大きくすると、屈折角も大きくなります。ただし、空気から水へ進むときは、屈折角はいつも入射角より小さいままです。',
+        hint: '光をよりななめに当てると、水の中の光もよりななめになるよ。',
+      }),
+      choice({
+        id: 'light-dr1-p5', concept: 'total-reflect',
+        prompt: 'プールにもぐって、ななめ上の水面を見上げると、水面が鏡のように光って見えた。その理由はどれ？',
+        options: ['水面で光が屈折して集まるから', '水が自分で光を出しているから', '水面で光が全反射しているから'],
+        answer: 'c',
+        explanation: '水中から水面に大きな入射角で当たった光は、空気中へ出られず全反射します。そのため、水面が鏡のように見えます。',
+        hint: '水中から空気へ進もうとする光の話だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'light-dr1-r1', concept: 'mirror-image',
+        prompt: '鏡に向かって、紙に書いた「F」の字を見せた。鏡に映った字はどう見える？',
+        options: ['左右が逆になって見える', '上下が逆になって見える', 'そのままの向きで見える'],
+        answer: 'a',
+        explanation: '鏡に向かい合わせると、像は左右が逆になります。上下は逆になりません。',
+        hint: '鏡の前で右手を上げると、像はどちらの手を上げるかな。',
+      }),
+      fill({
+        id: 'light-dr1-r2', concept: 'mirror-image',
+        prompt: '空らんに入る数を入れよう。',
+        text: '鏡から 2 m のところに立っていた人が、鏡に 0.8 m 近づいた。このとき、人と像との距離は[b1]である。',
+        blanks: [number('b1', 2.4, 0, 'm')],
+        explanation: '鏡までの距離は 2 − 0.8 ＝ 1.2 m です。像も鏡の奥 1.2 m にあるので、人と像の距離は 1.2 × 2 ＝ 2.4 m です。',
+        hint: 'まず、近づいたあとの鏡までの距離を出そう。',
+      }),
+      choice({
+        id: 'light-dr1-t2', concept: 'mirror-image', term: true,
+        prompt: '次の説明に合う言葉はどれ？「鏡の前の物体と、鏡をはさんで対称な位置に見えるもの」',
+        options: ['影', '像', '光源'],
+        answer: 'b',
+        explanation: '鏡の奥に見えるものを**像**といいます。',
+        hint: '鏡の中に見えるものの名前だよ。',
+      }),
+      choice({
+        id: 'light-dr1-r3', concept: 'refract-dir',
+        prompt: '厚いガラス板をななめに通りぬけた光の向きは、ガラスに入る前の光とくらべてどうなる？',
+        options: ['直角に曲がる', '逆向きになる', '平行になる（少し横にずれる）'],
+        answer: 'c',
+        explanation: '入るときと出るときに、反対向きに同じだけ曲がるので、出た光は入る前の光と平行になります。道すじは少し横にずれます。',
+        hint: '入るときと出るときの曲がり方をくらべよう。',
+      }),
+      figureChoice({
+        id: 'light-dr1-r4', concept: 'refract-dir',
+        prompt: '空気中からガラスへ、入射角 50° で光が進んだ。ガラスの中を進む光は、点線ア〜ウのどれ？（イは入射した光をまっすぐのばした線）',
+        // 境界面 y=90、入射点 (160, 90)。法線からの角: ア 70°、イ 50°（まっすぐ）、ウ 30°
+        figure: scene([
+          { type: 'boundary', y: 90, upper: 'air', lower: 'glass' },
+          { type: 'normal', x: 160, y: 90, angle: 0 },
+          { type: 'ray', x1: 255, y1: 10, x2: 160, y2: 90, arrow: true },
+          { type: 'ray', x1: 160, y1: 90, x2: 57, y2: 128, dashed: true },
+          { type: 'ray', x1: 160, y1: 90, x2: 76, y2: 161, dashed: true },
+          { type: 'ray', x1: 160, y1: 90, x2: 105, y2: 185, dashed: true },
+          { type: 'region', id: 'r1', x: 38, y: 135, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 60, y: 174, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 95, y: 203, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r3',
+        explanation: '空気からガラスへ進むとき、光は法線に近づくように曲がるので、屈折角は入射角（50°）より小さくなります。だから、法線に近いウの向きに進みます。',
+        hint: '角は、いつも空気側のほうが大きいよ。',
+      }),
+      choice({
+        id: 'light-dr1-r5', concept: 'total-reflect',
+        prompt: '入射角を大きくしていくと全反射が起こるのは、光がどう進むとき？',
+        options: ['空気から水へ進むとき', '水から空気へ進むとき', '空気からガラスへ進むとき'],
+        answer: 'b',
+        explanation: '全反射は、水やガラスから空気へ進む光で起こります。空気から水やガラスへ進む光では起こりません。',
+        hint: '屈折角が入射角より大きくなるのは、どちら向きかな。',
+      }),
+      fill({
+        id: 'light-dr1-r6', concept: 'total-reflect',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '光ファイバーの中の光は、ガラスの中から外側の境界面へ大きな[b1]で当たるので、全反射して外へもれない。',
+        blanks: [word('b1', ['屈折角', '入射角', '焦点距離'], '入射角')],
+        explanation: 'ガラスの中から境界面に当たる光の入射角が大きいと、光は空気中へ出られず全反射します。これをくり返して、遠くまで光が伝わります。',
+        hint: '境界面にどれだけななめに当たるかを表す角だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ light-dr2: ドリル 2（凸レンズの働き） ----
+  const lightDr2 = {
+    id: 'light-dr2', areaId: 'lens', free: true, title: 'ドリル 2: 凸レンズの働き', minutes: 6,
+    concepts: ['focus', 'lens-image'],
+    lessons: [
+      {
+        id: 'light-dr2-c1',
+        anim: 'lens-parallel-rays',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
+        text: '凸レンズで日光を集めると、光は**焦点**に集まります。焦点はレンズの両側に 1 つずつあり、レンズの中心からの距離（**焦点距離**）はどちらも同じです。',
+        figure: scene([
+          { type: 'axis', y: 120 },
+          { type: 'lens', cx: 160, cy: 120, height: 130, f: 70 },
+          { type: 'ray', x1: 20, y1: 80, x2: 160, y2: 80, arrow: true },
+          { type: 'ray', x1: 160, y1: 80, x2: 230, y2: 120, arrow: true },
+          { type: 'ray', x1: 20, y1: 160, x2: 160, y2: 160, arrow: true },
+          { type: 'ray', x1: 160, y1: 160, x2: 230, y2: 120, arrow: true },
+          { type: 'label', x: 160, y: 222, text: '焦点距離は両側で同じ', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'light-dr2-c2',
+        text: '物体が焦点より外側にあると、スクリーンに上下左右が逆向きの**実像**ができます。物体をレンズに近づけるほど、像はレンズから遠くにでき、大きくなります。',
+        figure: drLensTable(false),
+      },
+      {
+        id: 'light-dr2-c3',
+        anim: 'virtual-image',   // 動く図の使い回し（js/anim.js）。figure は静止図として残す
+        text: '物体が焦点より内側にあると、実像はできません。レンズをのぞくと、物体と同じ向きの大きな**虚像**が見えます。物体がちょうど焦点の上にあると、像はできません。',
+        figure: scene([
+          { type: 'axis', y: 130 },
+          { type: 'lens', cx: 180, cy: 130, height: 130, f: 70 },
+          { type: 'object', x: 87, y: 130, height: 79 },
+          { type: 'object', x: 140, y: 130, height: 34, label: '物体' },
+          { type: 'eye', x: 280, y: 120 },
+          { type: 'label', x: 20, y: 34, text: '虚像（同じ向き・大きい）', size: 13 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'light-dr2-w1', concept: 'lens-image',
+      prompt: '予想しよう。カメラで遠くの山と近くの花をとる。近くの花をとるとき、レンズとセンサーの距離はどうすると思う？',
+      options: ['遠くをとるときより短くする', '変えなくてよい', '遠くをとるときより長くする'],
+      answer: 'c',
+      explanation: '物体がレンズに近いほど、実像はレンズから遠くにできます。だから、近くのものをとるときは、レンズをセンサーから少しはなします。',
+      hint: '物体を近づけると、実像のできる位置はどうなったかな。',
+    }),
+    problems: [
+      fill({
+        id: 'light-dr2-p1', concept: 'focus',
+        prompt: '表を見て、空らんに入る数を入れよう。',
+        figure: drLensTable(false),
+        text: '物体と像がレンズから同じ距離のとき、同じ大きさの実像ができる。この凸レンズの焦点距離は[b1]である。',
+        blanks: [number('b1', 15, 0, 'cm')],
+        explanation: '物体も像もレンズから 30 cm のとき、同じ大きさの実像ができます。これは焦点距離の 2 倍の位置なので、焦点距離は 30 ÷ 2 ＝ 15 cm です。',
+        hint: '同じ大きさの実像ができるのは、焦点距離の何倍の位置かな。',
+      }),
+      fill({
+        id: 'light-dr2-t1', concept: 'focus', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '虫めがねで日光を 1 点に集めた。この点とレンズの中心との距離を[b1]という。',
+        blanks: [word('b1', ['光軸', '実像', '焦点距離'], '焦点距離')],
+        explanation: '日光が集まる点が焦点で、レンズの中心から焦点までの距離が**焦点距離**です。',
+        hint: '「点」ではなく「距離」をたずねているよ。',
+      }),
+      figureChoice({
+        id: 'light-dr2-p2', concept: 'lens-image',
+        prompt: '表のア〜ウのうち、スクリーンにできる実像が物体より大きいのはどれ？',
+        figure: drLensTable(true),
+        answer: 'r1',
+        explanation: '像がレンズから遠くにできるほど、像は大きくなります。アは物体 20 cm に対して像が 60 cm と遠いので、物体より大きい実像です。イは同じ大きさ、ウは小さい実像です。',
+        hint: 'レンズ〜像の距離が、レンズ〜物体の距離より長いものをさがそう。',
+      }),
+      choice({
+        id: 'light-dr2-p3', concept: 'lens-image',
+        prompt: 'カメラ・虫めがね・プロジェクターのうち、凸レンズでできる虚像を見る道具はどれ？',
+        options: ['虫めがね', 'カメラ', 'プロジェクター'],
+        answer: 'a',
+        explanation: '虫めがねは、焦点より内側の物体をのぞいて、大きな虚像を見る道具です。カメラはセンサーに、プロジェクターはスクリーンに実像をつくります。',
+        hint: 'スクリーンやセンサーに像を映さない道具はどれかな。',
+      }),
+      choice({
+        id: 'light-dr2-p4', concept: 'focus',
+        prompt: '同じ大きさの凸レンズで、焦点距離が短いのはどんなレンズ？',
+        options: ['ふくらみが小さくうすいレンズ', 'ふくらみが大きく厚いレンズ', '形とは関係がない'],
+        answer: 'b',
+        explanation: 'ふくらみが大きい（厚い）レンズほど光を大きく曲げるので、光が近くに集まり、焦点距離が短くなります。',
+        hint: '光を強く曲げるレンズほど、光はどこで集まるかな。',
+      }),
+      choice({
+        id: 'light-dr2-p5', concept: 'lens-image',
+        prompt: 'スマートフォンのカメラで遠くの山をとった。レンズの奥にできている像はどれ？',
+        options: ['同じ向きで大きい虚像', '逆向きで同じ大きさの実像', '逆向きで小さい実像'],
+        answer: 'c',
+        explanation: '山は焦点距離の 2 倍よりずっと遠くにあるので、焦点の少し外側に、逆向きで小さい実像ができます。',
+        hint: '物体がとても遠いと、像はレンズの近くに小さくできるよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'light-dr2-r1', concept: 'focus',
+        prompt: '凸レンズの焦点は、いくつある？',
+        options: ['レンズの両側に 1 つずつ', '光が入る側に 1 つだけ', 'レンズの中心に 1 つ'],
+        answer: 'a',
+        explanation: '光はどちらの側からでもレンズを通れるので、焦点はレンズの両側に 1 つずつあります。中心からの距離は同じです。',
+        hint: 'レンズを裏返して光を当てても、光は集まるね。',
+      }),
+      choice({
+        id: 'light-dr2-t2', concept: 'focus', term: true,
+        prompt: '次の説明に合う言葉はどれ？「レンズの中心から、光が集まる点までの距離」',
+        options: ['光軸', '焦点距離', '実像'],
+        answer: 'b',
+        explanation: 'レンズの中心から焦点までの距離を**焦点距離**といいます。',
+        hint: '長さを表す言葉だよ。',
+      }),
+      fill({
+        id: 'light-dr2-r2', concept: 'lens-image',
+        prompt: '表を見て、空らんに入る数を入れよう。',
+        figure: drLensTable(false),
+        text: '物体がレンズから 30 cm のとき、スクリーンにできる実像の大きさは、物体の[b1]である。',
+        blanks: [number('b1', 1, 0, '倍')],
+        explanation: '物体も像もレンズから 30 cm で、焦点距離の 2 倍の位置です。このとき、実像は物体と同じ大きさ（1 倍）になります。',
+        hint: 'レンズ〜物体とレンズ〜像の距離が同じだね。',
+      }),
+      figureChoice({
+        id: 'light-dr2-r3', concept: 'lens-image',
+        prompt: '図の F は凸レンズの焦点です。緑の矢印ア〜ウの位置に文字を置き、右から虫めがねとしてのぞきます。文字がいちばん大きく見えるのはどの位置？ ア〜ウから選ぼう。',
+        // レンズ x=235、焦点 F x=130。ア 焦点の外側、イ 焦点のすぐ内側、ウ レンズの近く
+        figure: scene([
+          { type: 'axis', y: 130 },
+          { type: 'lens', cx: 235, cy: 130, height: 120 },
+          { type: 'circle', x: 130, y: 130, r: 4, fill: 'ink', stroke: 'ink' },
+          { type: 'text', x: 130, y: 154, text: 'F', size: 14, anchor: 'middle' },
+          { type: 'eye', x: 295, y: 130 },
+          { type: 'object', x: 80, y: 130, height: 30 },
+          { type: 'object', x: 150, y: 130, height: 30 },
+          { type: 'object', x: 198, y: 130, height: 30 },
+          { type: 'region', id: 'r1', x: 80, y: 74, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 150, y: 74, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 198, y: 74, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: '焦点の内側では、物体を焦点に近づけるほど虚像は大きくなります。だから、焦点のすぐ内側のイがいちばん大きく見えます。焦点の外側のアでは、虚像は見えません。',
+        hint: '焦点の上に置くと像ができない。その少し手前では？',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -2686,10 +3043,9 @@
     concepts,
     areas: [
       { id: 'straight', title: '光の直進', order: 1, stages: [straight1, straight2] },
-      { id: 'reflect', title: '光の反射', order: 2, stages: [reflect1, reflect2] },
-      { id: 'refract', title: '光の屈折', order: 3, stages: [refract1, refract2] },
-      { id: 'lens', title: '凸レンズ', order: 4, stages: [lens1, lens2] },
-      { id: 'light-miniprint', title: 'ミニプリント', order: 5, free: true, stages: [lightMp1, lightMp2, lightMp3, lightMp4] },
+      { id: 'reflect', title: '光の反射', order: 2, stages: [reflect1, reflect2, lightMp1] },
+      { id: 'refract', title: '光の屈折', order: 3, stages: [refract1, refract2, lightMp2, lightDr1] },
+      { id: 'lens', title: '凸レンズ', order: 4, stages: [lens1, lens2, lightMp3, lightMp4, lightDr2] },
     ],
   };
 

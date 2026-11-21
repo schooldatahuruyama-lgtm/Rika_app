@@ -495,7 +495,7 @@
 
   // ---- ステージ state-3: 混合物と純粋な物質（沸点が一定にならない） ----
   const state3 = {
-    id: 'state-3', areaId: 'distill', title: '混合物と純粋な物質', minutes: 4, concepts: ['sc-mixture'],
+    id: 'state-3', areaId: 'sc-distill', title: '混合物と純粋な物質', minutes: 4, concepts: ['sc-mixture'],
     lessons: [
       {
         id: 'state-3-c1',
@@ -642,7 +642,7 @@
 
   // ---- ステージ state-4: 蒸留（沸点のちがいで分ける、装置の注意） ----
   const state4 = {
-    id: 'state-4', areaId: 'distill', title: '蒸留', minutes: 5, concepts: ['sc-distill'],
+    id: 'state-4', areaId: 'sc-distill', title: '蒸留', minutes: 5, concepts: ['sc-distill'],
     lessons: [
       {
         id: 'state-4-c1',
@@ -1073,7 +1073,7 @@
 
   // ---- ステージ state-change-mp1: プリント 1（状態変化と体積・質量） ----
   const scMp1 = {
-    id: 'state-change-mp1', areaId: 'state-change-miniprint', title: 'プリント 1: 状態変化と体積・質量', minutes: 5, concepts: ['sc-change'],
+    id: 'state-change-mp1', areaId: 'state', free: true, title: 'プリント 1: 状態変化と体積・質量', minutes: 5, concepts: ['sc-change'],
     lessons: [
       {
         id: 'state-change-mp1-c1',
@@ -1213,7 +1213,7 @@
 
   // ---- ステージ state-change-mp2: プリント 2（融点・沸点、エタノールの沸騰） ----
   const scMp2 = {
-    id: 'state-change-mp2', areaId: 'state-change-miniprint', title: 'プリント 2: 融点・沸点を読む', minutes: 5, concepts: ['sc-point'],
+    id: 'state-change-mp2', areaId: 'state', free: true, title: 'プリント 2: 融点・沸点を読む', minutes: 5, concepts: ['sc-point'],
     lessons: [
       {
         id: 'state-change-mp2-c1',
@@ -1351,7 +1351,7 @@
 
   // ---- ステージ state-change-mp3: プリント 3（混合物の沸点） ----
   const scMp3 = {
-    id: 'state-change-mp3', areaId: 'state-change-miniprint', title: 'プリント 3: 混合物の沸点', minutes: 5, concepts: ['sc-mixture', 'sc-point'],
+    id: 'state-change-mp3', areaId: 'sc-distill', free: true, title: 'プリント 3: 混合物の沸点', minutes: 5, concepts: ['sc-mixture', 'sc-point'],
     lessons: [
       {
         id: 'state-change-mp3-c1',
@@ -1454,7 +1454,7 @@
 
   // ---- ステージ state-change-mp4: プリント 4（赤ワインの蒸留、石油の分留） ----
   const scMp4 = {
-    id: 'state-change-mp4', areaId: 'state-change-miniprint', title: 'プリント 4: 蒸留と石油の分留', minutes: 5, concepts: ['sc-distill'],
+    id: 'state-change-mp4', areaId: 'sc-distill', free: true, title: 'プリント 4: 蒸留と石油の分留', minutes: 5, concepts: ['sc-distill'],
     lessons: [
       {
         id: 'state-change-mp4-c1',
@@ -1619,6 +1619,185 @@
   ]);
 
   // ================================================================
+  // 領域: ドリル（中学 1 年のテーマ「物質の状態変化」に合わせた自作の練習問題）
+  // ================================================================
+
+  // 融点と沸点の表（4 つの物質）。withRegions で左にア〜エの選ぶ場所
+  function drPointTable(withRegions) {
+    const items = [
+      { type: 'line', points: [[60, 22], [312, 22]], width: 2 },
+      { type: 'text', x: 210, y: 44, text: '融点〔℃〕', size: 14, anchor: 'middle' },
+      { type: 'text', x: 280, y: 44, text: '沸点〔℃〕', size: 14, anchor: 'middle' },
+      { type: 'line', points: [[60, 56], [312, 56]], width: 1, color: 'line' },
+    ];
+    const rows = [['酸素', '−218', '−183'], ['エタノール', '−115', '78'], ['水銀', '−39', '357'], ['パルミチン酸', '63', '360']];
+    rows.forEach((row, i) => {
+      const y = 92 + 46 * i;
+      items.push({ type: 'text', x: 62, y, text: row[0], size: 13 });
+      items.push({ type: 'text', x: 210, y, text: row[1], size: 15, anchor: 'middle' });
+      items.push({ type: 'text', x: 280, y, text: row[2], size: 15, anchor: 'middle' });
+      if (withRegions) items.push({ type: 'region', id: 'r' + (i + 1), x: 30, y: y - 6, r: 22, label: 'アイウエ'[i] });
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ state-change-dr1: ドリル 1（物質の状態変化） ----
+  const scDr1 = {
+    id: 'state-change-dr1', areaId: 'state', free: true, title: 'ドリル 1: 物質の状態変化', minutes: 7,
+    concepts: ['sc-model', 'sc-point', 'sc-distill'],
+    lessons: [
+      {
+        id: 'state-change-dr1-c1',
+        text: '**状態変化**では、粒子の数は変わらず、粒子の間かくと運動のようすが変わります。だから質量は変わらず、体積が変わります。多くの物質は液体から固体になると体積が減りますが、水は増えます。',
+        figure: scene([
+          ...particleBox(20, 60, 'solid'),
+          ...particleBox(120, 60, 'liquid'),
+          ...particleBox(220, 60, 'gas'),
+          { type: 'text', x: 60, y: 166, text: '固体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 166, text: '液体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 166, text: '気体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 210, text: '粒子の数（質量）は同じ', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+      {
+        id: 'state-change-dr1-c2',
+        text: '**融点**と**沸点**は物質ごとに決まっています。温度が融点より低ければ固体、融点と沸点のあいだなら液体、沸点より高ければ気体です。',
+        figure: scene([
+          { type: 'line', points: [[40, 120], [290, 120]], width: 3, arrow: true },
+          { type: 'text', x: 296, y: 140, text: '温度', size: 13, anchor: 'end' },
+          { type: 'line', points: [[120, 100], [120, 140]], width: 2 },
+          { type: 'line', points: [[220, 100], [220, 140]], width: 2 },
+          { type: 'text', x: 120, y: 166, text: '融点', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 220, y: 166, text: '沸点', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 76, y: 90, text: '固体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 170, y: 90, text: '液体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 90, text: '気体', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'state-change-dr1-c3',
+        text: '液体の混合物は、沸点のちがいを利用して**蒸留**で分けられます。海水を蒸留すると、出てきた気体を冷やした液は水で、食塩などはフラスコに残ります。',
+        figure: scene([
+          { type: 'beaker', x: 80, y: 180, width: 80, height: 90, level: 0.5, label: '海水' },
+          { type: 'flame', x: 80, y: 236 },
+          { type: 'line', points: [[80, 92], [80, 70], [220, 70], [240, 130]], width: 3 },
+          { type: 'tube', x: 240, y: 200, height: 80, level: 0.3, label: '水' },
+          { type: 'text', x: 150, y: 56, text: '水蒸気', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'state-change-dr1-w1', concept: 'sc-model',
+      prompt: '予想しよう。冷たい飲み物を入れたコップの外側に、水てきがつくのはなぜだと思う？',
+      options: ['飲み物がコップからしみ出たから', '空気中の水蒸気が冷えて水になったから', 'コップのガラスがとけたから'],
+      answer: 'b',
+      explanation: '空気中には、目に見えない気体の水（水蒸気）があります。冷たいコップにふれて冷やされると、液体の水に状態変化して、水てきになります。',
+      hint: '空気の中にも、目に見えない水があるよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'state-change-dr1-p1', concept: 'sc-model',
+        prompt: 'ドライアイスは、液体にならずに気体の二酸化炭素に変わる。出ていく二酸化炭素の粒子のようすはア〜ウのどれ？',
+        figure: particleChoiceScene(['liquid', 'solid', 'gas']),
+        answer: 'r3',
+        explanation: '気体では、粒子の間かくが広く、粒子が自由に飛び回っています。ドライアイス（固体）は、液体をへずにいきなり気体になります。',
+        hint: '気体の粒子は、間かくが広くばらばらだね。',
+      }),
+      fill({
+        id: 'state-change-dr1-t1', concept: 'sc-point', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '固体のパルミチン酸を加熱すると、63 ℃ で温度が一定になり、とけはじめた。この温度をパルミチン酸の[b1]という。',
+        blanks: [word('b1', ['沸点', '密度', '融点'], '融点')],
+        explanation: '固体がとけて液体になるときの温度を**融点**といいます。とけている間は、加えた熱が状態変化に使われるので、温度が一定になります。',
+        hint: '固体がとける温度だよ。',
+      }),
+      figureChoice({
+        id: 'state-change-dr1-p2', concept: 'sc-point',
+        prompt: '表のア〜エを 0 ℃ から 100 ℃ まで温める。そのあいだに、液体から気体に変わるものはどれ？',
+        figure: drPointTable(true),
+        answer: 'r2',
+        explanation: 'エタノールは 0 ℃ で液体で、沸点 78 ℃ をこえると気体になります。酸素ははじめから気体、水銀は液体のまま、パルミチン酸は 63 ℃ で固体から液体に変わります。',
+        hint: '沸点が 0 ℃ と 100 ℃ のあいだにある物質をさがそう。',
+      }),
+      fill({
+        id: 'state-change-dr1-p3', concept: 'sc-model',
+        prompt: '空らんに入る数を入れよう。',
+        text: '液体のろう 45 g を冷やして固体にすると、体積が 50 cm³ になった。固体のろうの密度は[b1]である。',
+        blanks: [number('b1', 0.9, 0, 'g/cm³')],
+        explanation: '状態が変わっても質量は 45 g のままです。密度＝質量÷体積なので、45 ÷ 50 ＝ 0.9 g/cm³ です。',
+        hint: '固体になっても、質量は変わらないね。',
+      }),
+      choice({
+        id: 'state-change-dr1-p4', concept: 'sc-model',
+        prompt: '水が沸騰しているとき、水の中から出てくる大きな泡の正体はどれ？',
+        options: ['水にとけていた空気', '酸素と水素', '水蒸気（気体の水）'],
+        answer: 'c',
+        explanation: '沸騰すると、水の内部でも液体の水が気体の水（水蒸気）に変わり、泡になって出てきます。加熱の最初に出る小さな泡は、とけていた空気です。',
+        hint: '沸騰は、液体の内部からも気体に変わる現象だよ。',
+      }),
+      fill({
+        id: 'state-change-dr1-p5', concept: 'sc-distill',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '海水を蒸留して集めた液を、蒸発皿にとって加熱すると、[b1]。',
+        blanks: [word('b1', ['何も残らない', '白い固体が残る', '黒い固体が残る'], '何も残らない')],
+        explanation: '蒸留で出てくるのは、沸点の低い水が気体になったものです。食塩などはフラスコに残るので、集めた液を加熱しても何も残りません。',
+        hint: '食塩は 100 ℃ では気体にならないね。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'state-change-dr1-r1', concept: 'sc-model',
+        prompt: 'ふくろにエタノールの気体を閉じこめて冷やすと、液体にもどった。ふくろ全体の質量は？',
+        options: ['変わらない', '減る', '増える'],
+        answer: 'a',
+        explanation: '状態が変わっても、エタノールの粒子の数は変わらないので、質量は変わりません。体積は小さくなります。',
+        hint: '粒子が出入りしていなければ、質量は？',
+      }),
+      fill({
+        id: 'state-change-dr1-r2', concept: 'sc-model',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ろうが液体から固体になると、粒子どうしの間かくが[b1]なるので、体積が減る。',
+        blanks: [word('b1', ['広く', 'せまく', '同じに'], 'せまく')],
+        explanation: '固体では粒子が規則正しくぎっしり並ぶので、液体のときより間かくがせまくなり、体積が減ります。水は例外で、氷になると体積が増えます。',
+        hint: '体積が減るのは、粒子がどうなったからかな。',
+      }),
+      choice({
+        id: 'state-change-dr1-t2', concept: 'sc-point', term: true,
+        prompt: '次の説明に合う言葉はどれ？「固体の物質がとけて液体になるときの温度。物質ごとに決まっている」',
+        options: ['沸点', '融点', '体積'],
+        answer: 'b',
+        explanation: '固体がとけて液体になるときの温度を**融点**といいます。液体が沸騰するときの温度は沸点です。',
+        hint: '「融」は、とけるという意味だよ。',
+      }),
+      choice({
+        id: 'state-change-dr1-r3', concept: 'sc-point',
+        prompt: '表を見て答えよう。−50 ℃ のとき、液体になっている物質はどれ？',
+        figure: drPointTable(false),
+        options: ['水銀', '酸素', 'エタノール'],
+        answer: 'c',
+        explanation: 'エタノールは融点 −115 ℃、沸点 78 ℃ なので、−50 ℃ では液体です。水銀は融点 −39 ℃ より低いので固体、酸素は沸点 −183 ℃ より高いので気体です。',
+        hint: '−50 ℃ が、融点と沸点のあいだにある物質をさがそう。',
+      }),
+      choice({
+        id: 'state-change-dr1-r4', concept: 'sc-distill',
+        prompt: '蒸留の実験で、出てきた気体を冷やして液体にするため、集める試験管を何に入れておく？',
+        options: ['水（氷水）', '湯', 'かわいた砂'],
+        answer: 'a',
+        explanation: '試験管を水や氷水に入れて冷やすと、出てきた気体が冷やされて液体にもどり、試験管にたまります。',
+        hint: '気体を液体にもどすには、温めるか冷やすか。',
+      }),
+      choice({
+        id: 'state-change-dr1-r5', concept: 'sc-distill',
+        prompt: '水とエタノールの混合物を蒸留した。温度がさらに上がったあと（後半）に集めた液に多くふくまれるのは？',
+        options: ['エタノール', '水', 'どちらも同じ量'],
+        answer: 'b',
+        explanation: '沸点の低いエタノールは前半に多く出ます。温度が上がった後半には、沸点の高い水が多く出てきます。',
+        hint: '沸点が高いのは、水とエタノールのどちらかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1628,9 +1807,8 @@
     mascot: 'B',   // 担当の先生（しずく博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'state', title: '状態変化と粒子', order: 1, stages: [state1, state2] },
-      { id: 'sc-distill', title: '混合物を分ける', order: 2, stages: [state3, state4] },
-      { id: 'state-change-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [scMp1, scMp2, scMp3, scMp4] },
+      { id: 'state', title: '状態変化と粒子', order: 1, stages: [state1, state2, scMp1, scMp2, scDr1] },
+      { id: 'sc-distill', title: '混合物を分ける', order: 2, stages: [state3, state4, scMp3, scMp4] },
     ],
   };
 

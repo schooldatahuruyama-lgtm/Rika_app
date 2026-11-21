@@ -191,9 +191,12 @@
     });
     list(unit.areas).forEach((a, i) => {
       if (!isObject(a)) { errors.push(unitName + ' の areas[' + i + '] が領域の形ではありません'); return; }
+      // free は true / false / 未指定だけ（'true' などの文字列や数は不正）
+      if (a.free !== undefined && typeof a.free !== 'boolean') errors.push('領域 ' + a.id + ' の free が true / false ではありません');
       if (!Array.isArray(a.stages)) { errors.push('領域 ' + a.id + ' の stages が配列ではありません'); return; }
       a.stages.forEach((s, j) => {
         if (!isObject(s)) { errors.push('領域 ' + a.id + ' の stages[' + j + '] がステージの形ではありません'); return; }
+        if (s.free !== undefined && typeof s.free !== 'boolean') errors.push('ステージ ' + s.id + ' の free が true / false ではありません');
         stages.push(s);
       });
     });

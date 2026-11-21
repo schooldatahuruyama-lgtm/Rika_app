@@ -223,6 +223,11 @@
     return (unit && Array.isArray(unit.areas) ? unit.areas.filter(Boolean) : []).slice().sort((a, b) => a.order - b.order);
   }
 
+  // ステージが free（領域 free かステージ free。いつでも挑戦できる）か
+  function isFreeStage(area, stage) {
+    return !!(area && area.free === true) || !!(stage && stage.free === true);
+  }
+
   function areaOfStage(unit, stageId) {
     return areasInOrder(unit).find((a) => (a.stages || []).some((s) => s && s.id === stageId)) || null;
   }
@@ -618,7 +623,7 @@
       ]));
       return;
     }
-    section.append(el('p', { class: 'muted', text: unit.title + '　どの領域から始めてもよいよ。領域の中は順番に開きます（ミニプリントはどれからでも開けます）。' }));
+    section.append(el('p', { class: 'muted', text: unit.title + '　どの領域から始めてもよいよ。基本のステージは順番に開きます。「プリント」「ドリル」のステージはいつでも挑戦できます。' }));
 
     areasInOrder(unit).forEach((area, ai) => {
       const stages = (area.stages || []).filter(Boolean);
@@ -632,17 +637,22 @@
           ]),
         ])));
       }
-      stages.forEach((stage, si) => {
+      // 基本のステージの番号は free でないステージだけで数える（1, 2, …）。free のステージは「＋」
+      let basicNum = 0;
+      stages.forEach((stage) => {
         const st = RQ.record.stageState(rec, stage.id);
+        const free = isFreeStage(area, stage);
+        if (!free) basicNum += 1;
         const unlocked = RQ.recommend.isUnlocked(ctx.reg, rec, stage.id);
         const stepCls = 'map-step ' + (unlocked ? 'is-' + st.status : 'is-locked');
-        const circleText = !unlocked ? '🔒' : st.status === 'cleared' ? '✓' : String(si + 1);
+        const circleText = !unlocked ? '🔒' : st.status === 'cleared' ? '✓' : free ? '＋' : String(basicNum);
+        const freeTag = free ? el('span', { class: 'tag tag-free', text: 'いつでも' }) : null;
         const meta = unlocked
-          ? el('span', { class: 'node-meta' }, [statusTag(st.status), starsView(st.stars)])
+          ? el('span', { class: 'node-meta' }, [freeTag, statusTag(st.status), starsView(st.stars)])
           : el('span', { class: 'node-meta muted', text: '前のステージをクリアすると開く' });
         const node = el('button', {
           type: 'button', class: 'map-node', disabled: !unlocked,
-          'aria-label': stage.title + '（' + (unlocked ? STATUS_LABEL[st.status] + '、星 ' + st.stars + ' つ' : 'まだ開いていない') + '）',
+          'aria-label': stage.title + '（' + (free ? 'いつでも挑戦できる、' : '') + (unlocked ? STATUS_LABEL[st.status] + '、星 ' + st.stars + ' つ' : 'まだ開いていない') + '）',
           onclick: unlocked ? () => ctx.go('stage', { stageId: stage.id }) : null,
         }, [
           el('span', { class: 'node-circle', 'aria-hidden': 'true', text: circleText }),
@@ -1408,9 +1418,9 @@
     const canNext = nextStage && RQ.recommend.isUnlocked(ctx.reg, rec, nextStage.id);
     if (stopped && isStage) next.push(el('p', { text: '明日、もう一度「' + stageTitleOf(ctx, session.stageId) + '」に挑戦しよう。' }));
     else if (canNext) {
-      // 次のステージが free の領域（ミニプリント）なら、もともと開いているので「挑戦してみよう」にする
+      // 次のステージが free（領域 free かステージ free）なら、もともと開いているので「挑戦してみよう」にする
       const nextArea = areaOfStage(ctx.reg.unitOfStage(nextStage.id), nextStage.id);
-      const text = nextArea && nextArea.free === true
+      const text = isFreeStage(nextArea, nextStage)
         ? '次は「' + nextStage.title + '」にも挑戦してみよう。'
         : '次のステージ「' + nextStage.title + '」が開いたよ。';
       next.push(el('p', { text }));

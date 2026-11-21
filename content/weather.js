@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通資料の「共通のデータの形」を参照）。
 // 2 領域 × 2 ステージ（大気と水蒸気: 圧力・気圧・気象観測、湿度と雲のでき方 / 前線と天気の変化: 気圧配置と前線、日本の天気）と、概念 7 つ。
 // 領域 3「ミニプリント」（we-miniprint）: 先生のミニプリントを書き直したステージ weather-mp1〜mp14 と、概念 3 つ（we-airmass・we-wind・we-disaster）。
+// 領域 4「ドリル」（weather-drill）: 学習プリントのテーマ名だけを目安にした自作のステージ weather-dr1〜dr7（既存の概念だけを使う）。
 // 概念 id は全単元で一意にするため、接頭辞 we- を付ける。
 // 図（scene）の item は js/figures.js の定義に従う（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
@@ -1171,7 +1172,7 @@
 
   // ---- ステージ weather-mp1: 大気圧と圧力 ----
   const weatherMp1 = {
-    id: 'weather-mp1', areaId: 'we-miniprint', title: 'プリント 1: 大気圧と圧力', minutes: 5, concepts: ['we-pressure'],
+    id: 'weather-mp1', areaId: 'air', free: true, title: 'プリント 1: 大気圧と圧力', minutes: 5, concepts: ['we-pressure'],
     lessons: [
       {
         id: 'weather-mp1-c1',
@@ -1331,7 +1332,7 @@
   }
 
   const weatherMp2 = {
-    id: 'weather-mp2', areaId: 'we-miniprint', title: 'プリント 2: 気象観測と天気記号', minutes: 5, concepts: ['we-observe'],
+    id: 'weather-mp2', areaId: 'air', free: true, title: 'プリント 2: 気象観測と天気記号', minutes: 5, concepts: ['we-observe'],
     lessons: [
       {
         id: 'weather-mp2-c1',
@@ -1546,7 +1547,7 @@
   }
 
   const weatherMp3 = {
-    id: 'weather-mp3', areaId: 'we-miniprint', title: 'プリント 3: 気温・湿度・気圧の変化', minutes: 5, concepts: ['we-observe'],
+    id: 'weather-mp3', areaId: 'air', free: true, title: 'プリント 3: 気温・湿度・気圧の変化', minutes: 5, concepts: ['we-observe'],
     lessons: [
       {
         id: 'weather-mp3-c1',
@@ -1672,7 +1673,7 @@
 
   // ---- ステージ weather-mp4: 露点の求め方 ----
   const weatherMp4 = {
-    id: 'weather-mp4', areaId: 'we-miniprint', title: 'プリント 4: 露点の求め方', minutes: 5, concepts: ['we-humidity'],
+    id: 'weather-mp4', areaId: 'air', free: true, title: 'プリント 4: 露点の求め方', minutes: 5, concepts: ['we-humidity'],
     lessons: [
       {
         id: 'weather-mp4-c1',
@@ -1811,7 +1812,7 @@
   }
 
   const weatherMp5 = {
-    id: 'weather-mp5', areaId: 'we-miniprint', title: 'プリント 5: 飽和水蒸気量のグラフ', minutes: 5, concepts: ['we-humidity'],
+    id: 'weather-mp5', areaId: 'air', free: true, title: 'プリント 5: 飽和水蒸気量のグラフ', minutes: 5, concepts: ['we-humidity'],
     lessons: [
       {
         id: 'weather-mp5-c1',
@@ -1943,7 +1944,7 @@
 
   // ---- ステージ weather-mp6: 湿度の計算 ----
   const weatherMp6 = {
-    id: 'weather-mp6', areaId: 'we-miniprint', title: 'プリント 6: 湿度の計算', minutes: 6, concepts: ['we-humidity'],
+    id: 'weather-mp6', areaId: 'air', free: true, title: 'プリント 6: 湿度の計算', minutes: 6, concepts: ['we-humidity'],
     lessons: [
       {
         id: 'weather-mp6-c1',
@@ -2117,7 +2118,7 @@
   }
 
   const weatherMp7 = {
-    id: 'weather-mp7', areaId: 'we-miniprint', title: 'プリント 7: 雲のでき方と水の循環', minutes: 5, concepts: ['we-cloud'],
+    id: 'weather-mp7', areaId: 'air', free: true, title: 'プリント 7: 雲のでき方と水の循環', minutes: 5, concepts: ['we-cloud'],
     lessons: [
       {
         id: 'weather-mp7-c1',
@@ -2343,7 +2344,7 @@
   }
 
   const weatherMp8 = {
-    id: 'weather-mp8', areaId: 'we-miniprint', title: 'プリント 8: 等圧線と風のふき方', minutes: 5, concepts: ['we-system'],
+    id: 'weather-mp8', areaId: 'front', free: true, title: 'プリント 8: 等圧線と風のふき方', minutes: 5, concepts: ['we-system'],
     lessons: [
       {
         id: 'weather-mp8-c1',
@@ -2493,8 +2494,12 @@
   function airMassItems(names) {
     const masses = [[80, 60, 'シベリア気団'], [285, 34, 'オホーツク海気団'], [55, 182, '揚子江気団'], [272, 206, '小笠原気団']];
     const items = japanSmall();
-    masses.forEach(([x, y]) => items.push({ type: 'ellipse', x, y, rx: 36, ry: 20, fill: 'white', stroke: 'gray' }));
-    if (names) masses.forEach(([x, y, n]) => items.push({ type: 'text', x: Math.min(Math.max(x, 52), 268), y: y + 5, text: n, size: 12, anchor: 'middle', bg: true }));
+    // 名前を書くときは、丸を文字の位置に合わせ、長い名前（オホーツク海気団）は丸を横に広げて文字がはみ出さないようにする
+    const nameX = (x) => Math.min(Math.max(x, 52), 268);
+    masses.forEach(([x, y, n]) => items.push(names
+      ? { type: 'ellipse', x: nameX(x), y, rx: Math.max(36, n.length * 6 + 6), ry: 20, fill: 'white', stroke: 'gray' }
+      : { type: 'ellipse', x, y, rx: 36, ry: 20, fill: 'white', stroke: 'gray' }));
+    if (names) masses.forEach(([x, y, n]) => items.push({ type: 'text', x: nameX(x), y: y + 5, text: n, size: 12, anchor: 'middle', bg: true }));
     else masses.forEach(([x, y], i) => items.push(region('r' + (i + 1), x, y, 'アイウエ'[i])));
     return items;
   }
@@ -2514,7 +2519,7 @@
   const CURRENT_AT = [[146, 128], [222, 212], [294, 132], [118, 66]];
 
   const weatherMp9 = {
-    id: 'weather-mp9', areaId: 'we-miniprint', title: 'プリント 9: 日本付近の気団と海流', minutes: 5, concepts: ['we-airmass'],
+    id: 'weather-mp9', areaId: 'front', free: true, title: 'プリント 9: 日本付近の気団と海流', minutes: 5, concepts: ['we-airmass'],
     lessons: [
       {
         id: 'weather-mp9-c1',
@@ -2673,7 +2678,7 @@
   }
 
   const weatherMp10 = {
-    id: 'weather-mp10', areaId: 'we-miniprint', title: 'プリント 10: 前線のつくり', minutes: 6, concepts: ['we-front'],
+    id: 'weather-mp10', areaId: 'front', free: true, title: 'プリント 10: 前線のつくり', minutes: 6, concepts: ['we-front'],
     lessons: [
       {
         id: 'weather-mp10-c1',
@@ -2891,7 +2896,7 @@
   }
 
   const weatherMp11 = {
-    id: 'weather-mp11', areaId: 'we-miniprint', title: 'プリント 11: 前線の通過と天気の予想', minutes: 6, concepts: ['we-front', 'we-japan'],
+    id: 'weather-mp11', areaId: 'front', free: true, title: 'プリント 11: 前線の通過と天気の予想', minutes: 6, concepts: ['we-front', 'we-japan'],
     lessons: [
       {
         id: 'weather-mp11-c1',
@@ -3042,7 +3047,7 @@
   }
 
   const weatherMp12 = {
-    id: 'weather-mp12', areaId: 'we-miniprint', title: 'プリント 12: 冬と夏の天気', minutes: 5, concepts: ['we-japan'],
+    id: 'weather-mp12', areaId: 'front', free: true, title: 'プリント 12: 冬と夏の天気', minutes: 5, concepts: ['we-japan'],
     lessons: [
       {
         id: 'weather-mp12-c1',
@@ -3235,7 +3240,7 @@
   }
 
   const weatherMp13 = {
-    id: 'weather-mp13', areaId: 'we-miniprint', title: 'プリント 13: 春・梅雨・台風と季節の天気図', minutes: 6, concepts: ['we-japan'],
+    id: 'weather-mp13', areaId: 'front', free: true, title: 'プリント 13: 春・梅雨・台風と季節の天気図', minutes: 6, concepts: ['we-japan'],
     lessons: [
       {
         id: 'weather-mp13-c1',
@@ -3446,7 +3451,7 @@
   }
 
   const weatherMp14 = {
-    id: 'weather-mp14', areaId: 'we-miniprint', title: 'プリント 14: 地球規模の風と気象の恵み・災害', minutes: 6, concepts: ['we-wind', 'we-disaster'],
+    id: 'weather-mp14', areaId: 'front', free: true, title: 'プリント 14: 地球規模の風と気象の恵み・災害', minutes: 6, concepts: ['we-wind', 'we-disaster'],
     lessons: [
       {
         id: 'weather-mp14-c1',
@@ -3592,6 +3597,1155 @@
         answer: 'a',
         explanation: '日本は梅雨や台風、冬の雪などがあるので、世界の平均とくらべて降水量が多い国です。',
         hint: '梅雨・台風・雪…と、雨や雪の季節が多いね。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 4: ドリル（weather-drill）。公開されている学習プリントのテーマ名（気象観測と気圧・空気中の水の変化・
+  // 前線の通過と天気の変化・日本の気象）だけを目安にした自作の問題。ステージ weather-dr1〜dr7。
+  // ================================================================
+
+  // ---- ドリル用の図の道具 ----
+
+  // 空を 10 マス（5 × 2）に分けた図を 3 つ（左から ア・イ・ウ）。counts は雲（灰色）のマスの数
+  function skyGridItems(counts) {
+    const items = [{ type: 'text', x: 160, y: 34, text: '空全体を 10 マスに分けた図（灰色は雲）', size: 13, anchor: 'middle' }];
+    counts.forEach((n, i) => {
+      const x0 = 15 + 100 * i;
+      for (let k = 0; k < 10; k++) {
+        const cx = x0 + 18 * (k % 5), cy = 64 + 18 * Math.floor(k / 5);
+        items.push({ type: 'rect', x: cx, y: cy, width: 18, height: 18, fill: k < n ? 'gray' : 'sky', stroke: 'line' });
+      }
+    });
+    counts.forEach((n, i) => items.push(region('r' + (i + 1), 60 + 100 * i, 150, 'アイウ'[i])));
+    return items;
+  }
+
+  // 8 方位の図（中心 (160, 125)、半径 85）。点と方位の名前をかく
+  const COMPASS = ['北', '北東', '東', '南東', '南', '南西', '西', '北西'];
+  function compassPoint(i, rr) {
+    const a = i * Math.PI / 4;
+    return rp([160 + rr * Math.sin(a), 125 - rr * Math.cos(a)]);
+  }
+  function compassItems() {
+    const items = [{ type: 'circle', x: 160, y: 125, r: 85, fill: 'none', stroke: 'line' }];
+    COMPASS.forEach((name, i) => {
+      const [x, y] = compassPoint(i, 85);
+      const [tx, ty] = compassPoint(i, 103);
+      items.push({ type: 'circle', x, y, r: 5, fill: 'ink', stroke: 'none' });
+      items.push({ type: 'text', x: tx, y: ty + 5, text: name, size: 13, anchor: 'middle', bold: true });
+    });
+    items.push({ type: 'text', x: 160, y: 130, text: '観測地点', size: 12, anchor: 'middle' });
+    return items;
+  }
+
+  // 低気圧のまわりの等圧線（中心 (110, 120)、半径 35・70・105。内側から 1000・1004・1008 hPa）と、選ぶ地点ア〜ウ
+  function lowRingItems() {
+    return [
+      { type: 'circle', x: 110, y: 120, r: 105, fill: 'none', stroke: 'line' },
+      { type: 'circle', x: 110, y: 120, r: 70, fill: 'none', stroke: 'line' },
+      { type: 'circle', x: 110, y: 120, r: 35, fill: 'none', stroke: 'line' },
+      { type: 'text', x: 110, y: 126, text: '低', size: 18, anchor: 'middle', bold: true },
+      { type: 'text', x: 84, y: 152, text: '1000', size: 12, anchor: 'end', bg: true },
+      { type: 'text', x: 222, y: 40, text: '等圧線は', size: 13 },
+      { type: 'text', x: 222, y: 58, text: '4 hPa ごと', size: 13 },
+      region('r1', 110, 85, 'ア'), region('r2', 180, 120, 'イ'), region('r3', 184.2, 194.2, 'ウ'),
+    ];
+  }
+
+  // 飽和水蒸気量のグラフに、空気ア（10 ℃、6.8 g/m³）・イ（20 ℃、12.8 g/m³）・ウ（30 ℃、9.4 g/m³）を置く
+  function threeAirItems() {
+    const pts = [[10, 6.8], [20, 12.8], [30, 9.4]];
+    const items = graphItems();
+    pts.forEach(([t, v]) => items.push({ type: 'circle', x: gx(t), y: gy(v), r: 5, fill: 'ink', stroke: 'none' }));
+    pts.forEach(([t, v], i) => items.push(region('r' + (i + 1), gx(t), gy(v), 'アイウ'[i])));
+    return items;
+  }
+
+  // 上昇する空気と高さ（y = 210 − 0.12 × 高さ〔m〕）。ア 1200 m・イ 800 m・ウ 400 m
+  function cloudHeightItems() {
+    const hy = (h) => r1(210 - 0.12 * h);
+    const items = [
+      { type: 'line', points: [[20, 210], [300, 210]], color: 'brown', width: 3 },
+      { type: 'text', x: 24, y: 230, text: '地表（0 m）', size: 12 },
+      { type: 'arrow', x1: 70, y1: 200, x2: 70, y2: 40, color: 'orange', width: 3 },
+      { type: 'circle', x: 70, y: 196, r: 12, fill: 'white', stroke: 'ink' },
+      { type: 'text', x: 70, y: 30, text: '上昇する空気', size: 12, anchor: 'middle' },
+    ];
+    [1200, 800, 400].forEach((h, i) => {
+      items.push({ type: 'line', points: [[90, hy(h)], [196, hy(h)]], color: 'gray', width: 1, dashed: true });
+      items.push({ type: 'text', x: 150, y: hy(h) - 6, text: h + ' m', size: 13, anchor: 'middle' });
+    });
+    [1200, 800, 400].forEach((h, i) => items.push(region('r' + (i + 1), 222, hy(h), 'アイウ'[i])));
+    return items;
+  }
+
+  // 天気図記号 3 つ（ア 雨・北の風・風力 2、イ 雨・南の風・風力 2、ウ くもり・南の風・風力 3）
+  function threeStationItems() {
+    return [
+      { type: 'text', x: 160, y: 22, text: '図の上が北', size: 12, anchor: 'middle' },
+      ...stationModel(60, 110, 0, 2, 'rain', 50),
+      ...stationModel(160, 110, 180, 2, 'rain', 50),
+      ...stationModel(260, 110, 180, 3, 'cloudy', 50),
+      region('r1', 60, 205, 'ア'), region('r2', 160, 205, 'イ'), region('r3', 260, 205, 'ウ'),
+    ];
+  }
+
+  // ある地点の 3 時間ごとの記録（15 時の前に寒冷前線が通過）
+  function frontRecordTable() {
+    return table(40, 40, [70, 80, 90], [
+      ['時刻', '気温', '風向'],
+      ['9 時', '18 ℃', '南南西'],
+      ['12 時', '19 ℃', '南西'],
+      ['15 時', '12 ℃', '北'],
+      ['18 時', '11 ℃', '北北西'],
+    ]);
+  }
+
+  // 寒冷前線の断面（右へ進む。地表の前線は x 160）。点線の丸 3 つ（前線の上・寒気の上・ずっと前の暖気）と、動かす雲
+  function coldDragItems() {
+    return [
+      { type: 'rect', x: 0, y: 30, width: 320, height: 160, fill: WARM_AIR, stroke: 'none' },
+      { type: 'polygon', points: [[0, 190], [160, 190], [150, 160], [125, 125], [0, 105]], fill: COLD_AIR, stroke: 'none' },
+      { type: 'line', points: [[0, 190], [320, 190]], color: 'brown', width: 3 },
+      { type: 'arrow', x1: 20, y1: 170, x2: 90, y2: 170, color: 'blue' },
+      { type: 'arrow', x1: 230, y1: 175, x2: 175, y2: 130, color: 'orange' },
+      { type: 'text', x: 30, y: 150, text: '寒気', size: 14, bold: true },
+      { type: 'text', x: 250, y: 160, text: '暖気', size: 14, bold: true },
+      { type: 'text', x: 160, y: 214, text: '進む向き →', size: 13, anchor: 'middle' },
+      { type: 'circle', x: 60, y: 70, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 165, y: 105, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 280, y: 70, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'ellipse', id: 'cloud', x: 285, y: 222, rx: 24, ry: 14, fill: 'white', stroke: 'ink', label: '雲' },
+    ];
+  }
+
+  // 夏の日本付近（大陸と太平洋に点線の丸）と、動かす「高」
+  function summerHighItems() {
+    return japanSmall().concat([
+      { type: 'polygon', points: [[0, 0], [130, 0], [110, 40], [70, 100], [0, 130]], fill: 'sand', stroke: 'line' },
+      { type: 'text', x: 8, y: 20, text: 'ユーラシア大陸', size: 12 },
+      { type: 'text', x: 236, y: 232, text: '太平洋', size: 13 },
+      { type: 'circle', x: 50, y: 60, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 260, y: 195, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', id: 'high', x: 40, y: 210, r: 16, fill: 'white', label: '高' },
+    ]);
+  }
+
+  // 北へ進む台風（中心 (160, 130)）と、中心から同じきょりの地点ア（西）・イ（東）・ウ（南）
+  function typhoonItems(withRegions) {
+    const items = [
+      { type: 'circle', x: 160, y: 130, r: 55, fill: 'none', stroke: 'line' },
+      { type: 'circle', x: 160, y: 130, r: 30, fill: 'none', stroke: 'line' },
+      { type: 'text', x: 160, y: 136, text: '×', size: 18, anchor: 'middle', bold: true },
+      { type: 'arrow', x1: 200, y1: 150, x2: 200, y2: 110, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 180, y1: 90, x2: 140, y2: 90, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 120, y1: 110, x2: 120, y2: 150, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 140, y1: 170, x2: 180, y2: 170, color: 'blue', width: 2 },
+      { type: 'arrow', x1: 260, y1: 90, x2: 260, y2: 30, color: 'orange', width: 4 },
+      { type: 'text', x: 266, y: 108, text: '台風の', size: 12 },
+      { type: 'text', x: 266, y: 124, text: '進む向き', size: 12 },
+      { type: 'text', x: 10, y: 30, text: '青い矢印は地表の風', size: 12 },
+    ];
+    if (withRegions) items.push(region('r1', 90, 130, 'ア'), region('r2', 230, 130, 'イ'), region('r3', 160, 205, 'ウ'));
+    return items;
+  }
+
+  // ---- ステージ weather-dr1: 気象要素の観測 ----
+  const weatherDr1 = {
+    id: 'weather-dr1', areaId: 'air', free: true, title: 'ドリル 1: 気象要素の観測', minutes: 6, concepts: ['we-observe'],
+    lessons: [
+      {
+        id: 'weather-dr1-c1',
+        text: '気温・湿度・気圧・風向・風速・降水量・雲量など、大気のようすを表すものを**気象要素**といいます。**雲量**は空全体を 10 としたときに雲がおおう割合で、雨や雪がなければ 0〜1 は快晴、2〜8 は晴れ、9〜10 はくもりです。',
+        figure: scene(skyGridItems([1, 5, 10]).filter(it => it.type !== 'region').concat([
+          { type: 'text', x: 60, y: 130, text: '雲量 1', size: 13, anchor: 'middle' },
+          { type: 'text', x: 60, y: 150, text: '快晴', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 130, text: '雲量 5', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 150, text: '晴れ', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 260, y: 130, text: '雲量 10', size: 13, anchor: 'middle' },
+          { type: 'text', x: 260, y: 150, text: 'くもり', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 200, text: '雨や雪が降っていれば、雲量に関係なく雨・雪', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'weather-dr1-c2',
+        text: '**風速**は、風が 1 秒間に進むきょりで、単位は m/s です。**降水量**は、降った雨（雪はとかした水）が流れずにたまったときの深さで、単位は mm です。雨量計という、つつ形の容器ではかります。',
+        figure: scene([
+          { type: 'rect', x: 40, y: 80, width: 70, height: 120, fill: 'white' },
+          { type: 'rect', x: 42, y: 160, width: 66, height: 38, fill: 'water', stroke: 'none' },
+          { type: 'line', points: [[120, 160], [120, 198]], width: 2 },
+          { type: 'line', points: [[114, 160], [126, 160]], width: 2 },
+          { type: 'line', points: [[114, 198], [126, 198]], width: 2 },
+          { type: 'text', x: 130, y: 184, text: '深さ＝降水量〔mm〕', size: 13 },
+          { type: 'text', x: 75, y: 70, text: '雨量計', size: 14, anchor: 'middle', bold: true },
+          { type: 'arrow', x1: 170, y1: 70, x2: 290, y2: 70, color: 'blue', width: 3 },
+          { type: 'text', x: 230, y: 56, text: '1 秒間に 5 m 進む', size: 13, anchor: 'middle' },
+          { type: 'text', x: 230, y: 96, text: '→ 風速 5 m/s', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+      {
+        id: 'weather-dr1-c3',
+        text: '晴れの日は、気温が昼すぎに最も高くなり、湿度は気温と反対の変化をします。雨やくもりの日は、気温の変化が小さく、湿度は高いままです。気圧が下がり続けると、天気はくずれていくことが多いです。',
+        figure: scene([
+          { type: 'line', points: [[40, 200], [300, 200]], width: 2, arrow: true },
+          { type: 'line', points: [[40, 200], [40, 30]], width: 2, arrow: true },
+          { type: 'line', points: [[50, 150], [100, 140], [150, 90], [190, 70], [240, 100], [290, 140]], color: 'orange', width: 3 },
+          { type: 'line', points: [[50, 80], [100, 90], [150, 140], [190, 160], [240, 130], [290, 90]], color: 'blue', width: 3 },
+          { type: 'text', x: 196, y: 60, text: '気温', size: 14, bold: true, color: 'orange' },
+          { type: 'text', x: 196, y: 180, text: '湿度', size: 14, bold: true, color: 'blue' },
+          { type: 'text', x: 170, y: 224, text: '晴れの日の 6 時〜18 時', size: 13, anchor: 'middle' },
+          { type: 'text', x: 46, y: 24, text: '高い', size: 12 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr1-w1', concept: 'we-observe',
+      prompt: '予想しよう。天気予報で「1 時間に 20 mm の雨」と言っていました。この 20 mm は何を表していると思う？',
+      options: ['降った雨がたまったときの水の深さ', '雨のつぶの大きさ', '雨が地面にしみこんだ深さ'],
+      answer: 'a',
+      explanation: '降水量は、降った雨が流れたりしみこんだりせずにたまったと考えたときの深さです。1 時間に 20 mm は、かなり強い雨です。',
+      hint: '雨量計という、つつ形の入れ物にたまった水をはかるよ。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr1-t1', concept: 'we-observe', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '降った雨や雪（とかした水）が、流れずにたまったときの深さを[b1]といい、単位は mm で表す。',
+        blanks: [word('b1', ['降水量', '湿度', '雲量'], '降水量')],
+        explanation: '**降水量**は、雨量計にたまった水の深さで表します。雪はとかして水にしてからはかります。',
+        hint: '「水が降る量」と書く言葉だよ。',
+      }),
+      figureChoice({
+        id: 'weather-dr1-p1', concept: 'we-observe',
+        prompt: 'ア〜ウは、空全体を 10 マスに分け、雲のマスを灰色にした図です。雨や雪は降っていません。天気が「晴れ」になるのはどれ？',
+        figure: scene(skyGridItems([9, 1, 6])),
+        answer: 'r3',
+        explanation: '灰色のマスを数えると、アは 9、イは 1、ウは 6 です。雲量 2〜8 が晴れなので、ウです。アはくもり、イは快晴です。',
+        hint: 'まず、それぞれの灰色のマスの数を数えよう。',
+      }),
+      fill({
+        id: 'weather-dr1-p2', concept: 'we-observe',
+        prompt: '空らんに入る数を入れよう。',
+        text: '風速 4 m/s の風は、10 秒間に[b1]進む。',
+        blanks: [number('b1', 40, 0, 'm')],
+        explanation: '風速 4 m/s は、1 秒間に 4 m 進む速さです。10 秒間では 4 × 10 ＝ 40 m 進みます。',
+        hint: '1 秒間に進むきょりに、秒数をかけよう。',
+      }),
+      fill({
+        id: 'weather-dr1-p3', concept: 'we-observe',
+        prompt: '雨量計の記録です。空らんに入る数を入れよう。',
+        text: '雨量計に、3 時間で 15 mm の深さの水がたまった。1 時間あたりの降水量は、平均[b1]である。',
+        blanks: [number('b1', 5, 0, 'mm')],
+        explanation: '3 時間で 15 mm なので、1 時間あたりは 15 ÷ 3 ＝ 5 mm です。',
+        hint: '全体の深さを、時間でわろう。',
+      }),
+      drag({
+        id: 'weather-dr1-p4', concept: 'we-observe',
+        prompt: '方位の図です。いま「南西の風」がふいています。この風がふいてくる方角の点に、「風」の印を動かそう。',
+        figure: scene(compassItems().concat([
+          { type: 'circle', id: 'wind', x: 290, y: 215, r: 16, fill: 'white', label: '風' },
+        ])),
+        draggable: { itemId: 'wind', axis: 'xy' },
+        target: { x: 99.9, y: 185.1 },
+        samples: { correct: { x: 100, y: 185 }, wrong: { x: 220, y: 65 } },
+        explanation: '風向は、風がふいてくる向きで表します。「南西の風」は南西からふいてきて、北東へ向かう風です。だから、南西の点に置きます。',
+        hint: '風向は、風が「どこから」くるかを表すよ。',
+      }),
+      choice({
+        id: 'weather-dr1-p5', concept: 'we-observe',
+        prompt: 'ある日、朝から夕方まで、気圧は下がり続け、湿度は上がり続けました。この日の天気の変化として考えられるものはどれ？',
+        options: ['晴れから、くもりや雨へ変わった', '雨から、晴れへ変わった', '1 日中よく晴れていた'],
+        answer: 'a',
+        explanation: '気圧が下がるのは低気圧などが近づいているときで、湿度が上がるのは空気がしめってきたからです。天気はくずれて、くもりや雨になっていったと考えられます。',
+        hint: '気圧が下がるのは、どんな気圧配置が近づくときかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'weather-dr1-r1', concept: 'we-observe',
+        prompt: 'ア〜ウは、空全体を 10 マスに分け、雲のマスを灰色にした図です。雨や雪は降っていません。天気が「くもり」になるのはどれ？',
+        figure: scene(skyGridItems([9, 1, 6])),
+        answer: 'r1',
+        explanation: '雲量 9〜10 がくもりです。灰色のマスが 9 のアがくもりです。イ（雲量 1）は快晴、ウ（雲量 6）は晴れです。',
+        hint: '灰色のマスが 9 以上の図をさがそう。',
+      }),
+      fill({
+        id: 'weather-dr1-r2', concept: 'we-observe',
+        prompt: '空らんに入る数を入れよう。',
+        text: '風速 3 m/s の風は、1 分間に[b1]進む。',
+        blanks: [number('b1', 180, 0, 'm')],
+        explanation: '1 分間は 60 秒です。3 m/s の風は、3 × 60 ＝ 180 m 進みます。',
+        hint: '1 分間は何秒かな。',
+      }),
+      fill({
+        id: 'weather-dr1-r3', concept: 'we-observe',
+        prompt: '雨量計の記録です。空らんに入る数を入れよう。',
+        text: 'はじめの 2 時間で 8 mm、続く 1 時間で 4 mm の水がたまった。3 時間の降水量は[b1]である。',
+        blanks: [number('b1', 12, 0, 'mm')],
+        explanation: 'たまった水の深さは足していけます。8 ＋ 4 ＝ 12 mm です。',
+        hint: 'たまった深さを合わせよう。',
+      }),
+      choice({
+        id: 'weather-dr1-r4', concept: 'we-observe', term: true,
+        prompt: '次の説明に合う言葉はどれ？「風が 1 秒間に進むきょり。単位は m/s」',
+        options: ['風速', '風向', '風力'],
+        answer: 'a',
+        explanation: '風が 1 秒間に進むきょりは**風速**です。風向は風がふいてくる向き、風力は風の強さを 0〜12 の 13 段階で表したものです。',
+        hint: '「速さ」を表す言葉だよ。',
+      }),
+      choice({
+        id: 'weather-dr1-r5', concept: 'we-observe',
+        prompt: 'よく晴れた日、1 日のうちで湿度がいちばん低くなるのは、いつごろ？',
+        options: ['昼すぎ（14 時ごろ）', '明け方（5 時ごろ）', '真夜中（0 時ごろ）'],
+        answer: 'a',
+        explanation: '晴れの日は、湿度は気温と反対の変化をします。気温が最も高くなる昼すぎに、湿度は最も低くなります。',
+        hint: '気温がいちばん高くなるのはいつかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-dr2: 圧力・気圧と風 ----
+  const weatherDr2 = {
+    id: 'weather-dr2', areaId: 'air', free: true, title: 'ドリル 2: 圧力・気圧と風', minutes: 6, concepts: ['we-pressure', 'we-system'],
+    lessons: [
+      {
+        id: 'weather-dr2-c1',
+        text: '**圧力**〔Pa〕＝面を垂直におす力〔N〕÷力がはたらく面積〔m²〕です。1 Pa は、1 m² に 1 N の力がはたらくときの圧力です。面積が cm² のときは、1 m² ＝ 10000 cm² を使って m² に直してから計算します。',
+        figure: scene([
+          ...box3d(90, 170, 120, 50, 40),
+          { type: 'arrow', x1: 160, y1: 40, x2: 160, y2: 100, color: 'red', width: 4 },
+          { type: 'text', x: 172, y: 60, text: 'おす力〔N〕', size: 13 },
+          { type: 'line', points: [[60, 170], [280, 170]], color: 'brown', width: 3 },
+          { type: 'text', x: 150, y: 192, text: 'ふれている面積〔m²〕', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 226, text: '圧力＝力 ÷ 面積', size: 15, anchor: 'middle', bold: true },
+        ]),
+      },
+      {
+        id: 'weather-dr2-c2',
+        text: '**大気圧**は、上にある空気の重さによる圧力で、あらゆる向きからはたらきます。海面付近ではおよそ 1013 hPa（約 10 万 Pa）です。高い所ほど上にある空気が少ないので、大気圧は小さくなります。',
+        figure: scene([
+          { type: 'rect', x: 0, y: 190, width: 320, height: 50, fill: 'water', stroke: 'none' },
+          { type: 'polygon', points: [[60, 190], [170, 50], [280, 190]], fill: 'lightgreen' },
+          { type: 'text', x: 170, y: 38, text: '山頂: 大気圧が小さい', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 160, y: 224, text: '海面付近: 約 1013 hPa', size: 13, anchor: 'middle', bg: true },
+          { type: 'arrow', x1: 30, y1: 60, x2: 30, y2: 170, color: 'blue', width: 2 },
+          { type: 'text', x: 38, y: 120, text: '下ほど大きい', size: 12 },
+        ]),
+      },
+      {
+        id: 'weather-dr2-c3',
+        text: '風は、気圧の高い所から低い所へ向かってふきます。**等圧線**の間かくがせまい所ほど、短いきょりで気圧の差が大きいので、強い風がふきます。間かくが広い所では、風は弱くなります。',
+        figure: scene([
+          ...[40, 60, 80, 100].map(x => ({ type: 'line', points: [[x, 40], [x, 190]], color: 'line', width: 2 })),
+          ...[190, 240, 290].map(x => ({ type: 'line', points: [[x, 40], [x, 190]], color: 'line', width: 2 })),
+          { type: 'arrow', x1: 34, y1: 120, x2: 108, y2: 120, color: 'blue', width: 5 },
+          { type: 'arrow', x1: 200, y1: 120, x2: 236, y2: 120, color: 'blue', width: 2 },
+          { type: 'text', x: 70, y: 214, text: 'せまい → 風が強い', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 214, text: '広い → 風が弱い', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 26, text: '等圧線の間かくと風の強さ', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr2-w1', concept: 'we-pressure',
+      prompt: '予想しよう。雪の上を歩くとき、ふつうのくつと、底の広いかんじきでは、雪にしずみにくいのはどちらだと思う？',
+      options: ['底の広いかんじき', 'ふつうのくつ', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '体重（雪をおす力）は同じでも、ふれる面積が広いほど圧力は小さくなります。だから、かんじきをはくとしずみにくくなります。',
+      hint: '同じ力でも、面積が広いと圧力はどうなるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr2-t1', concept: 'we-pressure', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '気圧の単位 hPa は[b1]と読み、1 hPa は 100 Pa である。',
+        blanks: [word('b1', ['ヘクトパスカル', 'キロパスカル', 'ニュートン'], 'ヘクトパスカル')],
+        explanation: 'hPa は**ヘクトパスカル**と読みます。ヘクトは 100 倍という意味で、1 hPa ＝ 100 Pa です。',
+        hint: 'h は「ヘクト」の頭文字だよ。',
+      }),
+      fill({
+        id: 'weather-dr2-p1', concept: 'we-pressure',
+        prompt: '空らんに入る数を入れよう。',
+        text: '底面が 20 cm × 10 cm で、重さ 30 N の直方体を机に置いた。机が受ける圧力は[b1]である。',
+        blanks: [number('b1', 1500, 0, 'Pa')],
+        explanation: '底面積は 20 × 10 ＝ 200 cm² ＝ 0.02 m² です。圧力は 30 ÷ 0.02 ＝ 1500 Pa です。',
+        hint: 'まず面積を cm² から m² に直そう（1 m² ＝ 10000 cm²）。',
+      }),
+      choice({
+        id: 'weather-dr2-p2', concept: 'we-pressure',
+        prompt: '体重 500 N の人が、両足（合わせて 500 cm²）で立つときと、片足（250 cm²）で立つときの、床が受ける圧力の組み合わせはどれ？',
+        options: ['両足 10000 Pa、片足 20000 Pa', '両足 20000 Pa、片足 10000 Pa', '両足も片足も 10000 Pa'],
+        answer: 'a',
+        explanation: '500 cm² ＝ 0.05 m² なので、両足では 500 ÷ 0.05 ＝ 10000 Pa です。片足は面積が半分なので、圧力は 2 倍の 20000 Pa になります。',
+        hint: '力が同じで面積が半分になると、圧力は何倍かな。',
+      }),
+      figureChoice({
+        id: 'weather-dr2-p3', concept: 'we-system',
+        prompt: '低気圧のまわりの等圧線（4 hPa ごと）です。いちばん内側の線は 1000 hPa です。ア〜ウのうち、1008 hPa の地点はどれ？',
+        figure: scene(lowRingItems()),
+        answer: 'r3',
+        explanation: '低気圧は中心ほど気圧が低いので、外側の線ほど気圧が高くなります。内側から 1000、1004、1008 hPa なので、いちばん外側の線の上にあるウです。',
+        hint: '低気圧では、外側へ行くほど気圧は高くなるよ。',
+      }),
+      choice({
+        id: 'weather-dr2-p4', concept: 'we-system',
+        prompt: '天気図で、等圧線の間かくがせまい所では強い風がふきます。そのわけはどれ？',
+        options: ['短いきょりで気圧の差が大きいから', 'そこだけ気温が高いから', 'そこには空気が少ないから'],
+        answer: 'a',
+        explanation: '風は気圧の差によってふきます。等圧線がこみ合っている所は、短いきょりで気圧が大きく変わるので、風が強くなります。',
+        hint: '風は、気圧の差があるとふくよ。',
+      }),
+      fill({
+        id: 'weather-dr2-p5', concept: 'we-pressure',
+        prompt: '空らんに入る数を入れよう（1 hPa ＝ 100 Pa）。',
+        text: '1013 hPa をパスカルで表すと[b1]である。',
+        blanks: [number('b1', 101300, 0, 'Pa')],
+        explanation: '1 hPa は 100 Pa なので、1013 × 100 ＝ 101300 Pa です。わたしたちは、いつもこれほど大きな圧力を受けています。',
+        hint: 'hPa の数に 100 をかけよう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'weather-dr2-r1', concept: 'we-pressure',
+        prompt: '空らんに入る数を入れよう。',
+        text: '面積 0.4 m² の板の上に、重さ 120 N の物体をのせた。板が受ける圧力は[b1]である。',
+        blanks: [number('b1', 300, 0, 'Pa')],
+        explanation: '圧力＝力÷面積なので、120 ÷ 0.4 ＝ 300 Pa です。',
+        hint: '力〔N〕を面積〔m²〕でわろう。',
+      }),
+      choice({
+        id: 'weather-dr2-r2', concept: 'we-pressure',
+        prompt: '空のペットボトルのふたを山頂でしっかり閉め、ふもとまで持って下りました。ペットボトルはどうなる？',
+        options: ['まわりの大気圧が大きくなり、へこむ', 'まわりの大気圧が小さくなり、ふくらむ', '何も変わらない'],
+        answer: 'a',
+        explanation: 'ふもとは山頂より大気圧が大きいので、外からおす力が中の空気のおす力より大きくなり、ペットボトルはへこみます。',
+        hint: '低い所ほど、大気圧は大きいね。',
+      }),
+      figureChoice({
+        id: 'weather-dr2-r3', concept: 'we-system',
+        prompt: '低気圧のまわりの等圧線（4 hPa ごと）です。いちばん内側の線は 1000 hPa です。ア〜ウのうち、1004 hPa の地点はどれ？',
+        figure: scene(lowRingItems()),
+        answer: 'r2',
+        explanation: '内側から 1000、1004、1008 hPa です。1004 hPa は内側から 2 本目の線で、その上にあるのはイです。',
+        hint: '内側の線から、4 hPa ずつ足していこう。',
+      }),
+      choice({
+        id: 'weather-dr2-r4', concept: 'we-system',
+        prompt: '天気図で、等圧線の間かくが広い所の風のようすとして正しいものはどれ？',
+        options: ['風は弱い', '風は強い', '風はまったくふかない'],
+        answer: 'a',
+        explanation: '等圧線の間かくが広い所は、気圧の差が小さいので、風は弱くなります。気圧の差がある限り、風はふきます。',
+        hint: '間かくがせまい所の反対を考えよう。',
+      }),
+      choice({
+        id: 'weather-dr2-r5', concept: 'we-pressure', term: true,
+        prompt: '1 m² の面に、1 N の力が垂直にはたらくときの圧力の大きさはどれ？',
+        options: ['1 Pa', '1 hPa', '1 N'],
+        answer: 'a',
+        explanation: '1 m² あたり 1 N の力がはたらくときの圧力が **1 Pa**（パスカル）です。1 N/m² と書くこともあります。',
+        hint: '圧力の単位で、h が付かないほうだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-dr3: 飽和水蒸気量・露点・湿度 ----
+  const weatherDr3 = {
+    id: 'weather-dr3', areaId: 'air', free: true, title: 'ドリル 3: 飽和水蒸気量と湿度', minutes: 7, concepts: ['we-humidity'],
+    lessons: [
+      {
+        id: 'weather-dr3-c1',
+        text: '**飽和水蒸気量**は、1 m³ の空気がふくむことのできる水蒸気の最大の量〔g/m³〕で、気温が高いほど大きくなります。空気を冷やしていくと、ある温度で水蒸気が水滴に変わり始めます。この温度を**露点**といいます。',
+        figure: scene(graphItems().concat([
+          { type: 'text', x: 150, y: 60, text: '飽和水蒸気量の曲線', size: 13, color: 'blue' },
+        ])),
+      },
+      {
+        id: 'weather-dr3-c2',
+        text: '**湿度**〔%〕＝空気 1 m³ 中の水蒸気量÷その気温の飽和水蒸気量×100 です。水蒸気量が同じでも、気温が上がると飽和水蒸気量が大きくなるので、湿度は下がります。',
+        figure: scene(satTable(40).concat([
+          { type: 'text', x: 160, y: 160, text: '湿度〔%〕＝', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 184, text: '水蒸気量 ÷ 飽和水蒸気量 × 100', size: 14, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'weather-dr3-c3',
+        text: '露点の空気の湿度は 100 % です。露点より低い温度まで冷やすと、（空気 1 m³ の水蒸気量）−（その温度の飽和水蒸気量）の分の水蒸気が、水滴になります。',
+        figure: scene(graphItems().concat([
+          { type: 'circle', x: gx(20), y: gy(9.4), r: 5, fill: 'ink', stroke: 'none' },
+          { type: 'line', points: [[gx(20), gy(9.4)], [gx(10), gy(9.4)]], color: 'orange', width: 2, dashed: true, arrow: true },
+          { type: 'text', x: gx(20) + 8, y: gy(9.4) + 16, text: '冷やす', size: 12 },
+          { type: 'text', x: gx(10) - 4, y: gy(9.4) - 10, text: '露点', size: 13, anchor: 'end', bold: true },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr3-w1', concept: 'we-humidity',
+      prompt: '予想しよう。冬、あたたかい部屋のまどガラスの内側に、水滴がつくことがあります。水滴がつきやすいのはどんな日だと思う？',
+      options: ['外が寒く、部屋の空気がしめっている日', '外があたたかく、部屋の空気が乾いた日', '天気に関係なく、毎日同じ'],
+      answer: 'a',
+      explanation: '外が寒いとガラスが冷え、そのそばの空気が露点より低くなると水滴ができます。部屋の空気がしめっているほど露点が高いので、水滴ができやすくなります。',
+      hint: 'ガラスで冷やされた空気が、露点より低くなると水滴ができるよ。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr3-t1', concept: 'we-humidity', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '空気中の水蒸気が冷やされて、水滴に変わることを[b1]という。',
+        blanks: [word('b1', ['凝結', '蒸発', '融解'], '凝結')],
+        explanation: '気体の水蒸気が液体の水滴に変わることを**凝結**といいます。露点は、凝結が始まる温度です。',
+        hint: '「こり固まる」ように集まる、という字を書くよ。',
+      }),
+      fill({
+        id: 'weather-dr3-p1', concept: 'we-humidity',
+        prompt: '空らんに入る数を入れよう（小数第 1 位まで）。',
+        text: '気温 25 ℃（飽和水蒸気量 23.1 g/m³）で、露点が 15 ℃（飽和水蒸気量 12.8 g/m³）の空気の湿度は[b1]である。',
+        blanks: [number('b1', 55.4, 0.1, '%')],
+        explanation: '露点が 15 ℃ なので、この空気は 1 m³ に 12.8 g の水蒸気をふくんでいます。湿度は 12.8 ÷ 23.1 × 100 ＝ 55.4… なので、約 55.4 % です。',
+        hint: '露点の飽和水蒸気量が、いまふくまれている水蒸気量だよ。',
+      }),
+      figureChoice({
+        id: 'weather-dr3-p2', concept: 'we-humidity',
+        prompt: '飽和水蒸気量のグラフに、空気ア（10 ℃）・イ（20 ℃）・ウ（30 ℃）の水蒸気量を点で示しました。露点がいちばん高いのはどれ？',
+        figure: scene(threeAirItems()),
+        answer: 'r2',
+        explanation: '露点は、ふくんでいる水蒸気量で決まり、水蒸気量が多いほど高くなります。点がいちばん上にある（水蒸気量が多い）のはイで、露点は 15 ℃ です。',
+        hint: '露点は気温ではなく、水蒸気量で決まるよ。',
+      }),
+      fill({
+        id: 'weather-dr3-p3', concept: 'we-humidity',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 m³ に 12.8 g の水蒸気をふくむ空気を、5 ℃（飽和水蒸気量 6.8 g/m³）まで冷やすと、1 m³ あたり[b1]の水滴ができる。',
+        blanks: [number('b1', 6, 0, 'g')],
+        explanation: '5 ℃ の空気は 1 m³ に 6.8 g までしか水蒸気をふくめません。12.8 − 6.8 ＝ 6 g が水滴になります。',
+        hint: 'ふくんでいた量から、ふくめる最大の量を引こう。',
+      }),
+      choice({
+        id: 'weather-dr3-p4', concept: 'we-humidity',
+        prompt: '湿度 100 % の空気を、水蒸気の量を変えずにあたためました。湿度はどうなる？',
+        options: ['下がる', '上がる', '100 % のまま変わらない'],
+        answer: 'a',
+        explanation: 'あたためると飽和水蒸気量が大きくなります。水蒸気量は同じなので、わり算の答え（湿度）は小さくなります。',
+        hint: '湿度の式の、分母がどう変わるか考えよう。',
+      }),
+      fill({
+        id: 'weather-dr3-p5', concept: 'we-humidity',
+        prompt: '空らんに入る数を入れよう。',
+        text: '容積 50 m³ の部屋の空気は、気温 20 ℃（飽和水蒸気量 17.3 g/m³）で湿度 60 % だった。部屋の空気全体の水蒸気は[b1]である。',
+        blanks: [number('b1', 519, 0, 'g')],
+        explanation: '1 m³ あたりの水蒸気量は 17.3 × 0.6 ＝ 10.38 g です。部屋全体では 10.38 × 50 ＝ 519 g です。',
+        hint: 'まず 1 m³ あたりの量を出して、容積をかけよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'weather-dr3-r1', concept: 'we-humidity',
+        prompt: '飽和水蒸気量のグラフに、空気ア（10 ℃）・イ（20 ℃）・ウ（30 ℃）の水蒸気量を点で示しました。露点がいちばん低いのはどれ？',
+        figure: scene(threeAirItems()),
+        answer: 'r1',
+        explanation: '水蒸気量がいちばん少ないのはアの 6.8 g/m³ です。露点は 5 ℃ で、3 つの中でいちばん低くなります。',
+        hint: '点がいちばん下にある空気をさがそう。',
+      }),
+      fill({
+        id: 'weather-dr3-r2', concept: 'we-humidity',
+        prompt: '空らんに入る数を入れよう（小数第 1 位まで）。',
+        text: '気温 30 ℃（飽和水蒸気量 30.4 g/m³）で、露点が 20 ℃（飽和水蒸気量 17.3 g/m³）の空気の湿度は[b1]である。',
+        blanks: [number('b1', 56.9, 0.1, '%')],
+        explanation: 'この空気の水蒸気量は 17.3 g/m³ です。17.3 ÷ 30.4 × 100 ＝ 56.9… なので、約 56.9 % です。',
+        hint: '露点のときの飽和水蒸気量を、気温の飽和水蒸気量でわろう。',
+      }),
+      fill({
+        id: 'weather-dr3-r3', concept: 'we-humidity',
+        prompt: '空らんに入る数を入れよう。',
+        text: '容積 100 m³ の部屋の空気は、気温 25 ℃（飽和水蒸気量 23.1 g/m³）で湿度 40 % だった。部屋の空気全体の水蒸気は[b1]である。',
+        blanks: [number('b1', 924, 0, 'g')],
+        explanation: '1 m³ あたり 23.1 × 0.4 ＝ 9.24 g です。部屋全体では 9.24 × 100 ＝ 924 g です。',
+        hint: '1 m³ あたりの量に、部屋の容積をかけよう。',
+      }),
+      choice({
+        id: 'weather-dr3-r4', concept: 'we-humidity', term: true,
+        prompt: '次の説明に合う言葉はどれ？「気体の水蒸気が、冷やされて液体の水滴に変わること」',
+        options: ['凝結', '蒸発', '沸騰'],
+        answer: 'a',
+        explanation: '水蒸気が水滴に変わることは**凝結**です。蒸発は、液体の水が表面から水蒸気になることです。',
+        hint: '露点で始まる変化だよ。',
+      }),
+      choice({
+        id: 'weather-dr3-r5', concept: 'we-humidity',
+        prompt: '気温 15 ℃ で湿度 100 % の空気を、10 ℃ まで冷やしました。このときの湿度と、空気のようすはどれ？',
+        options: ['100 % のままで、水滴ができる', '50 % に下がる', '100 % より大きくなる'],
+        answer: 'a',
+        explanation: '露点より低くなると、ふくみきれない水蒸気が水滴になります。空気は飽和したままなので、湿度は 100 % のままです。',
+        hint: '湿度は 100 % をこえることはないよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-dr4: 雲のでき方と水の循環 ----
+  const weatherDr4 = {
+    id: 'weather-dr4', areaId: 'air', free: true, title: 'ドリル 4: 雲のでき方と水の循環', minutes: 6, concepts: ['we-cloud'],
+    lessons: [
+      {
+        id: 'weather-dr4-c1',
+        text: '空気が上昇すると、まわりの気圧が低いので膨張して温度が下がります。露点より低くなると、水蒸気が凝結して雲ができます。**上昇気流**は、山の斜面、前線、地面が強くあたためられた所などで起こります。',
+        figure: scene([
+          { type: 'polygon', points: [[10, 200], [60, 120], [100, 200]], fill: 'lightgreen' },
+          { type: 'arrow', x1: 20, y1: 190, x2: 56, y2: 120, color: 'orange', width: 3 },
+          { type: 'text', x: 55, y: 224, text: '山の斜面', size: 12, anchor: 'middle' },
+          { type: 'rect', x: 120, y: 190, width: 80, height: 10, fill: 'brown', stroke: 'none' },
+          { type: 'arrow', x1: 160, y1: 186, x2: 160, y2: 110, color: 'orange', width: 3 },
+          { type: 'text', x: 160, y: 224, text: '地面があたたまる', size: 12, anchor: 'middle' },
+          { type: 'polygon', points: [[220, 200], [300, 200], [300, 140]], fill: 'sky', stroke: 'none' },
+          { type: 'arrow', x1: 230, y1: 190, x2: 270, y2: 120, color: 'orange', width: 3 },
+          { type: 'text', x: 262, y: 224, text: '前線', size: 12, anchor: 'middle' },
+          { type: 'ellipse', x: 60, y: 90, rx: 30, ry: 14, fill: 'white', stroke: 'gray' },
+          { type: 'ellipse', x: 160, y: 86, rx: 30, ry: 14, fill: 'white', stroke: 'gray' },
+          { type: 'ellipse', x: 270, y: 96, rx: 30, ry: 14, fill: 'white', stroke: 'gray' },
+          { type: 'text', x: 160, y: 40, text: '上昇気流が起こる所', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'weather-dr4-c2',
+        text: 'フラスコに少量の水と線香のけむりを入れ、つないだ注射器のピストンを引くと、中の空気が膨張して温度が下がり、白くくもります。けむりの粒は、水滴ができるときの**しん**になります。',
+        figure: scene([
+          { type: 'circle', x: 110, y: 140, r: 60, fill: 'glass' },
+          { type: 'rect', x: 98, y: 50, width: 24, height: 34, fill: 'glass' },
+          { type: 'line', points: [[110, 50], [110, 30], [220, 30]], width: 3 },
+          { type: 'rect', x: 220, y: 18, width: 70, height: 24, fill: 'white' },
+          { type: 'arrow', x1: 260, y1: 60, x2: 305, y2: 60, color: 'blue', width: 3 },
+          { type: 'text', x: 282, y: 80, text: '引く', size: 13, anchor: 'middle' },
+          { type: 'text', x: 110, y: 145, text: '白くくもる', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 110, y: 226, text: '水と線香のけむり', size: 13, anchor: 'middle' },
+          { type: 'text', x: 250, y: 140, text: '膨張して', size: 13, anchor: 'middle' },
+          { type: 'text', x: 250, y: 160, text: '温度が下がる', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'weather-dr4-c3',
+        anim: 'we-water-cycle',   // 動く図の使い回し（js/anim-*.js）。figure は静止図として残す
+        text: '雲の粒が大きくなると、雨や雪になって落ちてきます。地球上の水は、太陽のエネルギーで蒸発して雲になり、降水となって地上に降り、川や地下水として海へもどります。これを**水の循環**といいます。',
+        figure: scene([
+          { type: 'rect', x: 0, y: 180, width: 140, height: 60, fill: 'water', stroke: 'none' },
+          { type: 'polygon', points: [[140, 240], [140, 180], [230, 120], [320, 150], [320, 240]], fill: 'lightgreen' },
+          { type: 'ellipse', x: 190, y: 50, rx: 50, ry: 20, fill: 'white', stroke: 'gray' },
+          { type: 'arrow', x1: 70, y1: 170, x2: 140, y2: 60, color: 'orange', width: 3 },
+          { type: 'arrow', x1: 220, y1: 76, x2: 240, y2: 120, color: 'blue', width: 3 },
+          { type: 'arrow', x1: 280, y1: 170, x2: 160, y2: 200, color: 'blue', width: 3 },
+          { type: 'text', x: 40, y: 120, text: '蒸発', size: 13, bold: true },
+          { type: 'text', x: 254, y: 100, text: '降水', size: 13, bold: true },
+          { type: 'text', x: 232, y: 214, text: '川・地下水', size: 13, anchor: 'middle' },
+          { type: 'text', x: 50, y: 220, text: '海', size: 14, bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr4-w1', concept: 'we-cloud',
+      prompt: '予想しよう。ふもとは晴れているのに、高い山の上のほうに雲がかかっていることがあります。山の上で雲ができやすいのはなぜだと思う？',
+      options: ['上へ行く空気が冷やされるから', '山の上ほど太陽に近いから', '山の木が雲を出しているから'],
+      answer: 'a',
+      explanation: '風が山にぶつかると、空気は斜面にそって上昇し、膨張して冷えます。露点より低くなると雲ができます。',
+      hint: '上空ほど気圧が低く、空気は膨張するよ。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr4-t1', concept: 'we-cloud', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '空気が上に向かって動く流れを[b1]といい、雲ができる原因になる。',
+        blanks: [word('b1', ['上昇気流', '下降気流', '偏西風'], '上昇気流')],
+        explanation: '空気が上へ向かう流れを**上昇気流**といいます。上昇した空気は冷えて、雲ができます。',
+        hint: '空気が「上」へ「昇る」流れだよ。',
+      }),
+      choice({
+        id: 'weather-dr4-p1', concept: 'we-cloud',
+        prompt: 'フラスコの中を白くくもらせる実験で、線香のけむりを入れるのはなぜ？',
+        options: ['水滴ができるときのしんにするため', 'フラスコの中をあたためるため', 'くもりを黒くして見やすくするため'],
+        answer: 'a',
+        explanation: '水蒸気は、ちりやけむりの粒をしんにして水滴になります。しんがあると、くもりができやすくなります。',
+        hint: '空気中のちりは、雲の粒のもとになるよ。',
+      }),
+      fill({
+        id: 'weather-dr4-p2', concept: 'we-cloud',
+        prompt: 'ピストンを引いてフラスコの中を白くくもらせたあと、ピストンをおしもどしました。空らんに入る言葉を入れよう。',
+        text: 'ピストンをおすと、中の空気の温度が[b1]ので、白いくもりは消える。',
+        blanks: [word('b1', ['上がる', '下がる', '変わらない'], '上がる')],
+        explanation: 'ピストンをおすと、中の空気が圧縮されて温度が上がります。露点より高くなるので、水滴は水蒸気にもどり、くもりは消えます。',
+        hint: '引いたとき（空気がふくらむとき）と反対のことが起こるよ。',
+      }),
+      figureChoice({
+        id: 'weather-dr4-p3', concept: 'we-cloud',
+        prompt: '地表で気温 20 ℃、露点 12 ℃ の空気が上昇します。100 m 上がるごとに 1 ℃ 下がるとき、雲ができ始めるのはア〜ウのどの高さ？',
+        figure: scene(cloudHeightItems()),
+        answer: 'r2',
+        explanation: '20 − 12 ＝ 8 ℃ 下がると露点に達します。1 ℃ 下がるのに 100 m なので、8 × 100 ＝ 800 m（イ）で雲ができ始めます。',
+        hint: '気温と露点の差は何 ℃ かな。',
+      }),
+      fill({
+        id: 'weather-dr4-p4', concept: 'we-cloud',
+        prompt: '空らんに入る数を入れよう。',
+        text: '地表で気温 25 ℃、露点 15 ℃ の空気が上昇する。100 m 上がるごとに 1 ℃ 下がるとき、雲ができ始める高さは[b1]である。',
+        blanks: [number('b1', 1000, 0, 'm')],
+        explanation: '露点まで 25 − 15 ＝ 10 ℃ 下がる必要があります。10 × 100 ＝ 1000 m で雲ができ始めます。',
+        hint: '下がる温度に、100 m をかけよう。',
+      }),
+      choice({
+        id: 'weather-dr4-p5', concept: 'we-cloud',
+        prompt: '地球全体で 1 年間に、海や陸から蒸発する水の量と、降水として降る水の量の関係はどれ？',
+        options: ['ほぼ等しい', '蒸発する量のほうがずっと多い', '降る量のほうがずっと多い'],
+        answer: 'a',
+        explanation: '水はすがたを変えながら地球をめぐっています。地球全体では、蒸発する量と降る量はほぼつり合っています。',
+        hint: '水は、なくならずにめぐっているね。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'weather-dr4-r1', concept: 'we-cloud',
+        prompt: '地表で気温 18 ℃、露点 14 ℃ の空気が上昇します。100 m 上がるごとに 1 ℃ 下がるとき、雲ができ始めるのはア〜ウのどの高さ？',
+        figure: scene(cloudHeightItems()),
+        answer: 'r3',
+        explanation: '18 − 14 ＝ 4 ℃ 下がると露点に達します。4 × 100 ＝ 400 m（ウ）で雲ができ始めます。',
+        hint: '気温と露点の差を、まず計算しよう。',
+      }),
+      fill({
+        id: 'weather-dr4-r2', concept: 'we-cloud',
+        prompt: '空らんに入る数を入れよう。',
+        text: '地表で気温 22 ℃、露点 10 ℃ の空気が上昇する。100 m 上がるごとに 1 ℃ 下がるとき、雲ができ始める高さは[b1]である。',
+        blanks: [number('b1', 1200, 0, 'm')],
+        explanation: '22 − 10 ＝ 12 ℃ 下がると露点です。12 × 100 ＝ 1200 m で雲ができ始めます。',
+        hint: '1 ℃ 下がるのに 100 m だね。',
+      }),
+      choice({
+        id: 'weather-dr4-r3', concept: 'we-cloud',
+        prompt: '雲ができやすい場所はどれ？',
+        options: ['地面が強くあたためられた所の上空', '空気が下降している高気圧の中心', '風が山を下りてくる斜面'],
+        answer: 'a',
+        explanation: '地面が強くあたためられると上昇気流が起こり、雲ができます。空気が下降する所では、空気があたたまるので雲は消えやすくなります。',
+        hint: '雲ができるのは、空気が上昇する所だよ。',
+      }),
+      choice({
+        id: 'weather-dr4-r4', concept: 'we-cloud', term: true,
+        prompt: '次の説明に合う言葉はどれ？「上空から地表へ向かって下りてくる空気の流れ」',
+        options: ['下降気流', '上昇気流', '季節風'],
+        answer: 'a',
+        explanation: '空気が下りてくる流れは**下降気流**です。下降する空気はあたたまるので、雲ができにくく、晴れやすくなります。',
+        hint: '「下」へ「降りる」流れだよ。',
+      }),
+      choice({
+        id: 'weather-dr4-r5', concept: 'we-cloud',
+        prompt: '海の水は毎日たくさん蒸発しているのに、海の水がなくならないのはなぜ？',
+        options: ['雨や川の水として海にもどってくるから', '海の底から水がわき出ているから', '蒸発した水は海の上にとどまるから'],
+        answer: 'a',
+        explanation: '蒸発した水は雲になり、雨や雪として降って、川や地下水を通って海にもどります。これが水の循環です。',
+        hint: '水の循環を思い出そう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-dr5: 前線の通過と天気図 ----
+  const weatherDr5 = {
+    id: 'weather-dr5', areaId: 'front', free: true, title: 'ドリル 5: 前線の通過と天気図', minutes: 7, concepts: ['we-front', 'we-observe'],
+    lessons: [
+      {
+        id: 'weather-dr5-c1',
+        text: '気温や湿度がほぼ一様な大きな空気のかたまりを**気団**といいます。性質のちがう気団はすぐには混ざらず、その境が地表と交わる線が**前線**です。寒冷前線では寒気が暖気をおし上げ、温暖前線では暖気が寒気の上にはい上がります。',
+        figure: scene(coldSection(10, 18, 300, '寒冷前線').concat(warmSection(10, 132, 300, '温暖前線'))),
+      },
+      {
+        id: 'weather-dr5-c2',
+        text: '**寒冷前線**が通過すると、強い雨が短時間降り、風向は南寄りから北寄りに変わり、気温が急に下がります。**温暖前線**が通過するときは、弱い雨が長く降り、通過後は風向が南寄りに変わって気温が上がります。',
+        figure: scene(table(10, 50, [100, 105, 105], [
+          ['', '寒冷前線', '温暖前線'],
+          ['雨', '強い・短時間', '弱い・長時間'],
+          ['通過後の風向', '北寄り', '南寄り'],
+          ['通過後の気温', '急に下がる', '上がる'],
+        ])),
+      },
+      {
+        id: 'weather-dr5-c3',
+        text: '天気図には、各地の天気・風向・風力を表す**天気図記号**と、等圧線・高気圧・低気圧・前線がかかれます。天気図記号では、矢の向きが風向、矢羽根の数が風力を表します。',
+        figure: scene(stationModel(110, 130, 225, 2, 'cloudy', 70).concat([
+          { type: 'text', x: 160, y: 24, text: '図の上が北', size: 12, anchor: 'middle' },
+          { type: 'text', x: 180, y: 110, text: '天気: くもり', size: 14 },
+          { type: 'text', x: 180, y: 134, text: '風向: 南西', size: 14 },
+          { type: 'text', x: 180, y: 158, text: '風力: 2（羽根 2 本）', size: 14 },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr5-w1', concept: 'we-front',
+      prompt: '予想しよう。低気圧の中心から南西へ寒冷前線、東へ温暖前線がのびています。2 本の前線にはさまれた地域の気温は、まわりとくらべてどうだと思う？',
+      options: ['高い', '低い', '同じ'],
+      answer: 'a',
+      explanation: '2 本の前線にはさまれた南東側は、南からの暖気におおわれています。そのため、まわりより気温が高くなります。',
+      hint: '寒冷前線の前、温暖前線の後ろにある空気は、暖気かな寒気かな。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr5-t1', concept: 'we-front', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '大陸や海の上に長くとどまってできた、気温や湿度がほぼ一様な大きな空気のかたまりを[b1]という。',
+        blanks: [word('b1', ['気団', '前線', '高気圧'], '気団')],
+        explanation: '気温や湿度がほぼ同じ大きな空気のかたまりを**気団**といいます。性質のちがう気団がぶつかる所に前線ができます。',
+        hint: '「気」の「かたまり（団）」だよ。',
+      }),
+      figureChoice({
+        id: 'weather-dr5-p1', concept: 'we-observe',
+        prompt: 'ア〜ウは天気図記号です（図の上が北）。「雨、南の風、風力 2」を表しているのはどれ？',
+        figure: scene(threeStationItems()),
+        answer: 'r2',
+        explanation: '黒くぬった丸は雨、矢は風がふいてくる向き、羽根の数は風力です。矢が南（下）にのび、羽根が 2 本の雨の記号はイです。アは北の風、ウはくもりで風力 3 です。',
+        hint: '矢は、風がふいてくる方角にのびているよ。',
+      }),
+      fill({
+        id: 'weather-dr5-p2', concept: 'we-front',
+        prompt: 'ある地点の 3 時間ごとの記録です。前線が通過したと考えられるあいだに、気温は何 ℃ 下がった？',
+        figure: scene(frontRecordTable()),
+        text: '前線の通過で、気温は[b1]下がった。',
+        blanks: [number('b1', 7, 0, '℃')],
+        explanation: '12 時から 15 時のあいだに、風向が南西から北に変わり、気温が 19 ℃ から 12 ℃ へ急に下がっています。19 − 12 ＝ 7 ℃ です。',
+        hint: '風向が大きく変わったあいだの、気温の差を求めよう。',
+      }),
+      fill({
+        id: 'weather-dr5-p3', concept: 'we-front',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '温帯低気圧の 2 つの前線のうち、[b1]前線のほうが速く進み、やがてもう一方に追いつく。',
+        blanks: [word('b1', ['寒冷', '温暖', '停滞'], '寒冷')],
+        explanation: '**寒冷**前線のほうが速く進むので、やがて温暖前線に追いつきます。追いついてできるのが閉そく前線です。',
+        hint: '閉そく前線は、どちらがどちらに追いついてできるかな。',
+      }),
+      drag({
+        id: 'weather-dr5-p4', concept: 'we-front',
+        prompt: '右へ進む寒冷前線の断面です。積乱雲ができやすい場所を、点線の丸の中から選んで、「雲」を動かそう。',
+        figure: scene(coldDragItems()),
+        draggable: { itemId: 'cloud', axis: 'xy' },
+        target: { x: 165, y: 105 },
+        samples: { correct: { x: 165, y: 105 }, wrong: { x: 60, y: 70 } },
+        explanation: '寒冷前線では、寒気が暖気の下にもぐりこんで、暖気を急におし上げます。強い上昇気流が起こる前線の真上付近で、積乱雲が発達します。',
+        hint: '暖気が急におし上げられる所はどこかな。',
+      }),
+      choice({
+        id: 'weather-dr5-p5', concept: 'we-observe',
+        prompt: '天気図記号で、風力は何で表す？',
+        options: ['矢羽根の数', '矢の長さ', '丸の大きさ'],
+        answer: 'a',
+        explanation: '天気図記号では、丸の中の記号が天気、矢の向きが風向、矢羽根の数が風力を表します。',
+        hint: '風力 3 なら、何かが 3 本かかれるよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'weather-dr5-r1', concept: 'we-front',
+        prompt: '9 時 18 ℃ 南南西、12 時 19 ℃ 南西、15 時 12 ℃ 北、18 時 11 ℃ 北北西。この地点を通過した前線は何？',
+        options: ['寒冷前線', '温暖前線', '停滞前線'],
+        answer: 'a',
+        explanation: '気温が急に下がり、風向が南寄りから北寄りに変わっているので、寒冷前線が通過したと考えられます。',
+        hint: '通過後に気温が下がる前線はどちらかな。',
+      }),
+      choice({
+        id: 'weather-dr5-r2', concept: 'we-front',
+        prompt: '閉そく前線ができるのはなぜ？',
+        options: ['寒冷前線が温暖前線に追いつくから', '温暖前線が寒冷前線に追いつくから', '2 本の前線が止まって動かないから'],
+        answer: 'a',
+        explanation: '寒冷前線は温暖前線より速く進むので、やがて追いつきます。こうしてできるのが閉そく前線です。',
+        hint: '速く進むのは、寒冷前線と温暖前線のどちらかな。',
+      }),
+      figureChoice({
+        id: 'weather-dr5-r3', concept: 'we-observe',
+        prompt: 'ア〜ウは天気図記号です（図の上が北）。「くもり、南の風、風力 3」を表しているのはどれ？',
+        figure: scene(threeStationItems()),
+        answer: 'r3',
+        explanation: '丸の中にもう 1 つ丸がある記号はくもりです。矢が南にのび、羽根が 3 本あるのはウです。',
+        hint: 'まず、くもりの記号をさがそう。',
+      }),
+      choice({
+        id: 'weather-dr5-r4', concept: 'we-observe',
+        prompt: '天気図記号で、丸からのびる矢の向きは何を表している？',
+        options: ['風がふいてくる向き', '風がふいていく向き', '雲が動いていく向き'],
+        answer: 'a',
+        explanation: '矢は、風がふいてくる方角（風向）にのばしてかきます。北にのびていれば北の風です。',
+        hint: '風向は「どこから」ふくかを表すよ。',
+      }),
+      choice({
+        id: 'weather-dr5-r5', concept: 'we-front', term: true,
+        prompt: '次の説明に合う言葉はどれ？「広い範囲で、気温や湿度がほぼ一様になった大きな空気のかたまり」',
+        options: ['気団', '前線', '低気圧'],
+        answer: 'a',
+        explanation: 'これは**気団**です。気団どうしの境の面が前線面、前線面が地表と交わる線が前線です。',
+        hint: '日本のまわりには、シベリア○○、小笠原○○などがあるね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-dr6: 大気の流れと季節風・気団 ----
+  const weatherDr6 = {
+    id: 'weather-dr6', areaId: 'front', free: true, title: 'ドリル 6: 大気の流れと季節風', minutes: 6, concepts: ['we-wind', 'we-airmass'],
+    lessons: [
+      {
+        id: 'weather-dr6-c1',
+        text: '赤道付近は太陽の光を多く受けてあたたまり、極付近は冷えています。この温度の差によって、地球規模の大気の流れが生まれます。日本付近の上空には、西から東へ向かう**偏西風**がいつもふいています。',
+        figure: scene([
+          { type: 'circle', x: 120, y: 120, r: 95, fill: 'sky' },
+          { type: 'line', points: [[25, 120], [215, 120]], color: 'gray', width: 2, dashed: true },
+          { type: 'text', x: 120, y: 140, text: '赤道（あたたかい）', size: 12, anchor: 'middle', bg: true },
+          { type: 'text', x: 120, y: 44, text: '極（冷たい）', size: 12, anchor: 'middle', bg: true },
+          { type: 'arrow', x1: 45, y1: 82, x2: 195, y2: 82, color: 'orange', width: 4 },
+          { type: 'text', x: 230, y: 78, text: '偏西風', size: 14, bold: true },
+          { type: 'text', x: 230, y: 98, text: '（西 → 東）', size: 12 },
+        ]),
+      },
+      {
+        id: 'weather-dr6-c2',
+        text: '大陸は海よりあたたまりやすく冷えやすい性質があります。冬は大陸が冷えて高気圧ができ、北西の**季節風**がふきます。夏は大陸があたたまって気圧が低くなり、太平洋から南東の季節風がふきます。',
+        figure: scene(japanSmall().concat([
+          { type: 'text', x: 8, y: 20, text: '大陸', size: 13, bold: true },
+          { type: 'text', x: 176, y: 234, text: '太平洋', size: 13, bold: true },
+          { type: 'arrow', x1: 40, y1: 50, x2: 110, y2: 110, color: 'blue', width: 4 },
+          { type: 'text', x: 60, y: 44, text: '冬: 北西の季節風', size: 12 },
+          { type: 'arrow', x1: 300, y1: 200, x2: 250, y2: 150, color: 'orange', width: 4 },
+          // 文字が矢印に重ならないよう、矢印の根元の下に置く（2026-11-21）
+          { type: 'text', x: 316, y: 220, text: '夏: 南東の季節風', size: 12, anchor: 'end' },
+        ])),
+      },
+      {
+        id: 'weather-dr6-c3',
+        text: '日本のまわりには、冷たく乾いた**シベリア気団**、冷たくしめったオホーツク海気団、あたたかくしめった小笠原気団などがあります。大陸の上でできた気団は乾き、海の上でできた気団はしめっています。',
+        figure: scene(airMassItems(true)),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr6-w1', concept: 'we-wind',
+      prompt: '予想しよう。飛行機で、福岡から東京へ行くときと、東京から福岡へ行くときでは、かかる時間が短いことが多いのはどちらだと思う？',
+      options: ['福岡から東京へ行くとき', '東京から福岡へ行くとき', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '日本付近の上空には、西から東へ偏西風がふいています。西の福岡から東の東京へ向かうときは追い風になるので、時間が短くなることが多いです。',
+      hint: '上空の風は、どの方角からどの方角へふいているかな。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr6-t1', concept: 'we-airmass', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '冬に大陸の上で、空気が冷やされて発達する高気圧を[b1]という。',
+        blanks: [word('b1', ['シベリア高気圧', '太平洋高気圧', 'オホーツク海高気圧'], 'シベリア高気圧')],
+        explanation: '冬、大陸の上の空気が冷えて重くなり、**シベリア高気圧**が発達します。これがシベリア気団のもとになります。',
+        hint: '冬の天気図で、日本の西にある高気圧だよ。',
+      }),
+      figureChoice({
+        id: 'weather-dr6-p1', concept: 'we-airmass',
+        prompt: '日本のまわりの 4 つの気団ア〜エです。冷たくしめった性質をもつ気団はどれ？',
+        figure: scene(airMassItems(false)),
+        answer: 'r2',
+        explanation: '北の海の上でできるオホーツク海気団（イ）は、冷たくしめっています。アは冷たく乾き、ウはあたたかく乾き、エはあたたかくしめっています。',
+        hint: '冷たいのは北、しめっているのは海の上でできた気団だよ。',
+      }),
+      fill({
+        id: 'weather-dr6-p2', concept: 'we-wind',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '春に中国大陸でまい上がった砂（黄砂）は、上空の[b1]に乗って日本まで運ばれる。',
+        blanks: [word('b1', ['偏西風', '季節風', '海風'], '偏西風')],
+        explanation: '大陸でまい上がった砂は、上空を西から東へふく**偏西風**に乗って、日本へ運ばれます。',
+        hint: '日本の西にある大陸から、東へ運ぶ風だよ。',
+      }),
+      choice({
+        id: 'weather-dr6-p3', concept: 'we-wind',
+        prompt: '冬、大陸の上に高気圧ができるのはなぜ？',
+        options: ['大陸が冷えやすく、空気が冷えて重くなるから', '大陸の上で上昇気流が強くなるから', '海から水蒸気がたくさん入るから'],
+        answer: 'a',
+        explanation: '大陸は海より冷えやすいので、冬は大陸の上の空気が冷えて重くなり、下降して高気圧ができます。',
+        hint: '冷えた空気は、重いかな軽いかな。',
+      }),
+      drag({
+        id: 'weather-dr6-p4', concept: 'we-wind',
+        prompt: '夏の日本付近です。夏に発達する高気圧の中心はどちら側にある？ 点線の丸（大陸・太平洋）のうち、正しいほうへ「高」を動かそう。',
+        figure: scene(summerHighItems()),
+        draggable: { itemId: 'high', axis: 'xy' },
+        target: { x: 260, y: 195 },
+        samples: { correct: { x: 260, y: 195 }, wrong: { x: 50, y: 60 } },
+        explanation: '夏は大陸があたたまって気圧が低くなり、太平洋の上に太平洋高気圧が発達します。そこから日本へ、南東の季節風がふきます。',
+        hint: '夏にあたたまりやすいのは、大陸と海のどちらかな。',
+      }),
+      choice({
+        id: 'weather-dr6-p5', concept: 'we-airmass',
+        prompt: '気団の性質（あたたかい・冷たい、しめっている・乾いている）は、何によって決まる？',
+        options: ['気団ができた場所の気温と、海か陸か', '気団の大きさだけ', 'その日の風の強さ'],
+        answer: 'a',
+        explanation: '北でできた気団は冷たく、南でできた気団はあたたかくなります。海の上でできるとしめり、大陸の上でできると乾きます。',
+        hint: 'できた場所の「南北」と「海・陸」を考えよう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'weather-dr6-r1', concept: 'we-wind',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '夏は大陸があたたまって、大陸の上の気圧が[b1]なるので、太平洋から日本へ南東の季節風がふく。',
+        blanks: [word('b1', ['低く', '高く', '変わらなく'], '低く')],
+        explanation: '夏は大陸のほうがあたたまりやすく、大陸の上で気圧が低くなります。気圧の高い太平洋から、低い大陸へ向かって風がふきます。',
+        hint: '風は気圧の高い所から低い所へふくね。',
+      }),
+      choice({
+        id: 'weather-dr6-r2', concept: 'we-wind',
+        prompt: '地球規模の大気の流れが生まれる、いちばんのもとは何？',
+        options: ['赤道付近と極付近の温度の差', '月の引力', '海流の向き'],
+        answer: 'a',
+        explanation: '赤道付近はあたたかく、極付近は冷たいので、その温度の差を減らすように大気が大きく動きます。',
+        hint: '太陽の光の受け方は、場所によってちがうね。',
+      }),
+      figureChoice({
+        id: 'weather-dr6-r3', concept: 'we-airmass',
+        prompt: '日本のまわりの 4 つの気団ア〜エです。冷たく乾いた性質をもつ気団はどれ？',
+        figure: scene(airMassItems(false)),
+        answer: 'r1',
+        explanation: '北西の大陸の上でできるシベリア気団（ア）は、冷たく乾いています。冬の天気に影響します。',
+        hint: '北にあって、大陸の上でできた気団だよ。',
+      }),
+      choice({
+        id: 'weather-dr6-r4', concept: 'we-airmass', term: true,
+        prompt: '次の説明に合う言葉はどれ？「夏に日本の南東の海上で発達し、蒸し暑い天気をもたらす高気圧」',
+        options: ['太平洋高気圧', 'シベリア高気圧', '移動性高気圧'],
+        answer: 'a',
+        explanation: '夏に南東の海上で発達するのは**太平洋高気圧**です。あたたかくしめった小笠原気団をつくります。',
+        hint: '日本の南東にある海の名前が付いているよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-dr7: 四季の天気と台風・気象災害 ----
+  const weatherDr7 = {
+    id: 'weather-dr7', areaId: 'front', free: true, title: 'ドリル 7: 四季の天気と気象災害', minutes: 7, concepts: ['we-japan', 'we-disaster'],
+    lessons: [
+      {
+        id: 'weather-dr7-c1',
+        text: '冬は**西高東低**の気圧配置で、日本海側は雪、太平洋側は乾いた晴れが多くなります。春と秋は移動性高気圧と低気圧が交互に通り、天気が周期的に変わります。夏は南高北低で、蒸し暑い晴れの日が続きます。',
+        figure: scene([
+          { type: 'rect', x: 10, y: 20, width: 145, height: 95, fill: 'white', stroke: 'line' },
+          { type: 'rect', x: 165, y: 20, width: 145, height: 95, fill: 'white', stroke: 'line' },
+          { type: 'rect', x: 10, y: 125, width: 145, height: 95, fill: 'white', stroke: 'line' },
+          { type: 'rect', x: 165, y: 125, width: 145, height: 95, fill: 'white', stroke: 'line' },
+          { type: 'text', x: 82, y: 46, text: '冬', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 82, y: 72, text: '西高東低', size: 13, anchor: 'middle' },
+          { type: 'text', x: 82, y: 94, text: '日本海側は雪', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 46, text: '春・秋', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 237, y: 72, text: '移動性高気圧', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 94, text: '天気が周期的に変化', size: 13, anchor: 'middle' },
+          { type: 'text', x: 82, y: 151, text: '梅雨・秋雨', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 82, y: 177, text: '停滞前線', size: 13, anchor: 'middle' },
+          { type: 'text', x: 82, y: 199, text: '雨の日が続く', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 151, text: '夏', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 237, y: 177, text: '南高北低', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 199, text: '蒸し暑い晴れ', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'weather-dr7-c2',
+        text: '**台風**は、熱帯の海上で発生した熱帯低気圧が発達し、最大風速が約 17 m/s 以上になったものです。中心付近は等圧線がこみ合い、強い風と大雨をもたらします。夏から秋に日本付近へ来ることが多いです。',
+        figure: scene(typhoonItems(false).concat([
+          { type: 'text', x: 160, y: 226, text: '台風（地表の風は反時計回りにふきこむ）', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'weather-dr7-c3',
+        text: '大雨は洪水や土砂災害を、台風は強風や**高潮**を、大雪はなだれや交通の乱れをもたらします。災害の起こりやすい場所や避難場所を示した**ハザードマップ**や気象情報を使い、早めに行動することが大切です。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 24, width: 280, height: 40, fill: 'white', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 50, text: '大雨 → 洪水・土砂災害', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 74, width: 280, height: 40, fill: 'white', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 100, text: '台風 → 強風・高潮・大雨', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 124, width: 280, height: 40, fill: 'white', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 150, text: '大雪 → なだれ・交通の乱れ', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 180, width: 280, height: 40, fill: 'sky', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 206, text: 'ハザードマップで避難場所を確かめる', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-dr7-w1', concept: 'we-japan',
+      prompt: '予想しよう。北へ進む台風では、進む向きの右側（東側）と左側（西側）で、風が強くなりやすいのはどちらだと思う？',
+      options: ['右側（東側）', '左側（西側）', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '台風の地表の風は反時計回りにふきこみます。右側（東側）では、この風の向きと台風の進む向きがそろうので、風が強くなりやすいです。',
+      hint: '台風のまわりの風の向きと、進む向きを重ねてみよう。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-dr7-t1', concept: 'we-disaster', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '台風が近づいたとき、気圧が下がることや強い風によって、海面が高くなる現象を[b1]という。',
+        blanks: [word('b1', ['高潮', '津波', '洪水'], '高潮')],
+        explanation: '気圧が下がると海面がもち上がり、強い風が海水を岸へふき寄せるので、海面が高くなります。これを**高潮**といいます。津波は地震などで起こる波です。',
+        hint: '「潮（海面）」が「高く」なる現象だよ。',
+      }),
+      fill({
+        id: 'weather-dr7-p1', concept: 'we-japan',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '台風の中心付近は気圧がとても低く、等圧線の間かくが[b1]ので、強い風がふく。',
+        blanks: [word('b1', ['せまい', '広い', '一定でない'], 'せまい')],
+        explanation: '台風は発達した低気圧なので、中心付近は気圧がとても低く、等圧線がこみ合って（間かくがせまく）います。そのため強い風がふきます。',
+        hint: '等圧線がこみ合っている所ほど、風は強いよ。',
+      }),
+      figureChoice({
+        id: 'weather-dr7-p2', concept: 'we-japan',
+        prompt: '北へ進む台風の中心（×）から同じきょりにある地点ア（西）・イ（東）・ウ（南）です。風がいちばん強くなりやすいのはどれ？',
+        figure: scene(typhoonItems(true)),
+        answer: 'r2',
+        explanation: '反時計回りにふきこむ風は、東側（イ）では北向きになり、台風の進む向きと重なります。そのため、進む向きの右側にあたるイで風が強くなりやすいです。',
+        hint: 'イの地点の風の向きと、台風の進む向きをくらべよう。',
+      }),
+      fill({
+        id: 'weather-dr7-p3', concept: 'we-japan',
+        prompt: '空らんに入る数を入れよう（1 km ＝ 1000 m）。',
+        text: '風速 17 m/s の風が 1 時間ふき続けると、空気は[b1]進む。',
+        blanks: [number('b1', 61.2, 0.1, 'km')],
+        explanation: '1 時間は 3600 秒です。17 × 3600 ＝ 61200 m ＝ 61.2 km です。台風の風は、自動車ほどの速さです。',
+        hint: '1 時間は何秒かな。m を km に直すのもわすれずに。',
+      }),
+      choice({
+        id: 'weather-dr7-p4', concept: 'we-disaster',
+        prompt: '大雨が予想されるとき、ハザードマップを見ると分かることはどれ？',
+        options: ['浸水や土砂災害の危険な場所と避難場所', 'あすの天気と気温', '台風の進路の予想'],
+        answer: 'a',
+        explanation: 'ハザードマップには、洪水や土砂災害などが起こりやすい場所や、避難場所・避難経路がかかれています。天気や進路は気象情報で確かめます。',
+        hint: '「災害（ハザード）の地図」という意味だよ。',
+      }),
+      choice({
+        id: 'weather-dr7-p5', concept: 'we-japan',
+        prompt: '秋の日本の天気の特徴として正しいものはどれ？',
+        options: ['秋雨のあと、天気が周期的に変わる', '1 年でいちばん雪が多い', '南高北低で蒸し暑い晴れが続く'],
+        answer: 'a',
+        explanation: '秋のはじめは停滞前線（秋雨前線）で雨が続き、そのあとは移動性高気圧と低気圧が交互に通って、天気が周期的に変わります。',
+        hint: '秋は、春と似た天気の変わり方をするよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'weather-dr7-r1', concept: 'we-japan',
+        prompt: '北へ進む台風の中心（×）から同じきょりにある地点ア（西）・イ（東）・ウ（南）です。ア・イのうち、風が弱くなりやすいのはどちら？',
+        figure: scene(typhoonItems(true)),
+        answer: 'r1',
+        explanation: '西側（ア）では、反時計回りの風は南向きになり、台風の進む向き（北）と逆になります。そのため、イより風が弱くなりやすいです。',
+        hint: 'アの地点の風の向きは、台風の進む向きと同じかな、逆かな。',
+      }),
+      choice({
+        id: 'weather-dr7-r2', concept: 'we-japan',
+        prompt: '台風が日本に上陸すると、勢力がしだいに弱まるのはなぜ？',
+        options: ['エネルギーのもとの水蒸気が減るから', '陸の上は気圧が低いから', '偏西風が止まるから'],
+        answer: 'a',
+        explanation: '台風は、あたたかい海から蒸発する大量の水蒸気をエネルギーのもとにしています。陸の上では水蒸気の補給が減るので、勢力が弱まります。',
+        hint: '台風が発達するのは、あたたかい海の上だったね。',
+      }),
+      choice({
+        id: 'weather-dr7-r3', concept: 'we-disaster',
+        prompt: '冬の日本海側で大雪が降ったときに起こりやすい災害はどれ？',
+        options: ['なだれや交通の乱れ', '高潮', '水不足（干ばつ）'],
+        answer: 'a',
+        explanation: '大雪が積もると、山の斜面ではなだれが起こりやすくなり、道路や鉄道も止まりやすくなります。',
+        hint: '雪が積もるとどんなことが起こるかな。',
+      }),
+      choice({
+        id: 'weather-dr7-r4', concept: 'we-disaster', term: true,
+        prompt: '次の説明に合う言葉はどれ？「災害が起こりやすい場所や、避難場所などを示した地図」',
+        options: ['ハザードマップ', '天気図', '等圧線図'],
+        answer: 'a',
+        explanation: 'これは**ハザードマップ**です。住んでいる地域のハザードマップで、避難場所や避難の道を確かめておくことが大切です。',
+        hint: 'ハザードは「危険」という意味だよ。',
       }),
     ],
   };
@@ -3981,11 +5135,16 @@
     mascot: 'D',   // 担当の先生（もくもく先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'air', title: '大気と水蒸気', order: 1, stages: [weather1, weather2] },
-      { id: 'front', title: '前線と天気の変化', order: 2, stages: [weather3, weather4] },
-      { id: 'we-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [
+      // 2026-11-21: 分野でまとめた。基本 → プリント → ドリル（プリント・ドリルは free のステージ）
+      { id: 'air', title: '大気と水蒸気', order: 1, stages: [
+        weather1, weather2,
         weatherMp1, weatherMp2, weatherMp3, weatherMp4, weatherMp5, weatherMp6, weatherMp7,
+        weatherDr1, weatherDr2, weatherDr3, weatherDr4,
+      ] },
+      { id: 'front', title: '前線と天気の変化', order: 2, stages: [
+        weather3, weather4,
         weatherMp8, weatherMp9, weatherMp10, weatherMp11, weatherMp12, weatherMp13, weatherMp14,
+        weatherDr5, weatherDr6, weatherDr7,
       ] },
     ],
   };

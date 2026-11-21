@@ -1127,7 +1127,7 @@
 
   // ---- ステージ volcano-mp1: プリント 1（噴火と火山噴出物、火山の形、わんがけと鉱物） ----
   const voMp1 = {
-    id: 'volcano-mp1', areaId: 'volcano-miniprint', title: 'プリント 1: 噴火と火山の形・鉱物', minutes: 5, concepts: ['vo-magma', 'vo-mineral'],
+    id: 'volcano-mp1', areaId: 'volcano', free: true, title: 'プリント 1: 噴火と火山の形・鉱物', minutes: 5, concepts: ['vo-magma', 'vo-mineral'],
     lessons: [
       {
         id: 'volcano-mp1-c1',
@@ -1301,7 +1301,7 @@
 
   // ---- ステージ volcano-mp2: プリント 2（火山岩と深成岩、6 つの火成岩） ----
   const voMp2 = {
-    id: 'volcano-mp2', areaId: 'volcano-miniprint', title: 'プリント 2: 火山岩と深成岩', minutes: 5, concepts: ['vo-igneous'],
+    id: 'volcano-mp2', areaId: 'volcano', free: true, title: 'プリント 2: 火山岩と深成岩', minutes: 5, concepts: ['vo-igneous'],
     lessons: [
       {
         id: 'volcano-mp2-c1',
@@ -1440,7 +1440,7 @@
 
   // ---- ステージ volcano-mp3: プリント 3（震源と震央、地震計の記録、P 波と S 波） ----
   const voMp3 = {
-    id: 'volcano-mp3', areaId: 'volcano-miniprint', title: 'プリント 3: 地震のゆれと伝わり方', minutes: 5, concepts: ['vo-wave'],
+    id: 'volcano-mp3', areaId: 'quake', free: true, title: 'プリント 3: 地震のゆれと伝わり方', minutes: 5, concepts: ['vo-wave'],
     lessons: [
       {
         id: 'volcano-mp3-c1',
@@ -1603,7 +1603,7 @@
 
   // ---- ステージ volcano-mp4: プリント 4（地震の起こるしくみ、地震と災害、マグニチュード） ----
   const voMp4 = {
-    id: 'volcano-mp4', areaId: 'volcano-miniprint', title: 'プリント 4: 地震のしくみと災害', minutes: 5, concepts: ['vo-plate', 'vo-scale'],
+    id: 'volcano-mp4', areaId: 'quake', free: true, title: 'プリント 4: 地震のしくみと災害', minutes: 5, concepts: ['vo-plate', 'vo-scale'],
     lessons: [
       {
         id: 'volcano-mp4-c1',
@@ -1748,6 +1748,400 @@
   };
 
   // ================================================================
+  // 領域 4: ドリル（中学理科の知識から自作した練習問題。docs/reports/content/volcano.md）
+  // ================================================================
+
+  // 軽石（小さな穴がたくさんあいた石）と、ほかの火山噴出物（解説用）
+  function pumiceScene() {
+    const items = [
+      { type: 'ellipse', x: 110, y: 120, rx: 80, ry: 58, fill: '#EEEAE0' },
+    ];
+    [[70, 96, 6], [96, 84, 4], [124, 92, 7], [152, 104, 5], [62, 128, 5], [90, 118, 7], [118, 126, 4], [146, 134, 6],
+      [80, 152, 4], [108, 150, 6], [134, 158, 4], [166, 124, 4], [100, 100, 3], [130, 112, 3]]
+      .forEach(([x, y, r]) => items.push({ type: 'circle', x, y, r, fill: '#A8A39A', stroke: 'none' }));
+    items.push(
+      { type: 'text', x: 110, y: 204, text: '軽石', size: 14, anchor: 'middle', bold: true },
+      { type: 'text', x: 110, y: 224, text: '気体がぬけた跡の穴', size: 12, anchor: 'middle' },
+      { type: 'text', x: 214, y: 60, text: '火山噴出物', size: 13, bold: true },
+      { type: 'text', x: 214, y: 88, text: '・溶岩', size: 13 },
+      { type: 'text', x: 214, y: 110, text: '・火山弾', size: 13 },
+      { type: 'text', x: 214, y: 132, text: '・軽石', size: 13 },
+      { type: 'text', x: 214, y: 154, text: '・火山れき', size: 13 },
+      { type: 'text', x: 214, y: 176, text: '・火山灰', size: 13 },
+      { type: 'text', x: 214, y: 198, text: '・火山ガス', size: 13 },
+    );
+    return scene(items);
+  }
+
+  // 無色鉱物と有色鉱物の割合の例（100 % の帯グラフ。帯の長さ 220 px が 100 %）
+  function mineralBars() {
+    const items = [{ type: 'text', x: 160, y: 30, text: '鉱物の割合の例', size: 14, anchor: 'middle' }];
+    [['花こう岩', 90, 70], ['玄武岩', 50, 140]].forEach(([name, white, y]) => {
+      const w = 220 * white / 100;
+      items.push(
+        { type: 'text', x: 76, y: y + 24, text: name, size: 13, anchor: 'end' },
+        { type: 'rect', x: 84, y, width: w, height: 36, fill: 'white' },
+        { type: 'rect', x: 84 + w, y, width: 220 - w, height: 36, fill: '#4A4540' },
+        { type: 'text', x: 84 + w / 2, y: y + 24, text: '無色 ' + white + '%', size: 12, anchor: 'middle' },
+      );
+    });
+    items.push(
+      { type: 'text', x: 296, y: 128, text: '黒い部分は有色鉱物', size: 12, anchor: 'end' },
+      { type: 'text', x: 160, y: 216, text: '無色鉱物が多いほど白っぽい', size: 13, anchor: 'middle' },
+    );
+    return items;
+  }
+
+  // 火成岩の 6 つの分け方の表（上の段 火山岩、下の段 深成岩。左ほど白っぽい）
+  // names: 岩石の名前を書く（解説用）。書かないときは、ますの中心にア〜カの選ぶ場所（上の段の左から ア・イ・ウ、下の段の左から エ・オ・カ）
+  const IGNEOUS_NAMES = [['流紋岩', '安山岩', '玄武岩'], ['花こう岩', '閃緑岩', 'はんれい岩']];
+  function igneousGrid(names) {
+    const items = [
+      { type: 'text', x: 200, y: 32, text: '白っぽい ← 色 → 黒っぽい', size: 13, anchor: 'middle' },
+      { type: 'text', x: 42, y: 92, text: '火山岩', size: 13, anchor: 'middle' },
+      { type: 'text', x: 42, y: 110, text: '（斑状）', size: 12, anchor: 'middle' },
+      { type: 'text', x: 42, y: 172, text: '深成岩', size: 13, anchor: 'middle' },
+      { type: 'text', x: 42, y: 190, text: '（等粒状）', size: 12, anchor: 'middle' },
+    ];
+    [0, 1].forEach(row => [0, 1, 2].forEach(col => {
+      const x = 86 + 76 * col, y = 56 + 80 * row;
+      items.push({ type: 'rect', x, y, width: 76, height: 80, fill: ['white', '#D9D4CA', '#A8A39A'][col] });
+      if (names) items.push({ type: 'text', x: x + 38, y: y + 45, text: IGNEOUS_NAMES[row][col], size: 13, anchor: 'middle' });
+      else items.push({ type: 'region', id: 'r' + (row * 3 + col + 1), x: x + 38, y: y + 40, r: 22, label: 'アイウエオカ'[row * 3 + col] });
+    }));
+    return scene(items);
+  }
+
+  // 初期微動継続時間と震源からの距離のグラフ（距離 0〜150 km → x 50〜290、時間 0〜20 秒 → y 200〜40）
+  function durationGraph() {
+    return scene([
+      { type: 'line', points: [[50, 200], [50, 30]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [300, 200]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [290, 40]], color: 'blue', width: 3 },
+      { type: 'line', points: [[146, 200], [146, 136], [50, 136]], color: 'gray', width: 1, dashed: true },
+      { type: 'line', points: [[242, 200], [242, 72], [50, 72]], color: 'gray', width: 1, dashed: true },
+      { type: 'circle', x: 146, y: 136, r: 5, fill: 'blue', stroke: 'none' },
+      { type: 'circle', x: 242, y: 72, r: 5, fill: 'blue', stroke: 'none' },
+      { type: 'text', x: 146, y: 216, text: '60', size: 12, anchor: 'middle' },
+      { type: 'text', x: 242, y: 216, text: '120', size: 12, anchor: 'middle' },
+      { type: 'text', x: 44, y: 140, text: '8', size: 12, anchor: 'end' },
+      { type: 'text', x: 44, y: 76, text: '16', size: 12, anchor: 'end' },
+      { type: 'text', x: 44, y: 214, text: '0', size: 12, anchor: 'end' },
+      { type: 'text', x: 56, y: 24, text: '初期微動継続時間〔秒〕', size: 12 },
+      { type: 'text', x: 306, y: 236, text: '震源からの距離〔km〕', size: 12, anchor: 'end' },
+    ]);
+  }
+
+  // 同じ時刻にゆれ始めた地点を結んだ線（同心円）。中心 (190, 120)、半径 30・60・90
+  function quakeCircles() {
+    return [30, 60, 90].map(r => ({ type: 'circle', x: 190, y: 120, r, fill: 'none', stroke: 'gray' }));
+  }
+
+  // 海岸段丘（階段のような地形）の断面
+  function terraceScene() {
+    return scene([
+      { type: 'rect', x: 0, y: 0, width: 320, height: 240, fill: 'sky', stroke: 'none' },
+      { type: 'rect', x: 240, y: 186, width: 80, height: 54, fill: 'water', stroke: 'none' },
+      { type: 'polygon', points: [[0, 60], [70, 60], [84, 100], [150, 100], [164, 140], [226, 140], [244, 190], [244, 240], [0, 240]], fill: 'sand' },
+      { type: 'text', x: 35, y: 52, text: '段丘面', size: 12, anchor: 'middle' },
+      { type: 'text', x: 117, y: 92, text: '段丘面', size: 12, anchor: 'middle' },
+      { type: 'text', x: 195, y: 132, text: '段丘面', size: 12, anchor: 'middle' },
+      { type: 'text', x: 282, y: 214, text: '海', size: 14, anchor: 'middle' },
+      { type: 'arrow', x1: 120, y1: 210, x2: 120, y2: 160, color: 'blue' },
+      { type: 'text', x: 128, y: 196, text: '隆起', size: 13, color: 'blue' },
+      { type: 'text', x: 316, y: 24, text: '上の段ほど古い時代の海岸', size: 12, anchor: 'end' },
+    ]);
+  }
+
+  // ---- ステージ volcano-dr1: ドリル 1（火山活動と火成岩: 火山噴出物・鉱物の割合・火成岩の分け方） ----
+  const voDr1 = {
+    id: 'volcano-dr1', areaId: 'volcano', free: true, title: 'ドリル 1: 火山活動と火成岩', minutes: 6, concepts: ['vo-magma', 'vo-mineral', 'vo-igneous'],
+    lessons: [
+      {
+        id: 'volcano-dr1-c1',
+        text: '火山噴出物には、溶岩・火山弾・**軽石**・火山れき・火山灰・火山ガスがあります。軽石は、マグマの中の気体がぬけた跡の小さな穴がたくさんあいた、軽い石です。',
+        figure: pumiceScene(),
+      },
+      {
+        id: 'volcano-dr1-c2',
+        text: 'セキエイ・チョウ石は**無色鉱物**、クロウンモ・カクセン石・キ石・カンラン石は**有色鉱物**です。火成岩は、無色鉱物の割合が大きいほど白っぽくなります。',
+        figure: scene(mineralBars()),
+      },
+      {
+        id: 'volcano-dr1-c3',
+        text: '火成岩は、つくりと色で 6 つに分けられます。斑状組織の火山岩は流紋岩・安山岩・玄武岩、等粒状組織の深成岩は花こう岩・閃緑岩・はんれい岩で、表の左ほど白っぽくなります。',
+        figure: igneousGrid(true),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-dr1-w1', concept: 'vo-magma',
+      prompt: '予想しよう。水に浮くほど軽い石が、火山のまわりで見つかることがあります。軽いのはなぜだと思う？',
+      options: ['中に水が入っているから', '小さな穴がたくさんあいているから', 'とけた金属でできているから'],
+      answer: 'b',
+      explanation: 'この石は軽石で、マグマの中の気体がぬけた跡の穴がたくさんあいているので軽いのです。火山噴出物のちがいを、このステージで確かめよう。',
+      hint: 'スポンジが軽いのはなぜかを考えてみよう。',
+    }),
+    problems: [
+      choice({
+        id: 'volcano-dr1-p1', concept: 'vo-magma',
+        prompt: 'ある火山の火山灰は、全体に白っぽい色をしていました。この火山のマグマのねばりけは、どうだと考えられる？',
+        options: ['弱い', '色とは関係がない', '強い'],
+        answer: 'c',
+        explanation: 'ねばりけの強いマグマには無色鉱物が多くふくまれ、火山灰や溶岩は白っぽくなります。ねばりけの弱いマグマからは、黒っぽい火山灰や溶岩が出ます。',
+        hint: '白っぽい溶岩を出す火山のねばりけを思い出そう。',
+      }),
+      fill({
+        id: 'volcano-dr1-t1', concept: 'vo-magma', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'マグマの中の気体がぬけた跡の穴がたくさんあいた、軽い火山噴出物を[b1]という。',
+        blanks: [word('b1', ['火山弾', '軽石', '溶岩'], '軽石')],
+        explanation: '**軽石**は、穴がたくさんあいているので軽く、水に浮くこともあります。白っぽいものが多く見られます。',
+        hint: '名前に「軽い」が入っているよ。',
+      }),
+      fill({
+        id: 'volcano-dr1-p2', concept: 'vo-mineral',
+        prompt: 'ある火成岩にふくまれる鉱物の割合は、セキエイ 30 %、チョウ石 55 %、クロウンモ 15 % でした。',
+        text: 'この火成岩の無色鉱物の割合は[b1]である。',
+        blanks: [number('b1', 85, 0, '%')],
+        explanation: '無色鉱物はセキエイとチョウ石なので、30 ＋ 55 ＝ 85 % です。クロウンモは有色鉱物です。無色鉱物がとても多いので、白っぽい岩石です。',
+        hint: 'セキエイとチョウ石は、無色鉱物と有色鉱物のどちらかな。',
+      }),
+      figureChoice({
+        id: 'volcano-dr1-p3', concept: 'vo-igneous',
+        prompt: '表は火成岩の分け方です。上の段は火山岩（斑状組織）、下の段は深成岩（等粒状組織）で、左ほど白っぽい。黒っぽく斑状組織の岩石の位置はどれ？ ア〜カから選ぼう。',
+        figure: igneousGrid(false),
+        answer: 'r3',
+        explanation: '斑状組織なので上の段（火山岩）、黒っぽいので右はしです。この岩石は玄武岩です。',
+        hint: 'まず段（つくり）を決めて、次に左右（色）を決めよう。',
+      }),
+      choice({
+        id: 'volcano-dr1-p4', concept: 'vo-mineral',
+        prompt: '火山灰を観察すると、無色鉱物がとても多くふくまれていました。この火山灰を出した火山の形として考えられるのはどれ？',
+        options: ['傾斜のゆるやかな形', '盛り上がったドーム状の形', '形とは関係がない'],
+        answer: 'b',
+        explanation: '無色鉱物が多いのは、ねばりけの強いマグマです。ねばりけの強いマグマは流れにくいので、盛り上がったドーム状の火山になります。',
+        hint: '無色鉱物が多い → 白っぽい → ねばりけは？ と順に考えよう。',
+      }),
+      choice({
+        id: 'volcano-dr1-p5', concept: 'vo-igneous',
+        prompt: '安山岩と閃緑岩は、ふくむ鉱物の種類が似ていますが、つくりがちがいます。ちがいが生まれる原因はどれ？',
+        options: ['マグマの冷え方', 'マグマの色', '岩石にふくまれる水の量'],
+        answer: 'a',
+        explanation: '安山岩は地表や地表近くで急に冷えたので斑状組織、閃緑岩は地下深くでゆっくり冷えたので等粒状組織になりました。',
+        hint: 'どこで、どのくらいの速さで冷えたかを考えよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'volcano-dr1-r1', concept: 'vo-magma',
+        prompt: '軽石を水に入れると、どうなることが多い？',
+        options: ['浮く', 'すぐにしずむ', 'とけてなくなる'],
+        answer: 'a',
+        explanation: '軽石は、気体がぬけた跡の穴がたくさんあいていて軽いので、水に浮くことが多いです。',
+        hint: '名前のとおりの性質だよ。',
+      }),
+      fill({
+        id: 'volcano-dr1-t2', concept: 'vo-magma', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '噴火でふき出された粒のうち、直径 2 mm 以上で、火山灰より大きいものを[b1]という。',
+        blanks: [word('b1', ['溶岩', '火山れき', '火山ガス'], '火山れき')],
+        explanation: '直径 2 mm 以下の細かい粒が火山灰、それより大きい粒が**火山れき**です。さらに大きく、空中で固まって特有の形になったものを火山弾といいます。',
+        hint: '小石のことを「れき」というよ。',
+      }),
+      fill({
+        id: 'volcano-dr1-r2', concept: 'vo-mineral',
+        prompt: 'ある火成岩にふくまれる鉱物の割合は、セキエイ 10 %、チョウ石 50 %、キ石 25 %、カンラン石 15 % でした。',
+        text: 'この火成岩の有色鉱物の割合は[b1]である。',
+        blanks: [number('b1', 40, 0, '%')],
+        explanation: '有色鉱物はキ石とカンラン石なので、25 ＋ 15 ＝ 40 % です。セキエイとチョウ石は無色鉱物です。',
+        hint: '有色鉱物だけを足そう。',
+      }),
+      choice({
+        id: 'volcano-dr1-r3', concept: 'vo-mineral',
+        prompt: '無色鉱物の割合が 90 % の火成岩 A と、50 % の火成岩 B があります。白っぽく見えるのはどちら？',
+        options: ['B', '同じくらい', 'A'],
+        answer: 'c',
+        explanation: '無色鉱物の割合が大きいほど、岩石は白っぽく見えます。90 % の A のほうが白っぽくなります。',
+        hint: '無色鉱物は、白や無色の鉱物だよ。',
+      }),
+      figureChoice({
+        id: 'volcano-dr1-r4', concept: 'vo-igneous',
+        prompt: '表は火成岩の分け方です。上の段は火山岩（斑状組織）、下の段は深成岩（等粒状組織）で、左ほど白っぽい。白っぽく等粒状組織の岩石の位置はどれ？ ア〜カから選ぼう。',
+        figure: igneousGrid(false),
+        answer: 'r4',
+        explanation: '等粒状組織なので下の段（深成岩）、白っぽいので左はしです。この岩石は花こう岩です。',
+        hint: 'まず段（つくり）を決めて、次に左右（色）を決めよう。',
+      }),
+      fill({
+        id: 'volcano-dr1-r5', concept: 'vo-igneous',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '閃緑岩は、火成岩のうち[b1]に分けられる。',
+        blanks: [word('b1', ['火山岩', '深成岩', '堆積岩'], '深成岩')],
+        explanation: '閃緑岩は、地下深くでマグマがゆっくり冷えてできた深成岩です。等粒状組織をしています。',
+        hint: '深成岩は 花こう岩・閃緑岩・はんれい岩 だよ。',
+      }),
+      choice({
+        id: 'volcano-dr1-r6', concept: 'vo-magma',
+        prompt: '火山ガスの大部分は水蒸気ですが、人の体に有害な気体もふくまれます。その例はどれ？',
+        options: ['酸素', 'ちっ素', '二酸化硫黄'],
+        answer: 'c',
+        explanation: '火山ガスには、二酸化硫黄や硫化水素など、人の体に有害な気体がふくまれることがあります。火山の近くでは、立ち入りの決まりを守ろう。',
+        hint: '空気に多くふくまれる気体は、有害ではないね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ volcano-dr2: ドリル 2（地震: 初期微動継続時間の計算・緊急地震速報・マグニチュード・隆起） ----
+  const voDr2 = {
+    id: 'volcano-dr2', areaId: 'quake', free: true, title: 'ドリル 2: 地震の伝わり方と大地の変化', minutes: 7, concepts: ['vo-wave', 'vo-scale', 'vo-plate'],
+    lessons: [
+      {
+        id: 'volcano-dr2-c1',
+        text: '初期微動継続時間は、震源からの距離に比例します。震源から 60 km で 8 秒なら、120 km では 16 秒です。P 波を感知して、S 波が届く前に強いゆれを知らせるしくみを**緊急地震速報**といいます。',
+        figure: durationGraph(),
+      },
+      {
+        id: 'volcano-dr2-c2',
+        text: '**マグニチュード**が 1 大きいと地震のエネルギーは約 32 倍、2 大きいと約 1000 倍になります。ゆれ始めた時刻が同じ地点を結ぶと、震央を中心とした円に近い形になります。',
+        figure: scene(quakeCircles().concat([
+          { type: 'line', points: [[182, 112], [198, 128]], color: 'ink', width: 3 },
+          { type: 'line', points: [[198, 112], [182, 128]], color: 'ink', width: 3 },
+          { type: 'text', x: 190, y: 107, text: '震央', size: 12, anchor: 'middle', bg: true },   // いちばん内側の円の中（× の上）。円の線に重ならない
+          { type: 'text', x: 10, y: 24, text: 'ゆれ始めた時刻が同じ地点を結んだ線', size: 12 },
+        ])),
+      },
+      {
+        id: 'volcano-dr2-c3',
+        text: 'プレートの動きで大地が押されると、土地が**隆起**して山地ができます。海岸に階段のような地形（**海岸段丘**）があるのは、土地が何度も隆起した証拠です。',
+        figure: terraceScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-dr2-w1', concept: 'vo-wave',
+      prompt: '予想しよう。スマートフォンに「強いゆれに注意」という知らせが、大きくゆれる前に届くことがあります。前もって分かるのはなぜだと思う？',
+      options: ['地震が起こる日が決まっているから', '速く伝わる P 波を先に感知しているから', '動物のようすを見ているから'],
+      answer: 'b',
+      explanation: '地震計が速い P 波を感知し、大きなゆれを起こす S 波が届く前に知らせています。これが緊急地震速報です。',
+      hint: 'P 波と S 波は、どちらが速かったかな。',
+    }),
+    problems: [
+      fill({
+        id: 'volcano-dr2-p1', concept: 'vo-wave',
+        prompt: '初期微動継続時間は、震源から 60 km の地点で 8 秒でした。初期微動継続時間が 12 秒の地点を考えます。',
+        text: 'その地点の震源からの距離は[b1]である。',
+        blanks: [number('b1', 90, 0, 'km')],
+        explanation: '初期微動継続時間は震源からの距離に比例します。12 秒は 8 秒の 1.5 倍なので、距離も 60 × 1.5 ＝ 90 km です。',
+        hint: '時間が何倍になったかを考えよう。',
+      }),
+      fill({
+        id: 'volcano-dr2-t1', concept: 'vo-wave', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'P 波を感知して、S 波が届く前に強いゆれが来ることを知らせるしくみを[b1]という。',
+        blanks: [word('b1', ['津波警報', '緊急地震速報', '天気予報'], '緊急地震速報')],
+        explanation: '**緊急地震速報**は、震源の近くで P 波を感知し、S 波が届く前に知らせるしくみです。震源に近い所では、速報が間に合わないこともあります。',
+        hint: '地震を、急いで知らせるしくみだよ。',
+      }),
+      fill({
+        id: 'volcano-dr2-p2', concept: 'vo-wave',
+        prompt: 'S 波の速さは 3.5 km/s です。震源から 105 km の地点に、地震発生の 10 秒後に緊急地震速報が届きました。',
+        text: '速報が届いてから S 波が届くまでの時間は[b1]である。',
+        blanks: [number('b1', 20, 0, '秒')],
+        explanation: 'S 波が 105 km 伝わるのに 105 ÷ 3.5 ＝ 30 秒かかります。速報は 10 秒後に届いたので、30 − 10 ＝ 20 秒の間、身を守る行動がとれます。',
+        hint: 'まず、S 波が届くのが地震発生の何秒後かを求めよう。',
+      }),
+      drag({
+        id: 'volcano-dr2-p3', concept: 'vo-wave',
+        prompt: '図の線は、ゆれ始めた時刻が同じ地点を結んだものです。黄色の丸を、震央と考えられる位置へ動かして置こう。',
+        // 同心円の中心 (190, 120) が震央。不正解例は外側の円の上 (100, 120)
+        figure: scene(quakeCircles().concat([
+          { type: 'text', x: 10, y: 24, text: 'ゆれ始めた時刻が同じ地点を結んだ線', size: 12 },
+          { type: 'circle', id: 'epi', x: 40, y: 210, r: 10, fill: 'yellow', label: '震央', labelPos: 'above' },
+        ])),
+        draggable: { itemId: 'epi', axis: 'xy' },
+        target: { x: 190, y: 120 },
+        samples: { correct: { x: 190, y: 120 }, wrong: { x: 100, y: 120 } },
+        explanation: 'ゆれは震源からまわりへほぼ同じ速さで伝わるので、同じ時刻にゆれ始めた地点は、震央を中心とした円のように並びます。円の中心が震央です。',
+        hint: 'いちばん早くゆれ始めたのは、円のどこかな。',
+      }),
+      choice({
+        id: 'volcano-dr2-p4', concept: 'vo-scale',
+        prompt: 'マグニチュードが 2 大きくなると、地震のエネルギーは約何倍になる？',
+        options: ['約 2 倍', '約 64 倍', '約 1000 倍'],
+        answer: 'c',
+        explanation: 'マグニチュードが 1 大きいとエネルギーは約 32 倍、2 大きいと 32 × 32 で約 1000 倍になります。',
+        hint: '1 大きいと約 32 倍。それを 2 回かけよう。',
+      }),
+      figureChoice({
+        id: 'volcano-dr2-p5', concept: 'vo-plate',
+        prompt: '図は、海岸に見られる階段のような地形の断面です。ア〜ウの平らな面は、どれも昔、波にけずられてできた海岸です。いちばん古い時代にできた面はどれ？ ア〜ウから選ぼう。',
+        // 隆起のたびに古い面が持ち上がるので、いちばん高いアが最も古い
+        figure: scene([
+          { type: 'polygon', points: [[0, 240], [0, 70], [70, 70], [85, 115], [150, 115], [165, 160], [225, 160], [240, 190], [240, 240]], fill: 'sand', stroke: 'line' },
+          { type: 'rect', x: 240, y: 190, width: 80, height: 50, fill: 'water', stroke: 'none' },
+          { type: 'line', points: [[240, 190], [320, 190]], color: 'blue', width: 2 },
+          { type: 'text', x: 280, y: 222, text: '海', size: 14, anchor: 'middle' },
+          { type: 'region', id: 'r1', x: 35, y: 70, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 118, y: 115, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 195, y: 160, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r1',
+        explanation: '土地が隆起するたびに、それまでの海岸が持ち上がり、その下の海面の近くに新しい平らな面ができます。だから、いちばん高いアがいちばん古い面です。この地形から、土地が何度も隆起したことが分かります。',
+        hint: '新しい平らな面は、いつも海面の近くにできるよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'volcano-dr2-r1', concept: 'vo-wave',
+        prompt: '初期微動継続時間は、震源から 50 km の地点で 6 秒でした。初期微動継続時間が 9 秒の地点を考えます。',
+        text: 'その地点の震源からの距離は[b1]である。',
+        blanks: [number('b1', 75, 0, 'km')],
+        explanation: '初期微動継続時間は震源からの距離に比例します。9 秒は 6 秒の 1.5 倍なので、距離も 50 × 1.5 ＝ 75 km です。',
+        hint: '時間が何倍になったかを考えよう。',
+      }),
+      fill({
+        id: 'volcano-dr2-r2', concept: 'vo-wave',
+        prompt: 'P 波の速さは 6 km/s です。震源から 90 km の地点に、P 波が 9 時 30 分 20 秒に届きました。',
+        text: '地震が発生した時刻は、9 時 30 分[b1]である。',
+        blanks: [number('b1', 5, 0, '秒')],
+        explanation: 'P 波が 90 km 伝わるのに 90 ÷ 6 ＝ 15 秒かかります。20 秒の 15 秒前なので、地震が発生したのは 9 時 30 分 5 秒です。',
+        hint: 'P 波が届くまでにかかった時間を、届いた時刻から引こう。',
+      }),
+      choice({
+        id: 'volcano-dr2-r3', concept: 'vo-scale',
+        prompt: 'マグニチュード 7 の地震のエネルギーは、マグニチュード 5 の地震の約何倍？',
+        options: ['約 2 倍', '約 1000 倍', '約 32 倍'],
+        answer: 'b',
+        explanation: 'マグニチュードの差は 2 なので、エネルギーは 32 × 32 で約 1000 倍です。',
+        hint: 'マグニチュードの差はいくつかな。',
+      }),
+      choice({
+        id: 'volcano-dr2-r4', concept: 'vo-scale',
+        prompt: '同じ地震で、震央から同じ距離にある A 地点と B 地点の震度がちがいました。理由として考えられるのはどれ？',
+        options: ['マグニチュードがちがったから', '地盤のかたさがちがうから', '震源が 2 つあったから'],
+        answer: 'b',
+        explanation: '震度は、震央からの距離のほかに、その場所の地盤のようすでも変わります。やわらかい地盤では、ゆれが大きくなりやすいです。',
+        hint: '1 つの地震のマグニチュードは 1 つだけだよ。',
+      }),
+      choice({
+        id: 'volcano-dr2-t2', concept: 'vo-plate', term: true,
+        prompt: '次の説明に合う言葉はどれ？「土地の隆起がくり返されてできた、海岸の階段のような地形」',
+        options: ['海岸段丘', '扇状地', '三角州'],
+        answer: 'a',
+        explanation: '**海岸段丘**は、波でけずられた平らな海岸が、隆起で持ち上がることをくり返してできた地形です。',
+        hint: '海岸にできる「段」だよ。',
+      }),
+      choice({
+        id: 'volcano-dr2-r5', concept: 'vo-plate',
+        prompt: '日本列島に山地が多い理由として正しいのはどれ？',
+        options: ['川が土砂を積もらせたから', 'プレートに押されて土地が隆起したから', '雨で土地がけずられたから'],
+        answer: 'b',
+        explanation: '日本付近では、海洋プレートが大陸プレートの下に沈みこみ、大陸側の大地が押されています。その力で土地が隆起し、山地ができました。',
+        hint: '大地を持ち上げる大きな力は、何から来ているかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1757,9 +2151,8 @@
     mascot: 'D',   // 担当の先生（もくもく先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'volcano', title: '火山', order: 1, stages: [volcano1, volcano2] },
-      { id: 'quake', title: '地震', order: 2, stages: [volcano3, volcano4] },
-      { id: 'volcano-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [voMp1, voMp2, voMp3, voMp4] },
+      { id: 'volcano', title: '火山', order: 1, stages: [volcano1, volcano2, voMp1, voMp2, voDr1] },
+      { id: 'quake', title: '地震', order: 2, stages: [volcano3, volcano4, voMp3, voMp4, voDr2] },
     ],
   };
 

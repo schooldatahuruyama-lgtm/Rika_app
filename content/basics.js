@@ -947,6 +947,203 @@
   ];
 
   // ================================================================
+  // 領域 3: ドリル（中学理科の知識から自作した練習問題。docs/reports/content/basics.md）
+  // ================================================================
+
+  // 観察カード（記録の書き方の例）。regions: ア 日付・天気・場所、イ スケッチ、ウ 結果、エ 考察 の選ぶ場所を付ける
+  function recordCard(regions) {
+    const items = [
+      { type: 'rect', x: 16, y: 14, width: 288, height: 212, fill: 'white' },
+      { type: 'text', x: 30, y: 40, text: '5月10日　晴れ　校庭の日なた', size: 13 },
+      { type: 'line', points: [[24, 52], [296, 52]], color: 'gray', width: 1 },
+      { type: 'ellipse', x: 70, y: 100, rx: 34, ry: 24, fill: 'none' },
+      { type: 'circle', x: 70, y: 100, r: 7, fill: 'none' },
+      { type: 'text', x: 120, y: 92, text: '【結果】花びらは黄色', size: 13 },
+      { type: 'text', x: 120, y: 112, text: 'で細長く、数が多い', size: 13 },
+      { type: 'line', points: [[24, 146], [296, 146]], color: 'gray', width: 1 },
+      { type: 'text', x: 30, y: 172, text: '【考察】日なたに多いのは、', size: 13 },
+      { type: 'text', x: 30, y: 194, text: '日光がよく当たるからだろう', size: 13 },
+    ];
+    if (regions) {
+      [[278, 34], [36, 132], [278, 100], [278, 184]].forEach(([x, y], i) => {
+        items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KANA[i] });
+      });
+    }
+    return scene(items);
+  }
+
+  // レンズを横から見たようす。kind は 'objective'（対物レンズ。上から下へのびる）| 'eyepiece'（接眼レンズ。下から上へのびる）
+  // heights は左から ア・イ・ウ のレンズの長さ
+  function lensesScene(kind, heights) {
+    const title = kind === 'objective' ? '対物レンズ（横から見たようす）' : '接眼レンズ（横から見たようす）';
+    const items = [{ type: 'text', x: 160, y: 26, text: title, size: 14, anchor: 'middle' }];
+    heights.forEach((h, i) => {
+      const cx = 70 + 90 * i;
+      if (kind === 'objective') {
+        items.push({ type: 'rect', x: cx - 20, y: 46, width: 40, height: 12, fill: 'gray' });
+        items.push({ type: 'rect', x: cx - 14, y: 58, width: 28, height: h, fill: 'white' });
+        items.push({ type: 'rect', x: cx - 8, y: 58 + h, width: 16, height: 8, fill: 'glass' });
+      } else {
+        items.push({ type: 'rect', x: cx - 16, y: 170 - h, width: 32, height: h, fill: 'white' });
+        items.push({ type: 'ellipse', x: cx, y: 170 - h, rx: 16, ry: 5, fill: 'glass' });
+        items.push({ type: 'rect', x: cx - 20, y: 170, width: 40, height: 10, fill: 'gray' });
+      }
+      items.push({ type: 'region', id: 'r' + (i + 1), x: cx, y: 210, r: 22, label: KANA[i] });
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ basics-dr1: ドリル 1（生物の観察と分類: 記録の書き方、顕微鏡のあつかい、分類の観点） ----
+  const basDr1 = {
+    id: 'basics-dr1', areaId: 'bas-observe', free: true, title: 'ドリル 1: 生物の観察と分類', minutes: 6,
+    concepts: ['bas-loupe', 'bas-scope', 'bas-microbe'],
+    lessons: [
+      {
+        id: 'basics-dr1-c1',
+        text: '観察の記録には、**日付**・天気・場所と、見たものの特徴を書きます。見て分かった事実（**結果**）と、結果から考えたこと（**考察**）は、分けて書きます。',
+        // 観察カードの例（日付・天気・場所、スケッチ、結果、考察）
+        figure: recordCard(false),
+      },
+      {
+        id: 'basics-dr1-c2',
+        text: '顕微鏡は**アーム**をにぎり、鏡台を支えて運び、直射日光の当たらない明るい所に置きます。レンズは接眼レンズを先につけます。接眼レンズは短いほど、対物レンズは長いほど倍率が高くなります。',
+        // 写真（bas-2-c1 の画像）: 顕微鏡。接眼レンズ (142, 22)、対物レンズ (115, 116)
+        figure: scene([
+          photo('bas-2-c1'),
+          pointer(84, 30, 142, 22), tag(48, 34, '接眼レンズ'),
+          pointer(76, 120, 115, 116), tag(42, 124, '対物レンズ'),
+        ]),
+      },
+      {
+        id: 'basics-dr1-c3',
+        text: '生物をなかま分けするときは、「体が緑色か」のような**観点**を先に決め、その観点で分けます。同じ生物でも、観点を変えると分け方が変わることがあります。',
+        // 「体が緑色か」で分けた例
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '観点「体が緑色か」で分ける', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 50, width: 130, height: 150, fill: 'lightgreen', rx: 8 },
+          { type: 'rect', x: 170, y: 50, width: 130, height: 150, fill: 'white', rx: 8 },
+          { type: 'text', x: 85, y: 76, text: '緑色', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 235, y: 76, text: '緑色でない', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 85, y: 120, text: 'ミカヅキモ', size: 13, anchor: 'middle' },
+          { type: 'text', x: 85, y: 156, text: 'ボルボックス', size: 13, anchor: 'middle' },
+          { type: 'text', x: 235, y: 120, text: 'ゾウリムシ', size: 13, anchor: 'middle' },
+          { type: 'text', x: 235, y: 156, text: 'ミジンコ', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'basics-dr1-w1', concept: 'bas-loupe',
+      prompt: '予想しよう。観察の記録に「花びらが 5 枚あった」と書きました。これは結果と考察のどちらに書くことだと思う？',
+      options: ['考察', '結果', 'どちらにも書かない'],
+      answer: 'b',
+      explanation: '「花びらが 5 枚あった」は、見て分かった事実なので結果です。結果と考察を分けて書く方法を、このステージで学ぼう。',
+      hint: '見たことそのものか、そこから考えたことかを区別しよう。',
+    }),
+    problems: [
+      choice({
+        id: 'basics-dr1-p1', concept: 'bas-loupe',
+        prompt: '日なたと日かげでタンポポの数を調べました。観察の記録の「考察」に書くのに合うものはどれ？',
+        options: ['日なたのほうがタンポポが多かった', '5月10日、晴れ', '日当たりが、数に関係していそうだ'],
+        answer: 'c',
+        explanation: '考察には、結果をもとに考えたことを書きます。「日なたのほうが多かった」は見て分かった事実なので結果、「日付・天気」は記録のはじめに書くことです。',
+        hint: '見たことではなく、そこから考えたことを選ぼう。',
+      }),
+      fill({
+        id: 'basics-dr1-t1', concept: 'bas-scope', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '顕微鏡にレンズをつけるときは、鏡筒にほこりが入らないように、先に[b1]をつける。',
+        blanks: [word('b1', ['接眼レンズ', '対物レンズ', '反射鏡'], '接眼レンズ')],
+        explanation: '先に上の**接眼レンズ**をつけて鏡筒にふたをしてから、対物レンズをつけます。こうすると、鏡筒の中にほこりが落ちにくくなります。',
+        hint: '鏡筒の上の口を、先にふさぐと考えよう。',
+      }),
+      figureChoice({
+        id: 'basics-dr1-p2', concept: 'bas-scope',
+        prompt: '図は 3 本の対物レンズを横から見たようすです（ア 短い、イ 長い、ウ 中くらい）。倍率がいちばん高いのはどれ？ ア〜ウから選ぼう。',
+        // 対物レンズは長いほど倍率が高い → 長いイ
+        figure: lensesScene('objective', [36, 84, 60]),
+        answer: 'r2',
+        explanation: '対物レンズは、長いものほど倍率が高くなります。高倍率の対物レンズは、ピントが合ったときプレパラートとの間がとても近くなります。',
+        hint: '対物レンズは「長いほど」倍率が高いよ。',
+      }),
+      fill({
+        id: 'basics-dr1-p3', concept: 'bas-scope',
+        prompt: '空らんに入る数を入れよう。顕微鏡の倍率は、接眼レンズの倍率 × 対物レンズの倍率。',
+        text: '接眼レンズが 15 倍のとき、顕微鏡の倍率を 300 倍にするには、対物レンズを[b1]にする。',
+        blanks: [number('b1', 20, 0, '倍')],
+        explanation: '300 ÷ 15 ＝ 20 なので、20 倍の対物レンズを使います。倍率を上げるときは、低倍率でピントを合わせてから、レボルバーを回して対物レンズをかえます。',
+        hint: '顕微鏡の倍率を、接眼レンズの倍率でわってみよう。',
+      }),
+      figureChoice({
+        id: 'basics-dr1-p4', concept: 'bas-loupe',
+        prompt: '図は観察カードです。ア 日付・天気・場所、イ スケッチ、ウ 結果、エ 考察。「なぜそうなったのか」を考えて書く欄はどれ？ ア〜エから選ぼう。',
+        figure: recordCard(true),
+        answer: 'r4',
+        explanation: '結果をもとに「なぜそうなったか」を考えて書くのが考察です。カードの下の欄の「日光がよく当たるからだろう」は、考えたことなので考察です。',
+        hint: '「〜だろう」と考えたことが書かれている欄をさがそう。',
+      }),
+      choice({
+        id: 'basics-dr1-p5', concept: 'bas-microbe',
+        prompt: 'ミカヅキモとボルボックス、ゾウリムシとミジンコの 2 つのなかまに分けました。どんな観点で分けた？',
+        options: ['体が緑色をしているかどうか', '水中にすんでいるかどうか', '名前がカタカナかどうか'],
+        answer: 'a',
+        explanation: 'ミカヅキモとボルボックスは緑色、ゾウリムシとミジンコは緑色ではありません。4 つとも水中にすむので、「水中にすむか」では分けられません。',
+        hint: '4 つの生物の、色のちがいを思い出そう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'basics-dr1-r1', concept: 'bas-loupe',
+        prompt: '観察の記録の「結果」に書くのに合うものはどれ？',
+        options: ['結果から考えたこと', '見て分かった事実', '次に調べてみたいこと'],
+        answer: 'b',
+        explanation: '結果には、見たり調べたりして分かった事実をそのまま書きます。考えたことは考察に分けて書きます。',
+        hint: '考えたことと、見たことを分けよう。',
+      }),
+      figureChoice({
+        id: 'basics-dr1-r2', concept: 'bas-loupe',
+        prompt: '図は観察カードです。ア 日付・天気・場所、イ スケッチ、ウ 結果、エ 考察。観察したものの形を、細い線でかく欄はどれ？ ア〜エから選ぼう。',
+        figure: recordCard(true),
+        answer: 'r2',
+        explanation: '形はスケッチの欄に、よくけずった鉛筆の細い線でかきます。色などは、結果の欄に言葉で書きそえます。',
+        hint: '絵がかかれている欄だよ。',
+      }),
+      figureChoice({
+        id: 'basics-dr1-r3', concept: 'bas-scope',
+        prompt: '図は 3 本の接眼レンズを横から見たようすです（ア 中くらい、イ 長い、ウ 短い）。倍率がいちばん高いのはどれ？ ア〜ウから選ぼう。',
+        // 接眼レンズは短いほど倍率が高い → 短いウ
+        figure: lensesScene('eyepiece', [60, 84, 36]),
+        answer: 'r3',
+        explanation: '接眼レンズは、短いものほど倍率が高くなります。対物レンズ（長いほど高倍率）と反対なので、気をつけよう。',
+        hint: '接眼レンズは「短いほど」倍率が高いよ。',
+      }),
+      fill({
+        id: 'basics-dr1-t2', concept: 'bas-scope', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '顕微鏡を運ぶときは、[b1]を片手でにぎり、もう片方の手で鏡台を支える。',
+        blanks: [word('b1', ['レボルバー', 'しぼり', 'アーム'], 'アーム')],
+        explanation: '顕微鏡は**アーム**を片手でにぎり、もう片方の手で鏡台（いちばん下の台）を支えて運びます。',
+        hint: '「うで」という意味の言葉だよ。',
+      }),
+      choice({
+        id: 'basics-dr1-r4', concept: 'bas-microbe',
+        prompt: '集めた生物をなかま分けするとき、はじめにすることはどれ？',
+        options: ['どんな観点で分けるかを決める', '生物の数を数える', '名前の五十音順に並べる'],
+        answer: 'a',
+        explanation: 'なかま分けでは、まず「体が緑色か」「あしがあるか」のような観点を決めます。観点が決まると、だれが分けても同じ結果になります。',
+        hint: '何に注目して分けるかを、先に決めよう。',
+      }),
+      choice({
+        id: 'basics-dr1-r5', concept: 'bas-microbe',
+        prompt: '同じ 4 つの生物を、ちがう観点でなかま分けしました。分け方はどうなる？',
+        options: ['いつも同じ分け方になる', '分け方が変わることがある', 'なかま分けができなくなる'],
+        answer: 'b',
+        explanation: '観点を変えると、同じ生物でもちがうなかまに入ることがあります。だから、どの観点で分けたかを記録しておくことが大切です。',
+        hint: '「色」で分けるときと「大きさ」で分けるときを比べてみよう。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -956,7 +1153,7 @@
     mascot: 'A',   // 担当の先生（js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'bas-observe', title: '観察の道具', order: 1, stages: [bas1, bas2, bas3] },
+      { id: 'bas-observe', title: '観察の道具', order: 1, stages: [bas1, bas2, bas3, basDr1] },
       { id: 'bas-experiment', title: '実験の基本', order: 2, stages: [bas4] },
     ],
   };
