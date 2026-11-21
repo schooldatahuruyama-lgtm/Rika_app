@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通指示 .ai-tasks/20261104-170000_単元教材の共通指示.md）。
 // 2 領域 × 2 ステージ（生態系・人間と環境）と、概念 4 つ（id は単元の接頭辞 na- を付けて全単元で一意にする）。
 // 領域 3「ミニプリント」（na-miniprint）: 先生のミニプリントの問題を書き直したステージ nature-mp1〜nature-mp3（.ai-tasks/20261106-130000_ミニプリント反映_共通.md）。
+// 領域 4「ドリル」（nature-drill）: 公開のテーマ名だけを目安に自作したステージ nature-dr1〜nature-dr2（.ai-tasks/20261121-152500_ドリル問題_共通.md）。
 // 図（scene）の item は js/figures.js の汎用の部品で描く（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
 // 解説文の **語句** は大切な言葉（用語）。term: true の問題は、その用語を聞く用語問題。
@@ -940,7 +941,7 @@
 
   // ---- ステージ nature-mp1: プリント 1 食物連鎖と生物のつり合い（食物連鎖／つりあい／生産者消費者分解者） ----
   const natureMp1 = {
-    id: 'nature-mp1', areaId: 'na-miniprint', title: 'プリント 1: 食物連鎖とつり合い', minutes: 5, concepts: ['na-foodchain', 'na-decomposer'],
+    id: 'nature-mp1', areaId: 'na-ecosystem', free: true, title: 'プリント 1: 食物連鎖とつり合い', minutes: 5, concepts: ['na-foodchain', 'na-decomposer'],
     lessons: [
       {
         id: 'nature-mp1-c1',
@@ -1103,7 +1104,7 @@
 
   // ---- ステージ nature-mp2: プリント 2 分解者と炭素の循環（炭素の循環／分会者　落ち葉の実験） ----
   const natureMp2 = {
-    id: 'nature-mp2', areaId: 'na-miniprint', title: 'プリント 2: 炭素の循環と分解者の実験', minutes: 5, concepts: ['na-decomposer'],
+    id: 'nature-mp2', areaId: 'na-ecosystem', free: true, title: 'プリント 2: 炭素の循環と分解者の実験', minutes: 5, concepts: ['na-decomposer'],
     lessons: [
       {
         id: 'nature-mp2-c1',
@@ -1224,7 +1225,7 @@
 
   // ---- ステージ nature-mp3: プリント 3 川の生物と科学技術（川の環境調査／発電について／科学技術の発展） ----
   const natureMp3 = {
-    id: 'nature-mp3', areaId: 'na-miniprint', title: 'プリント 3: 川の水生生物と発電・科学技術', minutes: 5, concepts: ['na-environment', 'na-energy'],
+    id: 'nature-mp3', areaId: 'na-human', free: true, title: 'プリント 3: 川の水生生物と発電・科学技術', minutes: 5, concepts: ['na-environment', 'na-energy'],
     lessons: [
       {
         id: 'nature-mp3-c1',
@@ -1400,6 +1401,362 @@
   };
 
   // ================================================================
+  // 領域 4: ドリル（.ai-tasks/20261121-152500_ドリル問題_共通.md）
+  // 公開されているテーマ名（自然環境と人間の活動）だけを目安にし、問題・解説・図はすべて中学理科の知識から自作した。
+  // 既存の問い（陸の食物連鎖・炭素の循環・川の水生生物・発電など）とは場面や角度を変えている。
+  // ================================================================
+
+  // ---- ドリル用の図の部品 ----
+
+  // 海の食物連鎖（下から 植物プランクトン → 動物プランクトン → 小魚 → 大きな魚）。箱は x 60〜260、
+  // 上から y 40・90・140・190（高さ 34。箱のまん中の y は 57・107・157・207）。矢印は「食べられる → 食べる」
+  const SEA_Y = [40, 90, 140, 190];
+  function seaChain() {
+    const names = ['大きな魚（マグロなど）', '小魚（イワシなど）', '動物プランクトン', '植物プランクトン'];
+    const fills = ['white', 'white', 'white', 'lightgreen'];
+    const items = [{ type: 'rect', x: 0, y: 0, width: 320, height: 240, fill: 'water', stroke: 'none' }];
+    names.forEach((name, i) => items.push({ type: 'rect', x: 60, y: SEA_Y[i], width: 200, height: 34, rx: 6, fill: fills[i], stroke: 'line', label: name }));
+    [0, 1, 2].forEach(i => items.push({ type: 'arrow', x1: 160, y1: SEA_Y[i + 1] - 1, x2: 160, y2: SEA_Y[i] + 36, width: 2 }));
+    return items;
+  }
+
+  // 顕微鏡で見たマツの葉の気孔（視野の中心 cx, cy、半径 r）。dirty の数だけ、気孔を黒くぬる（よごれた気孔）
+  const STOMA_POS = [[-20, -18], [8, -22], [24, 0], [-24, 8], [0, 6], [14, 24]];
+  function stomataView(cx, cy, r, dirty) {
+    const k = r / 44;
+    return [{ type: 'circle', x: cx, y: cy, r, fill: 'lightgreen', stroke: 'ink' }].concat(
+      STOMA_POS.map(([dx, dy], i) => ({ type: 'ellipse', x: cx + dx * k, y: cy + dy * k, rx: 8, ry: 5, fill: i < dirty ? 'shadow' : 'white', stroke: 'ink' })));
+  }
+
+  // 2 つの生物の数の変化のグラフ（えさの草食動物は実線、食べる肉食動物は点線。肉食動物は少しおくれて増減する）
+  function waveLine(base, amp, shift, color, dashed) {
+    const pts = [];
+    for (let x = 50; x <= 300; x += 10) pts.push([x, Math.round(base - amp * Math.sin(2 * Math.PI * (x - 50 - shift) / 160))]);
+    return { type: 'line', points: pts, color, width: 3, dashed: !!dashed };
+  }
+
+  // ---- ステージ nature-dr1: ドリル 1 生態系での生物のはたらき ----
+  const natureDr1 = {
+    id: 'nature-dr1', areaId: 'na-ecosystem', free: true, title: 'ドリル 1: 生態系での生物のはたらき', minutes: 6, concepts: ['na-foodchain', 'na-decomposer'],
+    lessons: [
+      {
+        id: 'nature-dr1-c1',
+        text: '海や湖では、光合成をする**植物プランクトン**が生産者です。それを**動物プランクトン**が食べ、小魚、大きな魚へと食物連鎖がつながります。陸でも水中でも、食物連鎖のはじまりは光合成をする生物です。',
+        // 海の食物連鎖（下ほど数量が多い）
+        figure: scene(seaChain()),
+      },
+      {
+        id: 'nature-dr1-c2',
+        text: '生産者・消費者・分解者は、どの生物も呼吸をして二酸化炭素を出します。分解者は、死がいやふんの有機物をとり入れているので、消費者の一部ともいえます。ミミズやダンゴムシは、落ち葉を細かくして分解を助けます。',
+        // どの生物も呼吸で二酸化炭素を出す
+        figure: scene([
+          { type: 'rect', x: 10, y: 16, width: 300, height: 38, rx: 12, fill: 'sky', stroke: 'line' },
+          { type: 'text', x: 160, y: 41, text: '大気中の二酸化炭素', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 10, y: 170, width: 90, height: 40, fill: 'lightgreen', label: '生産者' },
+          { type: 'rect', x: 115, y: 170, width: 90, height: 40, fill: 'pink', label: '消費者' },
+          { type: 'rect', x: 220, y: 170, width: 90, height: 40, fill: 'sand', label: '分解者' },
+          { type: 'arrow', x1: 30, y1: 56, x2: 30, y2: 166, color: 'green', width: 2 },
+          { type: 'text', x: 36, y: 120, text: '光合成', size: 12 },
+          ...[76, 160, 265].flatMap(x => [
+            { type: 'arrow', x1: x, y1: 168, x2: x, y2: 58, color: 'gray', width: 2 },
+            { type: 'text', x: x + 6, y: 100, text: '呼吸', size: 12 },
+          ]),
+          { type: 'text', x: 160, y: 232, text: 'どの生物も呼吸をしている', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'nature-dr1-c3',
+        text: '食べる生物と食べられる生物の数は、少しずれながら増えたり減ったりします。えさになる生物が増えると、少しおくれて、それを食べる生物が増えます。このようにして、数量のつり合いが保たれています。',
+        // 草食動物（実線）と肉食動物（点線）の数の変化
+        figure: scene([
+          { type: 'line', points: [[50, 40], [50, 200], [300, 200]], width: 2 },
+          { type: 'text', x: 44, y: 52, text: '数', size: 12, anchor: 'end' },
+          { type: 'text', x: 300, y: 224, text: '時間 →', size: 12, anchor: 'end' },
+          waveLine(110, 50, 0, 'green'),
+          waveLine(160, 22, 40, 'orange', true),
+          { type: 'line', points: [[60, 20], [80, 20]], color: 'green', width: 3 },
+          { type: 'text', x: 84, y: 25, text: '草食動物（えさ）', size: 12 },
+          { type: 'line', points: [[190, 20], [210, 20]], color: 'orange', width: 3, dashed: true },
+          { type: 'text', x: 214, y: 25, text: '肉食動物', size: 12 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'nature-dr1-w1', concept: 'na-foodchain',
+      prompt: '予想しよう。海の中で、光合成をして食物連鎖のはじまりになっている生物は何だと思う？',
+      options: ['植物プランクトン', '小魚', 'クジラ'],
+      answer: 'a',
+      explanation: '海では、水中をただよう小さな植物プランクトンが光合成をして、有機物をつくっています。これが海の食物連鎖のはじまり（生産者）です。',
+      hint: '食物連鎖のはじまりは、光合成をする生物だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'nature-dr1-p1', concept: 'na-foodchain',
+        prompt: '海の食物連鎖の図です（矢印は「食べられる → 食べる」）。ア 大きな魚、イ 小魚、ウ 動物プランクトン、エ 植物プランクトン のうち、生産者を直接食べるのはどれ？',
+        figure: scene(seaChain().concat([
+          { type: 'region', id: 'r1', x: 292, y: 57, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 292, y: 107, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 292, y: 157, r: 22, label: 'ウ' },
+          { type: 'region', id: 'r4', x: 292, y: 207, r: 22, label: 'エ' },
+        ])),
+        answer: 'r3',
+        explanation: '海の生産者は、光合成をする植物プランクトン（エ）です。それを直接食べるのは動物プランクトン（ウ）です。小魚や大きな魚は、ほかの動物を食べる消費者です。',
+        hint: 'まず生産者を見つけて、その矢印の先をたどろう。',
+      }),
+      fill({
+        id: 'nature-dr1-t1', concept: 'na-foodchain', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水中をただよって生活し、光合成をする小さな生物を[b1]という。',
+        blanks: [word('b1', ['植物プランクトン', '動物プランクトン', '細菌類'], '植物プランクトン')],
+        explanation: '水中をただよう小さな生物のうち、光合成をするものを**植物プランクトン**といいます。海や湖の食物連鎖のはじまりになる生産者です。',
+        hint: '光合成をするのは、植物のなかまだよ。',
+      }),
+      choice({
+        id: 'nature-dr1-p2', concept: 'na-decomposer',
+        prompt: '植物（生産者）のはたらきについて、正しいものはどれ？',
+        options: ['光合成も呼吸もしている', '光合成だけをし、呼吸はしない', '呼吸だけをしている'],
+        answer: 'a',
+        explanation: '植物は、光が当たると光合成をして有機物をつくります。また、動物と同じように、昼も夜も呼吸をして二酸化炭素を出しています。',
+        hint: '呼吸は、生きている生物すべてがしているよ。',
+      }),
+      choice({
+        id: 'nature-dr1-p3', concept: 'na-foodchain',
+        prompt: 'ある島のウサギとキツネの数を何年も調べると、ウサギが増えたあと、少しおくれてキツネが増えていました。おくれて増えるのはなぜ？',
+        options: ['えさが増えてから、子が育って増えるから', 'キツネはウサギを食べないから', 'キツネのほうが体が大きいから'],
+        answer: 'a',
+        explanation: 'えさのウサギが増えると、キツネはえさを得やすくなり、子を育てて数を増やします。子が育つまでに時間がかかるので、少しおくれて増えます。',
+        hint: '食べる生物は、えさが増えるとすぐに数が増えるかな。',
+      }),
+      fill({
+        id: 'nature-dr1-p4', concept: 'na-foodchain',
+        prompt: 'ある湖で、植物プランクトンが急に減りました。',
+        text: 'そのすぐあと、動物プランクトンの数は、えさが減るので[b1]と考えられる。',
+        blanks: [word('b1', ['減る', '増える', '変わらない'], '減る')],
+        explanation: '動物プランクトンは植物プランクトンを食べています。えさの植物プランクトンが減ると、動物プランクトンも減ると考えられます。',
+        hint: '動物プランクトンのえさは何かな。',
+      }),
+      choice({
+        id: 'nature-dr1-p5', concept: 'na-decomposer',
+        prompt: '分解者がつくった無機物（二酸化炭素や、窒素などをふくむ養分）を利用して、有機物をつくるのはどの生物？',
+        options: ['生産者（植物）', '草食動物', '肉食動物'],
+        answer: 'a',
+        explanation: '植物（生産者）は、分解者がつくった二酸化炭素や土の中の養分などの無機物を使って、光合成で有機物をつくります。こうして物質は生物の間をめぐります。',
+        hint: '無機物から有機物をつくることができる生物はどれかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'nature-dr1-r1', concept: 'na-foodchain',
+        prompt: '海の食物連鎖の図です（矢印は「食べられる → 食べる」）。ア 大きな魚、イ 小魚、ウ 動物プランクトン、エ 植物プランクトン のうち、ふつう数量がいちばん多いのはどれ？',
+        figure: scene(seaChain().concat([
+          { type: 'region', id: 'r1', x: 292, y: 57, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 292, y: 107, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 292, y: 157, r: 22, label: 'ウ' },
+          { type: 'region', id: 'r4', x: 292, y: 207, r: 22, label: 'エ' },
+        ])),
+        answer: 'r4',
+        explanation: '食物連鎖では、ふつう食べられる生物のほうが、食べる生物よりも数量が多くなります。だから、はじまりの植物プランクトン（エ）がいちばん多くなります。',
+        hint: '数量のピラミッドの、いちばん下の段にくる生物だよ。',
+      }),
+      choice({
+        id: 'nature-dr1-r2', concept: 'na-foodchain', term: true,
+        prompt: '次の説明に合う言葉はどれ？「水中をただよって生活する小さな生物のうち、ほかの生物を食べるもの」',
+        options: ['動物プランクトン', '植物プランクトン', '分解者'],
+        answer: 'a',
+        explanation: '水中をただよう小さな生物のうち、ほかの生物を食べるものを**動物プランクトン**といいます。植物プランクトンを食べ、小魚に食べられます。',
+        hint: '光合成をしないで、ほかの生物を食べるなかまだよ。',
+      }),
+      choice({
+        id: 'nature-dr1-r3', concept: 'na-decomposer',
+        prompt: '分解者は、消費者の一部ともいえます。そのように考えられるのはなぜ？',
+        options: ['死がいやふんの有機物をとり入れて生きているから', '光合成で有機物をつくるから', '生きた植物だけを食べるから'],
+        answer: 'a',
+        explanation: '分解者は、自分で有機物をつくれず、ほかの生物の死がいやふんにふくまれる有機物をとり入れています。有機物をほかの生物から得ている点で、消費者の一部ともいえます。',
+        hint: '分解者は、有機物を自分でつくるかな。',
+      }),
+      fill({
+        id: 'nature-dr1-r4', concept: 'na-decomposer',
+        prompt: 'カビやキノコは光合成をしません。生きるための養分を、何から得ている？',
+        text: 'カビやキノコは、落ち葉や死がいなどにふくまれる[b1]を分解して養分を得ている。',
+        blanks: [word('b1', ['有機物', '無機物', '砂や石'], '有機物')],
+        explanation: 'カビやキノコ（菌類）は、落ち葉や死がいなどの有機物を分解して養分を得ています。そのとき、有機物は二酸化炭素や水などの無機物になります。',
+        hint: '分解者は、何を分解していたかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ nature-dr2: ドリル 2 環境の調査と人間の活動 ----
+  const natureDr2 = {
+    id: 'nature-dr2', areaId: 'na-human', free: true, title: 'ドリル 2: 環境の調査と人間の活動', minutes: 6, concepts: ['na-environment', 'na-energy'],
+    lessons: [
+      {
+        id: 'nature-dr2-c1',
+        text: '空気のよごれは、マツの葉の**気孔**のよごれを顕微鏡で観察して調べられます。交通量の多い道路ぞいのマツほど、よごれた気孔の割合が大きくなる傾向があります。川の水のよごれは、水生生物などで調べます。',
+        // 山の中と道路ぞいのマツの葉の気孔（黒いものがよごれた気孔）
+        figure: scene(stomataView(85, 110, 60, 1).concat(stomataView(235, 110, 60, 5), [
+          { type: 'text', x: 160, y: 26, text: 'マツの葉の気孔（黒いものはよごれた気孔）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 85, y: 196, text: '山の中', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 235, y: 196, text: '道路ぞい', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 85, y: 218, text: 'よごれは少ない', size: 12, anchor: 'middle' },
+          { type: 'text', x: 235, y: 218, text: 'よごれが多い', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'nature-dr2-c2',
+        text: 'プラスチックは自然の中で分解されにくく、海に流れて細かくなった**マイクロプラスチック**が、魚などの体にとりこまれています。微生物のはたらきで分解される**生分解性プラスチック**の開発も進んでいます。',
+        // 海に流れたプラスチックが細かくなり、生物にとりこまれる
+        figure: scene([
+          { type: 'rect', x: 0, y: 80, width: 320, height: 160, fill: 'water', stroke: 'none' },
+          { type: 'text', x: 160, y: 30, text: '紫外線や波で、細かくくだける', size: 13, anchor: 'middle' },
+          { type: 'rect', x: 24, y: 60, width: 30, height: 56, rx: 8, fill: 'glass', stroke: 'ink' },
+          { type: 'arrow', x1: 64, y1: 96, x2: 128, y2: 126, width: 2 },
+          ...[[150, 130], [172, 142], [196, 126], [214, 150], [160, 158], [236, 134], [188, 166]]
+            .map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'orange', stroke: 'none' })),
+          { type: 'text', x: 194, y: 112, text: 'マイクロプラスチック', size: 12, anchor: 'middle' },
+          { type: 'ellipse', x: 250, y: 196, rx: 28, ry: 12, fill: 'yellow', stroke: 'ink' },
+          { type: 'polygon', points: [[278, 196], [296, 184], [296, 208]], fill: 'yellow' },
+          { type: 'text', x: 120, y: 226, text: '魚などの体にとりこまれる', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'nature-dr2-c3',
+        text: 'ごみを減らす（リデュース）、くり返し使う（リユース）、資源として再び利用する（リサイクル）の **3R** を進めて、資源を大切にする**循環型社会**をめざしています。',
+        // 3R の 3 つの取り組み
+        figure: scene([
+          { type: 'text', x: 160, y: 36, text: '3R', size: 20, anchor: 'middle', bold: true },
+          { type: 'rect', x: 8, y: 60, width: 96, height: 80, rx: 8, fill: 'lightgreen', stroke: 'line' },
+          { type: 'rect', x: 112, y: 60, width: 96, height: 80, rx: 8, fill: 'sky', stroke: 'line' },
+          { type: 'rect', x: 216, y: 60, width: 96, height: 80, rx: 8, fill: '#FFF3C4', stroke: 'line' },
+          ...[[56, 'リデュース', 'ごみを減らす'], [160, 'リユース', 'くり返し使う'], [264, 'リサイクル', '資源にもどす']]
+            .flatMap(([x, a, b]) => [
+              { type: 'text', x, y: 94, text: a, size: 14, anchor: 'middle', bold: true },
+              { type: 'text', x, y: 120, text: b, size: 12, anchor: 'middle' },
+            ]),
+          { type: 'arrow', x1: 160, y1: 150, x2: 160, y2: 180, width: 2 },
+          { type: 'text', x: 160, y: 210, text: '循環型社会', size: 16, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'nature-dr2-w1', concept: 'na-environment',
+      prompt: '予想しよう。交通量の多い道路ぞいのマツと、山の中のマツ。葉の気孔がよごれているのはどちらだと思う？',
+      options: ['道路ぞいのマツ', '山の中のマツ', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '自動車の排出ガスなどにふくまれる細かい粒が、気孔につまってよごれます。だから、交通量の多い道路ぞいのマツのほうが、よごれた気孔が多くなる傾向があります。',
+      hint: '空気をよごすものが多いのは、どちらの場所かな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'nature-dr2-p1', concept: 'na-environment',
+        prompt: '3 か所のマツの葉の気孔を顕微鏡で見ました（黒い気孔はよごれたもの）。ア〜ウのうち、空気がいちばんきれいだと考えられる場所はどれ？',
+        // ア よごれ 3 個、イ 1 個、ウ 5 個（どれも 6 個中）
+        figure: scene(stomataView(56, 100, 44, 3).concat(stomataView(160, 100, 44, 1), stomataView(264, 100, 44, 5), [
+          { type: 'text', x: 160, y: 30, text: '黒い気孔はよごれた気孔（どれも 6 個中）', size: 12, anchor: 'middle' },
+          { type: 'region', id: 'r1', x: 56, y: 186, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 186, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 264, y: 186, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r2',
+        explanation: 'よごれた気孔の割合が小さいほど、空気がきれいだと考えられます。イは 6 個中 1 個しかよごれていないので、いちばん空気がきれいな場所です。',
+        hint: '黒い気孔がいちばん少ないのはどれかな。',
+      }),
+      fill({
+        id: 'nature-dr2-t1', concept: 'na-environment', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '海に流れたプラスチックが紫外線や波で細かくなった、大きさ 5 mm 以下のものを[b1]という。',
+        blanks: [word('b1', ['マイクロプラスチック', '生分解性プラスチック', 'フロン'], 'マイクロプラスチック')],
+        explanation: '細かくなった 5 mm 以下のプラスチックを**マイクロプラスチック**といいます。自然の中ではほとんど分解されず、魚などの体にとりこまれることが問題になっています。',
+        hint: '「とても小さい」という意味の言葉が付くよ。',
+      }),
+      fill({
+        id: 'nature-dr2-p2', concept: 'na-environment',
+        prompt: 'あるマツの葉で気孔を 200 個数えると、そのうち 50 個がよごれていました。',
+        text: 'よごれた気孔の割合は[b1]である。',
+        blanks: [number('b1', 25, 0, '%')],
+        explanation: '割合は、よごれた気孔の数 ÷ 数えた気孔の数 × 100 で求めます。50 ÷ 200 × 100 ＝ 25% です。',
+        hint: '（よごれた数）÷（全体の数）× 100 で求めよう。',
+      }),
+      fill({
+        id: 'nature-dr2-p3', concept: 'na-environment',
+        prompt: '使い終わったペットボトルを回収して、服の繊維につくりかえます。',
+        text: 'この取り組みは、3R のうちの[b1]にあたる。',
+        blanks: [word('b1', ['リサイクル', 'リユース', 'リデュース'], 'リサイクル')],
+        explanation: '使い終わった物を資源にもどし、別の製品につくりかえるのは**リサイクル**です。同じ物をくり返し使うのがリユース、ごみそのものを減らすのがリデュースです。',
+        hint: 'ペットボトルを、そのまま使うのではなく、別の物にしているよ。',
+      }),
+      drag({
+        id: 'nature-dr2-p4', concept: 'na-environment',
+        prompt: '土の中の小動物を集める装置です。土を入れたろうとを、上から電球で照らしました。しばらくして小動物が集まる場所に、青い印を動かして置こう。',
+        // 正解は下の容器の中 (160, 206)。不正解例は電球に近い土の表面 (160, 66) で 140px はなれる
+        figure: scene([
+          { type: 'circle', x: 160, y: 22, r: 14, fill: 'yellow', stroke: 'orange' },
+          { type: 'text', x: 182, y: 27, text: '電球', size: 12 },
+          { type: 'polygon', points: [[90, 50], [230, 50], [170, 136], [170, 170], [150, 170], [150, 136]], fill: 'glass', stroke: 'line' },
+          { type: 'polygon', points: [[97, 56], [223, 56], [195, 96], [125, 96]], fill: 'sand', stroke: 'none' },
+          { type: 'line', points: [[125, 98], [195, 98]], color: 'gray', width: 2, dashed: true },
+          { type: 'beaker', x: 160, y: 230, width: 70, height: 50, level: 0.4 },
+          { type: 'circle', id: 'mark', x: 284, y: 200, r: 11, fill: 'blue', stroke: 'ink' },
+        ]),
+        draggable: { itemId: 'mark', axis: 'xy' },
+        target: { x: 160, y: 206 },
+        samples: { correct: { x: 160, y: 206 }, wrong: { x: 160, y: 66 } },
+        explanation: '土の中の小動物の多くは、光や熱、かわきをさけて、しめった暗い下のほうへ移動し、ろうとの下の容器に落ちます。こうして集めて、数や種類を調べます。',
+        hint: '土の中の小動物は、明るくかわいた所をさけるよ。',
+      }),
+      choice({
+        id: 'nature-dr2-p5', concept: 'na-energy',
+        prompt: '同じ明るさの LED 電球は、白熱電球より少ない電気エネルギーで光ります。なぜ？',
+        options: ['熱になるむだが少なく、光に変わる割合が大きいから', 'LED 電球は電気を使わないから', '白熱電球より暗く光っているから'],
+        answer: 'a',
+        explanation: '白熱電球は、電気エネルギーの多くが熱になってしまいます。LED 電球は、熱になるむだが少なく、光に変わる割合（変換効率）が大きいので、少ない電気で同じ明るさになります。',
+        hint: '白熱電球はさわると熱くなるね。そのエネルギーはむだになっているよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'nature-dr2-r1', concept: 'na-environment',
+        prompt: '次のうち、3R の「リユース」にあたる取り組みはどれ？',
+        options: ['びんを洗って、もう一度使う', 'アルミ缶をとかして新しい缶にする', 'ごみになる包装をことわる'],
+        answer: 'a',
+        explanation: '同じ物を、形を変えずにくり返し使うのが**リユース**です。アルミ缶をとかしてつくりかえるのはリサイクル、包装をことわってごみを減らすのはリデュースです。',
+        hint: '「くり返し使う」のはどれかな。',
+      }),
+      choice({
+        id: 'nature-dr2-r2', concept: 'na-environment', term: true,
+        prompt: '次の説明に合う言葉はどれ？「微生物のはたらきで、最後は水と二酸化炭素などに分解されるプラスチック」',
+        options: ['生分解性プラスチック', 'マイクロプラスチック', 'ポリエチレン'],
+        answer: 'a',
+        explanation: '微生物のはたらきで分解されるプラスチックを**生分解性プラスチック**といいます。自然の中に長く残りにくいので、ごみの問題を減らすと期待されています。',
+        hint: '「生物によって分解される」という意味の言葉だよ。',
+      }),
+      fill({
+        id: 'nature-dr2-r3', concept: 'na-environment',
+        prompt: 'あるマツの葉で気孔を 150 個数えると、そのうち 30 個がよごれていました。',
+        text: 'よごれた気孔の割合は[b1]である。',
+        blanks: [number('b1', 20, 0, '%')],
+        explanation: '30 ÷ 150 × 100 ＝ 20% です。割合が大きいほど、空気がよごれていると考えられます。',
+        hint: '（よごれた数）÷（全体の数）× 100 で求めよう。',
+      }),
+      choice({
+        id: 'nature-dr2-r4', concept: 'na-energy',
+        prompt: '化石燃料にたよりすぎず、地球温暖化を防ぐための取り組みとして、正しいものはどれ？',
+        options: ['太陽光や風力などの利用を増やす', '石炭を燃やす発電を増やす', '電気をなるべく多く使う'],
+        answer: 'a',
+        explanation: '太陽光や風力などの再生可能エネルギーは、発電のときに二酸化炭素をほとんど出しません。利用を増やすと、化石燃料を燃やす量を減らせます。',
+        hint: '二酸化炭素をあまり出さない発電方法を考えよう。',
+      }),
+      choice({
+        id: 'nature-dr2-r5', concept: 'na-energy',
+        prompt: '同じ明るさで光らせたとき、白熱電球はさわると熱く、LED 電球はあまり熱くなりません。このちがいから分かることは？',
+        options: ['LED 電球は熱に変わるエネルギーが少ない', 'LED 電球は電気を使っていない', '白熱電球のほうが光に変わる割合が大きい'],
+        answer: 'a',
+        explanation: '白熱電球は、電気エネルギーの多くが目的外の熱になります。LED 電球は熱になる分が少なく、そのぶん効率よく光に変えています。',
+        hint: '熱くなるのは、電気エネルギーが何に変わったからかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（確認問題つき）
   // ================================================================
   const concepts = [
@@ -1531,9 +1888,8 @@
     mascot: 'A',   // 担当の先生（まる先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'na-ecosystem', title: '生態系', order: 1, stages: [nature1, nature2] },
-      { id: 'na-human', title: '人間と環境', order: 2, stages: [nature3, nature4] },
-      { id: 'na-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [natureMp1, natureMp2, natureMp3] },
+      { id: 'na-ecosystem', title: '生態系', order: 1, stages: [nature1, nature2, natureMp1, natureMp2, natureDr1] },
+      { id: 'na-human', title: '人間と環境', order: 2, stages: [nature3, nature4, natureMp3, natureDr2] },
     ],
   };
 

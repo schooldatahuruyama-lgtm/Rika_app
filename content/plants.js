@@ -181,7 +181,7 @@
 
   // ---- ステージ plants-1: 花のつくり（花の各部分、受粉、果実と種子、ルーペ） ----
   const plants1 = {
-    id: 'plants-1', areaId: 'flower', title: '花のつくり', minutes: 5, concepts: ['pl-flower'],
+    id: 'plants-1', areaId: 'pl-flower', title: '花のつくり', minutes: 5, concepts: ['pl-flower'],
     lessons: [
       {
         id: 'plants-1-c1',
@@ -357,7 +357,7 @@
 
   // ---- ステージ plants-2: 被子植物と裸子植物（子房の有無、マツの花） ----
   const plants2 = {
-    id: 'plants-2', areaId: 'flower', title: '被子植物と裸子植物', minutes: 4, concepts: ['pl-seed'],
+    id: 'plants-2', areaId: 'pl-flower', title: '被子植物と裸子植物', minutes: 4, concepts: ['pl-seed'],
     lessons: [
       {
         id: 'plants-2-c1',
@@ -1103,7 +1103,7 @@
 
   // ---- ステージ plants-mp1: プリント 1（花のつくり、果実と種子） ----
   const plMp1 = {
-    id: 'plants-mp1', areaId: 'plants-miniprint', title: 'プリント 1: 花のつくりと果実', minutes: 5, concepts: ['pl-flower'],
+    id: 'plants-mp1', areaId: 'pl-flower', free: true, title: 'プリント 1: 花のつくりと果実', minutes: 5, concepts: ['pl-flower'],
     lessons: [
       {
         id: 'plants-mp1-c1',
@@ -1240,7 +1240,7 @@
 
   // ---- ステージ plants-mp2: プリント 2（マツの花、被子植物と裸子植物） ----
   const plMp2 = {
-    id: 'plants-mp2', areaId: 'plants-miniprint', title: 'プリント 2: マツの花と裸子植物', minutes: 5, concepts: ['pl-seed', 'pl-classify'],
+    id: 'plants-mp2', areaId: 'pl-flower', free: true, title: 'プリント 2: マツの花と裸子植物', minutes: 5, concepts: ['pl-seed', 'pl-classify'],
     lessons: [
       {
         id: 'plants-mp2-c1',
@@ -1374,7 +1374,7 @@
 
   // ---- ステージ plants-mp3: プリント 3（単子葉類と双子葉類の葉・茎・根） ----
   const plMp3 = {
-    id: 'plants-mp3', areaId: 'plants-miniprint', title: 'プリント 3: 単子葉類と双子葉類', minutes: 5, concepts: ['pl-monodi'],
+    id: 'plants-mp3', areaId: 'body', free: true, title: 'プリント 3: 単子葉類と双子葉類', minutes: 5, concepts: ['pl-monodi'],
     lessons: [
       {
         id: 'plants-mp3-c1',
@@ -1525,7 +1525,7 @@
 
   // ---- ステージ plants-mp4: プリント 4（シダ植物・コケ植物と植物の分類） ----
   const plMp4 = {
-    id: 'plants-mp4', areaId: 'plants-miniprint', title: 'プリント 4: シダ・コケと植物の分類', minutes: 5, concepts: ['pl-spore', 'pl-classify'],
+    id: 'plants-mp4', areaId: 'body', free: true, title: 'プリント 4: シダ・コケと植物の分類', minutes: 5, concepts: ['pl-spore', 'pl-classify'],
     lessons: [
       {
         id: 'plants-mp4-c1',
@@ -1685,6 +1685,405 @@
   ]);
 
   // ================================================================
+  // 領域 4: ドリル（中学理科の知識から自作した練習問題。docs/reports/content/plants.md）
+  // ================================================================
+
+  // 数を答える空らん（content/volcano.js と同じ）
+  function number(id, answer, tolerance, unit) { return { id, kind: 'number', answer, tolerance, unit }; }
+
+  // エンドウのさや（果実）を開いたようす。中に豆（種子）が 6 個
+  function peaPod() {
+    const items = [
+      { type: 'text', x: 160, y: 30, text: 'エンドウのさやを開いたようす', size: 14, anchor: 'middle' },
+      { type: 'ellipse', x: 160, y: 120, rx: 120, ry: 36, fill: 'lightgreen' },
+      { type: 'line', points: [[44, 120], [276, 120]], color: 'green', width: 2 },
+    ];
+    [80, 112, 144, 176, 208, 240].forEach(x => items.push({ type: 'circle', x, y: 120, r: 13, fill: 'green' }));
+    items.push(
+      leader(250, 96, 270, 66), { type: 'text', x: 274, y: 62, text: 'さや（果実）', size: 13, anchor: 'end' },
+      leader(144, 134, 150, 186), { type: 'text', x: 150, y: 204, text: '豆（種子）', size: 13, anchor: 'middle' },
+      { type: 'text', x: 160, y: 228, text: 'さやは子房、豆は胚珠が育ったもの', size: 13, anchor: 'middle' },
+    );
+    return scene(items);
+  }
+
+  // 植物の特徴の表（子葉・葉脈・根）。rows は [植物の名前, 子葉, 葉脈, 根] の 4 行。左にア〜エの選ぶ場所
+  function plantTable(rows) {
+    const items = [
+      { type: 'rect', x: 44, y: 16, width: 272, height: 24, fill: 'glass' },
+      { type: 'text', x: 82, y: 33, text: '植物', size: 12, anchor: 'middle' },
+      { type: 'text', x: 142, y: 33, text: '子葉', size: 12, anchor: 'middle' },
+      { type: 'text', x: 199, y: 33, text: '葉脈', size: 12, anchor: 'middle' },
+      { type: 'text', x: 275, y: 33, text: '根', size: 12, anchor: 'middle' },
+    ];
+    rows.forEach((row, i) => {
+      const y = 40 + 46 * i;
+      items.push({ type: 'rect', x: 44, y, width: 272, height: 46, fill: 'white' });
+      [82, 142, 199, 275].forEach((x, k) => items.push({ type: 'text', x, y: y + 28, text: row[k], size: 12, anchor: 'middle' }));
+      items.push({ type: 'region', id: 'r' + (i + 1), x: 22, y: y + 23, r: 22, label: 'アイウエ'[i] });
+    });
+    [120, 164, 234].forEach(x => items.push({ type: 'line', points: [[x, 16], [x, 224]], color: 'line', width: 1 }));
+    return scene(items);
+  }
+
+  // 根の先の根毛（1 本の根の先近くに、細い毛がたくさん）
+  function rootHairScene() {
+    const items = [
+      { type: 'rect', x: 0, y: 0, width: 320, height: 240, fill: 'sand', stroke: 'none' },
+      { type: 'line', points: [[160, 20], [160, 210]], color: 'brown', width: 8 },
+    ];
+    for (let y = 110; y <= 186; y += 8) {
+      items.push({ type: 'line', points: [[156, y], [130, y - 8]], color: 'white', width: 2 });
+      items.push({ type: 'line', points: [[164, y], [190, y - 8]], color: 'white', width: 2 });
+    }
+    items.push(
+      { type: 'line', points: [[194, 140], [240, 120]], color: 'ink', width: 2 },
+      { type: 'text', x: 244, y: 118, text: '根毛', size: 14, bg: true },
+      { type: 'text', x: 16, y: 230, text: '土にふれる面積が広くなる', size: 13, bg: true },
+    );
+    return scene(items);
+  }
+
+  // シダ植物の葉の裏（茶色の胞子のうの集まりが並ぶ）
+  function fernUnderside() {
+    const items = [
+      { type: 'line', points: [[160, 226], [160, 30]], color: 'green', width: 4 },
+    ];
+    [60, 100, 140, 180].forEach((y, i) => {
+      const w = 110 - i * 14;
+      [-1, 1].forEach(s => {
+        items.push({ type: 'polygon', points: [[160, y + 12], [160 + s * w, y], [160 + s * (w - 8), y + 18], [160, y + 26]], fill: 'lightgreen', stroke: 'green' });
+        [0.35, 0.6, 0.85].forEach(t => items.push({ type: 'circle', x: 160 + s * w * t, y: y + 11, r: 4, fill: 'brown', stroke: 'none' }));
+      });
+    });
+    items.push(
+      { type: 'line', points: [[242, 76], [280, 40]], color: 'ink', width: 2 },
+      { type: 'text', x: 300, y: 34, text: '胞子のう', size: 13, anchor: 'end', bg: true },
+      { type: 'text', x: 20, y: 30, text: '葉の裏', size: 14, bg: true },
+    );
+    return scene(items);
+  }
+
+  // コケ植物（ゼニゴケのような体）。体の表面から水を取り入れ、仮根で地面に固定する
+  function mossScene() {
+    const items = [
+      { type: 'rect', x: 0, y: 150, width: 320, height: 90, fill: 'sand', stroke: 'none' },
+      { type: 'line', points: [[0, 150], [320, 150]], color: 'brown', width: 3 },
+      { type: 'polygon', points: [[70, 148], [110, 110], [160, 100], [210, 110], [250, 148]], fill: 'lightgreen', stroke: 'green' },
+    ];
+    [100, 130, 160, 190, 220].forEach((x, i) => items.push({ type: 'line', points: [[x, 150], [x + (i % 2 ? 4 : -4), 186]], color: 'line', width: 1 }));
+    [110, 160, 210].forEach(x => items.push({ type: 'arrow', x1: x, y1: 56, x2: x, y2: 92, color: 'blue', width: 2 }));
+    items.push(
+      { type: 'text', x: 160, y: 44, text: '水を体の表面全体から取り入れる', size: 13, anchor: 'middle' },
+      { type: 'line', points: [[224, 180], [262, 204]], color: 'ink', width: 2 },
+      { type: 'text', x: 266, y: 212, text: '仮根', size: 14 },
+    );
+    return scene(items);
+  }
+
+  // 植物の分け方の流れ（種子をつくらない植物まで）
+  function plantFlow() {
+    return scene([
+      { type: 'rect', x: 120, y: 14, width: 80, height: 30, fill: 'glass', label: '植物' },
+      { type: 'line', points: [[160, 44], [160, 60], [70, 60], [70, 76]], width: 2 },
+      { type: 'line', points: [[160, 60], [230, 60], [230, 76]], width: 2 },
+      { type: 'rect', x: 20, y: 76, width: 100, height: 30, fill: 'white', label: '種子植物' },
+      { type: 'rect', x: 160, y: 76, width: 140, height: 30, fill: 'white', label: '種子をつくらない' },
+      { type: 'text', x: 70, y: 128, text: '種子でふえる', size: 12, anchor: 'middle' },
+      { type: 'line', points: [[230, 106], [230, 140], [190, 140], [190, 156]], width: 2 },
+      { type: 'line', points: [[230, 140], [270, 140], [270, 156]], width: 2 },
+      { type: 'rect', x: 146, y: 156, width: 88, height: 30, fill: 'white', label: 'シダ植物' },
+      { type: 'rect', x: 238, y: 156, width: 76, height: 30, fill: 'white', label: 'コケ植物' },
+      { type: 'text', x: 190, y: 206, text: '根・茎・葉', size: 12, anchor: 'middle' },
+      { type: 'text', x: 190, y: 222, text: 'の区別あり', size: 12, anchor: 'middle' },
+      { type: 'text', x: 276, y: 206, text: '区別なし', size: 12, anchor: 'middle' },
+    ]);
+  }
+
+  // drag 用: 植物の名前のカードを、種子植物・シダ植物・コケ植物の箱へ入れる
+  // 箱の左上: 種子植物 (8, 120)、シダ植物 (115, 120)、コケ植物 (222, 120)（幅 90・高さ 100）。カード（80×32）を箱のまん中に置くと、
+  // カードの左上は 種子植物 (13, 154)、シダ植物 (120, 154)、コケ植物 (227, 154)
+  function plantBoxesScene(name) {
+    const items = [{ type: 'text', x: 160, y: 24, text: '植物の名前のカードを、なかまの箱へ', size: 13, anchor: 'middle' }];
+    [['種子植物', 8], ['シダ植物', 115], ['コケ植物', 222]].forEach(([t, x]) => {
+      items.push({ type: 'rect', x, y: 120, width: 90, height: 100, fill: 'white', rx: 6 });
+      items.push({ type: 'text', x: x + 45, y: 142, text: t, size: 13, anchor: 'middle', bold: true });
+    });
+    items.push({ type: 'rect', id: 'card', x: 120, y: 44, width: 80, height: 32, fill: 'yellow', rx: 4, label: name });
+    return scene(items);
+  }
+
+  // ---- ステージ plants-dr1: ドリル 1（植物の体の共通点と相違点 前半: 花・受粉と果実・葉脈と根） ----
+  const plDr1 = {
+    id: 'plants-dr1', areaId: 'pl-flower', free: true, title: 'ドリル 1: 花と果実・葉脈と根', minutes: 6, concepts: ['pl-flower', 'pl-monodi'],
+    lessons: [
+      {
+        id: 'plants-dr1-c1',
+        text: '受粉すると、子房は果実に、子房の中の**胚珠**は種子になります。1 つの胚珠から 1 つの種子ができるので、果実の中の種子の数から、胚珠がいくつ育ったかが分かります。花弁やおしべは、やがてかれ落ちます。',
+        figure: peaPod(),
+      },
+      {
+        id: 'plants-dr1-c2',
+        text: '葉にある**葉脈**は、水や養分などの通り道です。双子葉類の葉脈は網状脈、根は主根と側根です。単子葉類の葉脈は平行脈、根はひげ根です。',
+        figure: mpPartsScene('葉脈と根', ['netLeaf', 'parLeaf', 'tapRoot', 'fibrousRoot'], true),
+      },
+      {
+        id: 'plants-dr1-c3',
+        text: '根の先近くには、細い**根毛**がたくさんあります。根毛があると根が土にふれる面積が広くなり、水や水にとけた養分を効率よく吸収できます。根は、体を支えるはたらきもしています。',
+        figure: rootHairScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-dr1-w1', concept: 'pl-flower',
+      prompt: '予想しよう。エンドウのさやを開くと、豆（種子）が 6 個入っていました。花のとき、子房の中の胚珠はいくつあったと思う？',
+      options: ['1 個だけ', '少なくとも 6 個', '胚珠はなかった'],
+      answer: 'b',
+      explanation: '1 つの胚珠から 1 つの種子ができるので、胚珠は少なくとも 6 個ありました。種子にならなかった胚珠があれば、もっと多かったことになります。',
+      hint: '種子は、子房の中の何が育ったものかな。',
+    }),
+    problems: [
+      choice({
+        id: 'plants-dr1-p1', concept: 'pl-flower',
+        prompt: '受粉したあと、果実にならず、やがてかれ落ちることが多い部分はどれ？',
+        options: ['子房', '花弁', '胚珠'],
+        answer: 'b',
+        explanation: '受粉のあと、子房は果実に、胚珠は種子に育ちます。花弁やおしべは役目を終えて、やがてかれ落ちます。',
+        hint: '子房と胚珠は、それぞれ何に育つかな。',
+      }),
+      fill({
+        id: 'plants-dr1-t1', concept: 'pl-monodi', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '根の表面にたくさんあり、土にふれる面積を広くして、水を吸収しやすくしている細い毛のようなものを[b1]という。',
+        blanks: [word('b1', ['側根', '根毛', 'ひげ根'], '根毛')],
+        explanation: '**根毛**は根の先近くにある細い毛のようなものです。数がとても多いので、根が土にふれる面積が広くなり、水を吸収しやすくなります。',
+        hint: '根にはえている「毛」だよ。',
+      }),
+      figureChoice({
+        id: 'plants-dr1-p2', concept: 'pl-monodi',
+        prompt: '表は 4 つの植物の子葉・葉脈・根を調べたものです。1 つの行に、まちがいが 1 か所あります。まちがいがある行はどれ？ ア〜エから選ぼう。',
+        // ウ ツユクサは単子葉類なので、葉脈は平行脈が正しい
+        figure: plantTable([
+          ['アブラナ', '2枚', '網状脈', '主根と側根'],
+          ['ユリ', '1枚', '平行脈', 'ひげ根'],
+          ['ツユクサ', '1枚', '網状脈', 'ひげ根'],
+          ['ホウセンカ', '2枚', '網状脈', '主根と側根'],
+        ]),
+        answer: 'r3',
+        explanation: 'ツユクサは子葉が 1 枚の単子葉類なので、葉脈は平行脈です。表では網状脈になっているので、ウがまちがいです。',
+        hint: '子葉 1 枚のなかまは、葉脈と根がどんな形だったかな。',
+      }),
+      fill({
+        id: 'plants-dr1-p3', concept: 'pl-flower',
+        prompt: 'エンドウの花の子房の中に、胚珠が 7 個ありました。受粉して、胚珠がすべて育ったとします。',
+        text: 'さやの中にできる種子は[b1]である。',
+        blanks: [number('b1', 7, 0, '個')],
+        explanation: '1 つの胚珠から 1 つの種子ができます。7 個の胚珠がすべて育つと、種子は 7 個になります。さや（果実）は子房が育ったものです。',
+        hint: '胚珠 1 個 → 種子 1 個だよ。',
+      }),
+      choice({
+        id: 'plants-dr1-p4', concept: 'pl-flower',
+        prompt: 'Aさんのまとめ「受粉すると、胚珠が果実に、子房が種子になる」。まちがいを直す方法として正しいのはどれ？',
+        options: ['「受粉」を「発芽」に変える', '「果実」を「花粉」に変える', '「胚珠」と「子房」を入れかえる'],
+        answer: 'c',
+        explanation: '正しくは「子房が果実に、胚珠が種子になる」です。外側のふくらみ（子房）が果実、中の小さな粒（胚珠）が種子になります。',
+        hint: '外側のふくらみと、中の小さな粒は、それぞれ何になるかな。',
+      }),
+      choice({
+        id: 'plants-dr1-p5', concept: 'pl-monodi',
+        prompt: 'ダイコンの種子を発芽させると、根に白い綿毛のようなものがびっしり見えました。これを強くこすって取ってしまうと、水の吸収はどうなる？',
+        options: ['吸収しにくくなる', '吸収しやすくなる', '変わらない'],
+        answer: 'a',
+        explanation: '白い綿毛のようなものは根毛です。根毛がなくなると、根が土や水にふれる面積がせまくなるので、水を吸収しにくくなります。',
+        hint: '根毛は、ふれる面積を広くするはたらきがあったね。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'plants-dr1-r1', concept: 'pl-flower',
+        prompt: '受粉したあと、果実の中の種子の数と同じになるのはどれ？',
+        options: ['花弁の数', '種子になった胚珠の数', 'おしべの数'],
+        answer: 'b',
+        explanation: '種子は胚珠が育ったものなので、種子の数は種子になった胚珠の数と同じです。',
+        hint: '種子のもとは何だったかな。',
+      }),
+      fill({
+        id: 'plants-dr1-r2', concept: 'pl-flower',
+        prompt: 'ある花の子房の中に胚珠が 6 個あり、受粉後、さやの中に種子が 5 個できました。',
+        text: '種子にならなかった胚珠は[b1]である。',
+        blanks: [number('b1', 1, 0, '個')],
+        explanation: '1 つの胚珠から 1 つの種子ができます。胚珠 6 個のうち 5 個が種子になったので、種子にならなかった胚珠は 6 − 5 ＝ 1 個です。',
+        hint: '胚珠の数から、種子の数を引こう。',
+      }),
+      choice({
+        id: 'plants-dr1-r3', concept: 'pl-monodi',
+        prompt: '葉にある葉脈のはたらきとして正しいのはどれ？',
+        options: ['花粉をつくる', '体を地面に固定する', '水や養分などの通り道になる'],
+        answer: 'c',
+        explanation: '葉脈は、根から吸い上げた水や、葉でつくられた養分などの通り道です。',
+        hint: '葉の中にのびる「すじ」は、何かを運ぶ道だよ。',
+      }),
+      figureChoice({
+        id: 'plants-dr1-r4', concept: 'pl-monodi',
+        prompt: '表は 4 つの植物の子葉・葉脈・根を調べたものです。1 つの行に、まちがいが 1 か所あります。まちがいがある行はどれ？ ア〜エから選ぼう。',
+        // イ アサガオは双子葉類なので、根は主根と側根が正しい
+        figure: plantTable([
+          ['イネ', '1枚', '平行脈', 'ひげ根'],
+          ['アサガオ', '2枚', '網状脈', 'ひげ根'],
+          ['トウモロコシ', '1枚', '平行脈', 'ひげ根'],
+          ['タンポポ', '2枚', '網状脈', '主根と側根'],
+        ]),
+        answer: 'r2',
+        explanation: 'アサガオは子葉が 2 枚の双子葉類なので、根は主根と側根です。表ではひげ根になっているので、イがまちがいです。',
+        hint: '子葉 2 枚のなかまの根は、どんな形だったかな。',
+      }),
+      fill({
+        id: 'plants-dr1-t2', concept: 'pl-flower', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '受粉したあと、子房が育ってできるものを[b1]という。',
+        blanks: [word('b1', ['果実', '種子', '花粉'], '果実')],
+        explanation: '子房が育ってできるものを**果実**といいます。果実の中の種子は、胚珠が育ったものです。',
+        hint: 'エンドウのさやや、サクランボの食べる部分だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-dr2: ドリル 2（植物の体の共通点と相違点 後半: 種子をつくらない植物・胞子・分類） ----
+  const plDr2 = {
+    id: 'plants-dr2', areaId: 'body', free: true, title: 'ドリル 2: 胞子でふえる植物と分類', minutes: 6, concepts: ['pl-spore', 'pl-classify'],
+    lessons: [
+      {
+        id: 'plants-dr2-c1',
+        text: 'シダ植物は、葉の裏の**胞子のう**から**胞子**を出してふえます。胞子のうは、かわくと割れて胞子を飛ばします。シダ植物は根・茎・葉の区別があり、日かげのしめった所に多く見られます。',
+        figure: fernUnderside(),
+      },
+      {
+        id: 'plants-dr2-c2',
+        text: 'コケ植物は根・茎・葉の区別がなく、水を体の表面全体から取り入れます。根のように見える**仮根**は、おもに体を地面などに固定するはたらきをしています。',
+        figure: mossScene(),
+      },
+      {
+        id: 'plants-dr2-c3',
+        text: '植物は、種子をつくるかどうかで分け、種子をつくらない植物は、根・茎・葉の区別があるかどうかで**シダ植物**と**コケ植物**に分けられます。このように観点を順に使って分類します。',
+        figure: plantFlow(),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-dr2-w1', concept: 'pl-spore',
+      prompt: '予想しよう。イヌワラビの葉の裏に、茶色の小さな粒がたくさん並んでいました。これは何だと思う？',
+      options: ['病気でできたしみ', '花のつぼみ', '胞子が入った袋'],
+      answer: 'c',
+      explanation: '茶色の粒は胞子のうで、中に胞子が入っています。シダ植物は花をさかせず、胞子でなかまをふやします。',
+      hint: 'シダ植物は、種子ではなく何でふえるかな。',
+    }),
+    problems: [
+      choice({
+        id: 'plants-dr2-p1', concept: 'pl-spore',
+        prompt: 'シダ植物の胞子のうは、どんなときに割れて、胞子を飛ばす？',
+        options: ['かわいたとき', '雨にぬれたとき', '夜になったとき'],
+        answer: 'a',
+        explanation: '胞子のうは、かわくと割れて、中の胞子を飛ばします。胞子のうを紙の上でかわかしておくと、粉のような胞子が出てくるのが見られます。',
+        hint: '胞子は風で遠くへ運ばれるよ。運ばれやすいのはどんなときかな。',
+      }),
+      fill({
+        id: 'plants-dr2-t1', concept: 'pl-spore', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'コケ植物の、根のように見えるが、おもに体を地面などに固定するはたらきをする部分を[b1]という。',
+        blanks: [word('b1', ['仮根', '根毛', '地下茎'], '仮根')],
+        explanation: 'コケ植物の**仮根**は、根のように見えますが、水を吸収するはたらきはほとんどなく、おもに体を固定しています。水は体の表面全体から取り入れます。',
+        hint: '「仮の根」と書くよ。',
+      }),
+      drag({
+        id: 'plants-dr2-p2', concept: 'pl-classify',
+        prompt: '「スギゴケ」のカードを、なかまの箱へ動かして入れよう。スギゴケは根・茎・葉の区別がなく、胞子でふえます。',
+        // カードの左上が コケ植物の箱のまん中 (227, 154) に来れば正解。不正解例はシダ植物の箱 (120, 154)
+        figure: plantBoxesScene('スギゴケ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 227, y: 154 },
+        samples: { correct: { x: 227, y: 154 }, wrong: { x: 120, y: 154 } },
+        explanation: 'スギゴケは、根・茎・葉の区別がなく、胞子でふえるのでコケ植物です。根・茎・葉の区別があって胞子でふえるのがシダ植物です。',
+        hint: '根・茎・葉の区別があるかどうかで、シダ植物とコケ植物を分けるよ。',
+      }),
+      fill({
+        id: 'plants-dr2-p3', concept: 'pl-classify',
+        prompt: 'アブラナ・イヌワラビ・ゼニゴケ・マツ・スギナ・スギゴケ・イネ・ゼンマイの 8 種類があります。',
+        text: 'このうち、胞子でふえる植物は[b1]である。',
+        blanks: [number('b1', 5, 0, '種類')],
+        explanation: '胞子でふえるのは、シダ植物のイヌワラビ・スギナ・ゼンマイと、コケ植物のゼニゴケ・スギゴケの 5 種類です。アブラナ・マツ・イネは種子植物です。',
+        hint: 'シダ植物とコケ植物を数えよう。',
+      }),
+      choice({
+        id: 'plants-dr2-p4', concept: 'pl-spore',
+        prompt: 'コケ植物は、体に必要な水を、おもにどこから取り入れる？',
+        options: ['仮根', '体の表面全体', '葉の裏の胞子のう'],
+        answer: 'b',
+        explanation: 'コケ植物は、水を体の表面全体から取り入れます。仮根はおもに体を地面などに固定するはたらきをしています。',
+        hint: '仮根のおもなはたらきは、水の吸収ではなかったね。',
+      }),
+      choice({
+        id: 'plants-dr2-p5', concept: 'pl-classify',
+        prompt: 'Bさんのまとめ「シダ植物とコケ植物は、どちらも根・茎・葉の区別がない」。正しく直したものはどれ？',
+        options: ['「どちらも」を「コケ植物だけ」にする', '「区別がない」を「花がさく」にする', '「シダ植物」を「種子植物」にする'],
+        answer: 'a',
+        explanation: 'シダ植物には根・茎・葉の区別があり、コケ植物にはありません。「区別がない」のはコケ植物だけです。',
+        hint: 'イヌワラビには、地下茎や根があったね。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'plants-dr2-r1', concept: 'pl-spore',
+        prompt: 'イヌワラビの葉の裏の胞子のうを、紙の上でかわかしておきました。紙の上に何が見られる？',
+        options: ['細かい粉のような胞子', '小さな種子', '黄色い花粉'],
+        answer: 'a',
+        explanation: '胞子のうはかわくと割れて、中の胞子を飛ばします。胞子はとても小さく、粉のように見えます。',
+        hint: 'シダ植物がふえるときに使うものだよ。',
+      }),
+      choice({
+        id: 'plants-dr2-r2', concept: 'pl-spore',
+        prompt: 'コケ植物が、日かげのしめった所に多いのはなぜ？',
+        options: ['根で水をたくさん吸うから', '種子がかわくと困るから', '体の表面から水を取り入れるから'],
+        answer: 'c',
+        explanation: 'コケ植物は、水を体の表面全体から取り入れます。そのため、しめった所でないと水が足りなくなります。',
+        hint: 'コケ植物の水の取り入れ方を思い出そう。',
+      }),
+      drag({
+        id: 'plants-dr2-r3', concept: 'pl-classify',
+        prompt: '「ゼンマイ」のカードを、なかまの箱へ動かして入れよう。ゼンマイは根・茎・葉の区別があり、胞子でふえます。',
+        // カードの左上が シダ植物の箱のまん中 (120, 154) に来れば正解。不正解例はコケ植物の箱 (227, 154)
+        figure: plantBoxesScene('ゼンマイ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 120, y: 154 },
+        samples: { correct: { x: 120, y: 154 }, wrong: { x: 227, y: 154 } },
+        explanation: 'ゼンマイは、根・茎・葉の区別があり、胞子でふえるのでシダ植物です。ワラビやスギナも同じなかまです。',
+        hint: '根・茎・葉の区別があって、胞子でふえるなかまはどれかな。',
+      }),
+      fill({
+        id: 'plants-dr2-r4', concept: 'pl-classify',
+        prompt: 'イチョウ・スギナ・サクラ・ゼニゴケ・ツユクサ・マツ・イヌワラビの 7 種類があります。',
+        text: 'このうち、種子でふえる植物は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: '種子でふえるのは、イチョウ・サクラ・ツユクサ・マツの 4 種類です。スギナ・イヌワラビ（シダ植物）とゼニゴケ（コケ植物）は胞子でふえます。',
+        hint: 'シダ植物とコケ植物をのぞいて数えよう。',
+      }),
+      fill({
+        id: 'plants-dr2-t2', concept: 'pl-spore', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'シダ植物の葉の裏などにあり、中に胞子が入っている袋を[b1]という。',
+        blanks: [word('b1', ['花粉のう', '胞子のう', '子房'], '胞子のう')],
+        explanation: '胞子が入っている袋を**胞子のう**といいます。花粉のうは、マツの雄花のりん片にある、花粉が入った袋です。',
+        hint: '中に入っているものの名前が、袋の名前になっているよ。',
+      }),
+      choice({
+        id: 'plants-dr2-r5', concept: 'pl-spore',
+        prompt: 'シダ植物が多く見られる場所として、いちばん当てはまるのはどれ？',
+        options: ['日当たりのよい、かわいた砂地', '日かげの、しめった所', '海の中'],
+        answer: 'b',
+        explanation: 'シダ植物やコケ植物は、日かげのしめった所に多く見られます。森の木の下や、しめった石がきなどでさがしてみよう。',
+        hint: '胞子でふえる植物は、水分の多い所を好むよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1694,9 +2093,8 @@
     mascot: 'F',   // 担当の先生（まめ博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'pl-flower', title: '花と種子', order: 1, stages: [plants1, plants2] },
-      { id: 'body', title: 'からだのつくりと分類', order: 2, stages: [plants3, plants4] },
-      { id: 'plants-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [plMp1, plMp2, plMp3, plMp4] },
+      { id: 'pl-flower', title: '花と種子', order: 1, stages: [plants1, plants2, plMp1, plMp2, plDr1] },
+      { id: 'body', title: 'からだのつくりと分類', order: 2, stages: [plants3, plants4, plMp3, plMp4, plDr2] },
     ],
   };
 

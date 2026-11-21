@@ -1101,7 +1101,7 @@
 
   // ---- ステージ strata-mp1: プリント 1（流れる水のはたらき、地層のでき方、堆積岩） ----
   const srMp1 = {
-    id: 'strata-mp1', areaId: 'strata-miniprint', title: 'プリント 1: 地層のでき方と堆積岩', minutes: 5, concepts: ['st-erosion', 'st-grain', 'st-sedimentary'],
+    id: 'strata-mp1', areaId: 'form', free: true, title: 'プリント 1: 地層のでき方と堆積岩', minutes: 5, concepts: ['st-erosion', 'st-grain', 'st-sedimentary'],
     lessons: [
       {
         id: 'strata-mp1-c1',
@@ -1257,7 +1257,7 @@
 
   // ---- ステージ strata-mp2: プリント 2（地層の読み取り、化石、大陸の移動、標高と柱状図） ----
   const srMp2 = {
-    id: 'strata-mp2', areaId: 'strata-miniprint', title: 'プリント 2: 地層の読み取りと化石', minutes: 5, concepts: ['st-column', 'st-fossil', 'st-sedimentary', 'st-deform'],
+    id: 'strata-mp2', areaId: 'history', free: true, title: 'プリント 2: 地層の読み取りと化石', minutes: 5, concepts: ['st-column', 'st-fossil', 'st-sedimentary', 'st-deform'],
     lessons: [
       {
         id: 'strata-mp2-c1',
@@ -1417,6 +1417,200 @@
   };
 
   // ================================================================
+  // 領域 4: ドリル（中学理科の知識から自作した練習問題。docs/reports/content/strata.md）
+  // ================================================================
+
+  // ある地点の柱状図（上から 砂岩・泥岩・砂岩・れき岩。逆転はない）。右にア〜エの選ぶ場所（上の層から順）
+  const DR_COLUMN_Q = scene([
+    { type: 'text', x: 160, y: 20, text: 'ある地点の柱状図（上下の逆転はない）', size: 13, anchor: 'middle' },
+  ].concat(columnItems(110, 30, [['sand', 45], ['mud', 45], ['sand', 45], ['gravel', 45]], 'right'),
+    [52.5, 97.5, 142.5, 187.5].map((y, i) => ({ type: 'region', id: 'r' + (i + 1), x: 270, y, r: 22, label: 'アイウエ'[i] }))));
+
+  // 粒の大きさの変化と海の深さ（解説用）
+  function columnDepthScene() {
+    return scene(columnItems(60, 40, [['mud', 50], ['sand', 50], ['gravel', 50]], 'right').concat([
+      { type: 'text', x: 88, y: 30, text: '柱状図', size: 13, anchor: 'middle' },
+      { type: 'arrow', x1: 190, y1: 184, x2: 190, y2: 46, color: 'blue' },
+      { type: 'text', x: 200, y: 90, text: '上ほど粒が', size: 13 },
+      { type: 'text', x: 200, y: 110, text: '小さい', size: 13 },
+      { type: 'text', x: 200, y: 140, text: '→ 海が深く', size: 13 },
+      { type: 'text', x: 200, y: 160, text: 'なった', size: 13 },
+      { type: 'text', x: 160, y: 222, text: '標高をそろえると、離れた地点も比べられる', size: 12, anchor: 'middle' },
+    ]));
+  }
+
+  // 示相化石と示準化石の例（解説用）
+  function fossilKindsScene() {
+    const items = [];
+    [['示相化石', '環境が分かる', ['サンゴ', 'シジミ', 'ブナの葉']], ['示準化石', '時代が分かる', ['サンヨウチュウ', 'アンモナイト', 'ビカリア']]]
+      .forEach(([t, sub, list], i) => {
+        const x = 14 + 154 * i;
+        items.push(
+          { type: 'rect', x, y: 20, width: 138, height: 200, fill: i ? 'white' : 'lightgreen', rx: 8 },
+          { type: 'text', x: x + 69, y: 48, text: t, size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: x + 69, y: 72, text: sub, size: 12, anchor: 'middle' },
+        );
+        list.forEach((n, k) => items.push({ type: 'text', x: x + 69, y: 112 + 34 * k, text: n, size: 13, anchor: 'middle' }));
+      });
+    return scene(items);
+  }
+
+  // れき岩の粒（丸い）と、火成岩の鉱物の粒（角ばってすき間なく組み合わさる）を比べる（解説用）
+  function grainCompareScene() {
+    const items = textureBox(40, 50, 'gravel');
+    items.push({ type: 'rect', x: 200, y: 50, width: 80, height: 80, fill: 'white' });
+    TUFF_SHAPES.forEach((ps, k) => items.push({
+      type: 'polygon', points: ps.map(([x, y]) => [200 + x, 50 + y]), fill: ['white', '#3A3A3A', '#D9D4CA'][k % 3], stroke: 'line',
+    }));
+    items.push(
+      { type: 'text', x: 80, y: 156, text: 'れき岩（堆積岩）', size: 13, anchor: 'middle' },
+      { type: 'text', x: 80, y: 176, text: '粒が丸い', size: 12, anchor: 'middle' },
+      { type: 'text', x: 240, y: 156, text: '火成岩', size: 13, anchor: 'middle' },
+      { type: 'text', x: 240, y: 176, text: '鉱物が角ばっている', size: 12, anchor: 'middle' },
+      { type: 'text', x: 160, y: 216, text: '化石が入っているのは堆積岩', size: 13, anchor: 'middle' },
+    );
+    return scene(items);
+  }
+
+  // ---- ステージ strata-dr1: ドリル 1（地層の重なりと過去の様子: 柱状図と標高・化石・堆積岩と火成岩） ----
+  const srDr1 = {
+    id: 'strata-dr1', areaId: 'history', free: true, title: 'ドリル 1: 地層の重なりと過去の様子', minutes: 7, concepts: ['st-column', 'st-sedimentary', 'st-fossil'],
+    lessons: [
+      {
+        id: 'strata-dr1-c1',
+        text: '地層の重なりから、過去の様子が分かります。下から上へ粒が小さくなっていれば、その場所の海が深くなった（河口から遠くなった）と考えられます。**標高**をそろえると、離れた地点の地層を比べられます。',
+        figure: columnDepthScene(),
+      },
+      {
+        id: 'strata-dr1-c2',
+        text: '**示相化石**になるのは、限られた環境でしか生きられない生物です。**示準化石**になるのは、短い期間に広い範囲で栄えて、やがて絶滅した生物です。',
+        figure: fossilKindsScene(),
+      },
+      {
+        id: 'strata-dr1-c3',
+        text: 'れき岩・砂岩・泥岩は、流れる水に運ばれた粒が積もってできるので、粒が丸みをおびています。堆積岩には化石が入っていることがありますが、マグマが冷えてできた**火成岩**には入っていません。',
+        figure: grainCompareScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'strata-dr1-w1', concept: 'st-fossil',
+      prompt: '予想しよう。ある地層の中に、木の葉の化石がたくさん入っていました。この地層が積もった場所として考えられるのはどれ？',
+      options: ['深い海の底', '陸に近い湖や河口', '火山の火口の中'],
+      answer: 'b',
+      explanation: '木の葉は陸の植物なので、陸に近い湖や河口に積もったと考えられます。化石や粒から過去の様子を読み取る方法を、このステージで学ぼう。',
+      hint: '木の葉は、どこから運ばれてくるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'strata-dr1-p1', concept: 'st-column',
+        prompt: '図はある地点の柱状図です。ア〜エの層のうち、積もったときの海がいちばん深かったと考えられる層はどれ？ ア〜エから選ぼう。',
+        figure: DR_COLUMN_Q,
+        answer: 'r2',
+        explanation: '粒がいちばん小さい泥は、河口から遠い深い海の底に積もります。泥岩の層（イ）が積もったときに、いちばん深かったと考えられます。',
+        hint: '粒がいちばん小さい層をさがそう。',
+      }),
+      fill({
+        id: 'strata-dr1-t1', concept: 'st-sedimentary', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '堆積岩とちがい、マグマが冷えて固まってできた岩石を[b1]という。',
+        blanks: [word('b1', ['凝灰岩', '火成岩', '石灰岩'], '火成岩')],
+        explanation: 'マグマが冷えて固まった岩石を**火成岩**といいます。凝灰岩は火山灰などが積もってできた堆積岩、石灰岩は生物の殻などが積もってできた堆積岩です。',
+        hint: '「火」から「成」る岩石だよ。',
+      }),
+      fill({
+        id: 'strata-dr1-p2', concept: 'st-column',
+        prompt: '地表の標高が 120 m の地点で、凝灰岩の層が地表から 15 m の深さにありました。',
+        text: 'この凝灰岩の層の標高は[b1]である。',
+        blanks: [number('b1', 105, 0, 'm')],
+        explanation: '標高は、地表の標高から深さを引いて求めます。120 − 15 ＝ 105 m です。',
+        hint: '地表より深い所の標高は、地表より低くなるね。',
+      }),
+      choice({
+        id: 'strata-dr1-p3', concept: 'st-column',
+        prompt: 'A 地点の凝灰岩の層の標高は 85 m、A 地点の東にある B 地点では 80 m でした。地層は平らなまま、かたむいています。この地層は、どちらに向かって低くなっている？',
+        options: ['西', '東', 'どちらにも低くなっていない'],
+        answer: 'b',
+        explanation: '同じ凝灰岩の層が、東の B 地点のほうが 5 m 低い所にあります。だから、この地層は東に向かって低くなっています。',
+        hint: '同じ層の標高を、2 つの地点で比べよう。',
+      }),
+      choice({
+        id: 'strata-dr1-p4', concept: 'st-sedimentary',
+        prompt: '岩石 X をルーペで見ると、粒が丸みをおびていて、貝の化石も入っていました。岩石 X はどちら？',
+        options: ['火成岩', '堆積岩', 'どちらとも決められない'],
+        answer: 'b',
+        explanation: '粒が丸いのは流れる水に運ばれたからで、化石が入っているので堆積岩です。マグマが冷えてできる火成岩には、化石は入っていません。',
+        hint: '化石が入るのは、どちらのでき方の岩石かな。',
+      }),
+      choice({
+        id: 'strata-dr1-p5', concept: 'st-fossil',
+        prompt: 'ある地層から、アンモナイトとサンゴの化石が見つかりました。この地層について分かることはどれ？',
+        options: ['古生代の、冷たく深い海で積もった', '新生代の、湖で積もった', '中生代の、あたたかく浅い海で積もった'],
+        answer: 'c',
+        explanation: 'アンモナイトは中生代の示準化石、サンゴはあたたかく浅い海を示す示相化石です。2 つを合わせて、時代と環境が分かります。',
+        hint: '時代を示す化石と、環境を示す化石に分けて考えよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'strata-dr1-r1', concept: 'st-column',
+        prompt: '図はある地点の柱状図です。ア〜エの層のうち、積もったときに河口にいちばん近かったと考えられる層はどれ？ ア〜エから選ぼう。',
+        figure: DR_COLUMN_Q,
+        answer: 'r4',
+        explanation: '粒がいちばん大きいれきは、河口に近い浅い所に積もります。れき岩の層（エ）が積もったときに、河口にいちばん近かったと考えられます。',
+        hint: '粒がいちばん大きい層をさがそう。',
+      }),
+      fill({
+        id: 'strata-dr1-r2', concept: 'st-column',
+        prompt: '地表の標高が 74 m の地点で、かぎ層が標高 62 m の所にありました。',
+        text: 'このかぎ層は、地表から[b1]の深さにある。',
+        blanks: [number('b1', 12, 0, 'm')],
+        explanation: '深さは、地表の標高からかぎ層の標高を引いて求めます。74 − 62 ＝ 12 m です。',
+        hint: '2 つの標高の差を求めよう。',
+      }),
+      choice({
+        id: 'strata-dr1-r3', concept: 'st-sedimentary',
+        prompt: '火成岩と比べたときの、堆積岩の特徴として正しいのはどれ？',
+        options: ['マグマが冷えてできる', '粒がすべて角ばっている', '化石が入っていることがある'],
+        answer: 'c',
+        explanation: '堆積岩は、生物の死がいなどもいっしょに積もるので、化石が入っていることがあります。火成岩には化石は入っていません。',
+        hint: '積もってできる岩石には、何がまじることがあるかな。',
+      }),
+      fill({
+        id: 'strata-dr1-t2', concept: 'st-sedimentary', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '流れる水などで運ばれた粒が積もり、長い年月の間に押し固められてできた岩石を[b1]という。',
+        blanks: [word('b1', ['火成岩', '鉱物', '堆積岩'], '堆積岩')],
+        explanation: '積もったものが押し固められてできた岩石を**堆積岩**といいます。れき岩・砂岩・泥岩・凝灰岩・石灰岩・チャートなどがあります。',
+        hint: '「堆積」は積もることだよ。',
+      }),
+      choice({
+        id: 'strata-dr1-r4', concept: 'st-fossil',
+        prompt: '恐竜の足あとの化石が見つかった地層は、足あとがついたとき、どんな場所だったと考えられる？',
+        options: ['陸地や水辺', '深い海の底', '火山の火口の中'],
+        answer: 'a',
+        explanation: '恐竜が歩いて足あとがついたので、そこは陸地や水辺だったと考えられます。足あとのような生活のあとも化石になります。',
+        hint: '恐竜が歩ける場所はどこかな。',
+      }),
+      fill({
+        id: 'strata-dr1-r5', concept: 'st-fossil',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'アンモナイトの化石は、ふつう[b1]として使われる。',
+        blanks: [word('b1', ['示相化石', '示準化石', '鉱物'], '示準化石')],
+        explanation: 'アンモナイトは、中生代に広い範囲で栄えて絶滅したので、時代を知る示準化石として使われます。',
+        hint: '短い期間に広い範囲で栄えた生物だよ。',
+      }),
+      choice({
+        id: 'strata-dr1-r6', concept: 'st-fossil',
+        prompt: '示相化石として役に立つのは、どんな生物の化石？',
+        options: ['すめる環境が限られている生物', 'どんな環境でも生きられる生物', '今はもう絶滅した生物ならどれでも'],
+        answer: 'a',
+        explanation: 'すめる環境が限られている生物の化石なら、「その環境だった」と分かります。どんな環境でも生きられる生物では、環境の手がかりになりません。',
+        hint: '化石から「どんな環境だったか」を決めるには、どんな生物がよいかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1426,9 +1620,8 @@
     mascot: 'D',   // 担当の先生（もくもく先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'form', title: '地層のでき方', order: 1, stages: [strata1, strata2] },
-      { id: 'history', title: '地層から読み取る', order: 2, stages: [strata3, strata4] },
-      { id: 'strata-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [srMp1, srMp2] },
+      { id: 'form', title: '地層のでき方', order: 1, stages: [strata1, strata2, srMp1] },
+      { id: 'history', title: '地層から読み取る', order: 2, stages: [strata3, strata4, srMp2, srDr1] },
     ],
   };
 

@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通資料の「共通のデータの形」）。
 // 2 領域 × 2 ステージ（回路と電流・電圧、電気のはたらき）と、概念 6 つ。
 // 領域 3「ミニプリント」（el-miniprint）: 先生のミニプリントを書き直したステージ electricity-mp1〜mp16 と、概念 3 つ（el-motor・el-induction・el-radiation）。
+// 領域 4「ドリル」（electricity-drill）: 中学理科のテーマごとに自作した練習問題のステージ electricity-dr1〜dr6（概念は既存のものを使う）。
 // 図（scene）の item は js/figures.js の汎用の部品（docs/figures-guide.md）で描く。座標は x 右向き・y 下向き、場面は 320×240。
 // 回路図は symbol（電気用図記号）と line（導線）で描く。電流計・電圧計の symbol は回すと文字も回るので、横向きの導線にだけ置く。
 // drag の解答 { x, y } は動かす部品の基準点（circle なら中心）。samples は手計算した正解例・不正解例。
@@ -1018,7 +1019,7 @@
 
   // ---- ステージ electricity-mp1: 電流のはたらきと回路 ----
   const elecMp1 = {
-    id: 'electricity-mp1', areaId: 'el-miniprint', title: 'プリント 1: 電流のはたらきと回路', minutes: 5, concepts: ['el-circuit'],
+    id: 'electricity-mp1', areaId: 'circuit', free: true, title: 'プリント 1: 電流のはたらきと回路', minutes: 5, concepts: ['el-circuit'],
     lessons: [
       {
         id: 'electricity-mp1-c1',
@@ -1149,7 +1150,7 @@
 
   // ---- ステージ electricity-mp2: 電気用図記号と回路図 ----
   const elecMp2 = {
-    id: 'electricity-mp2', areaId: 'el-miniprint', title: 'プリント 2: 電気用図記号と回路図', minutes: 5, concepts: ['el-circuit'],
+    id: 'electricity-mp2', areaId: 'circuit', free: true, title: 'プリント 2: 電気用図記号と回路図', minutes: 5, concepts: ['el-circuit'],
     lessons: [
       {
         id: 'electricity-mp2-c1',
@@ -1269,7 +1270,7 @@
 
   // ---- ステージ electricity-mp3: 電流計と電圧計の使い方 ----
   const elecMp3 = {
-    id: 'electricity-mp3', areaId: 'el-miniprint', title: 'プリント 3: 電流計と電圧計の使い方', minutes: 6, concepts: ['el-circuit'],
+    id: 'electricity-mp3', areaId: 'circuit', free: true, title: 'プリント 3: 電流計と電圧計の使い方', minutes: 6, concepts: ['el-circuit'],
     lessons: [
       {
         id: 'electricity-mp3-c1',
@@ -1427,7 +1428,7 @@
 
   // ---- ステージ electricity-mp4: 直列回路・並列回路の電流と電圧 ----
   const elecMp4 = {
-    id: 'electricity-mp4', areaId: 'el-miniprint', title: 'プリント 4: 直列回路・並列回路の電流と電圧', minutes: 5, concepts: ['el-rule'],
+    id: 'electricity-mp4', areaId: 'circuit', free: true, title: 'プリント 4: 直列回路・並列回路の電流と電圧', minutes: 5, concepts: ['el-rule'],
     lessons: [
       {
         id: 'electricity-mp4-c1',
@@ -1571,7 +1572,7 @@
   }
 
   const elecMp5 = {
-    id: 'electricity-mp5', areaId: 'el-miniprint', title: 'プリント 5: オームの法則の計算', minutes: 6, concepts: ['el-ohm'],
+    id: 'electricity-mp5', areaId: 'circuit', free: true, title: 'プリント 5: オームの法則の計算', minutes: 6, concepts: ['el-ohm'],
     lessons: [
       {
         id: 'electricity-mp5-c1',
@@ -1743,7 +1744,7 @@
   }
 
   const elecMp6 = {
-    id: 'electricity-mp6', areaId: 'el-miniprint', title: 'プリント 6: 電圧と電流のグラフ・導体と不導体', minutes: 6, concepts: ['el-ohm'],
+    id: 'electricity-mp6', areaId: 'circuit', free: true, title: 'プリント 6: 電圧と電流のグラフ・導体と不導体', minutes: 6, concepts: ['el-ohm'],
     lessons: [
       {
         id: 'electricity-mp6-c1',
@@ -1930,7 +1931,7 @@
   }
 
   const elecMp7 = {
-    id: 'electricity-mp7', areaId: 'el-miniprint', title: 'プリント 7: 直列・並列回路の抵抗', minutes: 6, concepts: ['el-ohm'],
+    id: 'electricity-mp7', areaId: 'circuit', free: true, title: 'プリント 7: 直列・並列回路の抵抗', minutes: 6, concepts: ['el-ohm'],
     lessons: [
       {
         id: 'electricity-mp7-c1',
@@ -2111,7 +2112,7 @@
   }
 
   const elecMp8 = {
-    id: 'electricity-mp8', areaId: 'el-miniprint', title: 'プリント 8: 実験の回路をつくる', minutes: 5, concepts: ['el-circuit'],
+    id: 'electricity-mp8', areaId: 'circuit', free: true, title: 'プリント 8: 実験の回路をつくる', minutes: 5, concepts: ['el-circuit'],
     lessons: [
       {
         id: 'electricity-mp8-c1',
@@ -2252,7 +2253,7 @@
   }
 
   const elecMp9 = {
-    id: 'electricity-mp9', areaId: 'el-miniprint', title: 'プリント 9: 電力', minutes: 6, concepts: ['el-power'],
+    id: 'electricity-mp9', areaId: 'el-energy', free: true, title: 'プリント 9: 電力', minutes: 6, concepts: ['el-power'],
     lessons: [
       {
         id: 'electricity-mp9-c1',
@@ -2437,7 +2438,7 @@
   }
 
   const elecMp10 = {
-    id: 'electricity-mp10', areaId: 'el-miniprint', title: 'プリント 10: 電流による発熱', minutes: 6, concepts: ['el-power'],
+    id: 'electricity-mp10', areaId: 'el-energy', free: true, title: 'プリント 10: 電流による発熱', minutes: 6, concepts: ['el-power'],
     lessons: [
       {
         id: 'electricity-mp10-c1',
@@ -2579,7 +2580,7 @@
 
   // ---- ステージ electricity-mp11: 電力量 ----
   const elecMp11 = {
-    id: 'electricity-mp11', areaId: 'el-miniprint', title: 'プリント 11: 電力量', minutes: 6, concepts: ['el-power'],
+    id: 'electricity-mp11', areaId: 'el-energy', free: true, title: 'プリント 11: 電力量', minutes: 6, concepts: ['el-power'],
     lessons: [
       {
         id: 'electricity-mp11-c1',
@@ -2764,7 +2765,7 @@
   }
 
   const elecMp12 = {
-    id: 'electricity-mp12', areaId: 'el-miniprint', title: 'プリント 12: 静電気・陰極線・放射線', minutes: 6, concepts: ['el-static', 'el-radiation'],
+    id: 'electricity-mp12', areaId: 'el-energy', free: true, title: 'プリント 12: 静電気・陰極線・放射線', minutes: 6, concepts: ['el-static', 'el-radiation'],
     lessons: [
       {
         id: 'electricity-mp12-c1',
@@ -2984,7 +2985,7 @@
   const DIR_OPTIONS = ['右（→）', '左（←）', '上（↑）', '下（↓）'];
 
   const elecMp13 = {
-    id: 'electricity-mp13', areaId: 'el-miniprint', title: 'プリント 13: 磁石のまわりの磁界と磁力線', minutes: 5, concepts: ['el-magnet'],
+    id: 'electricity-mp13', areaId: 'el-energy', free: true, title: 'プリント 13: 磁石のまわりの磁界と磁力線', minutes: 5, concepts: ['el-magnet'],
     lessons: [
       {
         id: 'electricity-mp13-c1',
@@ -3167,7 +3168,7 @@
   }
 
   const elecMp14 = {
-    id: 'electricity-mp14', areaId: 'el-miniprint', title: 'プリント 14: 電流がつくる磁界', minutes: 5, concepts: ['el-magnet'],
+    id: 'electricity-mp14', areaId: 'el-energy', free: true, title: 'プリント 14: 電流がつくる磁界', minutes: 5, concepts: ['el-magnet'],
     lessons: [
       {
         id: 'electricity-mp14-c1',
@@ -3336,7 +3337,7 @@
   }
 
   const elecMp15 = {
-    id: 'electricity-mp15', areaId: 'el-miniprint', title: 'プリント 15: 電流が磁界から受ける力とモーター', minutes: 6, concepts: ['el-motor'],
+    id: 'electricity-mp15', areaId: 'el-energy', free: true, title: 'プリント 15: 電流が磁界から受ける力とモーター', minutes: 6, concepts: ['el-motor'],
     lessons: [
       {
         id: 'electricity-mp15-c1',
@@ -3500,7 +3501,7 @@
   }
 
   const elecMp16 = {
-    id: 'electricity-mp16', areaId: 'el-miniprint', title: 'プリント 16: 電磁誘導と直流・交流', minutes: 6, concepts: ['el-induction'],
+    id: 'electricity-mp16', areaId: 'el-energy', free: true, title: 'プリント 16: 電磁誘導と直流・交流', minutes: 6, concepts: ['el-induction'],
     lessons: [
       {
         id: 'electricity-mp16-c1',
@@ -3646,6 +3647,1069 @@
         answer: 'r1',
         explanation: 'アは、向きも大きさも変わらない電流なので直流です。乾電池の電流がこの形です。',
         hint: '線がずっと同じ高さのままなのはどちらかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 4: ドリル（中学理科のテーマごとに、自作した問題で練習する）
+  // ステージ electricity-dr1〜dr6。文・図・問題はすべてこのアプリのための自作。
+  // ================================================================
+
+  // ---- ドリル用の図の道具 ----
+
+  // 電池（左、＋極が上）と豆電球（右）の回路。点 P（上の導線）か Q（下の導線）に印をつけ、
+  // ア（左向きの矢印）・イ（右向きの矢印）を選ぶ場所にする
+  function dirChoiceItems(pointName) {
+    const py = pointName === 'Q' ? 190 : 50;
+    return [
+      sym('battery', 40, 120, 90), sym('bulb', 280, 120, 90),
+      wire([[40, 100], [40, 50], [280, 50], [280, 100]]),
+      wire([[280, 140], [280, 190], [40, 190], [40, 140]]),
+      note(58, 106, '＋', 14), note(58, 146, '−', 14),
+      { type: 'circle', x: 160, y: py, r: 5, fill: 'ink', stroke: 'ink' },
+      { type: 'text', x: 160, y: pointName === 'Q' ? 214 : 38, text: pointName, size: 14, bold: true, anchor: 'middle' },
+      { type: 'arrow', x1: 135, y1: 95, x2: 85, y2: 95, color: 'blue' },
+      { type: 'arrow', x1: 185, y1: 95, x2: 235, y2: 95, color: 'blue' },
+      { type: 'region', id: 'r1', x: 110, y: 135, r: 22, label: 'ア' },
+      { type: 'region', id: 'r2', x: 210, y: 135, r: 22, label: 'イ' },
+    ];
+  }
+
+  // 電流計を置く場所を選ぶ回路（上の導線の切れ目と、抵抗の両はしにつながる点線の切れ目）。
+  // 電流計（A の丸）は x=160 の上下に動く。上の切れ目 y=50（直列）、点線の切れ目 y=150（並列）
+  function ammeterGapItems() {
+    return [
+      sym('battery', 40, 120, 90), sym('resistor', 160, 190),
+      wire([[40, 100], [40, 50], [140, 50]]),
+      wire([[180, 50], [280, 50], [280, 190], [180, 190]]),
+      wire([[140, 190], [40, 190], [40, 140]]),
+      note(58, 106, '＋', 14), note(58, 146, '−', 14),
+      { type: 'line', points: [[110, 190], [110, 150], [140, 150]], width: 2, color: 'gray', dashed: true },
+      { type: 'line', points: [[180, 150], [210, 150], [210, 190]], width: 2, color: 'gray', dashed: true },
+      dot(110, 190), dot(210, 190),
+      note(160, 226, '抵抗', 13),
+      { type: 'circle', id: 'am', x: 160, y: 100, r: 16, fill: 'white', stroke: 'blue', label: 'A' },
+    ];
+  }
+
+  // 電圧計で抵抗の電圧をはかる回路（電圧計は抵抗の上に並列）
+  function voltmeterItems() {
+    return [
+      sym('battery', 40, 140, 90), sym('resistor', 160, 100), sym('voltmeter', 160, 40),
+      wire([[40, 120], [40, 100], [140, 100]]),
+      wire([[180, 100], [280, 100], [280, 190], [40, 190], [40, 160]]),
+      wire([[110, 100], [110, 40], [140, 40]]),
+      wire([[180, 40], [210, 40], [210, 100]]),
+      dot(110, 100), dot(210, 100),
+      note(58, 126, '＋', 14), note(160, 128, '抵抗', 13),
+      note(160, 160, '電圧計は抵抗と並列につなぐ', 14),
+    ];
+  }
+
+  // 電熱線の電圧と電流の表（rows は [電圧の文字の配列, 電流の文字の配列]）
+  function tableItems(title, volts, amps) {
+    const items = [
+      note(160, 40, title, 14),
+      { type: 'rect', x: 20, y: 70, width: 280, height: 100, fill: 'white', stroke: 'ink' },
+      { type: 'line', points: [[20, 120], [300, 120]], width: 2 },
+      { type: 'line', points: [[100, 70], [100, 170]], width: 2 },
+      note(60, 100, '電圧〔V〕', 13), note(60, 150, '電流〔A〕', 13),
+    ];
+    volts.forEach((v, i) => {
+      const x = 130 + 50 * i;
+      if (i > 0) items.push({ type: 'line', points: [[x - 25, 70], [x - 25, 170]], width: 1, color: 'gray' });
+      items.push(note(x, 100, v, 14), note(x, 150, amps[i], 14));
+    });
+    return items;
+  }
+
+  // 同じ電池と 10 Ω の抵抗の 3 つの回路（ア 1 個、イ 2 個直列、ウ 2 個並列）
+  function threeResistorItems() {
+    const items = [];
+    [55, 160, 265].forEach((cx, i) => {
+      items.push(sym('battery', cx, 205));
+      if (i === 0) {
+        items.push(sym('resistor', cx, 60),
+          wire([[cx - 20, 205], [cx - 45, 205], [cx - 45, 60], [cx - 20, 60]]),
+          wire([[cx + 20, 60], [cx + 45, 60], [cx + 45, 205], [cx + 20, 205]]));
+      } else if (i === 1) {
+        items.push(sym('resistor', cx, 60), sym('resistor', cx + 45, 120, 90),
+          wire([[cx - 20, 205], [cx - 45, 205], [cx - 45, 60], [cx - 20, 60]]),
+          wire([[cx + 20, 60], [cx + 45, 60], [cx + 45, 100]]),
+          wire([[cx + 45, 140], [cx + 45, 205], [cx + 20, 205]]));
+      } else {
+        items.push(sym('resistor', cx, 50), sym('resistor', cx, 105),
+          wire([[cx - 20, 205], [cx - 45, 205], [cx - 45, 50], [cx - 20, 50]]),
+          wire([[cx - 45, 105], [cx - 20, 105]]),
+          wire([[cx + 20, 50], [cx + 45, 50], [cx + 45, 205], [cx + 20, 205]]),
+          wire([[cx + 20, 105], [cx + 45, 105]]),
+          dot(cx - 45, 105), dot(cx + 45, 105));
+      }
+      items.push({ type: 'region', id: 'r' + (i + 1), x: cx, y: 155, r: 22, label: 'アイウ'[i] });
+    });
+    items.push(note(160, 20, '抵抗はどれも 10 Ω、電池はどれも同じ', 13));
+    return items;
+  }
+
+  // 100 V で使う電気器具の表示（ア〜エ）
+  function applianceItems() {
+    const rows = [['ア', '電気ストーブ', '1000 W'], ['イ', 'テレビ', '150 W'], ['ウ', 'LED 電球', '8 W'], ['エ', 'ドライヤー', '1200 W']];
+    const items = [note(180, 24, '100 V で使う電気器具', 14)];
+    rows.forEach(([lab, name, w], i) => {
+      const y = 60 + 50 * i;
+      items.push(
+        { type: 'rect', x: 80, y: y - 20, width: 220, height: 40, fill: 'white', stroke: 'line', rx: 6 },
+        { type: 'text', x: 96, y: y + 6, text: name, size: 15 },
+        { type: 'text', x: 288, y: y + 6, text: '100 V−' + w, size: 15, anchor: 'end' },
+        { type: 'region', id: 'r' + (i + 1), x: 40, y, r: 22, label: lab });
+    });
+    return items;
+  }
+
+  // 電磁石の 3 つの条件（ア 50 回・1 A、イ 100 回・1 A、ウ 100 回・2 A）
+  function electromagnetItems() {
+    const items = [];
+    [['ア', '50 回', '1 A'], ['イ', '100 回', '1 A'], ['ウ', '100 回', '2 A']].forEach(([lab, turns, amp], i) => {
+      const cx = 60 + 100 * i;
+      items.push(
+        { type: 'rect', x: cx - 38, y: 50, width: 76, height: 22, fill: 'gray', stroke: 'ink' },
+        { type: 'line', points: [[cx - 30, 44], [cx - 22, 78], [cx - 14, 44], [cx - 6, 78], [cx + 2, 44], [cx + 10, 78], [cx + 18, 44], [cx + 26, 78]], color: 'orange', width: 2 },
+        note(cx, 108, '巻数 ' + turns, 13),
+        note(cx, 130, '電流 ' + amp, 13),
+        { type: 'region', id: 'r' + (i + 1), x: cx, y: 180, r: 22, label: lab });
+    });
+    items.push(note(160, 228, '鉄心は同じもの', 13));
+    return items;
+  }
+
+  // 磁石のあいだの導線の断面（電流は紙の裏から表へ ・）。northLeft なら左が N 極。
+  // 導線（id 'wire'）は x=160 の上下に動く。上の点線の丸 y=60、下の点線の丸 y=180
+  function forceDragItems(northLeft) {
+    const left = northLeft ? 'N' : 'S', right = northLeft ? 'S' : 'N';
+    const fx = northLeft ? [95, 225] : [225, 95];
+    return [
+      { type: 'rect', x: 20, y: 80, width: 60, height: 80, fill: northLeft ? 'red' : 'sky', stroke: 'ink', label: left },
+      { type: 'rect', x: 240, y: 80, width: 60, height: 80, fill: northLeft ? 'sky' : 'red', stroke: 'ink', label: right },
+      { type: 'arrow', x1: fx[0], y1: 92, x2: fx[1], y2: 92, color: 'blue', width: 2 },
+      { type: 'arrow', x1: fx[0], y1: 148, x2: fx[1], y2: 148, color: 'blue', width: 2 },
+      { type: 'circle', x: 160, y: 60, r: 14, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 160, y: 180, r: 14, fill: 'none', stroke: 'gray' },
+      note(160, 228, '・は電流が紙の裏から表へ流れる', 13),
+      { type: 'circle', id: 'wire', x: 160, y: 120, r: 14, fill: 'white', stroke: 'ink', label: '・' },
+    ];
+  }
+
+  // 糸でつるしたストロー A（id 'a'、x の左右に動く）と、左から近づける物体
+  function staticDragItems(leftText) {
+    return [
+      { type: 'line', points: [[20, 30], [300, 30]], width: 2, color: 'line' },
+      { type: 'rect', x: 6, y: 120, width: 90, height: 60, fill: 'white', stroke: 'ink', rx: 6, label: leftText },
+      { type: 'circle', x: 120, y: 150, r: 14, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 220, y: 150, r: 14, fill: 'none', stroke: 'gray' },
+      note(170, 228, '点線の丸は A が動く先', 13),
+      { type: 'circle', id: 'a', x: 170, y: 150, r: 18, fill: 'yellow', stroke: 'ink', label: 'A' },
+    ];
+  }
+
+  // ---- ステージ electricity-dr1: 電流の向きと電流計 ----
+  const elecDr1 = {
+    id: 'electricity-dr1', areaId: 'circuit', free: true, title: 'ドリル 1: 電流の向きと電流計', minutes: 6, concepts: ['el-circuit'],
+    lessons: [
+      {
+        id: 'electricity-dr1-c1',
+        text: '電流は、電池の**＋極**から出て、回路を通って**−極**へもどる向きに流れると決められています。回路のどこかが切れていると、電流は流れません。電流の道すじが、切れ目のない 1 つの輪になっていることが大切です。',
+        figure: scene([
+          sym('battery', 60, 120, 90), sym('switch', 160, 50), sym('bulb', 260, 120, 90),
+          wire([[60, 100], [60, 50], [140, 50]]),
+          wire([[180, 50], [260, 50], [260, 100]]),
+          wire([[260, 140], [260, 190], [60, 190], [60, 140]]),
+          note(78, 106, '＋', 14), note(78, 146, '−', 14),
+          { type: 'arrow', x1: 200, y1: 30, x2: 240, y2: 30, color: 'orange' },
+          { type: 'arrow', x1: 200, y1: 208, x2: 160, y2: 208, color: 'orange' },
+          note(160, 120, '＋極 → 回路 → −極', 14),
+          note(160, 234, '電流の向き', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr1-c2',
+        text: '**電流計**は、はかりたい部分に**直列**につなぎます。＋端子は電池の＋極側に、−端子は 5 A・500 mA・50 mA のどれかにつなぎます。針のふれが小さすぎるときは、小さい値の−端子につなぎかえます。電流計だけを電池に直接つないではいけません。',
+        figure: scene([
+          sym('battery', 60, 120, 90), sym('ammeter', 160, 50), sym('resistor', 260, 120, 90),
+          wire([[60, 100], [60, 50], [140, 50]]),
+          wire([[180, 50], [260, 50], [260, 100]]),
+          wire([[260, 140], [260, 190], [60, 190], [60, 140]]),
+          note(78, 106, '＋', 14),
+          note(160, 90, '電流計は直列', 14),
+          note(216, 125, '抵抗', 13),
+          note(160, 226, '−端子: 5 A・500 mA・50 mA', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr1-c3',
+        text: '**回路図**では、導線をまっすぐな線でかき、曲げるところは直角にします。器具は電気用図記号で導線のとちゅうにかき、導線が枝分かれする点には黒い点（●）をかきます。実物の形ではなく、つながり方を表す図です。',
+        figure: scene([
+          sym('bulb', 160, 50), sym('bulb', 160, 125), sym('battery', 160, 205),
+          wire([[140, 205], [40, 205], [40, 50], [140, 50]]),
+          wire([[180, 50], [280, 50], [280, 205], [180, 205]]),
+          wire([[40, 125], [140, 125]]),
+          wire([[180, 125], [280, 125]]),
+          dot(40, 125), dot(280, 125),
+          note(95, 100, 'つなぎ目は●', 13),
+          note(230, 100, '角は直角に', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-dr1-w1', concept: 'el-circuit',
+      prompt: '予想しよう。回路をつくったのに豆電球がつきません。まず確かめるとよいことはどれだと思う？',
+      options: ['導線の色', '導線が切れ目なく輪になっているか', '豆電球の大きさ'],
+      answer: 'b',
+      explanation: '電流は、切れ目のない輪になった道すじにしか流れません。つなぎ目がはずれていないか、まず確かめよう。',
+      hint: '電流が流れるには、道すじがどうなっている必要があるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-dr1-t1', concept: 'el-circuit', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電流の大きさの単位アンペアは、記号[b1]で表す。',
+        blanks: [word('b1', ['V', 'A', 'W'], 'A')],
+        explanation: 'アンペアの記号は **A** です。V はボルト（電圧）、W はワット（電力）の記号です。',
+        hint: 'アンペアの頭文字だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-dr1-p1', concept: 'el-circuit',
+        prompt: '電池の＋極が上の回路です。点 P を流れる電流の向きは、ア（左向き）・イ（右向き）のどちら？',
+        figure: scene(dirChoiceItems('P')),
+        answer: 'r2',
+        explanation: '電流は＋極（電池の上）から出て、上の導線を右へ進み、豆電球を通って−極へもどります。だから点 P では右向き（イ）です。',
+        hint: '電池の＋極から出た電流は、上の導線をどちらへ進むかな。',
+      }),
+      choice({
+        id: 'electricity-dr1-p2', concept: 'el-circuit',
+        prompt: '電流計の−端子を 5 A につないだら、針のふれがとても小さく読みにくい。次にすることはどれ？',
+        options: ['＋端子と−端子を入れかえる', '500 mA の−端子につなぎかえる', '電流計を豆電球と並列にする'],
+        answer: 'b',
+        explanation: '針のふれが小さいときは、1 つ小さい値の−端子（500 mA）につなぎかえると、細かく読めるようになります。',
+        hint: '−端子の値を小さくすると、同じ電流でも針は大きくふれるよ。',
+      }),
+      fill({
+        id: 'electricity-dr1-p3', concept: 'el-circuit',
+        prompt: '電流計が 320 mA を示しました。空らんに入る数を入れよう。',
+        text: '320 mA は[b1]である。',
+        blanks: [number('b1', 0.32, 0, 'A')],
+        explanation: '1 A ＝ 1000 mA なので、320 ÷ 1000 ＝ 0.32 A です。',
+        hint: 'mA を A になおすときは、1000 でわるよ。',
+      }),
+      drag({
+        id: 'electricity-dr1-p4', concept: 'el-circuit',
+        prompt: '抵抗に流れる電流をはかりたい。電流計（A の丸）を上下に動かして、上の導線の切れ目か、点線の切れ目のどちらかに置こう。',
+        // 印は x=160 の上下に動く。y=50 は上の導線の切れ目（直列・正解）、y=150 は抵抗の両はしにつながる点線（並列）。不正解例は y=150（100 はなれる）
+        figure: scene(ammeterGapItems()),
+        draggable: { itemId: 'am', axis: 'y' },
+        target: { x: 160, y: 50 },
+        samples: { correct: { x: 160, y: 50 }, wrong: { x: 160, y: 150 } },
+        explanation: '電流計は、はかりたい部分と一列（直列）になるようにつなぎます。上の導線の切れ目に置くと、抵抗を通る電流がすべて電流計を通ります。点線の切れ目は抵抗と並列で、電圧計をつなぐ場所です。',
+        hint: '抵抗を流れる電流が、そのまま通りぬける場所はどちらかな。',
+      }),
+      choice({
+        id: 'electricity-dr1-p5', concept: 'el-circuit',
+        prompt: '電流計を、豆電球や抵抗をつながずに電池に直接つないではいけないのはなぜ？',
+        options: ['電流が流れなくなるから', '電圧計に変わってしまうから', '大きな電流が流れてこわれるから'],
+        answer: 'c',
+        explanation: '電流計そのものの抵抗はとても小さいので、電池に直接つなぐと大きな電流が流れ、電流計がこわれるおそれがあります。',
+        hint: '電流計の中は、電流がとても流れやすいつくりになっているよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'electricity-dr1-r1', concept: 'el-circuit',
+        prompt: '電池の＋極が上の回路です。下の導線の点 Q を流れる電流の向きは、ア（左向き）・イ（右向き）のどちら？',
+        figure: scene(dirChoiceItems('Q')),
+        answer: 'r1',
+        explanation: '電流は豆電球を通ったあと、下の導線を左へ進んで電池の−極（下）へもどります。だから点 Q では左向き（ア）です。',
+        hint: '電流は最後に、電池の−極へもどってくるよ。',
+      }),
+      fill({
+        id: 'electricity-dr1-r2', concept: 'el-circuit',
+        prompt: '電流計が 1.2 A を示しました。空らんに入る数を入れよう。',
+        text: '1.2 A は[b1]である。',
+        blanks: [number('b1', 1200, 0, 'mA')],
+        explanation: '1 A ＝ 1000 mA なので、1.2 × 1000 ＝ 1200 mA です。',
+        hint: 'A を mA になおすときは、1000 をかけるよ。',
+      }),
+      choice({
+        id: 'electricity-dr1-r3', concept: 'el-circuit',
+        prompt: '電流計の針が、0 より左にふれてしまいました。考えられる原因はどれ？',
+        options: ['−端子の値が大きすぎた', '豆電球が切れていた', '＋端子と−端子を逆につないだ'],
+        answer: 'c',
+        explanation: '＋端子と−端子を逆につなぐと、針はふだんと反対の左にふれます。＋端子は電池の＋極側につなぎなおそう。',
+        hint: '針が逆にふれるのは、電流が逆から入ったときだよ。',
+      }),
+      choice({
+        id: 'electricity-dr1-r4', concept: 'el-circuit',
+        prompt: '回路図のかき方として正しいものはどれ？',
+        options: ['器具は実物に近い絵でかく', '導線は直線で、角は直角に曲げる', '導線のつなぎ目には何もかかない'],
+        answer: 'b',
+        explanation: '回路図は、導線をまっすぐな線でかき、角は直角にします。器具は電気用図記号でかき、枝分かれする点には●をかきます。',
+        hint: '回路図は、つながり方を見やすく表す図だよ。',
+      }),
+      choice({
+        id: 'electricity-dr1-t2', concept: 'el-circuit', term: true,
+        prompt: '電流の大きさを表す単位アンペアの記号はどれ？',
+        options: ['A', 'Ω', 'V'],
+        answer: 'a',
+        explanation: 'アンペアの記号は A です。Ω はオーム（抵抗）、V はボルト（電圧）の記号です。',
+        hint: '電流計の記号の丸の中にも書いてある文字だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-dr2: 電圧と電圧計・導体と不導体 ----
+  const elecDr2 = {
+    id: 'electricity-dr2', areaId: 'circuit', free: true, title: 'ドリル 2: 電圧と電圧計・導体と不導体', minutes: 7, concepts: ['el-circuit', 'el-rule', 'el-ohm'],
+    lessons: [
+      {
+        id: 'electricity-dr2-c1',
+        text: '**電圧**は、回路に電流を流そうとするはたらきの大きさです。**電圧計**は、はかりたい部分に**並列**につなぎます。−端子は 300 V・15 V・3 V のどれかにつなぎ、針のふれが小さいときは小さい値の端子にかえます。',
+        figure: scene(voltmeterItems()),
+      },
+      {
+        id: 'electricity-dr2-c2',
+        text: '**直列回路**では、電流はどこも同じで、各部分の電圧の和が電源の電圧になります。**並列回路**では、各部分の電圧は電源の電圧と同じで、枝の電流の和が全体の電流になります。',
+        figure: scene(twoCircuitsItems(false).concat([
+          note(80, 30, '直列', 14), note(80, 145, '電流 どこも同じ', 12), note(80, 165, '電圧 和＝電源', 12),
+          note(240, 30, '並列', 14), note(240, 160, '電圧 どこも同じ', 12), note(240, 180, '電流 和＝全体', 12),
+        ])),
+      },
+      {
+        id: 'electricity-dr2-c3',
+        text: '金属のように電流が流れやすい物質を**導体**、ガラスやゴムのように電流がほとんど流れない物質を**不導体**（**絶縁体**）といいます。電気のコードは、導体の銅線を、不導体のビニルでおおってあります。',
+        figure: scene([
+          { type: 'circle', x: 110, y: 120, r: 70, fill: 'sky', stroke: 'ink' },
+          { type: 'circle', x: 110, y: 120, r: 30, fill: 'orange', stroke: 'ink' },
+          { type: 'line', points: [[130, 110], [195, 90]], width: 2 },
+          { type: 'text', x: 200, y: 95, text: '銅（導体）', size: 13 },
+          { type: 'line', points: [[160, 160], [195, 170]], width: 2 },
+          { type: 'text', x: 200, y: 175, text: 'ビニル（不導体）', size: 13 },
+          note(160, 225, 'コードの断面', 14),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-dr2-w1', concept: 'el-ohm',
+      prompt: '予想しよう。電気のコードの外側が、ビニルなどでおおわれているのはなぜだと思う？',
+      options: ['電流を速く流すため', 'コードを重くするため', '電流が外にもれないようにするため'],
+      answer: 'c',
+      explanation: 'ビニルは電流をほとんど通さない不導体です。中の銅線をおおうことで、電流がほかへ流れたり、人が感電したりするのを防ぎます。',
+      hint: 'ビニルは電流を通しやすいかな、通しにくいかな。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-dr2-t1', concept: 'el-ohm', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電流がほとんど流れない物質を、不導体または[b1]という。',
+        blanks: [word('b1', ['導体', '絶縁体', '電解質'], '絶縁体')],
+        explanation: 'ガラスやゴムのように電流がほとんど流れない物質を、不導体または**絶縁体**といいます。',
+        hint: '電気を「絶つ」ものだよ。',
+      }),
+      fill({
+        id: 'electricity-dr2-p1', concept: 'el-circuit',
+        prompt: '電圧計の−端子を 3 V につないだら、針が図のようにふれました。空らんに入る数を入れよう。',
+        figure: scene(meterFace(3, 30, ['0', '1', '2', '3'], 2.4, '')),
+        text: '電圧の大きさは[b1]である。',
+        blanks: [number('b1', 2.4, 0, 'V')],
+        explanation: '3 V の端子では、目盛りの数をそのまま V で読みます。大きい目盛り 2 から小さい目盛り 4 つ分進んでいるので 2.4 V です。',
+        hint: '大きい目盛りの 1 つ分は 1 V、小さい目盛りの 1 つ分は 0.1 V だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-dr2-p2', concept: 'el-rule',
+        prompt: '豆電球 2 個の直列回路です。ア AB 間・イ BC 間・ウ AC 間のうち、電源の電圧と同じ大きさの電圧が加わるのはどこ？',
+        figure: scene(seriesABCItems().concat([
+          { type: 'region', id: 'r1', x: 110, y: 105, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 210, y: 105, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 160, y: 150, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: '直列回路では、各豆電球の電圧の和が電源の電圧になります。AC 間は 2 個の豆電球の両はしなので、電源の電圧と同じです（ウ）。',
+        hint: '2 個の豆電球の電圧を合わせると、何と等しくなるかな。',
+      }),
+      fill({
+        id: 'electricity-dr2-p3', concept: 'el-rule',
+        prompt: '豆電球 X と Y の直列回路で、X に 1.8 V、Y に 1.2 V の電圧が加わっています。空らんに入る数を入れよう。',
+        text: '電源の電圧は[b1]である。',
+        blanks: [number('b1', 3, 0, 'V')],
+        explanation: '直列回路では、各部分の電圧の和が電源の電圧です。1.8 ＋ 1.2 ＝ 3.0 V です。',
+        hint: '直列回路の電圧は、たし算で考えよう。',
+      }),
+      fill({
+        id: 'electricity-dr2-p4', concept: 'el-rule',
+        prompt: '同じ豆電球 3 個を直列につなぎ、4.5 V の電源につなぎました。空らんに入る数を入れよう。',
+        text: '豆電球 1 個に加わる電圧は[b1]である。',
+        blanks: [number('b1', 1.5, 0, 'V')],
+        explanation: '同じ豆電球なので、電源の電圧 4.5 V を 3 個で等しく分けます。4.5 ÷ 3 ＝ 1.5 V です。',
+        hint: '3 個の電圧の和が 4.5 V になるよ。',
+      }),
+      choice({
+        id: 'electricity-dr2-p5', concept: 'el-ohm',
+        prompt: '次のうち、どちらも導体である組み合わせはどれ？',
+        options: ['ガラス・銅', '鉄・アルミニウム', 'ゴム・プラスチック', '鉄・紙'],
+        answer: 'b',
+        explanation: '鉄やアルミニウムなどの金属は、電流が流れやすい導体です。ガラス・ゴム・プラスチック・紙は不導体です。',
+        hint: '金属どうしの組み合わせをさがそう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'electricity-dr2-r1', concept: 'el-circuit',
+        prompt: '電圧計の−端子を 300 V につないだら、針が図のようにふれました。空らんに入る数を入れよう。',
+        figure: scene(meterFace(300, 30, ['0', '100', '200', '300'], 120, '')),
+        text: '電圧の大きさは[b1]である。',
+        blanks: [number('b1', 120, 0, 'V')],
+        explanation: '300 V の端子では、大きい目盛り 1 つ分が 100 V、小さい目盛り 1 つ分が 10 V です。100 から小さい目盛り 2 つ分で 120 V です。',
+        hint: '小さい目盛り 1 つ分は何 V かな。',
+      }),
+      figureChoice({
+        id: 'electricity-dr2-r2', concept: 'el-circuit',
+        prompt: '電圧計の−端子は、ア 300 V、イ 15 V、ウ 3 V です。イにつないだら針のふれがとても小さく読みにくい。次につなぎかえる−端子はどれ？',
+        // 電圧計の本体と、下に並ぶ−端子 3 つ（左から 300 V・15 V・3 V）と＋端子（赤）
+        figure: scene([
+          { type: 'rect', x: 40, y: 30, width: 240, height: 130, fill: 'white', stroke: 'ink' },
+          note(160, 108, 'V', 32),
+          { type: 'circle', x: 80, y: 192, r: 9, fill: 'ink', stroke: 'ink' },
+          { type: 'circle', x: 150, y: 192, r: 9, fill: 'ink', stroke: 'ink' },
+          { type: 'circle', x: 220, y: 192, r: 9, fill: 'ink', stroke: 'ink' },
+          { type: 'circle', x: 280, y: 192, r: 9, fill: 'red', stroke: 'ink' },
+          note(150, 232, '−端子', 13), note(280, 232, '＋端子', 13),
+          { type: 'region', id: 'r1', x: 80, y: 192, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 150, y: 192, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 220, y: 192, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r3',
+        explanation: '針のふれが小さいときは、1 つ小さい値の−端子（ウの 3 V）につなぎかえると、細かく読めます。大きい値の端子にすると、ふれはもっと小さくなります。',
+        hint: '電流計のときと同じ考え方だよ。',
+      }),
+      fill({
+        id: 'electricity-dr2-r3', concept: 'el-rule',
+        prompt: '同じ豆電球 3 個を直列につなぎ、6.0 V の電源につなぎました。空らんに入る数を入れよう。',
+        text: '豆電球 1 個に加わる電圧は[b1]である。',
+        blanks: [number('b1', 2, 0, 'V')],
+        explanation: '同じ豆電球 3 個で、6.0 V を等しく分けます。6.0 ÷ 3 ＝ 2.0 V です。',
+        hint: '3 個の電圧の和が 6.0 V になるよ。',
+      }),
+      fill({
+        id: 'electricity-dr2-r4', concept: 'el-rule',
+        prompt: '豆電球 X と Y の直列回路で、X に 1.5 V、Y に 2.5 V の電圧が加わっています。空らんに入る数を入れよう。',
+        text: '電源の電圧は[b1]である。',
+        blanks: [number('b1', 4, 0, 'V')],
+        explanation: '直列回路では、各部分の電圧の和が電源の電圧です。1.5 ＋ 2.5 ＝ 4.0 V です。',
+        hint: '直列回路の電圧は、たし算で考えよう。',
+      }),
+      choice({
+        id: 'electricity-dr2-r5', concept: 'el-ohm',
+        prompt: '次のうち、電流をほとんど通さないものはどれ？',
+        options: ['10 円玉', 'アルミニウムはく', '鉄くぎ', 'ガラスのコップ'],
+        answer: 'd',
+        explanation: 'ガラスは不導体（絶縁体）なので、電流をほとんど通しません。10 円玉（銅）・アルミニウムはく・鉄くぎは金属で、導体です。',
+        hint: '金属でないものをさがそう。',
+      }),
+      choice({
+        id: 'electricity-dr2-t2', concept: 'el-ohm', term: true,
+        prompt: 'ゴムやガラスのように電流をほとんど通さない物質の、「不導体」以外のよび名はどれ？',
+        options: ['導体', '絶縁体', '電磁石'],
+        answer: 'b',
+        explanation: '電流をほとんど通さない物質は、不導体または絶縁体といいます。',
+        hint: '電気を「絶つ」ものだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-dr3: オームの法則と抵抗のつなぎ方 ----
+  const elecDr3 = {
+    id: 'electricity-dr3', areaId: 'circuit', free: true, title: 'ドリル 3: オームの法則と抵抗のつなぎ方', minutes: 7, concepts: ['el-ohm'],
+    lessons: [
+      {
+        id: 'electricity-dr3-c1',
+        text: '**オームの法則**は、電圧〔V〕＝抵抗〔Ω〕×電流〔A〕と表せます。電流＝電圧÷抵抗、抵抗＝電圧÷電流と変形して使うこともできます。mA で表された電流は、A になおしてから計算します。',
+        figure: scene([
+          { type: 'polygon', points: [[160, 40], [60, 200], [260, 200]], fill: 'white', stroke: 'ink' },
+          { type: 'line', points: [[104, 130], [216, 130]], width: 2 },
+          { type: 'line', points: [[160, 130], [160, 200]], width: 2 },
+          note(160, 112, 'V', 24), note(125, 178, 'R', 22), note(195, 178, 'I', 22),
+          { type: 'text', x: 16, y: 40, text: 'V：電圧〔V〕', size: 13 },
+          { type: 'text', x: 16, y: 60, text: 'R：抵抗〔Ω〕', size: 13 },
+          { type: 'text', x: 16, y: 80, text: 'I：電流〔A〕', size: 13 },
+          note(160, 228, 'V ＝ R × I', 16),
+        ]),
+      },
+      {
+        id: 'electricity-dr3-c2',
+        text: '抵抗を**直列**につなぐと、全体の抵抗は各抵抗の和になり、1 個のときより大きくなります。抵抗を**並列**につなぐと、全体の抵抗は、つないだどの抵抗よりも小さくなります。',
+        figure: scene([
+          wire([[15, 80], [40, 80]]), sym('resistor', 60, 80), wire([[80, 80], [100, 80]]), sym('resistor', 120, 80), wire([[140, 80], [155, 80]]),
+          note(85, 50, '直列', 14), note(85, 125, '和になり大きく', 13),
+          wire([[175, 85], [195, 85]]), wire([[195, 60], [195, 110]]),
+          wire([[195, 60], [220, 60]]), wire([[195, 110], [220, 110]]),
+          sym('resistor', 240, 60), sym('resistor', 240, 110),
+          wire([[260, 60], [285, 60]]), wire([[260, 110], [285, 110]]),
+          wire([[285, 60], [285, 110]]), wire([[285, 85], [305, 85]]),
+          dot(195, 85), dot(285, 85),
+          note(240, 35, '並列', 14), note(240, 150, 'どれよりも小さく', 13),
+          { type: 'line', points: [[165, 30], [165, 170]], color: 'gray', width: 1, dashed: true },
+          note(160, 210, '例: 10 Ω と 20 Ω の直列は 30 Ω', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr3-c3',
+        text: '直列回路では、どの抵抗にも同じ電流が流れるので、抵抗が大きいほうに大きな電圧が加わります。並列回路では、どの抵抗にも同じ電圧が加わるので、抵抗が小さいほうに大きな電流が流れます。',
+        figure: scene([
+          sym('resistor', 100, 60), sym('resistor', 220, 60), sym('battery', 160, 200),
+          wire([[140, 200], [40, 200], [40, 60], [80, 60]]),
+          wire([[120, 60], [200, 60]]),
+          wire([[240, 60], [280, 60], [280, 200], [180, 200]]),
+          note(100, 40, '10 Ω', 13), note(220, 40, '20 Ω', 13),
+          note(100, 95, '2 V', 14), note(220, 95, '4 V', 14),
+          note(160, 140, '電流はどちらも 0.2 A', 13),
+          note(160, 232, '電源 6 V', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-dr3-w1', concept: 'el-ohm',
+      prompt: '予想しよう。豆電球 1 個の回路に、もう 1 個の豆電球を直列につなぎました。電池から流れ出る電流はどうなると思う？',
+      options: ['大きくなる', '小さくなる', '変わらない'],
+      answer: 'b',
+      explanation: '直列につなぐと、回路全体の抵抗が大きくなるので、同じ電池では流れる電流が小さくなります。',
+      hint: '直列につなぐと、全体の抵抗はどうなるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-dr3-t1', concept: 'el-ohm', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '抵抗の単位オームは、記号[b1]で表す。',
+        blanks: [word('b1', ['V', 'A', 'Ω'], 'Ω')],
+        explanation: 'オームの記号は **Ω** です。ギリシャ文字の「オメガ」の大文字です。',
+        hint: 'U の字を上下さかさまにしたような形の記号だよ。',
+      }),
+      fill({
+        id: 'electricity-dr3-p1', concept: 'el-ohm',
+        prompt: '表は、電熱線 P に加えた電圧と流れた電流の結果です。空らんに入る数を入れよう。',
+        figure: scene(tableItems('電熱線 P の測定結果', ['0', '2.0', '4.0', '6.0'], ['0', '0.10', '0.20', '0.30'])),
+        text: '電熱線 P の抵抗は[b1]である。',
+        blanks: [number('b1', 20, 0, 'Ω')],
+        explanation: '表のどの組を使っても同じになります。たとえば 2.0 V ÷ 0.10 A ＝ 20 Ω です。',
+        hint: '抵抗 ＝ 電圧 ÷ 電流 だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-dr3-p2', concept: 'el-ohm',
+        prompt: '同じ電池と 10 Ω の抵抗で、ア 1 個、イ 2 個を直列、ウ 2 個を並列にした回路です。電池から流れ出る電流がいちばん大きいのは？',
+        figure: scene(threeResistorItems()),
+        answer: 'r3',
+        explanation: '全体の抵抗は、ア 10 Ω、イ 20 Ω、ウ 5 Ω です。電圧が同じなら、全体の抵抗がいちばん小さいウにいちばん大きな電流が流れます。',
+        hint: '全体の抵抗がいちばん小さいのはどれかな。',
+      }),
+      fill({
+        id: 'electricity-dr3-p3', concept: 'el-ohm',
+        prompt: '10 Ω と 30 Ω の抵抗を直列につなぎ、8 V の電圧を加えました。空らんに入る数を入れよう。',
+        text: '30 Ω の抵抗に加わる電圧は[b1]である。',
+        blanks: [number('b1', 6, 0, 'V')],
+        explanation: '全体の抵抗は 40 Ω なので、電流は 8 ÷ 40 ＝ 0.2 A。30 Ω に加わる電圧は 30 × 0.2 ＝ 6 V です。',
+        hint: 'まず全体の抵抗と、回路に流れる電流を求めよう。',
+      }),
+      fill({
+        id: 'electricity-dr3-p4', concept: 'el-ohm',
+        prompt: '20 Ω と 5 Ω の抵抗を並列につなぎ、4 V の電圧を加えました。空らんに入る数を入れよう。',
+        text: '電源から流れ出る全体の電流は[b1]である。',
+        blanks: [number('b1', 1, 0, 'A')],
+        explanation: 'どちらにも 4 V が加わります。20 Ω には 4 ÷ 20 ＝ 0.2 A、5 Ω には 4 ÷ 5 ＝ 0.8 A。全体は 0.2 ＋ 0.8 ＝ 1.0 A です。',
+        hint: '並列では、それぞれの抵抗に電源と同じ電圧が加わるよ。',
+      }),
+      choice({
+        id: 'electricity-dr3-p5', concept: 'el-ohm',
+        prompt: '20 Ω の抵抗だけの回路に、同じ電源のまま 20 Ω の抵抗をもう 1 つ並列につなぎました。電源から流れる電流は？',
+        options: ['半分になる', '変わらない', '2 倍になる'],
+        answer: 'c',
+        explanation: '並列にすると、どちらの抵抗にも同じ電圧が加わり、同じ電流が流れます。全体の電流は 2 本分の和なので 2 倍になります。',
+        hint: '新しくつないだ抵抗にも、同じ大きさの電流が流れるよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'electricity-dr3-r1', concept: 'el-ohm',
+        prompt: '表は、電熱線 Q に加えた電圧と流れた電流の結果です。空らんに入る数を入れよう。',
+        figure: scene(tableItems('電熱線 Q の測定結果', ['0', '1.5', '3.0', '4.5'], ['0', '0.10', '0.20', '0.30'])),
+        text: '電熱線 Q の抵抗は[b1]である。',
+        blanks: [number('b1', 15, 0, 'Ω')],
+        explanation: 'たとえば 3.0 V ÷ 0.20 A ＝ 15 Ω です。どの組で計算しても同じになります。',
+        hint: '抵抗 ＝ 電圧 ÷ 電流 だよ。',
+      }),
+      fill({
+        id: 'electricity-dr3-r2', concept: 'el-ohm',
+        prompt: '20 Ω と 40 Ω の抵抗を直列につなぎ、9 V の電圧を加えました。空らんに入る数を入れよう。',
+        text: '40 Ω の抵抗に加わる電圧は[b1]である。',
+        blanks: [number('b1', 6, 0, 'V')],
+        explanation: '全体の抵抗は 60 Ω なので、電流は 9 ÷ 60 ＝ 0.15 A。40 Ω に加わる電圧は 40 × 0.15 ＝ 6 V です。',
+        hint: 'まず全体の抵抗と、回路に流れる電流を求めよう。',
+      }),
+      figureChoice({
+        id: 'electricity-dr3-r3', concept: 'el-ohm',
+        prompt: '同じ電池と 10 Ω の抵抗で、ア 1 個、イ 2 個を直列、ウ 2 個を並列にした回路です。電池から流れ出る電流がいちばん小さいのは？',
+        figure: scene(threeResistorItems()),
+        answer: 'r2',
+        explanation: '全体の抵抗は、ア 10 Ω、イ 20 Ω、ウ 5 Ω です。全体の抵抗がいちばん大きいイの電流がいちばん小さくなります。',
+        hint: '全体の抵抗がいちばん大きいのはどれかな。',
+      }),
+      choice({
+        id: 'electricity-dr3-r4', concept: 'el-ohm',
+        prompt: '10 Ω と 20 Ω の抵抗を直列につなぎました。加わる電圧が大きいのはどちら？',
+        options: ['10 Ω の抵抗', 'どちらも同じ', '20 Ω の抵抗'],
+        answer: 'c',
+        explanation: '直列ではどちらにも同じ電流が流れます。電圧 ＝ 抵抗 × 電流 なので、抵抗が大きい 20 Ω のほうに大きな電圧（2 倍）が加わります。',
+        hint: '直列で同じなのは、電流と電圧のどちらかな。',
+      }),
+      choice({
+        id: 'electricity-dr3-t2', concept: 'el-ohm', term: true,
+        prompt: '抵抗の単位オームの記号はどれ？',
+        options: ['W', 'Ω', 'J'],
+        answer: 'b',
+        explanation: 'オームの記号は Ω です。W はワット（電力）、J はジュール（熱量）の記号です。',
+        hint: 'ギリシャ文字のオメガだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-dr4: 電力・電力量・発熱量 ----
+  const elecDr4 = {
+    id: 'electricity-dr4', areaId: 'el-energy', free: true, title: 'ドリル 4: 電力・電力量・発熱量', minutes: 7, concepts: ['el-power'],
+    lessons: [
+      {
+        id: 'electricity-dr4-c1',
+        text: '電気がもつ、光や熱、音、運動などを生み出す能力を**電気エネルギー**といいます。1 秒間に使われる電気エネルギーの大きさが**電力**で、電力〔W〕＝電圧〔V〕×電流〔A〕で求めます。',
+        figure: scene([
+          { type: 'rect', x: 12, y: 95, width: 140, height: 50, fill: 'yellow', stroke: 'ink', rx: 8, label: '電気エネルギー' },
+          { type: 'arrow', x1: 156, y1: 120, x2: 200, y2: 45 },
+          { type: 'arrow', x1: 156, y1: 120, x2: 200, y2: 98 },
+          { type: 'arrow', x1: 156, y1: 120, x2: 200, y2: 145 },
+          { type: 'arrow', x1: 156, y1: 120, x2: 200, y2: 195 },
+          { type: 'text', x: 205, y: 50, text: '光（電灯）', size: 13 },
+          { type: 'text', x: 205, y: 103, text: '熱（ヒーター）', size: 13 },
+          { type: 'text', x: 205, y: 150, text: '音（スピーカー）', size: 13 },
+          { type: 'text', x: 205, y: 200, text: '運動（モーター）', size: 13 },
+        ]),
+      },
+      {
+        id: 'electricity-dr4-c2',
+        text: '電流によって発生する熱の量を**発熱量**（熱量）といい、熱量〔J〕＝電力〔W〕×時間〔s〕で求めます。使った電気エネルギーの量である**電力量**も、電力×時間で求め、単位は J・Wh・kWh を使います。',
+        figure: scene([
+          note(160, 60, '電力〔W〕＝電圧〔V〕×電流〔A〕', 14),
+          note(160, 110, '熱量〔J〕＝電力〔W〕×時間〔s〕', 14),
+          note(160, 160, '電力量〔J〕＝電力〔W〕×時間〔s〕', 14),
+          note(160, 210, '1 Wh ＝ 3600 J　1 kWh ＝ 1000 Wh', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr4-c3',
+        text: '家庭のコンセントには 100 V の電圧が加わり、電気器具は**並列**につながれています。そのため、どの器具にも 100 V が加わります。同時に使う器具がふえるほど、全体の電流は大きくなります。',
+        figure: scene([
+          { type: 'rect', x: 12, y: 95, width: 60, height: 50, fill: 'white', stroke: 'ink', label: '100 V' },
+          wire([[72, 110], [90, 110], [90, 50], [275, 50]]),
+          wire([[72, 130], [90, 130], [90, 200], [275, 200]]),
+          wire([[135, 50], [135, 95]]), wire([[135, 155], [135, 200]]),
+          wire([[205, 50], [205, 95]]), wire([[205, 155], [205, 200]]),
+          wire([[275, 50], [275, 95]]), wire([[275, 155], [275, 200]]),
+          { type: 'rect', x: 107, y: 95, width: 56, height: 60, fill: 'white', stroke: 'ink', label: '照明' },
+          { type: 'rect', x: 177, y: 95, width: 56, height: 60, fill: 'white', stroke: 'ink', label: 'テレビ' },
+          { type: 'rect', x: 247, y: 95, width: 56, height: 60, fill: 'white', stroke: 'ink', label: 'レンジ' },
+          dot(135, 50), dot(205, 50), dot(135, 200), dot(205, 200),
+          note(170, 228, '器具は並列につながっている', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-dr4-w1', concept: 'el-power',
+      prompt: '予想しよう。ドライヤーのように熱を出す器具の電力は、LED 電球とくらべてどうだと思う？',
+      options: ['ずっと大きい', 'ずっと小さい', 'ほとんど同じ'],
+      answer: 'a',
+      explanation: '熱を出す器具は、電力が大きいものが多いです。ドライヤーは 1000 W 以上、LED 電球は 10 W 前後のものがよく使われています。',
+      hint: '電気器具に書いてある W の数を思い出そう。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-dr4-t1', concept: 'el-power', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電気がもつ、光・熱・音などを生み出す能力を[b1]という。',
+        blanks: [word('b1', ['電圧', '電気エネルギー', '電気抵抗'], '電気エネルギー')],
+        explanation: '光・熱・音・運動などを生み出す、電気がもつ能力を**電気エネルギー**といいます。',
+        hint: '「…エネルギー」という形の言葉だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-dr4-p1', concept: 'el-power',
+        prompt: 'ア〜エは、100 V で使う電気器具の表示です。100 V で使ったとき、流れる電流が 1.5 A になるのはどれ？',
+        figure: scene(applianceItems()),
+        answer: 'r2',
+        explanation: '電流 ＝ 電力 ÷ 電圧 です。150 W ÷ 100 V ＝ 1.5 A なので、テレビ（イ）です。',
+        hint: '電力を 100 V でわってみよう。',
+      }),
+      fill({
+        id: 'electricity-dr4-p2', concept: 'el-power',
+        prompt: '100 V のコンセントで、600 W の電子レンジと 1200 W のドライヤーを同時に使いました。空らんに入る数を入れよう。',
+        text: 'コンセントから流れる全体の電流は[b1]である。',
+        blanks: [number('b1', 18, 0, 'A')],
+        explanation: '電子レンジは 600 ÷ 100 ＝ 6 A、ドライヤーは 1200 ÷ 100 ＝ 12 A。並列なので全体は 6 ＋ 12 ＝ 18 A です。',
+        hint: 'それぞれの電流を求めて、たし合わせよう。',
+      }),
+      fill({
+        id: 'electricity-dr4-p3', concept: 'el-power',
+        prompt: '電気料金が 1 kWh あたり 30 円のとき、1200 W のドライヤーを 30 分使いました。空らんに入る数を入れよう。',
+        text: 'この電気料金は[b1]である。',
+        blanks: [number('b1', 18, 0, '円')],
+        explanation: '電力量は 1.2 kW × 0.5 時間 ＝ 0.6 kWh。料金は 0.6 × 30 ＝ 18 円です。',
+        hint: 'W を kW に、分を時間になおして電力量（kWh）を求めよう。',
+      }),
+      fill({
+        id: 'electricity-dr4-p4', concept: 'el-power',
+        prompt: '同じ量の水を、6 W の電熱線で 5 分あたためると 3 ℃ 上がりました。空らんに入る数を入れよう。',
+        text: '12 W の電熱線で 5 分あたためると、水の上昇温度は[b1]である。',
+        blanks: [number('b1', 6, 0, '℃')],
+        explanation: '時間が同じなら、水の上昇温度は電力に比例します。電力が 2 倍なので、3 × 2 ＝ 6 ℃ です。',
+        hint: '電力が何倍になったかを考えよう。',
+      }),
+      choice({
+        id: 'electricity-dr4-p5', concept: 'el-power',
+        prompt: '電熱線で水をあたためる実験で、同じ時間で発熱量を大きくする方法はどれ？',
+        options: ['水の量をふやす', '電熱線に加える電圧を大きくする', '電流を流す時間を短くする'],
+        answer: 'b',
+        explanation: '同じ電熱線に加える電圧を大きくすると、電流も大きくなり、電力が大きくなります。そのため同じ時間での発熱量が大きくなります。',
+        hint: '発熱量 ＝ 電力 × 時間。電力を大きくするには？',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'electricity-dr4-r1', concept: 'el-power',
+        prompt: 'ア〜エは、100 V で使う電気器具の表示です。100 V で使ったとき、流れる電流が 10 A になるのはどれ？',
+        figure: scene(applianceItems()),
+        answer: 'r1',
+        explanation: '電流 ＝ 電力 ÷ 電圧 です。1000 W ÷ 100 V ＝ 10 A なので、電気ストーブ（ア）です。',
+        hint: '電力を 100 V でわってみよう。',
+      }),
+      fill({
+        id: 'electricity-dr4-r2', concept: 'el-power',
+        prompt: '電気料金が 1 kWh あたり 30 円のとき、50 W のテレビを 4 時間見ました。空らんに入る数を入れよう。',
+        text: 'この電気料金は[b1]である。',
+        blanks: [number('b1', 6, 0, '円')],
+        explanation: '電力量は 50 W × 4 時間 ＝ 200 Wh ＝ 0.2 kWh。料金は 0.2 × 30 ＝ 6 円です。',
+        hint: 'まず電力量を kWh で求めよう。',
+      }),
+      fill({
+        id: 'electricity-dr4-r3', concept: 'el-power',
+        prompt: '1500 W の IH 調理器を 2 分間使いました。1 kJ ＝ 1000 J です。空らんに入る数を入れよう。',
+        text: '発生した熱量は[b1]である。',
+        blanks: [number('b1', 180, 0, 'kJ')],
+        explanation: '2 分 ＝ 120 秒なので、1500 × 120 ＝ 180000 J。1000 でわって 180 kJ です。',
+        hint: '時間を秒になおしてから、電力 × 時間 を計算しよう。',
+      }),
+      choice({
+        id: 'electricity-dr4-t2', concept: 'el-power', term: true,
+        prompt: '電流を流したときに電熱線から発生する熱の量を何という？',
+        options: ['電圧', '電力', '発熱量（熱量）'],
+        answer: 'c',
+        explanation: '電流によって発生する熱の量を発熱量（熱量）といい、単位はジュール（J）です。',
+        hint: '「熱の量」を表す言葉だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-dr5: 電流と磁界 ----
+  const elecDr5 = {
+    id: 'electricity-dr5', areaId: 'el-energy', free: true, title: 'ドリル 5: 電磁石・モーター・発電機', minutes: 7, concepts: ['el-magnet', 'el-motor', 'el-induction'],
+    lessons: [
+      {
+        id: 'electricity-dr5-c1',
+        text: 'コイルの中に鉄心を入れたものを**電磁石**といいます。電流を流すと磁石になり、電流を切ると磁石のはたらきがなくなります。電流を大きくしたり、コイルの巻数をふやしたりすると、電磁石は強くなります。',
+        figure: scene([
+          { type: 'rect', x: 90, y: 95, width: 140, height: 30, fill: 'gray', stroke: 'ink' },
+          { type: 'line', points: [[100, 88], [110, 132], [120, 88], [130, 132], [140, 88], [150, 132], [160, 88], [170, 132], [180, 88], [190, 132], [200, 88], [210, 132], [220, 88]], color: 'orange', width: 2 },
+          sym('battery', 160, 200),
+          wire([[100, 88], [70, 88], [70, 200], [140, 200]]),
+          wire([[220, 88], [250, 88], [250, 200], [180, 200]]),
+          { type: 'line', points: [[160, 150], [160, 128]], width: 2 },
+          note(160, 166, '鉄心（コイルの中）', 13),
+          note(160, 60, '電流を流すと磁石になる', 13),
+          note(160, 232, '電流を大きく・巻数を多く → 強く', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr5-c2',
+        text: '電流が磁界から受ける力で回るのが**モーター**、コイルの中の磁界を変化させて電流をとり出す**電磁誘導**を利用したのが**発電機**です。モーターは電気を運動に、発電機は運動を電気に変えます。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 40, width: 110, height: 44, fill: 'yellow', stroke: 'ink', rx: 6, label: '電流' },
+          { type: 'arrow', x1: 136, y1: 62, x2: 190, y2: 62, color: 'blue' },
+          { type: 'rect', x: 196, y: 40, width: 104, height: 44, fill: 'white', stroke: 'ink', rx: 6, label: '運動' },
+          note(160, 108, 'モーター（磁界から受ける力）', 13),
+          { type: 'rect', x: 20, y: 130, width: 110, height: 44, fill: 'white', stroke: 'ink', rx: 6, label: '運動' },
+          { type: 'arrow', x1: 136, y1: 152, x2: 190, y2: 152, color: 'blue' },
+          { type: 'rect', x: 196, y: 130, width: 104, height: 44, fill: 'yellow', stroke: 'ink', rx: 6, label: '電流' },
+          note(160, 198, '発電機（電磁誘導）', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-dr5-w1', concept: 'el-magnet',
+      prompt: '予想しよう。電磁石をもっと強くするには、どうすればよいと思う？',
+      options: ['流す電流を小さくする', '鉄心をぬく', 'コイルの巻数をふやす'],
+      answer: 'c',
+      explanation: 'コイルの巻数をふやしたり、電流を大きくしたりすると、電磁石は強くなります。鉄心を入れると、さらに強くなります。',
+      hint: 'コイルがつくる磁界を強くする方法を考えよう。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-dr5-t1', concept: 'el-magnet', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'コイルの中に鉄心を入れ、電流を流すと磁石になるようにしたものを[b1]という。',
+        blanks: [word('b1', ['電磁石', '永久磁石', '検流計'], '電磁石')],
+        explanation: '電流を流したときだけ磁石になる、鉄心入りのコイルを**電磁石**といいます。',
+        hint: '「電」の字がつく磁石だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-dr5-p1', concept: 'el-magnet',
+        prompt: '同じ鉄心で、巻数と電流を変えた電磁石ア〜ウがあります。クリップをいちばん多く引きつけるのはどれ？',
+        figure: scene(electromagnetItems()),
+        answer: 'r3',
+        explanation: '巻数が多いほど、電流が大きいほど、電磁石は強くなります。巻数 100 回で電流 2 A のウがいちばん強いです。',
+        hint: '巻数と電流の両方が大きいのはどれかな。',
+      }),
+      fill({
+        id: 'electricity-dr5-p2', concept: 'el-magnet',
+        prompt: '電磁石と、ふつうの棒磁石（永久磁石）のちがいです。空らんに入る言葉を入れよう。',
+        text: '電磁石は、電流を[b1]と、磁石のはたらきがなくなる。',
+        blanks: [word('b1', ['切る', '強くする', '逆向きにする'], '切る')],
+        explanation: '電磁石は、電流が流れているあいだだけ磁石になります。電流を切ると、磁石のはたらきがなくなります。永久磁石は、いつも磁石のはたらきをもっています。',
+        hint: '電磁石は、電流が流れているときだけ磁石になるよ。',
+      }),
+      drag({
+        id: 'electricity-dr5-p3', concept: 'el-motor',
+        prompt: '左が N 極、右が S 極の磁石のあいだに導線（・）があり、紙の裏から表へ電流が流れます。導線を、力を受けて動く先（上か下の点線の丸）へ動かそう。',
+        // 磁界は右向き、電流は紙の裏から表へ → 力は上向き。導線は x=160 の上下に動く。正解 y=60、不正解例 y=180（120 はなれる）
+        figure: scene(forceDragItems(true)),
+        draggable: { itemId: 'wire', axis: 'y' },
+        target: { x: 160, y: 60 },
+        samples: { correct: { x: 160, y: 60 }, wrong: { x: 160, y: 180 } },
+        explanation: 'フレミングの左手の法則で、中指（電流）を手前へ、人さし指（磁界）を右へ向けると、親指（力）は上を向きます。だから導線は上へ動きます。',
+        hint: '磁界は N 極から S 極へ向かうよ。左手の中指・人さし指・親指で考えよう。',
+      }),
+      choice({
+        id: 'electricity-dr5-p4', concept: 'el-induction',
+        prompt: '発電機と同じ電磁誘導のしくみを利用しているものはどれ？',
+        options: ['電気ストーブ', '自転車のライトの発電機', '乾電池'],
+        answer: 'b',
+        explanation: '自転車のライトの発電機は、タイヤの回転で中の磁石を回し、電磁誘導で電流をとり出しています。',
+        hint: '回転を使って電流をつくるものはどれかな。',
+      }),
+      fill({
+        id: 'electricity-dr5-p5', concept: 'el-induction',
+        prompt: 'モーターに豆電球をつなぎ、モーターの軸を手で速く回すと、豆電球が光りました。空らんに入る言葉を入れよう。',
+        text: '軸を回すと、モーターが[b1]としてはたらき、電流が流れた。',
+        blanks: [word('b1', ['発電機', '電磁石', '乾電池'], '発電機')],
+        explanation: '軸を回すと、モーターの中のコイルと磁石の位置関係が変わり、電磁誘導で電流が流れます。モーターが**発電機**としてはたらいたのです。',
+        hint: 'コイルと磁石の位置関係が変わると、何が起こるかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'electricity-dr5-r1', concept: 'el-magnet',
+        prompt: '同じ鉄心で、巻数と電流を変えた電磁石ア〜ウがあります。引きつけるクリップがいちばん少ないのはどれ？',
+        figure: scene(electromagnetItems()),
+        answer: 'r1',
+        explanation: '巻数が少なく、電流も小さいアがいちばん弱い電磁石です。',
+        hint: '巻数も電流もいちばん小さいのはどれかな。',
+      }),
+      choice({
+        id: 'electricity-dr5-t2', concept: 'el-magnet', term: true,
+        prompt: '電流を流したときだけ磁石になる、鉄心入りのコイルを何という？',
+        options: ['電磁石', '整流子', '発電機'],
+        answer: 'a',
+        explanation: '鉄心入りのコイルに電流を流して磁石にしたものを電磁石といいます。',
+        hint: '「電」の字がつく磁石だよ。',
+      }),
+      drag({
+        id: 'electricity-dr5-r2', concept: 'el-motor',
+        prompt: '左が S 極、右が N 極の磁石のあいだに導線（・）があり、紙の裏から表へ電流が流れます。導線を、力を受けて動く先（上か下の点線の丸）へ動かそう。',
+        // 磁界は左向き、電流は紙の裏から表へ → 力は下向き。正解 y=180、不正解例 y=60（120 はなれる）
+        figure: scene(forceDragItems(false)),
+        draggable: { itemId: 'wire', axis: 'y' },
+        target: { x: 160, y: 180 },
+        samples: { correct: { x: 160, y: 180 }, wrong: { x: 160, y: 60 } },
+        explanation: '磁界は N 極から S 極へ向かうので左向きです。中指（電流）を手前へ、人さし指（磁界）を左へ向けると、親指（力）は下を向きます。',
+        hint: '磁石の極が入れかわると、磁界の向きも逆になるよ。',
+      }),
+      choice({
+        id: 'electricity-dr5-r3', concept: 'el-motor',
+        prompt: 'モーターのコイルの巻数をふやし、同じ電流を流しました。モーターの回り方はどうなる？',
+        options: ['力強く回る', '逆向きに回る', '回らなくなる'],
+        answer: 'a',
+        explanation: 'コイルの巻数をふやすと、コイルが磁界から受ける力が大きくなり、モーターは力強く回ります。',
+        hint: '力を受ける導線の本数がふえるね。',
+      }),
+      choice({
+        id: 'electricity-dr5-r4', concept: 'el-induction',
+        prompt: '発電機のはたらきを表しているものはどれ？',
+        options: ['電気エネルギーを運動のエネルギーに変える', '運動のエネルギーを電気エネルギーに変える', '電気エネルギーを光に変える'],
+        answer: 'b',
+        explanation: '発電機は、回転などの運動のエネルギーを、電磁誘導によって電気エネルギーに変える装置です。',
+        hint: '発電機は、何を使って電流をつくるかな。',
+      }),
+      choice({
+        id: 'electricity-dr5-r5', concept: 'el-induction',
+        prompt: '手回し発電機に豆電球をつなぎ、ハンドルを速く回しました。ゆっくり回したときとくらべて豆電球は？',
+        options: ['暗くなる', '変わらない', '明るくなる'],
+        answer: 'c',
+        explanation: '速く回すほど、コイルの中の磁界が速く変化するので、大きな誘導電流が流れ、豆電球は明るくなります。',
+        hint: '磁界の変化が速いほど、誘導電流はどうなるかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-dr6: 静電気と電流 ----
+  const elecDr6 = {
+    id: 'electricity-dr6', areaId: 'el-energy', free: true, title: 'ドリル 6: 静電気と電流', minutes: 6, concepts: ['el-static'],
+    lessons: [
+      {
+        id: 'electricity-dr6-c1',
+        text: '物体は、ふつう＋と−の電気を同じ量だけもっています。2 つの物体をこすり合わせると、一方の**電子**がもう一方へ移ります。電子を受けとった物体は−の電気を、電子を失った物体は＋の電気を帯びます。',
+        figure: scene([
+          note(160, 30, 'こする前', 14),
+          { type: 'rect', x: 25, y: 45, width: 120, height: 50, fill: 'white', stroke: 'ink', rx: 6, label: 'A ＋−＋−' },
+          { type: 'rect', x: 175, y: 45, width: 120, height: 50, fill: 'white', stroke: 'ink', rx: 6, label: 'B ＋−＋−' },
+          note(160, 132, 'こすると電子（−）が B から A へ', 13),
+          { type: 'rect', x: 25, y: 145, width: 120, height: 50, fill: 'white', stroke: 'ink', rx: 6, label: 'A ＋−＋−−' },
+          { type: 'rect', x: 175, y: 145, width: 120, height: 50, fill: 'white', stroke: 'ink', rx: 6, label: 'B ＋−＋' },
+          { type: 'arrow', x1: 173, y1: 170, x2: 147, y2: 170, color: 'blue' },
+          note(85, 220, '−を帯びる', 13), note(235, 220, '＋を帯びる', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr6-c2',
+        text: 'たまっていた電気が流れ出したり、空間を移動したりする現象を**放電**といいます。冬にドアノブにふれてパチッとするのも、雷も放電です。雷は、雲にたまった静電気が空気中を流れる大きな放電です。',
+        figure: scene([
+          { type: 'ellipse', x: 160, y: 55, rx: 110, ry: 35, fill: 'gray', stroke: 'ink', label: '− − − −' },
+          { type: 'polygon', points: [[150, 92], [178, 92], [162, 135], [188, 135], [148, 200], [158, 148], [134, 148]], fill: 'yellow', stroke: 'ink' },
+          { type: 'line', points: [[20, 205], [300, 205]], color: 'brown', width: 3 },
+          note(160, 230, '雷は大規模な放電', 13),
+        ]),
+      },
+      {
+        id: 'electricity-dr6-c3',
+        text: '回路を流れる電流の正体は、導線の中を移動する電子の流れです。電子は電源の−極側から＋極側へ移動します。だから、電流の向き（＋極から−極）と、電子が移動する向きは逆になります。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 90, width: 280, height: 40, fill: 'white', stroke: 'ink' },
+          { type: 'circle', x: 60, y: 110, r: 10, fill: 'sky', stroke: 'ink', label: '−' },
+          { type: 'circle', x: 125, y: 110, r: 10, fill: 'sky', stroke: 'ink', label: '−' },
+          { type: 'circle', x: 190, y: 110, r: 10, fill: 'sky', stroke: 'ink', label: '−' },
+          { type: 'circle', x: 255, y: 110, r: 10, fill: 'sky', stroke: 'ink', label: '−' },
+          { type: 'arrow', x1: 100, y1: 66, x2: 220, y2: 66, color: 'orange' },
+          note(160, 50, '電流の向き', 13),
+          { type: 'arrow', x1: 220, y1: 158, x2: 100, y2: 158, color: 'blue' },
+          note(160, 184, '電子が移動する向き', 13),
+          note(45, 228, '＋極側', 13), note(275, 228, '−極側', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-dr6-w1', concept: 'el-static',
+      prompt: '予想しよう。冬、ドアノブにふれたときにパチッとすることがあります。これは何によると思う？',
+      options: ['ドアノブの磁力', '体にたまった静電気', '空気中の水蒸気の熱'],
+      answer: 'b',
+      explanation: '服どうしがこすれるなどして体にたまった静電気が、金属のドアノブへ一気に流れる（放電する）ためです。',
+      hint: 'こすれて物体にたまる電気を思い出そう。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-dr6-t1', concept: 'el-static', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'たまっていた電気が流れ出したり、空間を移動したりする現象を[b1]という。',
+        blanks: [word('b1', ['発電', '放電', '電磁誘導'], '放電')],
+        explanation: 'たまっていた電気が流れ出したり、空間を移動したりする現象を**放電**といいます。',
+        hint: '電気を「放つ」と書くよ。',
+      }),
+      figureChoice({
+        id: 'electricity-dr6-p1', concept: 'el-static',
+        prompt: '電池の＋極が上の回路です。点 P の導線の中を電子が移動する向きは、ア（左向き）・イ（右向き）のどちら？',
+        figure: scene(dirChoiceItems('P')),
+        answer: 'r1',
+        explanation: '点 P では、電流は右向きに流れます。電子は電流と逆向きに移動するので、左向き（ア）です。電子は−極側から＋極側へ進みます。',
+        hint: 'まず電流の向きを考え、その逆を選ぼう。',
+      }),
+      choice({
+        id: 'electricity-dr6-p2', concept: 'el-static',
+        prompt: 'こする前のストローやティッシュが、電気を帯びていないのはなぜ？',
+        options: ['電気をまったくもっていないから', '電子をもっていないから', '＋と−の電気を同じ量ずつもっているから'],
+        answer: 'c',
+        explanation: '物体は、ふつう＋と−の電気を同じ量だけもっていて、打ち消し合っています。こすって電子が移ると、つり合いがくずれて電気を帯びます。',
+        hint: '物体は、もともと電子をもっているよ。',
+      }),
+      fill({
+        id: 'electricity-dr6-p3', concept: 'el-static',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '回路で、導線の中を電子が移動する向きは、電流の向きと[b1]である。',
+        blanks: [word('b1', ['逆向き', '同じ向き', '直角の向き'], '逆向き')],
+        explanation: '電流は＋極から−極へ流れると決められていますが、−の電気をもつ電子は−極から＋極へ移動します。だから**逆向き**です。',
+        hint: '電子は−の電気をもっているよ。',
+      }),
+      drag({
+        id: 'electricity-dr6-p4', concept: 'el-static',
+        prompt: 'こすったストロー A・B を近づけると、しりぞけ合った。B をこすったティッシュを、つるした A に左から近づけると A はどう動く？ A を動かそう。',
+        // A と B は同じ電気、ティッシュは B と逆の電気 → A とティッシュは引き合う。A は x の左右に動く。正解 x=120、不正解例 x=220（100 はなれる）
+        figure: scene(staticDragItems('ティッシュ')),
+        draggable: { itemId: 'a', axis: 'x' },
+        target: { x: 120, y: 150 },
+        samples: { correct: { x: 120, y: 150 }, wrong: { x: 220, y: 150 } },
+        explanation: 'A と B はしりぞけ合ったので同じ種類の電気です。B をこすったティッシュは B と逆の電気なので、A とも逆の電気です。逆の電気どうしは引き合うので、A は左へ動きます。',
+        hint: 'A と B は同じ電気。ティッシュは B と逆の電気だよ。',
+      }),
+      choice({
+        id: 'electricity-dr6-p5', concept: 'el-static',
+        prompt: '放電によって起こる現象として正しいものはどれ？',
+        options: ['磁石が鉄を引きつける', '方位磁針が北をさす', '冬に金属にふれてパチッと光る'],
+        answer: 'c',
+        explanation: '体にたまった静電気が、金属へ一気に流れて光や音が出るのは放電です。磁石や方位磁針は磁力によるものです。',
+        hint: 'たまった電気が一気に流れる場面をさがそう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'electricity-dr6-r1', concept: 'el-static',
+        prompt: '電池の＋極が上の回路です。下の導線の点 Q で、電子が移動する向きは、ア（左向き）・イ（右向き）のどちら？',
+        figure: scene(dirChoiceItems('Q')),
+        answer: 'r2',
+        explanation: '点 Q では、電流は左向き（−極へもどる向き）です。電子は電流と逆向きに移動するので、右向き（イ）です。',
+        hint: 'まず点 Q の電流の向きを考え、その逆を選ぼう。',
+      }),
+      fill({
+        id: 'electricity-dr6-r2', concept: 'el-static',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: 'ガラス棒を絹の布でこすると、ガラス棒の[b1]が絹へ移るので、ガラス棒は＋の電気を帯びる。',
+        blanks: [word('b1', ['電子', '＋の電気', '電流'], '電子')],
+        explanation: 'こすると、−の電気をもつ**電子**がガラス棒から絹へ移ります。電子を失ったガラス棒は＋の電気を帯び、電子を受けとった絹は−の電気を帯びます。',
+        hint: '物体のあいだを移動するのは、−の電気をもつ小さな粒だよ。',
+      }),
+      drag({
+        id: 'electricity-dr6-r3', concept: 'el-static',
+        prompt: 'ストロー A・B を別々のティッシュでこすると、A は B をこすったティッシュと引き合った。B を、つるした A に左から近づけると A はどう動く？',
+        // B はティッシュと逆の電気、A もティッシュと逆の電気 → A と B は同じ電気でしりぞけ合う。正解 x=220、不正解例 x=120（100 はなれる）
+        figure: scene(staticDragItems('B')),
+        draggable: { itemId: 'a', axis: 'x' },
+        target: { x: 220, y: 150 },
+        samples: { correct: { x: 220, y: 150 }, wrong: { x: 120, y: 150 } },
+        explanation: 'A は B をこすったティッシュと引き合ったので、そのティッシュと逆の電気です。B もそのティッシュと逆の電気なので、A と B は同じ種類の電気になり、しりぞけ合います。A は右へ動きます。',
+        hint: 'A も B も、B をこすったティッシュとは逆の電気だよ。',
+      }),
+      choice({
+        id: 'electricity-dr6-t2', concept: 'el-static', term: true,
+        prompt: '雷のように、たまった電気が空気中を一気に流れる現象を何という？',
+        options: ['発電', '放電', '電磁誘導'],
+        answer: 'b',
+        explanation: 'たまった電気が流れ出したり、空間を移動したりする現象を放電といいます。雷は大きな放電です。',
+        hint: '電気を「放つ」と書くよ。',
       }),
     ],
   };
@@ -4067,11 +5131,13 @@
     mascot: 'E',   // 担当の先生（キューブ先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'circuit', title: '回路と電流・電圧', order: 1, stages: [elec1, elec2] },
-      { id: 'el-energy', title: '電気のはたらき', order: 2, stages: [elec3, elec4] },
-      { id: 'el-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [
-        elecMp1, elecMp2, elecMp3, elecMp4, elecMp5, elecMp6, elecMp7, elecMp8,
-        elecMp9, elecMp10, elecMp11, elecMp12, elecMp13, elecMp14, elecMp15, elecMp16,
+      { id: 'circuit', title: '回路と電流・電圧', order: 1, stages: [
+        elec1, elec2, elecMp1, elecMp2, elecMp3, elecMp4, elecMp5, elecMp6, elecMp7, elecMp8,
+        elecDr1, elecDr2, elecDr3,
+      ] },
+      { id: 'el-energy', title: '電気のはたらき', order: 2, stages: [
+        elec3, elec4, elecMp9, elecMp10, elecMp11, elecMp12, elecMp13, elecMp14, elecMp15, elecMp16,
+        elecDr4, elecDr5, elecDr6,
       ] },
     ],
   };

@@ -1105,7 +1105,7 @@
 
   // ---- ステージ animals-mp1: プリント 1（セキツイ動物と無セキツイ動物、5 つのなかまの特徴） ----
   const anMp1 = {
-    id: 'animals-mp1', areaId: 'animals-miniprint', title: 'プリント 1: セキツイ動物の分類', minutes: 5, concepts: ['an-groups', 'an-traits', 'an-classify'],
+    id: 'animals-mp1', areaId: 'vertebrate', free: true, title: 'プリント 1: セキツイ動物の分類', minutes: 5, concepts: ['an-groups', 'an-traits', 'an-classify'],
     lessons: [
       {
         id: 'animals-mp1-c1',
@@ -1249,7 +1249,7 @@
 
   // ---- ステージ animals-mp2: プリント 2（無セキツイ動物: 節足動物・軟体動物） ----
   const anMp2 = {
-    id: 'animals-mp2', areaId: 'animals-miniprint', title: 'プリント 2: 無セキツイ動物', minutes: 5, concepts: ['an-arthropod', 'an-mollusc', 'an-classify'],
+    id: 'animals-mp2', areaId: 'invertebrate', free: true, title: 'プリント 2: 無セキツイ動物', minutes: 5, concepts: ['an-arthropod', 'an-mollusc', 'an-classify'],
     lessons: [
       {
         id: 'animals-mp2-c1',
@@ -1400,6 +1400,442 @@
   ]);
 
   // ================================================================
+  // 領域 4: ドリル（中学理科の知識から自作した練習問題。docs/reports/content/animals.md）
+  // ================================================================
+
+  // 数を答える空らん（content/volcano.js と同じ）
+  function number(id, answer, tolerance, unit) { return { id, kind: 'number', answer, tolerance, unit }; }
+
+  // 5 つのなかまの図に、なかまの名前を書いたもの（解説用）
+  function fiveAnimalsNamed() {
+    return scene(fiveAnimals().concat([
+      { type: 'text', x: 60, y: 112, text: '魚類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 165, y: 112, text: '両生類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 262, y: 112, text: 'ハチュウ類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 105, y: 214, text: '鳥類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 225, y: 214, text: 'ホニュウ類', size: 13, anchor: 'middle' },
+    ]));
+  }
+
+  // 1 回にうむ卵（子）の数の例の表
+  const EGG_TABLE = scene([
+    { type: 'text', x: 160, y: 24, text: '1 回にうむ卵（子）の数の例', size: 14, anchor: 'middle' },
+    { type: 'rect', x: 30, y: 36, width: 260, height: 26, fill: 'glass' },
+    { type: 'text', x: 90, y: 54, text: '動物', size: 12, anchor: 'middle' },
+    { type: 'text', x: 220, y: 54, text: '数', size: 12, anchor: 'middle' },
+  ].concat([
+    ['マンボウ（魚類）', '約 3 億個'], ['ヒキガエル（両生類）', '数千個'], ['ウミガメ（ハチュウ類）', '約 100 個'],
+    ['ハト（鳥類）', '2 個'], ['ヒト（ホニュウ類）', 'ふつう 1 人'],
+  ].flatMap(([a, n], i) => [
+    { type: 'rect', x: 30, y: 62 + 34 * i, width: 260, height: 34, fill: 'white' },
+    { type: 'text', x: 40, y: 84 + 34 * i, text: a, size: 12 },
+    { type: 'text', x: 220, y: 84 + 34 * i, text: n, size: 12, anchor: 'middle' },
+  ]), [
+    { type: 'line', points: [[160, 36], [160, 232]], color: 'line', width: 1 },
+  ]));
+
+  // drag 用: 「体温」×「卵」の 2×2 のます。動物の名前のカード（80×30）を、なかまのますへ動かす
+  // ますの中心: 一定・殻あり (150, 105)、変わる・殻あり (250, 105)、一定・殻なし (150, 175)、変わる・殻なし (250, 175)
+  // カードの左上は 中心 − (40, 15): (110, 90)、(210, 90)、(110, 160)、(210, 160)
+  function traitGridScene(name) {
+    return scene([
+      { type: 'text', x: 150, y: 60, text: '体温がほぼ一定', size: 12, anchor: 'middle' },
+      { type: 'text', x: 250, y: 60, text: '体温が変わる', size: 12, anchor: 'middle' },
+      { type: 'text', x: 52, y: 110, text: '殻のある卵', size: 12, anchor: 'middle' },
+      { type: 'text', x: 52, y: 180, text: '殻のない卵', size: 12, anchor: 'middle' },
+      { type: 'rect', x: 100, y: 70, width: 100, height: 70, fill: 'white' },
+      { type: 'rect', x: 200, y: 70, width: 100, height: 70, fill: 'white' },
+      { type: 'rect', x: 100, y: 140, width: 100, height: 70, fill: 'white' },
+      { type: 'rect', x: 200, y: 140, width: 100, height: 70, fill: 'white' },
+      { type: 'rect', id: 'card', x: 8, y: 10, width: 80, height: 30, fill: 'yellow', rx: 4, label: name },
+    ]);
+  }
+
+  // セキツイ動物のなかまの特徴の表（呼吸・体の表面・うまれ方）。rows は 4 行。左にア〜エの選ぶ場所
+  function vertTable(rows) {
+    const items = [
+      { type: 'rect', x: 44, y: 16, width: 272, height: 24, fill: 'glass' },
+      { type: 'text', x: 76, y: 33, text: 'なかま', size: 12, anchor: 'middle' },
+      { type: 'text', x: 150, y: 33, text: '呼吸', size: 12, anchor: 'middle' },
+      { type: 'text', x: 229, y: 33, text: '体の表面', size: 12, anchor: 'middle' },
+      { type: 'text', x: 291, y: 33, text: 'うまれ方', size: 12, anchor: 'middle' },
+    ];
+    rows.forEach((row, i) => {
+      const y = 40 + 46 * i;
+      items.push({ type: 'rect', x: 44, y, width: 272, height: 46, fill: 'white' });
+      [76, 150, 229, 291].forEach((x, k) => items.push({ type: 'text', x, y: y + 28, text: row[k], size: 12, anchor: 'middle' }));
+      items.push({ type: 'region', id: 'r' + (i + 1), x: 22, y: y + 23, r: 22, label: 'アイウエ'[i] });
+    });
+    [108, 192, 266].forEach(x => items.push({ type: 'line', points: [[x, 16], [x, 224]], color: 'line', width: 1 }));
+    return scene(items);
+  }
+
+  // クモを上から見た図（左が頭胸部、右が腹部。8 本のあしは頭胸部から出る）。s は大きさの倍率
+  // 頭胸部の中心 (cx−26s, cy)、腹部の中心 (cx+30s, cy)
+  function spider(cx, cy, s) {
+    const k = v => v * s;
+    const items = [];
+    [0, 1, 2, 3].forEach(i => {
+      const bx = cx + k(-38 + 8 * i);
+      [-1, 1].forEach(side => {
+        items.push({ type: 'line', points: [
+          [bx, cy + side * k(8)], [bx + k(-26 + 16 * i), cy + side * k(34)], [bx + k(-40 + 26 * i), cy + side * k(52)],
+        ], width: 2 });
+      });
+    });
+    items.push(
+      { type: 'ellipse', x: cx + k(30), y: cy, rx: k(32), ry: k(24), fill: 'brown' },
+      { type: 'ellipse', x: cx - k(26), y: cy, rx: k(22), ry: k(16), fill: 'brown' },
+    );
+    return items;
+  }
+
+  // クモの図に ア 頭胸部・イ 腹部 の選ぶ場所（引き出し線つき）を付けたもの
+  const SPIDER_Q = scene(spider(160, 130, 1.3).concat([
+    leader(82, 52, 126, 126), { type: 'region', id: 'r1', x: 66, y: 40, r: 22, label: 'ア' },
+    leader(244, 52, 204, 126), { type: 'region', id: 'r2', x: 260, y: 40, r: 22, label: 'イ' },
+  ]));
+
+  // 昆虫とクモの体の分かれ方（解説用）
+  function insectSpiderScene() {
+    return scene(insect(92, 110, 0.9).concat(spider(236, 110, 0.9), [
+      { type: 'text', x: 92, y: 190, text: '昆虫', size: 14, anchor: 'middle', bold: true },
+      { type: 'text', x: 92, y: 210, text: '頭部・胸部・腹部', size: 12, anchor: 'middle' },
+      { type: 'text', x: 236, y: 190, text: 'クモ', size: 14, anchor: 'middle', bold: true },
+      { type: 'text', x: 236, y: 210, text: '頭胸部・腹部', size: 12, anchor: 'middle' },
+    ]));
+  }
+
+  // アサリの体の中（殻を開いたようす）: 殻・外とう膜・えら・あし
+  function clamScene() {
+    return scene([
+      { type: 'ellipse', x: 170, y: 116, rx: 120, ry: 76, fill: 'glass' },
+      { type: 'ellipse', x: 170, y: 116, rx: 102, ry: 60, fill: 'pink' },
+      { type: 'line', points: [[120, 96], [220, 96]], color: 'line', width: 2 },
+      { type: 'line', points: [[118, 108], [222, 108]], color: 'line', width: 2 },
+      { type: 'line', points: [[120, 120], [220, 120]], color: 'line', width: 2 },
+      { type: 'polygon', points: [[84, 150], [40, 196], [72, 210], [112, 166]], fill: 'yellow' },
+      leader(222, 108, 262, 30), { type: 'text', x: 266, y: 26, text: 'えら', size: 13 },
+      leader(250, 150, 278, 214), { type: 'text', x: 236, y: 230, text: '外とう膜', size: 13 },
+      leader(70, 70, 40, 30), { type: 'text', x: 16, y: 24, text: '殻', size: 13 },
+      { type: 'text', x: 20, y: 228, text: 'あし', size: 13 },
+    ]);
+  }
+
+  // 無セキツイ動物の分け方（解説用）
+  function invertTree() {
+    const items = [
+      { type: 'rect', x: 100, y: 14, width: 120, height: 30, fill: 'glass', label: '無セキツイ動物' },
+      { type: 'line', points: [[160, 44], [160, 62]], width: 2 },
+      { type: 'line', points: [[56, 62], [264, 62]], width: 2 },
+    ];
+    [['節足動物', 'バッタ・クモ', 'カニ・ムカデ'], ['軟体動物', 'イカ・アサリ', 'マイマイ'], ['その他', 'ミミズ・ウニ', 'クラゲ']].forEach(([t, a, b], i) => {
+      const cx = 56 + 104 * i;
+      items.push(
+        { type: 'line', points: [[cx, 62], [cx, 80]], width: 2 },
+        { type: 'rect', x: cx - 48, y: 80, width: 96, height: 30, fill: 'white', label: t },
+        { type: 'text', x: cx, y: 136, text: a, size: 12, anchor: 'middle' },
+        { type: 'text', x: cx, y: 156, text: b, size: 12, anchor: 'middle' },
+      );
+    });
+    items.push(
+      { type: 'text', x: 56, y: 196, text: '外骨格・節', size: 12, anchor: 'middle' },
+      { type: 'text', x: 160, y: 196, text: '外とう膜', size: 12, anchor: 'middle' },
+      { type: 'text', x: 264, y: 196, text: 'どちらもない', size: 12, anchor: 'middle' },
+    );
+    return scene(items);
+  }
+
+  // ---- ステージ animals-dr1: ドリル 1（動物の体の共通点と相違点 前半: セキツイ動物の 5 つのなかま） ----
+  const anDr1 = {
+    id: 'animals-dr1', areaId: 'vertebrate', free: true, title: 'ドリル 1: セキツイ動物の 5 つのなかま', minutes: 6, concepts: ['an-traits', 'an-groups'],
+    lessons: [
+      {
+        id: 'animals-dr1-c1',
+        text: 'セキツイ動物の 5 つのなかまは、**呼吸**のしかた、体の表面のようす、子のうまれ方などのちがいで区別します。クジラは海にすみますが、肺で呼吸するので、ときどき海面に出て息つぎをします。',
+        figure: fiveAnimalsNamed(),
+      },
+      {
+        id: 'animals-dr1-c2',
+        text: '親が卵をうみ、卵から子がかえるうまれ方を**卵生**といいます。魚類や両生類は殻のない卵を水中にたくさんうみます。卵や子が食べられることも多いので、数が多いと子孫が残りやすくなります。',
+        figure: EGG_TABLE,
+      },
+    ],
+    warmup: choice({
+      id: 'animals-dr1-w1', concept: 'an-traits',
+      prompt: '予想しよう。マンボウは 1 回に約 3 億個の卵をうみますが、ハトは 2 個です。マンボウの卵がこんなに多いのはなぜだと思う？',
+      options: ['親が卵を温めるから', '食べられる卵や子が多いから', '卵がとても大きいから'],
+      answer: 'b',
+      explanation: '水中にうまれた卵や子は、ほかの動物に食べられることが多いので、たくさんうむことで子孫が残りやすくなります。なかまごとの特徴を、このステージで確かめよう。',
+      hint: '親が世話をしない卵は、どうなりやすいかな。',
+    }),
+    problems: [
+      fill({
+        id: 'animals-dr1-t1', concept: 'an-traits', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '親が卵をうみ、卵から子がかえるうまれ方を[b1]という。',
+        blanks: [word('b1', ['胎生', '卵生', '変態'], '卵生')],
+        explanation: '卵をうむうまれ方を**卵生**といいます。魚類・両生類・ハチュウ類・鳥類は卵生、ホニュウ類は胎生です。',
+        hint: '「卵」でうまれる、と書くよ。',
+      }),
+      drag({
+        id: 'animals-dr1-p1', concept: 'an-traits',
+        prompt: '表は「体温」と「卵」で動物を分けるものです。「ペンギン」のカードを、当てはまるますへ動かして入れよう。',
+        // ペンギン（鳥類）: 体温がほぼ一定・殻のある卵 → カードの左上 (110, 90)。不正解例は 体温が変わる・殻のある卵 (210, 90)
+        figure: traitGridScene('ペンギン'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 110, y: 90 },
+        samples: { correct: { x: 110, y: 90 }, wrong: { x: 210, y: 90 } },
+        explanation: 'ペンギンは飛べませんが、羽毛をもつ鳥類です。鳥類は体温がほぼ一定の恒温動物で、陸上に殻のある卵をうみます。',
+        hint: 'ペンギンは鳥類だよ。鳥類の体温と卵を思い出そう。',
+      }),
+      fill({
+        id: 'animals-dr1-p2', concept: 'an-groups',
+        prompt: 'イルカ・ペンギン・コウモリ・ヤモリ・イモリ・クジラ・サケ・ウサギの 8 種類の動物がいます。',
+        text: 'このうち、ホニュウ類は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: 'ホニュウ類は、イルカ・コウモリ・クジラ・ウサギの 4 種類です。ペンギンは鳥類、ヤモリはハチュウ類、イモリは両生類、サケは魚類です。',
+        hint: '子を乳で育てるなかまを数えよう。',
+      }),
+      choice({
+        id: 'animals-dr1-p3', concept: 'an-traits',
+        prompt: '1 回にうむ卵の数の例: マンボウ 約 3 億個、ヒキガエル 数千個、ウミガメ 約 100 個、ハト 2 個。ここから言えることとして正しいのはどれ？',
+        options: ['水中に殻のない卵をうむなかまほど多い', '陸上で生活するなかまほど多い', '体が小さいなかまほど多い'],
+        answer: 'a',
+        explanation: '殻のない卵を水中にうむ魚類や両生類は、卵の数がとても多くなっています。陸上に殻のある卵をうむハチュウ類や鳥類は、それより少なくなっています。',
+        hint: '数の多い 2 つは、どこにどんな卵をうむなかまかな。',
+      }),
+      figureChoice({
+        id: 'animals-dr1-p4', concept: 'an-groups',
+        prompt: '表はセキツイ動物の 4 つのなかまの特徴です。1 つの行に、まちがいが 1 か所あります。まちがいがある行はどれ？ ア〜エから選ぼう。',
+        // イ ハチュウ類の体の表面はうろこが正しい（羽毛は鳥類）
+        figure: vertTable([
+          ['両生類', 'えら→肺', 'しめった皮ふ', '卵生'],
+          ['ハチュウ類', '肺', '羽毛', '卵生'],
+          ['鳥類', '肺', '羽毛', '卵生'],
+          ['ホニュウ類', '肺', '毛', '胎生'],
+        ]),
+        answer: 'r2',
+        explanation: 'ハチュウ類の体の表面は、うろこでおおわれています。羽毛でおおわれているのは鳥類なので、イがまちがいです。',
+        hint: 'トカゲやヘビの体の表面を思い出そう。',
+      }),
+      choice({
+        id: 'animals-dr1-p5', concept: 'an-groups',
+        prompt: 'コウモリとハトは、どちらも空を飛びますが、ちがうなかまです。分ける決め手になる特徴はどれ？',
+        options: ['翼があるかどうか', '子のうまれ方（胎生か卵生か）', '背骨があるかどうか'],
+        answer: 'b',
+        explanation: 'コウモリは子をうんで乳で育てる胎生のホニュウ類、ハトは卵をうむ卵生の鳥類です。どちらも翼と背骨があるので、それでは分けられません。',
+        hint: '2 つに共通している特徴では、分けられないね。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'animals-dr1-r1', concept: 'an-traits',
+        prompt: 'カエルの卵が、ニワトリの卵とちがって水中にうまれるのはなぜ？',
+        options: ['殻がなく、かわきに弱いから', '殻がとてもかたいから', '親が水中でしか動けないから'],
+        answer: 'a',
+        explanation: '両生類の卵には殻がないので、陸上ではかわいてしまいます。そのため水中にうみます。ニワトリ（鳥類）の卵は殻があるので陸上にうめます。',
+        hint: '2 つの卵の、殻のちがいを考えよう。',
+      }),
+      drag({
+        id: 'animals-dr1-r2', concept: 'an-traits',
+        prompt: '表は「体温」と「卵」で動物を分けるものです。「ヤモリ」のカードを、当てはまるますへ動かして入れよう。',
+        // ヤモリ（ハチュウ類）: 体温が変わる・殻のある卵 → カードの左上 (210, 90)。不正解例は 体温がほぼ一定・殻のある卵 (110, 90)
+        figure: traitGridScene('ヤモリ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 210, y: 90 },
+        samples: { correct: { x: 210, y: 90 }, wrong: { x: 110, y: 90 } },
+        explanation: 'ヤモリはハチュウ類です。体温がまわりの気温で変わる変温動物で、陸上に殻のある卵をうみます。',
+        hint: 'ヤモリはハチュウ類、イモリは両生類だよ。',
+      }),
+      fill({
+        id: 'animals-dr1-r3', concept: 'an-groups',
+        prompt: 'イモリ・ヤモリ・ヘビ・サンショウウオ・ワニ・カエルの 6 種類の動物がいます。',
+        text: 'このうち、ハチュウ類は[b1]である。',
+        blanks: [number('b1', 3, 0, '種類')],
+        explanation: 'ハチュウ類は、ヤモリ・ヘビ・ワニの 3 種類です。イモリ・サンショウウオ・カエルは両生類です。',
+        hint: '体の表面がうろこでおおわれているなかまを数えよう。',
+      }),
+      figureChoice({
+        id: 'animals-dr1-r4', concept: 'an-groups',
+        prompt: '表はセキツイ動物の 4 つのなかまの特徴です。1 つの行に、まちがいが 1 か所あります。まちがいがある行はどれ？ ア〜エから選ぼう。',
+        // エ ホニュウ類のうまれ方は胎生が正しい
+        figure: vertTable([
+          ['両生類', 'えら→肺', 'しめった皮ふ', '卵生'],
+          ['ハチュウ類', '肺', 'うろこ', '卵生'],
+          ['鳥類', '肺', '羽毛', '卵生'],
+          ['ホニュウ類', '肺', '毛', '卵生'],
+        ]),
+        answer: 'r4',
+        explanation: 'ホニュウ類は、子が母親の体内である程度育ってからうまれる胎生です。表では卵生になっているので、エがまちがいです。',
+        hint: 'ホニュウ類の子のうまれ方を思い出そう。',
+      }),
+      choice({
+        id: 'animals-dr1-t2', concept: 'an-traits', term: true,
+        prompt: '次の説明に合う言葉はどれ？「魚類やハチュウ類の体の表面をおおっている、かたい小さな板のようなもの」',
+        options: ['羽毛', 'うろこ', '外骨格'],
+        answer: 'b',
+        explanation: '魚類やハチュウ類の体の表面は**うろこ**でおおわれています。羽毛は鳥類、外骨格は節足動物の体をおおうものです。',
+        hint: '魚の表面にたくさん並んでいるものだよ。',
+      }),
+      choice({
+        id: 'animals-dr1-r5', concept: 'an-traits',
+        prompt: 'クジラが、ときどき海面に出てくるのはなぜ？',
+        options: ['えらに水を通すため', '卵をうむため', '肺で呼吸するので、息つぎをするため'],
+        answer: 'c',
+        explanation: 'クジラはホニュウ類なので、えらではなく肺で呼吸します。そのため、ときどき海面に出て空気を吸います。',
+        hint: 'クジラはどのなかまで、何で呼吸するかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ animals-dr2: ドリル 2（動物の体の共通点と相違点 後半: 無セキツイ動物と分類） ----
+  const anDr2 = {
+    id: 'animals-dr2', areaId: 'invertebrate', free: true, title: 'ドリル 2: 無セキツイ動物と分類', minutes: 6, concepts: ['an-arthropod', 'an-mollusc', 'an-classify'],
+    lessons: [
+      {
+        id: 'animals-dr2-c1',
+        text: '昆虫の体は頭部・胸部・腹部に分かれ、胸部や腹部にある**気門**から空気を取り入れます。クモの体は**頭胸部**と腹部の 2 つに分かれ、あしは 8 本で、すべて頭胸部から出ています。',
+        figure: insectSpiderScene(),
+      },
+      {
+        id: 'animals-dr2-c2',
+        text: '軟体動物は、内臓が**外とう膜**に包まれています。アサリやイカなど水中にすむものの多くはえらで呼吸し、マイマイ（カタツムリ）のように陸上にすむものは肺で呼吸します。',
+        figure: clamScene(),
+      },
+      {
+        id: 'animals-dr2-c3',
+        text: '無セキツイ動物は、外骨格と節がある節足動物、外とう膜がある軟体動物、そのどちらでもない**ミミズ**・ウニ・ヒトデ・クラゲなどに分けられます。',
+        figure: invertTree(),
+      },
+    ],
+    warmup: choice({
+      id: 'animals-dr2-w1', concept: 'an-arthropod',
+      prompt: '予想しよう。ダンゴムシは、あしがたくさんあり、体がかたい殻でおおわれています。ダンゴムシは昆虫のなかまだと思う？',
+      options: ['昆虫のなかまである', '昆虫のなかまではない', 'セキツイ動物のなかまである'],
+      answer: 'b',
+      explanation: 'ダンゴムシは、エビやカニと同じ甲殻類です。節足動物ですが、昆虫ではありません。昆虫のあしは 6 本です。',
+      hint: '昆虫のあしの数を思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'animals-dr2-p1', concept: 'an-arthropod',
+        prompt: '図はクモを上から見たようすです。ア 頭胸部、イ 腹部。8 本のあしが出ている部分はどちら？ ア・イから選ぼう。',
+        figure: SPIDER_Q,
+        answer: 'r1',
+        explanation: 'クモの体は頭胸部と腹部の 2 つに分かれ、8 本のあしはすべて頭胸部から出ています。昆虫（あしは胸部から 6 本）とのちがいです。',
+        hint: '前のほうの、小さいほうの部分を見よう。',
+      }),
+      fill({
+        id: 'animals-dr2-t1', concept: 'an-arthropod', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '昆虫の胸部や腹部にある、空気を取り入れるための穴を[b1]という。',
+        blanks: [word('b1', ['気門', '外とう膜', 'えら'], '気門')],
+        explanation: '昆虫は、胸部や腹部の側面に並ぶ**気門**から空気を取り入れて呼吸しています。',
+        hint: '「気（空気）」の「門（入り口）」だよ。',
+      }),
+      choice({
+        id: 'animals-dr2-p2', concept: 'an-mollusc',
+        prompt: 'マイマイ（カタツムリ）は陸上にすむ軟体動物です。マイマイは何で呼吸する？',
+        options: ['えら', '肺', '気門'],
+        answer: 'b',
+        explanation: '水中にすむ軟体動物の多くはえらで呼吸しますが、陸上にすむマイマイは肺で呼吸します。',
+        hint: '陸上で空気を取り入れる器官だよ。',
+      }),
+      fill({
+        id: 'animals-dr2-p3', concept: 'an-classify',
+        prompt: 'カニ・クモ・タコ・ミミズ・ムカデ・アサリ・ダンゴムシ・ヒトデの 8 種類の動物がいます。',
+        text: 'このうち、節足動物は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: '節足動物は、カニ・クモ・ムカデ・ダンゴムシの 4 種類です。タコ・アサリは軟体動物、ミミズ・ヒトデはそのどちらでもない無セキツイ動物です。',
+        hint: '外骨格があり、あしに節があるなかまを数えよう。',
+      }),
+      choice({
+        id: 'animals-dr2-p4', concept: 'an-classify',
+        prompt: 'ミミズ・ヒトデ・クラゲに共通する特徴はどれ？',
+        options: ['背骨も外骨格もない', '背骨がある', '外とう膜で内臓を包んでいる'],
+        answer: 'a',
+        explanation: 'ミミズ・ヒトデ・クラゲは、背骨のない無セキツイ動物で、外骨格も外とう膜もありません。節足動物にも軟体動物にも入りません。',
+        hint: '節足動物にも軟体動物にも入らないなかまだよ。',
+      }),
+      choice({
+        id: 'animals-dr2-p5', concept: 'an-arthropod',
+        prompt: 'Cさんのまとめ「エビやカニは、あしがたくさんあるので昆虫のなかまである」。正しく直したものはどれ？',
+        options: ['軟体動物で、昆虫ではない', '甲殻類で、昆虫ではない', 'セキツイ動物で、昆虫ではない'],
+        answer: 'b',
+        explanation: 'エビやカニは甲殻類です。外骨格があり、あしに節がある節足動物ですが、昆虫ではありません。昆虫のあしは 6 本です。',
+        hint: 'エビ・カニ・ダンゴムシのなかまの名前を思い出そう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'animals-dr2-r1', concept: 'an-arthropod',
+        prompt: '図はクモを上から見たようすです。ア 頭胸部、イ 腹部。糸を出す所があるのはどちら？ ア・イから選ぼう。',
+        figure: SPIDER_Q,
+        answer: 'r2',
+        explanation: 'クモは、腹部の先にある所から糸を出します。あしが出ているのは頭胸部です。',
+        hint: 'あしの出ていない、大きいほうの部分だよ。',
+      }),
+      choice({
+        id: 'animals-dr2-r2', concept: 'an-arthropod',
+        prompt: '昆虫とクモに共通する特徴はどれ？',
+        options: ['あしが 6 本ある', '外骨格があり、あしに節がある', '体が 3 つに分かれている'],
+        answer: 'b',
+        explanation: '昆虫もクモも節足動物で、外骨格があり、あしに節があります。あしの数と体の分かれ方はちがいます。',
+        hint: 'あしの数や体の分かれ方は、2 つでちがっていたね。',
+      }),
+      fill({
+        id: 'animals-dr2-t2', concept: 'an-arthropod', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'クモやエビの、頭部と胸部が 1 つになった部分を[b1]という。',
+        blanks: [word('b1', ['腹部', '外とう膜', '頭胸部'], '頭胸部')],
+        explanation: 'クモやエビの頭部と胸部が 1 つになった部分を**頭胸部**といいます。',
+        hint: '頭部と胸部を合わせた名前だよ。',
+      }),
+      fill({
+        id: 'animals-dr2-r3', concept: 'an-mollusc',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'イカやタコは、水中で[b1]を使って呼吸している。',
+        blanks: [word('b1', ['えら', '肺', '気門'], 'えら')],
+        explanation: 'イカやタコは水中にすむ軟体動物で、えらで呼吸します。',
+        hint: '水中にすむ軟体動物の呼吸を思い出そう。',
+      }),
+      choice({
+        id: 'animals-dr2-r4', concept: 'an-mollusc',
+        prompt: '次の軟体動物のうち、陸上にすむものはどれ？',
+        options: ['アサリ', 'タコ', 'マイマイ'],
+        answer: 'c',
+        explanation: 'マイマイ（カタツムリ）は陸上にすむ軟体動物で、肺で呼吸します。アサリとタコは水中にすみ、えらで呼吸します。',
+        hint: '雨の日に、葉の上で見つかるよ。',
+      }),
+      fill({
+        id: 'animals-dr2-r5', concept: 'an-classify',
+        prompt: 'イカ・カニ・アサリ・ミミズ・タコ・マイマイ・クラゲの 7 種類の動物がいます。',
+        text: 'このうち、軟体動物は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: '軟体動物は、イカ・アサリ・タコ・マイマイの 4 種類です。カニは節足動物、ミミズとクラゲはそのどちらでもない無セキツイ動物です。',
+        hint: '外とう膜で内臓が包まれているなかまを数えよう。',
+      }),
+      choice({
+        id: 'animals-dr2-r6', concept: 'an-classify',
+        prompt: 'ウニやヒトデは、どのなかまに入る？',
+        options: ['節足動物', '節足動物・軟体動物以外の無セキツイ動物', '軟体動物'],
+        answer: 'b',
+        explanation: 'ウニやヒトデは背骨がなく、外骨格も外とう膜もないので、節足動物にも軟体動物にも入らない無セキツイ動物です。',
+        hint: '外骨格や外とう膜があるかを考えよう。',
+      }),
+      choice({
+        id: 'animals-dr2-r7', concept: 'an-mollusc',
+        prompt: 'アサリは、えらで呼吸します。アサリのえらは、どこにある？',
+        options: ['殻の外側', 'あしの先', '外とう膜の内側'],
+        answer: 'c',
+        explanation: 'アサリのえらは、殻の内側の外とう膜に包まれた所にあります。殻を開けると、外とう膜の内側にえらが見られます。',
+        hint: '外とう膜は、内臓などを包んでいたね。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1409,9 +1845,8 @@
     mascot: 'F',   // 担当の先生（まめ博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'vertebrate', title: 'セキツイ動物', order: 1, stages: [animals1, animals2] },
-      { id: 'invertebrate', title: '無セキツイ動物', order: 2, stages: [animals3, animals4] },
-      { id: 'animals-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [anMp1, anMp2] },
+      { id: 'vertebrate', title: 'セキツイ動物', order: 1, stages: [animals1, animals2, anMp1, anDr1] },
+      { id: 'invertebrate', title: '無セキツイ動物', order: 2, stages: [animals3, animals4, anMp2, anDr2] },
     ],
   };
 

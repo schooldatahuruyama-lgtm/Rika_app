@@ -124,3 +124,47 @@ test("isUnlocked: free: 'true'（文字列）では free と見なさず、2 番
   reg.register(u);
   assert.equal(recommend.isUnlocked(reg, record.createRecord(), 's-a2'), false);
 });
+
+// ステージ単位の free（プリント・ドリル）。isUnlocked は reg.units() と領域のステージの並びだけを見るので、小さな登録簿で確かめる
+function fakeReg(stages) {
+  const u = { id: 'fu', areas: [{ id: 'fa', order: 1, stages }] };
+  return { units: () => [u] };
+}
+const doneRec = (...ids) => rec({ stages: Object.fromEntries(ids.map(id => [id, stageOf('cleared')])) });
+
+test('isUnlocked: ステージの free: true は順番に関係なく最初から解放。基本のステージの鎖に free は入らない', () => {
+  const reg = fakeReg([{ id: 'a1' }, { id: 'a2' }, { id: 'p1', free: true }, { id: 'a3' }, { id: 'p2', free: true }]);
+  const fresh = record.createRecord();
+  assert.equal(recommend.isUnlocked(reg, fresh, 'a1'), true);
+  assert.equal(recommend.isUnlocked(reg, fresh, 'p1'), true);
+  assert.equal(recommend.isUnlocked(reg, fresh, 'p2'), true);
+  assert.equal(recommend.isUnlocked(reg, fresh, 'a2'), false);
+  assert.equal(recommend.isUnlocked(reg, fresh, 'a3'), false);
+  assert.equal(recommend.isUnlocked(reg, doneRec('a1'), 'a2'), true);
+  // a3 は a2 のクリアで開く（直前の p1 のクリアは関係ない）
+  assert.equal(recommend.isUnlocked(reg, doneRec('a1', 'p1'), 'a3'), false);
+  assert.equal(recommend.isUnlocked(reg, doneRec('a1', 'a2'), 'a3'), true);
+});
+
+test('isUnlocked: free のステージが先頭にある領域では、最初の基本のステージは最初から解放', () => {
+  const reg = fakeReg([{ id: 'p1', free: true }, { id: 'a1' }, { id: 'a2' }]);
+  const fresh = record.createRecord();
+  assert.equal(recommend.isUnlocked(reg, fresh, 'a1'), true);
+  assert.equal(recommend.isUnlocked(reg, fresh, 'a2'), false);
+  assert.equal(recommend.isUnlocked(reg, doneRec('a1'), 'a2'), true);
+});
+
+test("isUnlocked: ステージの free が 'true'（文字列）や 1 なら free でない", () => {
+  const reg = fakeReg([{ id: 'a1' }, { id: 'p1', free: 'true' }, { id: 'p2', free: 1 }]);
+  const fresh = record.createRecord();
+  assert.equal(recommend.isUnlocked(reg, fresh, 'p1'), false);
+  assert.equal(recommend.isUnlocked(reg, doneRec('a1'), 'p1'), true);
+  assert.equal(recommend.isUnlocked(reg, doneRec('a1'), 'p2'), false);
+});
+
+test('isFreeStage: 領域 free かステージ free のときだけ true', () => {
+  assert.equal(recommend.isFreeStage({ free: true }, { id: 'x' }), true);
+  assert.equal(recommend.isFreeStage({}, { id: 'x', free: true }), true);
+  assert.equal(recommend.isFreeStage({ free: 'true' }, { id: 'x', free: 1 }), false);
+  assert.equal(recommend.isFreeStage(null, null), false);
+});

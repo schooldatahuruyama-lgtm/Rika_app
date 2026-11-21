@@ -792,7 +792,7 @@
 
   // ---- ステージ force-mp1: プリント 1（力を加えると 2・力の作図矢印） ----
   const forceMp1 = {
-    id: 'force-mp1', areaId: 'force-miniprint', title: 'プリント 1: 力のはたらきと力の矢印', minutes: 6, concepts: ['fo-effect', 'fo-kinds', 'fo-arrow'],
+    id: 'force-mp1', areaId: 'what', free: true, title: 'プリント 1: 力のはたらきと力の矢印', minutes: 6, concepts: ['fo-effect', 'fo-kinds', 'fo-arrow'],
     lessons: [
       {
         id: 'force-mp1-c1',
@@ -969,7 +969,7 @@
 
   // ---- ステージ force-mp2: プリント 2（フックの法則・ばねの伸びを調べる・2 力のつりあい） ----
   const forceMp2 = {
-    id: 'force-mp2', areaId: 'force-miniprint', title: 'プリント 2: ばねの伸びと 2 力のつり合い', minutes: 6, concepts: ['fo-hooke', 'fo-balance'],
+    id: 'force-mp2', areaId: 'spring', free: true, title: 'プリント 2: ばねの伸びと 2 力のつり合い', minutes: 6, concepts: ['fo-hooke', 'fo-balance'],
     lessons: [
       {
         id: 'force-mp2-c1',
@@ -1284,6 +1284,342 @@
   ];
 
   // ================================================================
+  // 領域: ドリル（中学 1 年のテーマ「力のはたらき」に合わせた自作の練習問題）
+  // ================================================================
+
+  // いろいろな力の 4 つの場面（ア〜エ）。文字だけの簡単な絵
+  const DR_FORCE_SCENES = scene([
+    { type: 'rect', x: 10, y: 10, width: 145, height: 100, fill: 'white', rx: 8 },
+    { type: 'text', x: 82, y: 50, text: '磁石が', size: 13, anchor: 'middle' },
+    { type: 'text', x: 82, y: 72, text: 'クリップを引く', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 36, y: 90, r: 22, label: 'ア' },
+    { type: 'rect', x: 165, y: 10, width: 145, height: 100, fill: 'white', rx: 8 },
+    { type: 'text', x: 237, y: 50, text: 'こすった下じきが', size: 13, anchor: 'middle' },
+    { type: 'text', x: 237, y: 72, text: '紙の小片を引く', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r2', x: 191, y: 90, r: 22, label: 'イ' },
+    { type: 'rect', x: 10, y: 125, width: 145, height: 100, fill: 'white', rx: 8 },
+    { type: 'text', x: 82, y: 165, text: '糸が', size: 13, anchor: 'middle' },
+    { type: 'text', x: 82, y: 187, text: 'おもりを引く', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r3', x: 36, y: 205, r: 22, label: 'ウ' },
+    { type: 'rect', x: 165, y: 125, width: 145, height: 100, fill: 'white', rx: 8 },
+    { type: 'text', x: 237, y: 165, text: '床が', size: 13, anchor: 'middle' },
+    { type: 'text', x: 237, y: 187, text: '箱を押し上げる', size: 13, anchor: 'middle' },
+    { type: 'region', id: 'r4', x: 191, y: 205, r: 22, label: 'エ' },
+  ]);
+
+  // 3 本のばね（ア〜ウ）の、力の大きさと伸びのグラフ（原点 (50,200)）
+  const DR_THREE_SPRINGS = scene([
+    { type: 'line', points: [[50, 200], [305, 200]], width: 2, arrow: true },
+    { type: 'line', points: [[50, 200], [50, 28]], width: 2, arrow: true },
+    { type: 'text', x: 8, y: 22, text: '伸び', size: 12 },
+    { type: 'text', x: 312, y: 228, text: '力の大きさ', size: 12, anchor: 'end' },
+    { type: 'text', x: 42, y: 216, text: '0', size: 12, anchor: 'end' },
+    { type: 'line', points: [[50, 200], [140, 50]], color: 'blue', width: 3 },
+    { type: 'line', points: [[50, 200], [250, 80]], color: 'blue', width: 3 },
+    { type: 'line', points: [[50, 200], [280, 150]], color: 'blue', width: 3 },
+    { type: 'region', id: 'r1', x: 160, y: 46, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 274, y: 72, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 280, y: 124, r: 22, label: 'ウ' },
+  ]);
+
+  // ---- ステージ force-dr1: ドリル 1（力のはたらき 前半: 力のはたらきといろいろな力） ----
+  const forceDr1 = {
+    id: 'force-dr1', areaId: 'what', free: true, title: 'ドリル 1: 力のはたらきといろいろな力', minutes: 6,
+    concepts: ['fo-effect', 'fo-kinds'],
+    lessons: [
+      {
+        id: 'force-dr1-c1',
+        text: 'ふれ合ってはたらく力に、ばねがもとにもどろうとする**弾性力**、面が物体を支える**垂直抗力**、動きをさまたげる**摩擦力**、糸やひもが物体を引く**張力**などがあります。',
+        figure: scene([
+          ceiling(110, 100),
+          { type: 'line', points: [[160, 18], [160, 110]], color: 'brown', width: 2 },
+          { type: 'rect', x: 140, y: 110, width: 40, height: 30, fill: 'gray' },
+          { type: 'text', x: 186, y: 130, text: 'おもり', size: 13 },
+          ...force(160, 110, 160, 60),
+          { type: 'text', x: 170, y: 84, text: '張力', size: 13 },
+          { type: 'line', points: [[20, 220], [300, 220]], color: 'line', width: 3 },
+          { type: 'rect', x: 40, y: 180, width: 60, height: 40, fill: 'sand' },
+          { type: 'text', x: 46, y: 205, text: '箱', size: 13 },
+          ...force(70, 220, 70, 170),
+          { type: 'text', x: 110, y: 200, text: '垂直抗力', size: 13 },
+        ]),
+      },
+      {
+        id: 'force-dr1-c2',
+        text: 'はなれていてもはたらく力もあります。地球が物体を引く重力、磁石の**磁力**、こすった下じきが髪の毛を引きつけるような**静電気力**です。',
+        figure: scene([
+          { type: 'rect', x: 30, y: 60, width: 80, height: 40, fill: 'sky', label: '下じき' },
+          { type: 'text', x: 70, y: 150, text: '髪の毛', size: 14, anchor: 'middle' },
+          { type: 'line', points: [[60, 135], [60, 108]], color: 'gray', width: 1, dashed: true },
+          { type: 'line', points: [[80, 135], [80, 108]], color: 'gray', width: 1, dashed: true },
+          { type: 'text', x: 70, y: 196, text: '静電気力', size: 14, anchor: 'middle', bold: true },
+          { type: 'rect', x: 190, y: 70, width: 90, height: 30, fill: 'gray', label: '磁石' },
+          { type: 'rect', x: 225, y: 140, width: 20, height: 10, fill: 'white' },
+          { type: 'text', x: 235, y: 196, text: '磁力', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'force-dr1-w1', concept: 'fo-kinds',
+      prompt: '予想しよう。セーターでこすった下じきを、髪の毛に近づけると、どうなると思う？',
+      options: ['髪の毛がぬれる', '髪の毛が引きつけられる', '何も起こらない'],
+      answer: 'b',
+      explanation: 'こすった下じきには静電気がたまり、ふれていなくても髪の毛を引きつけます。この力を静電気力といいます。',
+      hint: '冬にドアノブでパチッとくる、あの電気だよ。',
+    }),
+    problems: [
+      choice({
+        id: 'force-dr1-p1', concept: 'fo-effect',
+        prompt: 'テニスのラケットでボールを打ち返す瞬間、ボールにはどんな力のはたらきが見られる？',
+        options: ['物体を支えるだけ', '何もはたらいていない', '形を変え、運動のようすも変える'],
+        answer: 'c',
+        explanation: '打った瞬間、ボールはへこみ（形が変わる）、向きと速さが変わります（運動のようすが変わる）。1 つの場面で 2 つのはたらきが見られます。',
+        hint: 'ボールの形と、飛ぶ向きの両方を見てみよう。',
+      }),
+      fill({
+        id: 'force-dr1-t1', concept: 'fo-kinds', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '天井から糸でつるしたおもりを、糸が上向きに引く力を[b1]という。',
+        blanks: [word('b1', ['張力', '弾性力', '摩擦力'], '張力')],
+        explanation: '糸やひもが物体を引く力を**張力**といいます。ぴんと張った糸が、おもりを上向きに引いています。',
+        hint: '糸が「張って」いるときの力だよ。',
+      }),
+      figureChoice({
+        id: 'force-dr1-p2', concept: 'fo-kinds',
+        prompt: 'ア 磁石がクリップを引く、イ こすった下じきが紙の小片を引く、ウ 糸がおもりを引く、エ 床が箱を押し上げる。静電気力はどれ？',
+        figure: DR_FORCE_SCENES,
+        answer: 'r2',
+        explanation: 'こすった下じきが紙を引きつけるのは静電気力（イ）です。アは磁力、ウは張力、エは垂直抗力です。',
+        hint: 'こすってできる電気の力だよ。',
+      }),
+      choice({
+        id: 'force-dr1-p3', concept: 'fo-kinds',
+        prompt: '雪の上より、氷の上のほうがすべりやすい。氷の上で小さくなっている力はどれ？',
+        options: ['摩擦力', '重力', '磁力'],
+        answer: 'a',
+        explanation: 'ふれ合う面がなめらかなほど、動きをさまたげる摩擦力は小さくなります。だから氷の上はすべりやすいです。',
+        hint: '動きをさまたげる向きにはたらく力だよ。',
+      }),
+      choice({
+        id: 'force-dr1-p4', concept: 'fo-kinds',
+        prompt: '次のうち、はなれていてもはたらく力だけの組み合わせはどれ？',
+        options: ['摩擦力・弾性力・張力', '重力・磁力・静電気力', '垂直抗力・摩擦力・重力'],
+        answer: 'b',
+        explanation: '重力・磁力・静電気力は、ふれていなくてもはたらきます。摩擦力・弾性力・張力・垂直抗力は、ふれ合っているときにはたらく力です。',
+        hint: '物体どうしがふれていなくてもはたらく力をさがそう。',
+      }),
+      fill({
+        id: 'force-dr1-p5', concept: 'fo-kinds',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'トランポリンが人を上へはね上げるのは、へこんだ面がもとにもどろうとする[b1]による。',
+        blanks: [word('b1', ['磁力', '弾性力', '静電気力'], '弾性力')],
+        explanation: '変形したものがもとにもどろうとする力を弾性力といいます。ばねやゴム、トランポリンの面などで見られます。',
+        hint: 'ばねがもとにもどろうとする力と同じなかまだよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'force-dr1-r1', concept: 'fo-effect',
+        prompt: 'つり橋のワイヤーが、橋を上から引いて落ちないようにしている。この力のはたらきはどれ？',
+        options: ['物体の形を変える', '運動のようすを変える', '物体を支える'],
+        answer: 'c',
+        explanation: 'ワイヤーは橋を引いて、落ちないように支えています。これは「物体を支える」はたらきです。',
+        hint: '橋は動いていないね。',
+      }),
+      choice({
+        id: 'force-dr1-r2', concept: 'fo-effect',
+        prompt: '空き缶を足でふんでつぶした。このときの主な力のはたらきはどれ？',
+        options: ['物体の形を変える', '物体を支える', '運動のようすを変える'],
+        answer: 'a',
+        explanation: '缶がつぶれて形が変わったので、「物体の形を変える」はたらきです。',
+        hint: 'ふんだあと、缶の何が変わったかな。',
+      }),
+      fill({
+        id: 'force-dr1-t2', concept: 'fo-kinds', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'こすった物体が、はなれた物体を引きつけたり、しりぞけたりする力を[b1]という。',
+        blanks: [word('b1', ['磁力', '静電気力', '張力'], '静電気力')],
+        explanation: 'こすってたまった静電気による力を**静電気力**といいます。',
+        hint: '「こすった」がヒントだよ。',
+      }),
+      figureChoice({
+        id: 'force-dr1-r3', concept: 'fo-kinds',
+        prompt: 'ア 磁石がクリップを引く、イ こすった下じきが紙の小片を引く、ウ 糸がおもりを引く、エ 床が箱を押し上げる。磁力がはたらいているのはどれ？',
+        figure: DR_FORCE_SCENES,
+        answer: 'r1',
+        explanation: '磁石が鉄のクリップを引きつける力は磁力（ア）です。間に紙があっても、はなれていてもはたらきます。イは静電気力、ウは張力、エは垂直抗力です。',
+        hint: '磁石の力の名前だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ force-dr2: ドリル 2（力のはたらき 後半: 力の大きさ・質量と重さ・つり合い） ----
+  const forceDr2 = {
+    id: 'force-dr2', areaId: 'spring', free: true, title: 'ドリル 2: 力の大きさ・重さと質量・つり合い', minutes: 7,
+    concepts: ['fo-hooke', 'fo-mass', 'fo-balance'],
+    lessons: [
+      {
+        id: 'force-dr2-c1',
+        anim: 'fo-hooke-graph',   // 動く図の使い回し（js/anim-physics.js）。figure は静止図として残す
+        text: '力の大きさの単位はニュートン（N）で、100 g の物体にはたらく重力を約 1 N とします。ばねの伸びは加えた力の大きさに比例し、これを**フックの法則**といいます。',
+        figure: scene(hookeGraph()),
+      },
+      {
+        id: 'force-dr2-c2',
+        text: '物体そのものの量を**質量**（g・kg）、物体にはたらく重力の大きさを**重さ**（N）といいます。月の重力は地球の約 6 分の 1 なので、月では重さは変わりますが、質量は変わりません。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '600 g の物体', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 20, y: 60, width: 130, height: 120, fill: 'sky', rx: 8 },
+          { type: 'text', x: 85, y: 92, text: '地球', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 85, y: 128, text: '質量 600 g', size: 14, anchor: 'middle' },
+          { type: 'text', x: 85, y: 158, text: '重さ 約 6 N', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 170, y: 60, width: 130, height: 120, fill: 'glass', rx: 8 },
+          { type: 'text', x: 235, y: 92, text: '月', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 235, y: 128, text: '質量 600 g', size: 14, anchor: 'middle' },
+          { type: 'text', x: 235, y: 158, text: '重さ 約 1 N', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'force-dr2-c3',
+        text: '1 つの物体にはたらく 2 力は、大きさが等しく、向きが反対で、同じ一直線上にあるとき**つり合い**ます。糸でつるしたおもりでは、重力と糸が引く力がつり合っています。',
+        figure: scene([
+          ceiling(110, 100),
+          { type: 'line', points: [[160, 18], [160, 100]], color: 'brown', width: 2 },
+          { type: 'rect', x: 135, y: 100, width: 50, height: 40, fill: 'gray' },
+          ...force(160, 100, 160, 50),
+          { type: 'text', x: 170, y: 72, text: '糸が引く力', size: 13 },
+          ...force(160, 120, 160, 190),
+          { type: 'text', x: 170, y: 176, text: '重力', size: 13 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'force-dr2-w1', concept: 'fo-mass',
+      prompt: '予想しよう。ばねばかりと上皿てんびんを月へ持っていき、同じりんごをはかる。地球とくらべて値が変わるのはどっち？',
+      options: ['ばねばかり', '上皿てんびん', 'どちらも変わらない'],
+      answer: 'a',
+      explanation: 'ばねばかりは重さ（重力の大きさ）をはかるので、月では値が約 6 分の 1 になります。上皿てんびんは質量をくらべるので、値は変わりません。',
+      hint: '月で変わるのは、重さと質量のどちらかな。',
+    }),
+    problems: [
+      fill({
+        id: 'force-dr2-p1', concept: 'fo-hooke',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'もとの長さ 12 cm のばねに 0.5 N のおもりをつるすと、全体の長さが 16 cm になった。1.5 N のおもりをつるすと、全体の長さは[b1]になる。',
+        blanks: [number('b1', 24, 0, 'cm')],
+        explanation: '0.5 N で 16 − 12 ＝ 4 cm 伸びます。1.5 N は 3 倍なので伸びは 12 cm、全体の長さは 12 ＋ 12 ＝ 24 cm です。',
+        hint: 'まず伸びを求め、もとの長さを足そう。',
+      }),
+      fill({
+        id: 'force-dr2-t1', concept: 'fo-mass', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '宇宙ステーションの中でも地上でも 50 kg のまま変わらない、物体そのものの量を[b1]という。',
+        blanks: [word('b1', ['重さ', '重力', '質量'], '質量')],
+        explanation: '場所が変わっても変わらない、物体そのものの量を**質量**といいます。重さは場所によって変わります。',
+        hint: '単位が g や kg の量だよ。',
+      }),
+      figureChoice({
+        id: 'force-dr2-p2', concept: 'fo-hooke',
+        prompt: 'グラフのア〜ウは、3 本のばねの力の大きさと伸びの関係です。同じ力で引いたとき、いちばん伸びるばねはどれ？',
+        figure: DR_THREE_SPRINGS,
+        answer: 'r1',
+        explanation: '同じ力（横軸の同じ位置）で見ると、グラフのかたむきが大きいアがいちばん伸びます。かたむきが大きいばねほど、伸びやすいばねです。',
+        hint: '横軸の同じところで、縦にいちばん高い線はどれかな。',
+      }),
+      fill({
+        id: 'force-dr2-p3', concept: 'fo-mass',
+        prompt: '空らんに入る数を入れよう。100 g の物体にはたらく重力を 1 N、月の重力を地球の 6 分の 1 とする。',
+        text: '地球で質量 1.2 kg の物体を月に持っていった。月での重さは[b1]である。',
+        blanks: [number('b1', 2, 0, 'N')],
+        explanation: '1.2 kg ＝ 1200 g なので、地球での重さは 12 N です。月ではその 6 分の 1 で、12 ÷ 6 ＝ 2 N です。質量は 1.2 kg のままです。',
+        hint: 'kg を g になおしてから、地球での重さを出そう。',
+      }),
+      fill({
+        id: 'force-dr2-p4', concept: 'fo-balance',
+        prompt: '空らんに入る数を入れよう。100 g の物体にはたらく重力を 1 N とする。',
+        text: '天井から糸でつるした 200 g のおもりが静止している。糸がおもりを引く力の大きさは[b1]である。',
+        blanks: [number('b1', 2, 0, 'N')],
+        explanation: 'おもりは静止しているので、重力 2 N と糸が引く力がつり合っています。つり合う 2 力は大きさが等しいので、2 N です。',
+        hint: '静止しているとき、2 力の大きさはどうなっているかな。',
+      }),
+      figureChoice({
+        id: 'force-dr2-p5', concept: 'fo-balance',
+        prompt: '図は体重計に乗って静止している人です。ア 人が体重計を押す力、イ 体重計が人を押し上げる力、ウ 床が体重計を押し上げる力。人にはたらく重力とつり合う力はどれ？',
+        // 人・体重計・床と力の矢印（作用点は青い丸）。重力は人の中心から下向き
+        figure: scene([
+          { type: 'rect', x: 0, y: 188, width: 320, height: 14, fill: 'brown', stroke: 'ink' },
+          { type: 'rect', x: 90, y: 170, width: 140, height: 18, fill: 'gray', stroke: 'ink' },
+          { type: 'rect', x: 140, y: 60, width: 40, height: 110, fill: 'lightgreen', stroke: 'ink', rx: 6 },
+          { type: 'circle', x: 160, y: 44, r: 14, fill: 'lightgreen', stroke: 'ink' },
+        ].concat(
+          force(150, 112, 150, 160),
+          [{ type: 'text', x: 134, y: 142, text: '重力', size: 14, anchor: 'end' }],
+          force(172, 170, 172, 118),
+          force(105, 170, 105, 222),
+          force(215, 188, 215, 146),
+          [
+            { type: 'region', id: 'r1', x: 62, y: 210, r: 22, label: 'ア' },
+            { type: 'region', id: 'r2', x: 206, y: 100, r: 22, label: 'イ' },
+            { type: 'region', id: 'r3', x: 264, y: 150, r: 22, label: 'ウ' },
+          ])),
+        answer: 'r2',
+        explanation: 'つり合う 2 力は、同じ物体（人）にはたらきます。人にはたらく重力とつり合うのは、体重計が人を押し上げる力（イ）です。アは体重計に、ウは体重計にはたらく力です。',
+        hint: 'どちらの力も「人に」はたらいているものを選ぼう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'force-dr2-r1', concept: 'fo-hooke',
+        prompt: 'ばねに 2 N の力を加えると 6 cm 伸びた。同じばねを 4.5 cm 伸ばすのに必要な力はどれ？',
+        options: ['3 N', '13.5 N', '1.5 N'],
+        answer: 'c',
+        explanation: 'このばねは 1 N で 3 cm 伸びます。4.5 cm 伸ばすには 4.5 ÷ 3 ＝ 1.5 N の力が必要です。',
+        hint: 'まず 1 N で何 cm 伸びるかを出そう。',
+      }),
+      fill({
+        id: 'force-dr2-r2', concept: 'fo-hooke',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 N の力で 4 cm 伸びるばねを、10 cm 伸ばすのに必要な力の大きさは[b1]である。',
+        blanks: [number('b1', 2.5, 0, 'N')],
+        explanation: '伸びは力の大きさに比例するので、10 ÷ 4 ＝ 2.5 倍の力、2.5 N が必要です。',
+        hint: '10 cm は 4 cm の何倍かな。',
+      }),
+      choice({
+        id: 'force-dr2-t2', concept: 'fo-mass', term: true,
+        prompt: '次の説明に合う言葉はどれ？「物体にはたらく重力の大きさ。場所によって変わり、単位は N」',
+        options: ['重さ', '質量', '密度'],
+        answer: 'a',
+        explanation: '物体にはたらく重力の大きさを**重さ**といいます。月では地球の約 6 分の 1 になります。',
+        hint: 'ばねばかりではかる量だよ。',
+      }),
+      choice({
+        id: 'force-dr2-r3', concept: 'fo-mass',
+        prompt: '質量 2 kg の物体にはたらく重力の大きさは、約何 N？（100 g で 1 N とする）',
+        options: ['2 N', '20 N', '200 N'],
+        answer: 'b',
+        explanation: '2 kg ＝ 2000 g で、100 g で 1 N なので、2000 ÷ 100 ＝ 20 N です。',
+        hint: 'kg を g になおそう。',
+      }),
+      choice({
+        id: 'force-dr2-r4', concept: 'fo-balance',
+        prompt: '箱を右に 4 N、左に 4 N で一直線上に引くと動かなかった。左の力だけ 6 N にすると、箱はどうなる？',
+        options: ['右へ動きだす', '動かないまま', '左へ動きだす'],
+        answer: 'c',
+        explanation: '2 力の大きさが等しくなくなるので、つり合いがくずれます。大きい力の向き（左）へ動きだします。',
+        hint: 'つり合いの条件のうち、どれがくずれたかな。',
+      }),
+      fill({
+        id: 'force-dr2-r5', concept: 'fo-balance',
+        prompt: '空らんに入る数を入れよう。100 g の物体にはたらく重力を 1 N とする。',
+        text: '水平な机の上に置いた 500 g の本を、机が押し上げる力（垂直抗力）の大きさは[b1]である。',
+        blanks: [number('b1', 5, 0, 'N')],
+        explanation: '本は静止しているので、重力 5 N と垂直抗力がつり合っています。だから垂直抗力も 5 N です。',
+        hint: '本にはたらく重力の大きさと同じだよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1293,9 +1629,8 @@
     mascot: 'E',   // 担当の先生（キューブ先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'what', title: '力とは', order: 1, stages: [force1, force2] },
-      { id: 'spring', title: '力の大きさ', order: 2, stages: [force3, force4] },
-      { id: 'force-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [forceMp1, forceMp2] },
+      { id: 'what', title: '力とは', order: 1, stages: [force1, force2, forceMp1, forceDr1] },
+      { id: 'spring', title: '力の大きさ', order: 2, stages: [force3, force4, forceMp2, forceDr2] },
     ],
   };
 

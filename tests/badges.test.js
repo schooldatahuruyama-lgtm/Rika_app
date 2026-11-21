@@ -60,6 +60,25 @@ test('stats: free: true の領域（ミニプリント）は clearedUnits に数
   assert.equal(badges.stats(r3, reg3, config).clearedUnits, 0);
 });
 
+test('stats: ステージの free: true（プリント・ドリル）は clearedUnits の条件から除く。free だけのクリアでは 0', () => {
+  const u = JSON.parse(JSON.stringify(unit));
+  u.areas[0].stages[1].free = true;   // s-a2 をプリント扱いに。基本は s-a1 と s-b1
+  const reg2 = cr.createRegistry(); reg2.register(u);
+  let r = record.createRecord();
+  r = record.finishStage(r, { stageId: 's-a2', stars: 3, cleared: true }, at(3));
+  let s = badges.stats(r, reg2, config);
+  assert.equal(s.clearedUnits, 0); assert.equal(s.clearedStages, 1); assert.equal(s.totalStars, 3);
+  let r2 = record.createRecord();
+  r2 = record.finishStage(r2, { stageId: 's-a1', stars: 2, cleared: true }, at(3));
+  r2 = record.finishStage(r2, { stageId: 's-b1', stars: 1, cleared: true }, at(3));
+  s = badges.stats(r2, reg2, config);
+  assert.equal(s.clearedUnits, 1); assert.equal(s.clearedStages, 2);   // s-a2 が未クリアでも 1
+  // ステージの free: 'true'（文字列）は free と見なさない
+  const u3 = JSON.parse(JSON.stringify(unit)); u3.areas[0].stages[1].free = 'true';
+  const reg3 = cr.createRegistry(); reg3.register(u3);
+  assert.equal(badges.stats(r2, reg3, config).clearedUnits, 0);
+});
+
 test('stats: ステージ 0 の単元は clearedUnits に数えない', () => {
   const reg2 = cr.createRegistry(); reg2.register({ id: 'empty', title: '空', concepts: [], areas: [] });
   assert.equal(badges.stats(record.createRecord(), reg2, config).clearedUnits, 0);

@@ -150,3 +150,14 @@ test('validateUnit: レッスン文の ** が閉じていない・空の用語�
   u.areas[0].stages[0].lessons[0].text = '**光**は**まっすぐ**進みます。';
   assert.deepEqual(cr.validateUnit(u), []);
 });
+
+test("validateUnit: ステージ・領域の free は true / false / 未指定だけ（'true' や 1 はエラー）", () => {
+  const ok = JSON.parse(JSON.stringify(unit));
+  ok.areas[0].stages[1].free = true; ok.areas[1].free = false;
+  assert.deepEqual(cr.validateUnit(ok), []);
+  const bad = JSON.parse(JSON.stringify(unit));
+  bad.areas[0].stages[1].free = 'true'; bad.areas[1].free = 1;
+  const errs = cr.validateUnit(bad);
+  assert.ok(errs.some(e => e.includes('ステージ s-a2 の free')), errs.join('\n'));
+  assert.ok(errs.some(e => e.includes('領域 ' + bad.areas[1].id + ' の free')), errs.join('\n'));
+});

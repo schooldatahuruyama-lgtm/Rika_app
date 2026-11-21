@@ -485,7 +485,7 @@
 
   // ---- ステージ sol-3: 溶解度と飽和水溶液（溶解度曲線の読み取り） ----
   const sol3 = {
-    id: 'sol-3', areaId: 'solubility', title: '溶解度と飽和水溶液', minutes: 5, concepts: ['sol-solubility'],
+    id: 'sol-3', areaId: 'sol-solubility', title: '溶解度と飽和水溶液', minutes: 5, concepts: ['sol-solubility'],
     lessons: [
       {
         id: 'sol-3-c1',
@@ -635,7 +635,7 @@
 
   // ---- ステージ sol-4: 再結晶（冷やす・蒸発させる、結晶の形、ろ過） ----
   const sol4 = {
-    id: 'sol-4', areaId: 'solubility', title: '再結晶', minutes: 5, concepts: ['sol-recrystal'],
+    id: 'sol-4', areaId: 'sol-solubility', title: '再結晶', minutes: 5, concepts: ['sol-recrystal'],
     lessons: [
       {
         id: 'sol-4-c1',
@@ -1022,7 +1022,7 @@
 
   // ---- ステージ solution-mp1: プリント 1（溶質・溶媒と混合物、ろ過） ----
   const solMp1 = {
-    id: 'solution-mp1', areaId: 'solution-miniprint', title: 'プリント 1: 混合物とろ過', minutes: 5, concepts: ['sol-terms', 'sol-mixture', 'sol-recrystal'],
+    id: 'solution-mp1', areaId: 'dissolve', free: true, title: 'プリント 1: 混合物とろ過', minutes: 5, concepts: ['sol-terms', 'sol-mixture', 'sol-recrystal'],
     lessons: [
       {
         id: 'solution-mp1-c1',
@@ -1174,7 +1174,7 @@
 
   // ---- ステージ solution-mp2: プリント 2（質量パーセント濃度の計算） ----
   const solMp2 = {
-    id: 'solution-mp2', areaId: 'solution-miniprint', title: 'プリント 2: 濃度の計算', minutes: 5, concepts: ['sol-concentration'],
+    id: 'solution-mp2', areaId: 'dissolve', free: true, title: 'プリント 2: 濃度の計算', minutes: 5, concepts: ['sol-concentration'],
     lessons: [
       {
         id: 'solution-mp2-c1',
@@ -1309,7 +1309,7 @@
 
   // ---- ステージ solution-mp3: プリント 3（溶解度と飽和水溶液、温度ととける量） ----
   const solMp3 = {
-    id: 'solution-mp3', areaId: 'solution-miniprint', title: 'プリント 3: 溶解度の表を読む', minutes: 5, concepts: ['sol-solubility', 'sol-recrystal'],
+    id: 'solution-mp3', areaId: 'sol-solubility', free: true, title: 'プリント 3: 溶解度の表を読む', minutes: 5, concepts: ['sol-solubility', 'sol-recrystal'],
     lessons: [
       {
         id: 'solution-mp3-c1',
@@ -1414,7 +1414,7 @@
 
   // ---- ステージ solution-mp4: プリント 4（溶解度の問題: 結晶が出はじめる温度と結晶の質量） ----
   const solMp4 = {
-    id: 'solution-mp4', areaId: 'solution-miniprint', title: 'プリント 4: 結晶の出る温度と量', minutes: 5, concepts: ['sol-recrystal', 'sol-solubility'],
+    id: 'solution-mp4', areaId: 'sol-solubility', free: true, title: 'プリント 4: 結晶の出る温度と量', minutes: 5, concepts: ['sol-recrystal', 'sol-solubility'],
     lessons: [
       {
         id: 'solution-mp4-c1',
@@ -1609,6 +1609,191 @@
   ]);
 
   // ================================================================
+  // 領域: ドリル（中学 1 年のテーマ「水溶液の性質」に合わせた自作の練習問題）
+  // ================================================================
+
+  // 水 100 g にとける質量〔g〕の表（20・40・60 ℃）。withRegions で左にア〜ウの選ぶ場所
+  function drSolTable(withRegions) {
+    const items = [
+      { type: 'text', x: 160, y: 24, text: '水 100 g にとける質量〔g〕', size: 14, anchor: 'middle' },
+      { type: 'line', points: [[60, 38], [312, 38]], width: 2 },
+      { type: 'text', x: 200, y: 60, text: '20 ℃', size: 14, anchor: 'middle' },
+      { type: 'text', x: 250, y: 60, text: '40 ℃', size: 14, anchor: 'middle' },
+      { type: 'text', x: 296, y: 60, text: '60 ℃', size: 14, anchor: 'middle' },
+      { type: 'line', points: [[60, 72], [312, 72]], width: 1, color: 'line' },
+    ];
+    const rows = [['硝酸カリウム', 32, 64, 110], ['塩化ナトリウム', 36, 36, 37], ['ミョウバン', 11, 24, 57]];
+    rows.forEach((row, i) => {
+      const y = 116 + 50 * i;
+      items.push({ type: 'text', x: 62, y, text: row[0], size: 13 });
+      items.push({ type: 'text', x: 200, y, text: String(row[1]), size: 15, anchor: 'middle' });
+      items.push({ type: 'text', x: 250, y, text: String(row[2]), size: 15, anchor: 'middle' });
+      items.push({ type: 'text', x: 296, y, text: String(row[3]), size: 15, anchor: 'middle' });
+      if (withRegions) items.push({ type: 'region', id: 'r' + (i + 1), x: 30, y: y - 6, r: 22, label: 'アイウ'[i] });
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ solution-dr1: ドリル 1（水溶液の性質） ----
+  const solDr1 = {
+    id: 'solution-dr1', areaId: 'sol-solubility', free: true, title: 'ドリル 1: 水溶液の性質', minutes: 7,
+    concepts: ['sol-terms', 'sol-concentration', 'sol-recrystal'],
+    lessons: [
+      {
+        id: 'solution-dr1-c1',
+        text: 'とけている物質が**溶質**、とかしている液体が**溶媒**、できた液全体が**溶液**です。溶媒は水とはかぎらず、エタノールのこともあります。溶液の質量は、溶質と溶媒の質量の和です。',
+        figure: scene([
+          { type: 'beaker', x: 160, y: 170, width: 100, height: 100, level: 0.7 },
+          { type: 'text', x: 160, y: 205, text: '溶液 ＝ 溶質 ＋ 溶媒', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 230, text: '（質量も 溶質 ＋ 溶媒）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 30, y: 28, text: '溶質: とけている物質', size: 13 },
+          { type: 'text', x: 30, y: 50, text: '溶媒: とかしている液体', size: 13 },
+        ]),
+      },
+      {
+        id: 'solution-dr1-c2',
+        text: '濃さは**質量パーセント濃度**で表し、溶質の質量÷溶液の質量×100 で求めます。水を加えてうすめても、とけている溶質の質量は変わりません。',
+        figure: scene([
+          { type: 'text', x: 160, y: 50, text: '質量パーセント濃度〔%〕', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 96, text: '＝ 溶質の質量 ÷ 溶液の質量 × 100', size: 14, anchor: 'middle' },
+          { type: 'beaker', x: 90, y: 210, width: 70, height: 70, level: 0.4 },
+          { type: 'line', points: [[140, 175], [180, 175]], width: 2, arrow: true },
+          { type: 'text', x: 160, y: 165, text: '水を足す', size: 12, anchor: 'middle' },
+          { type: 'beaker', x: 230, y: 210, width: 70, height: 70, level: 0.8 },
+          { type: 'text', x: 160, y: 232, text: '溶質の質量は同じ', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'solution-dr1-c3',
+        text: '温度を下げると溶解度が小さくなり、とけきれなくなった分が結晶として出てきます。これが**再結晶**です。出てくる量は、とけていた量から、その温度での溶解度を引いて求めます。',
+        figure: drSolTable(false),
+      },
+    ],
+    warmup: choice({
+      id: 'solution-dr1-w1', concept: 'sol-concentration',
+      prompt: '予想しよう。スポーツドリンクを水でうすめた。とけている砂糖などの量（質量）はどうなると思う？',
+      options: ['変わらない', '減る', '増える'],
+      answer: 'a',
+      explanation: '水を足しても、とけている物質はそのまま残っているので、量は変わりません。変わるのは溶液全体の質量で、そのため濃さはうすくなります。',
+      hint: '足したのは水だけだね。',
+    }),
+    problems: [
+      choice({
+        id: 'solution-dr1-p1', concept: 'sol-terms',
+        prompt: 'ヨウ素をエタノールにとかした液（ヨウ素のエタノール溶液）で、溶媒にあたるものはどれ？',
+        options: ['ヨウ素', 'エタノール', 'ヨウ素のエタノール溶液'],
+        answer: 'b',
+        explanation: 'ヨウ素をとかしているエタノールが溶媒です。ヨウ素は溶質、できた液全体が溶液です。溶媒が水でないので、この液は水溶液とはいいません。',
+        hint: '「とかしている液体」はどちらかな。',
+      }),
+      fill({
+        id: 'solution-dr1-t1', concept: 'sol-terms', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ヨウ素のエタノール溶液のエタノールのように、ほかの物質をとかしている液体を[b1]という。',
+        blanks: [word('b1', ['溶媒', '溶液', '溶質'], '溶媒')],
+        explanation: '物質をとかしている液体を**溶媒**といいます。水だけでなく、エタノールも溶媒になります。',
+        hint: '「媒」は、なかだちをするものという意味だよ。',
+      }),
+      fill({
+        id: 'solution-dr1-p2', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '10 % の食塩水 200 g に、水 200 g を加えてうすめた。うすめた食塩水の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 5, 0, '%')],
+        explanation: '食塩は 200 × 0.1 ＝ 20 g のままで、溶液は 400 g になります。20 ÷ 400 × 100 ＝ 5 % です。',
+        hint: 'まず、とけている食塩が何 g かを求めよう。',
+      }),
+      fill({
+        id: 'solution-dr1-p3', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '15 % の砂糖水を 120 g つくりたい。必要な水の質量は[b1]である。',
+        blanks: [number('b1', 102, 0, 'g')],
+        explanation: '砂糖は 120 × 0.15 ＝ 18 g です。のこりが水なので、120 − 18 ＝ 102 g です。',
+        hint: '溶液 120 g のうち、砂糖が何 g かを先に出そう。',
+      }),
+      figureChoice({
+        id: 'solution-dr1-p4', concept: 'sol-recrystal',
+        prompt: '60 ℃ の水 100 g に、ア〜ウをそれぞれ 30 g とかし、20 ℃ まで冷やした。結晶がいちばん多く出るのはどれ？',
+        figure: drSolTable(true),
+        answer: 'r3',
+        explanation: '20 ℃ で、硝酸カリウムは 32 g、塩化ナトリウムは 36 g までとけるので、30 g なら結晶は出ません。ミョウバンは 11 g までなので、30 − 11 ＝ 19 g が結晶になります。',
+        hint: '20 ℃ でとける量が 30 g より少ないものをさがそう。',
+      }),
+      figureChoice({
+        id: 'solution-dr1-p5', concept: 'sol-recrystal',
+        prompt: '冷やして出てきた硝酸カリウムの結晶を、液と分けて取り出したい。ア 蒸留、イ 加熱してとかす、ウ ろ過。使う装置はどれ？ ア〜ウから選ぼう。',
+        // ア 蒸留（フラスコ・管・試験管）、イ ビーカーを加熱、ウ ろ過（filterSetup）
+        figure: scene([
+          { type: 'circle', x: 50, y: 124, r: 28, fill: 'water', stroke: 'ink' },
+          { type: 'line', points: [[50, 96], [50, 80], [100, 110], [100, 150]], color: 'line', width: 4 },
+          { type: 'tube', x: 100, y: 190, height: 70, level: 0.2 },
+          { type: 'flame', x: 50, y: 190 },
+          { type: 'beaker', x: 150, y: 150, width: 60, height: 60, level: 0.5 },
+          { type: 'flame', x: 150, y: 190 },
+        ].concat(filterSetup(212, true, true), [
+          { type: 'region', id: 'r1', x: 55, y: 218, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 150, y: 218, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 250, y: 218, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: '液にとけていない固体（結晶）は、ろ紙を通りぬけられないので、ウのろ過で液と分けられます。アの蒸留は液体を分ける方法、イの加熱は結晶をとかしてしまいます。',
+        hint: '固体と液体を、ろ紙で分ける方法だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'solution-dr1-r1', concept: 'sol-terms',
+        prompt: '水 150 g に食塩 30 g をすべてとかした。できた食塩水（溶液）の質量はどれ？',
+        options: ['180 g', '150 g', '120 g'],
+        answer: 'a',
+        explanation: '溶液の質量は、溶媒（水）と溶質（食塩）の質量の和なので、150 ＋ 30 ＝ 180 g です。とけて見えなくなっても、食塩の質量はなくなりません。',
+        hint: 'とけた食塩の質量はどうなったかな。',
+      }),
+      choice({
+        id: 'solution-dr1-t2', concept: 'sol-terms', term: true,
+        prompt: '次の説明に合う言葉はどれ？「溶質が溶媒にとけてできた、液全体」',
+        options: ['溶媒', '溶液', '溶質'],
+        answer: 'b',
+        explanation: '溶質が溶媒にとけてできた液全体を**溶液**といいます。溶媒が水のときは、とくに水溶液といいます。',
+        hint: '食塩水でいえば、食塩水そのものだよ。',
+      }),
+      fill({
+        id: 'solution-dr1-r2', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '20 % の食塩水 100 g に水 60 g を加えた。この食塩水の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 12.5, 0, '%')],
+        explanation: '食塩は 100 × 0.2 ＝ 20 g、溶液は 160 g になります。20 ÷ 160 × 100 ＝ 12.5 % です。',
+        hint: '食塩 20 g は変わらない。溶液は何 g になったかな。',
+      }),
+      choice({
+        id: 'solution-dr1-r3', concept: 'sol-concentration',
+        prompt: '5 % の砂糖水 300 g と同じ量の砂糖がとけている、10 % の砂糖水は何 g？',
+        options: ['600 g', '30 g', '150 g'],
+        answer: 'c',
+        explanation: '砂糖は 300 × 0.05 ＝ 15 g です。15 g が 10 % になる溶液は、15 ÷ 0.1 ＝ 150 g です。',
+        hint: 'まず砂糖の質量を出し、それが 10 % になる全体の質量を考えよう。',
+      }),
+      fill({
+        id: 'solution-dr1-r4', concept: 'sol-recrystal',
+        prompt: '表を見て、空らんに入る数を入れよう。',
+        figure: drSolTable(false),
+        text: '40 ℃ の水 100 g にミョウバン 24 g をとかし、20 ℃ まで冷やすと、出てくる結晶は[b1]である。',
+        blanks: [number('b1', 13, 0, 'g')],
+        explanation: '20 ℃ ではミョウバンは 11 g までしかとけないので、24 − 11 ＝ 13 g が結晶になります。',
+        hint: '20 ℃ の列のミョウバンの数を見よう。',
+      }),
+      fill({
+        id: 'solution-dr1-r5', concept: 'sol-recrystal',
+        prompt: '表を見て、空らんに入る数を入れよう。',
+        figure: drSolTable(false),
+        text: '20 ℃ の水 100 g に硝酸カリウムを 32 g とかした飽和水溶液から、20 ℃ のまま水を 50 g 蒸発させた。出てくる結晶は[b1]である。',
+        blanks: [number('b1', 16, 0, 'g')],
+        explanation: 'のこった水 50 g には、20 ℃ で 32 の半分の 16 g までしかとけません。32 − 16 ＝ 16 g が結晶になります。',
+        hint: '水が半分になると、とけられる量も半分になるね。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1618,9 +1803,8 @@
     mascot: 'B',   // 担当の先生（しずく博士。js/mascot.js の MASCOTS）
     concepts: concepts.concat(mpConcepts),
     areas: [
-      { id: 'dissolve', title: '水にとける', order: 1, stages: [sol1, sol2] },
-      { id: 'sol-solubility', title: '溶解度', order: 2, stages: [sol3, sol4] },
-      { id: 'solution-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [solMp1, solMp2, solMp3, solMp4] },
+      { id: 'dissolve', title: '水にとける', order: 1, stages: [sol1, sol2, solMp1, solMp2] },
+      { id: 'sol-solubility', title: '溶解度', order: 2, stages: [sol3, sol4, solMp3, solMp4, solDr1] },
     ],
   };
 

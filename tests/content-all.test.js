@@ -171,17 +171,19 @@ const ANIM_TEXT_EXCEPTIONS = {};
 const LIGHT_COUNT = 23;
 const LIGHT_KINDS = anim.KINDS.slice(0, LIGHT_COUNT);
 
-// 全単元の anim を持つカード [{ unitId, card, mp }]。mp: ミニプリントのステージ（id に -mp を含む）のカード
+// 全単元の anim を持つカード [{ unitId, card, mp }]。mp: ミニプリント・ドリルのステージ（id に -mp を含む、または -dr<数字> で終わる）のカード。
+// ドリルのカードも、ミニプリントと同じく、ほかのカードの kind を使い回してよい
 const animCards = files.flatMap(file => {
   const unit = require(path.join(CONTENT_DIR, file)).unit;
-  return (unit.areas || []).flatMap(a => (a.stages || []).flatMap(s => (s.lessons || []).map(card => ({ card, mp: s.id.includes('-mp') }))))
+  return (unit.areas || []).flatMap(a => (a.stages || []).flatMap(s => (s.lessons || []).map(card => ({ card, mp: s.id.includes('-mp') || /-dr\d+$/.test(s.id), dr: /-dr\d+$/.test(s.id) }))))
     .filter(({ card }) => card.anim !== undefined)
-    .map(({ card, mp }) => ({ unitId: unit.id, card, mp }));
+    .map(({ card, mp, dr }) => ({ unitId: unit.id, card, mp, dr }));
 });
 // ミニプリントのカードは、ほかのカードの kind を使い回してよい（docs/plans/mp-figures-1nen.md）。
 // 使い回し: ミニプリント以外のカードも使っている kind をミニプリントのカードが使うこと
 const usedOutsideMp = new Set(animCards.filter(c => !c.mp).map(c => c.card.anim));
-const isShared = ({ card, mp }) => mp && usedOutsideMp.has(card.anim);
+// ドリルのカードは新しい kind を作らず、いつも既存の kind の使い回し（ミニプリントのカードのために作った kind もふくむ）
+const isShared = ({ card, mp, dr }) => dr || (mp && usedOutsideMp.has(card.anim));
 
 test('anim: カードの kind は文字列で KINDS にあり、ミニプリント以外のカードでは全単元で重ならない（1 kind ＝ 1 カード）', () => {
   const seen = new Map();   // kind → カード id

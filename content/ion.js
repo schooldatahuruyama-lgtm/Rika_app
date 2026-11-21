@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通資料の「共通のデータの形」を参照）。
 // 2 領域 × 2 ステージ（水溶液とイオン: 電解質とイオン・電気分解と電池 / 酸・アルカリと中和: 酸とアルカリ・中和と塩）と、概念 6 つ。
 // 領域 3「ミニプリント」（io-miniprint）: 先生のミニプリントの問題を書き直したステージ ion-mp1〜ion-mp10（.ai-tasks/20261106-130000_ミニプリント反映_共通.md）。
+// 領域 4「ドリル」（ion-drill）: 公開のテーマ名だけを目安に自作したステージ ion-dr1〜ion-dr6（.ai-tasks/20261121-152500_ドリル問題_共通.md）。
 // 図（scene）の item は js/figures.js の定義に従う（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
 // drag の位置は部品の基準点（circle は中心）で判定する（js/ui-problems.js の anchorOf）。
@@ -1088,7 +1089,7 @@
 
   // ---- ステージ ion-mp1: プリント 1 電解質と非電解質（電解質／電解質2／電解質３） ----
   const ionMp1 = {
-    id: 'ion-mp1', areaId: 'io-miniprint', title: 'プリント 1: 電解質と非電解質', minutes: 5, concepts: ['io-electrolyte'],
+    id: 'ion-mp1', areaId: 'io-ion', free: true, title: 'プリント 1: 電解質と非電解質', minutes: 5, concepts: ['io-electrolyte'],
     lessons: [
       {
         id: 'ion-mp1-c1',
@@ -1231,7 +1232,7 @@
 
   // ---- ステージ ion-mp2: プリント 2 原子の構造とイオン・電離（ヘリウム原子の構造／イオンのでき方／電離　イオン式／電離の式　たくさん） ----
   const ionMp2 = {
-    id: 'ion-mp2', areaId: 'io-miniprint', title: 'プリント 2: 原子の構造とイオン・電離', minutes: 5, concepts: ['io-structure', 'io-electrolyte'],
+    id: 'ion-mp2', areaId: 'io-ion', free: true, title: 'プリント 2: 原子の構造とイオン・電離', minutes: 5, concepts: ['io-structure', 'io-electrolyte'],
     lessons: [
       {
         id: 'ion-mp2-c1',
@@ -1396,7 +1397,7 @@
 
   // ---- ステージ ion-mp3: プリント 3 塩化銅の電気分解（塩化銅の電気分解／2／モデル） ----
   const ionMp3 = {
-    id: 'ion-mp3', areaId: 'io-miniprint', title: 'プリント 3: 塩化銅の電気分解', minutes: 5, concepts: ['io-electrolysis'],
+    id: 'ion-mp3', areaId: 'io-ion', free: true, title: 'プリント 3: 塩化銅の電気分解', minutes: 5, concepts: ['io-electrolysis'],
     lessons: [
       {
         id: 'ion-mp3-c1',
@@ -1540,7 +1541,7 @@
 
   // ---- ステージ ion-mp4: プリント 4 電池のしくみ（⑤電池の実験／電池のしくみ／電池のしくみ２／電池4種類の金属） ----
   const ionMp4 = {
-    id: 'ion-mp4', areaId: 'io-miniprint', title: 'プリント 4: 電池のしくみ', minutes: 5, concepts: ['io-battery'],
+    id: 'ion-mp4', areaId: 'io-ion', free: true, title: 'プリント 4: 電池のしくみ', minutes: 5, concepts: ['io-battery'],
     lessons: [
       {
         id: 'ion-mp4-c1',
@@ -1695,7 +1696,7 @@
 
   // ---- ステージ ion-mp5: プリント 5 金属の組み合わせと電池（電池５種類の金属2／実験プリント　電池／木炭電池） ----
   const ionMp5 = {
-    id: 'ion-mp5', areaId: 'io-miniprint', title: 'プリント 5: 金属の組み合わせと木炭電池', minutes: 5, concepts: ['io-battery'],
+    id: 'ion-mp5', areaId: 'io-ion', free: true, title: 'プリント 5: 金属の組み合わせと木炭電池', minutes: 5, concepts: ['io-battery'],
     lessons: [
       {
         id: 'ion-mp5-c1',
@@ -1849,7 +1850,7 @@
 
   // ---- ステージ ion-mp6: プリント 6 いろいろな電池（⑥ダニエル電池のしくみ／⑦電池の種類／⑧燃料電池／身の回りの電池） ----
   const ionMp6 = {
-    id: 'ion-mp6', areaId: 'io-miniprint', title: 'プリント 6: ダニエル電池といろいろな電池', minutes: 5, concepts: ['io-battery'],
+    id: 'ion-mp6', areaId: 'io-ion', free: true, title: 'プリント 6: ダニエル電池といろいろな電池', minutes: 5, concepts: ['io-battery'],
     lessons: [
       {
         id: 'ion-mp6-c1',
@@ -2013,7 +2014,7 @@
 
   // ---- ステージ ion-mp7: プリント 7 酸性・アルカリ性の性質と正体（酸性・アルカリ性の性質／２／酸の正体／アルカリの正体） ----
   const ionMp7 = {
-    id: 'ion-mp7', areaId: 'io-miniprint', title: 'プリント 7: 酸性・アルカリ性の性質と正体', minutes: 5, concepts: ['io-acidbase'],
+    id: 'ion-mp7', areaId: 'io-acid', free: true, title: 'プリント 7: 酸性・アルカリ性の性質と正体', minutes: 5, concepts: ['io-acidbase'],
     lessons: [
       {
         id: 'ion-mp7-c1',
@@ -2179,7 +2180,7 @@
 
   // ---- ステージ ion-mp8: プリント 8 中和と塩（①中和１／中和１（3年生フォルダ）／②中和まとめ／④いろいろな塩） ----
   const ionMp8 = {
-    id: 'ion-mp8', areaId: 'io-miniprint', title: 'プリント 8: 中和と塩', minutes: 5, concepts: ['io-neutral', 'io-acidbase'],
+    id: 'ion-mp8', areaId: 'io-acid', free: true, title: 'プリント 8: 中和と塩', minutes: 5, concepts: ['io-neutral', 'io-acidbase'],
     lessons: [
       {
         id: 'ion-mp8-c1',
@@ -2337,7 +2338,7 @@
 
   // ---- ステージ ion-mp9: プリント 9 中和のモデルと電離式（③中和のモデル／中和モデル／中和モデル2／酸とアルカリの電離式） ----
   const ionMp9 = {
-    id: 'ion-mp9', areaId: 'io-miniprint', title: 'プリント 9: 中和のモデルと電離式', minutes: 5, concepts: ['io-neutral', 'io-acidbase'],
+    id: 'ion-mp9', areaId: 'io-acid', free: true, title: 'プリント 9: 中和のモデルと電離式', minutes: 5, concepts: ['io-neutral', 'io-acidbase'],
     lessons: [
       {
         id: 'ion-mp9-c1',
@@ -2489,7 +2490,7 @@
 
   // ---- ステージ ion-mp10: プリント 10 中和と体積の比（A4問題　中和　濃さと体積／中和　濃さと体積） ----
   const ionMp10 = {
-    id: 'ion-mp10', areaId: 'io-miniprint', title: 'プリント 10: 中和の体積の比と濃さ', minutes: 5, concepts: ['io-neutral'],
+    id: 'ion-mp10', areaId: 'io-acid', free: true, title: 'プリント 10: 中和の体積の比と濃さ', minutes: 5, concepts: ['io-neutral'],
     lessons: [
       {
         id: 'ion-mp10-c1',
@@ -2620,6 +2621,1043 @@
         answer: 'a',
         explanation: '塩酸 8 cm³ をちょうど中和するには、8 × 2 ＝ 16 cm³ が必要です。加えたのは 15 cm³ で足りないので、塩酸があまって酸性になります。',
         hint: 'まず、塩酸 8 cm³ をちょうど中和する量を計算しよう。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 4: ドリル（.ai-tasks/20261121-152500_ドリル問題_共通.md）
+  // 公開されているテーマ名（水溶液とイオン・酸・アルカリとイオン・電池とイオン）だけを目安にし、
+  // 問題・解説・図はすべて中学理科の知識から自作した。既存の問いとは角度を変えている。
+  // ================================================================
+
+  // ---- ドリル用の図の部品 ----
+
+  // 表のます目（左上 x・y、列の幅の配列 widths、行の高さ h、行の数 rows）。線は line 色
+  function gridCells(x, y, widths, h, rows) {
+    const items = [];
+    for (let r = 0; r < rows; r++) {
+      let left = x;
+      widths.forEach(w => {
+        items.push({ type: 'rect', x: left, y: y + h * r, width: w, height: h, fill: 'white', stroke: 'line' });
+        left += w;
+      });
+    }
+    return items;
+  }
+
+  // 表の文字（行ごとの文字の配列 rows を、列の中心 xs・行の基準線 ys に置く。size は 12〜13）
+  function gridTexts(rows, xs, ys, size) {
+    const items = [];
+    rows.forEach((cells, r) => cells.forEach((t, c) => {
+      if (t) items.push({ type: 'text', x: xs[c], y: ys[r], text: t, size: size || 13, anchor: 'middle' });
+    }));
+    return items;
+  }
+
+  // pH の数直線（0〜14 を x 20〜300。1 目もり 20px。帯は y 100〜124、酸性側は桃、アルカリ性側は水色）
+  const phX = (ph) => 20 + 20 * ph;
+  function phBar() {
+    return [
+      { type: 'rect', x: phX(0), y: 100, width: 140, height: 24, fill: 'pink', stroke: 'line' },
+      { type: 'rect', x: phX(7), y: 100, width: 140, height: 24, fill: 'sky', stroke: 'line' },
+      { type: 'line', points: [[phX(7), 94], [phX(7), 130]], width: 2 },
+      { type: 'text', x: phX(0), y: 144, text: '0', size: 12, anchor: 'middle' },
+      { type: 'text', x: phX(7), y: 144, text: '7', size: 12, anchor: 'middle' },
+      { type: 'text', x: phX(14), y: 144, text: '14', size: 12, anchor: 'middle' },
+    ];
+  }
+
+  // 電流の大きさ（または温度）のグラフの軸（原点 (50, 200)、縦軸の上 y 40、横軸の右 x 300）
+  function graphAxes(yName, xName) {
+    return [
+      { type: 'line', points: [[50, 40], [50, 200], [300, 200]], width: 2 },
+      { type: 'text', x: 14, y: 120, text: yName, size: 12 },
+      { type: 'text', x: 175, y: 232, text: xName, size: 12, anchor: 'middle' },
+    ];
+  }
+
+  // うすい硫酸に水酸化バリウム水溶液を加えたときの電流の変化（0〜20 cm³ を x 50〜300、10 cm³ で 0）
+  const BA_CURVE = { type: 'line', points: [[50, 60], [175, 196], [300, 60]], color: 'blue', width: 3 };
+
+  // 3 本のビーカーに金属板を入れた図（中心 x 60・160・260）。plates は板の名前、fills は板の色、liquids は液の名前
+  function plateBeakers(plates, fills, liquids) {
+    const items = [];
+    [60, 160, 260].forEach((x, i) => {
+      items.push({ type: 'beaker', x, y: 160, width: 70, height: 90, level: 0.7 });
+      items.push({ type: 'rect', x: x - 6, y: 56, width: 12, height: 98, fill: fills[i] });
+      items.push({ type: 'text', x, y: 46, text: plates[i], size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x, y: 182, text: liquids[i], size: 12, anchor: 'middle' });
+    });
+    return items;
+  }
+
+  // ---- ステージ ion-dr1: ドリル 1 電解質と電気分解の実験 ----
+  const ionDr1 = {
+    id: 'ion-dr1', areaId: 'io-ion', free: true, title: 'ドリル 1: 電解質と電気分解の実験', minutes: 6, concepts: ['io-electrolyte', 'io-electrolysis'],
+    lessons: [
+      {
+        id: 'ion-dr1-c1',
+        text: '電解質の水溶液の中では、陽イオンと陰イオンが自由に動けるので、電流が流れます。食塩の固体（結晶）ではイオンが動けないので、電流は流れません。食塩と砂糖を混ぜてとかした水溶液には、食塩のイオンがあるので電流が流れます。',
+        // 左: 固体の中で並んだまま動けないイオン、右: 水溶液の中で動けるイオン
+        figure: scene([
+          { type: 'text', x: 80, y: 28, text: '固体（結晶）', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 240, y: 28, text: '水溶液', size: 13, anchor: 'middle', bold: true },
+          { type: 'rect', x: 10, y: 44, width: 140, height: 146, rx: 6, fill: 'white', stroke: 'line' },
+          ion(40, 75, 'Na+'), ion(80, 75, 'Cl-'), ion(120, 75, 'Na+'),
+          ion(40, 117, 'Cl-'), ion(80, 117, 'Na+'), ion(120, 117, 'Cl-'),
+          ion(40, 159, 'Na+'), ion(80, 159, 'Cl-'), ion(120, 159, 'Na+'),
+          { type: 'beaker', x: 240, y: 190, width: 130, height: 146, level: 0.85 },
+          ion(200, 98, 'Na+'), ion(276, 110, 'Cl-'), ion(214, 160, 'Cl-'), ion(274, 166, 'Na+'),
+          { type: 'arrow', x1: 222, y1: 98, x2: 246, y2: 98, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 236, y1: 160, x2: 258, y2: 148, color: 'gray', width: 2 },
+          { type: 'text', x: 80, y: 214, text: 'イオンが動けない', size: 12, anchor: 'middle' },
+          { type: 'text', x: 240, y: 214, text: 'イオンが動ける', size: 12, anchor: 'middle' },
+          { type: 'text', x: 80, y: 232, text: '電流は流れない', size: 12, anchor: 'middle' },
+          { type: 'text', x: 240, y: 232, text: '電流が流れる', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'ion-dr1-c2',
+        text: 'うすい塩酸を電気分解すると、陰極から**水素**、陽極から**塩素**が発生します。水素はマッチの火を近づけると音を立てて燃えます。塩素は刺激臭があり、色を消すはたらき（漂白作用）があります。塩素を出す実験では、部屋の換気をします。',
+        // 塩酸の電気分解（左の電極が陽極で塩素、右の電極が陰極で水素）
+        figure: scene(electrolysisItems('water').concat([
+          ...[[118, 120], [102, 140], [119, 162], [100, 182], [210 + 10, 115], [198, 135], [221, 150], [199, 168], [220, 186]]
+            .map(([x, y]) => ({ type: 'circle', x, y, r: 4, fill: 'white', stroke: 'gray' })),
+          { type: 'text', x: 38, y: 130, text: '陽極', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 38, y: 150, text: '塩素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 284, y: 130, text: '陰極', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 284, y: 150, text: '水素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 236, text: 'うすい塩酸', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'ion-dr1-c3',
+        text: '塩化銅水溶液を電気分解すると、陰極に**銅**が付きます。付いた物質を薬さじでこすると、金属の光沢が出ます。電流の大きさを変えなければ、陰極に付く銅の質量は、電流を流した時間に比例します。',
+        // 電流を流した時間と、陰極に付いた銅の質量の表
+        figure: scene(gridCells(10, 50, [100, 50, 50, 50, 50], 40, 2).concat(
+          gridTexts([['時間〔分〕', '0', '5', '10', '15'], ['銅〔g〕', '0', '0.10', '0.20', '0.30']],
+            [60, 135, 185, 235, 285], [76, 116], 13),
+          [
+            { type: 'text', x: 160, y: 30, text: '電流を流した時間と、陰極に付いた銅', size: 13, anchor: 'middle' },
+            { type: 'text', x: 160, y: 170, text: '時間が 2 倍、3 倍になると', size: 14, anchor: 'middle' },
+            { type: 'text', x: 160, y: 194, text: '銅の質量も 2 倍、3 倍になる', size: 14, anchor: 'middle', bold: true },
+          ])),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-dr1-w1', concept: 'io-electrolyte',
+      prompt: '予想しよう。ぬれた手で電気の器具にさわると、感電しやすくて危ないといわれます。そのわけは何だと思う？',
+      options: ['汗などがとけた水には電流が流れやすいから', '水が冷たくて手がこわばるから', '手が重くなるから'],
+      answer: 'a',
+      explanation: '手についた水には、汗などにふくまれる物質がとけています。その物質がイオンに分かれるので、電流が流れやすくなります。このステージで、電流が流れる水溶液について学ぼう。',
+      hint: '純粋な水には電流がほとんど流れないけれど、手の水はどうかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-dr1-p1', concept: 'io-electrolysis',
+        prompt: '表は、4 つの水溶液ア〜エに電流を流した結果です。塩化銅水溶液だと考えられるのはア〜エのどれ？',
+        // ア 塩酸など、イ 塩化銅水溶液（青色・陰極に赤い物質）、ウ 砂糖水など、エ 水酸化ナトリウム水溶液など
+        figure: scene([
+          { type: 'text', x: 110, y: 30, text: '液の色', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 180, y: 30, text: '電流', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 260, y: 30, text: '陰極のようす', size: 13, anchor: 'middle', bold: true },
+          ...[40, 88, 136, 184].map(y => ({ type: 'line', points: [[4, y], [316, y]], color: 'gray', width: 1 })),
+          ...gridTexts([
+            ['無色', '流れた', '気体が出た'],
+            ['青色', '流れた', '赤い物質が付いた'],
+            ['無色', '流れない', '変化なし'],
+            ['無色', '流れた', '気体が出た'],
+          ], [110, 180, 260], [69, 117, 165, 213], 12),
+          { type: 'region', id: 'r1', x: 30, y: 64, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 30, y: 112, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 30, y: 160, r: 22, label: 'ウ' },
+          { type: 'region', id: 'r4', x: 30, y: 208, r: 22, label: 'エ' },
+        ]),
+        answer: 'r2',
+        explanation: '塩化銅水溶液は青色で、電流が流れます。陰極では銅イオンが銅になるので、赤い物質（銅）が付きます。気体が出たアとエは塩酸などで、電流が流れないウは非電解質の水溶液です。',
+        hint: '塩化銅水溶液の色と、陰極に付く物質を思い出そう。',
+      }),
+      fill({
+        id: 'ion-dr1-t1', concept: 'io-electrolysis', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電気分解で、電源の−極につないだ電極を[b1]という。',
+        blanks: [word('b1', ['陰極', '陽極', '導線'], '陰極')],
+        explanation: '電源の−極につないだ電極を**陰極**、＋極につないだ電極を**陽極**といいます。陽イオンは陰極に、陰イオンは陽極に引かれます。',
+        hint: '−の電気を「陰」と表すよ。',
+      }),
+      choice({
+        id: 'ion-dr1-p2', concept: 'io-electrolysis',
+        prompt: '塩化銅水溶液を電気分解したあと、陰極に付いた赤い物質を取り出し、薬さじでこすりました。どうなる？',
+        options: ['金属の光沢が出る', '白い粉になる', '気体を出して消える'],
+        answer: 'a',
+        explanation: '陰極に付いた赤い物質は銅です。銅は金属なので、こすると金属の光沢が出ます。このことから、陰極で銅イオンが銅になったと分かります。',
+        hint: '陰極に付いた物質は何だったかな。それは金属かな。',
+      }),
+      fill({
+        id: 'ion-dr1-p3', concept: 'io-electrolysis',
+        prompt: '電流の大きさを変えずに塩化銅水溶液を電気分解すると、陰極に付いた銅は 5 分で 0.15 g、10 分で 0.30 g でした。',
+        text: '同じように 20 分間電流を流すと、陰極に付く銅は[b1]になる。',
+        blanks: [number('b1', 0.6, 0, 'g')],
+        explanation: '5 分で 0.15 g、10 分で 0.30 g なので、銅の質量は時間に比例しています。20 分は 10 分の 2 倍なので、0.30 × 2 ＝ 0.60 g です。',
+        hint: '時間が 2 倍になると、付く銅の質量はどうなっているかな。',
+      }),
+      choice({
+        id: 'ion-dr1-p4', concept: 'io-electrolyte',
+        prompt: '食塩と砂糖を混ぜてから水にとかしました。この水溶液に電極を入れると、電流は流れる？',
+        options: ['流れる', '流れない', '砂糖が多いときだけ流れる'],
+        answer: 'a',
+        explanation: '砂糖は電離しませんが、食塩は水にとけて Na+ と Cl- に分かれます。水溶液の中に動けるイオンがあるので、電流が流れます。',
+        hint: '混ぜた物質のうち、どちらかがイオンに分かれれば…。',
+      }),
+      figureChoice({
+        id: 'ion-dr1-p5', concept: 'io-electrolysis',
+        prompt: '図のようにつないで塩化銅水溶液を電気分解すると、電極アから塩素が出て、イに銅が付きました。とちゅうで電源の＋と−をつなぎかえると、このあと銅が付くのはア・イのどちら？',
+        figure: scene(electrolysisItems('sky').concat([
+          { type: 'region', id: 'r1', x: 110, y: 150, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 210, y: 150, r: 22, label: 'イ' },
+          { type: 'text', x: 160, y: 236, text: '塩化銅水溶液', size: 12, anchor: 'middle' },
+        ])),
+        answer: 'r1',
+        explanation: 'つなぎかえると、さっきまで陽極だったアが陰極になります。銅イオン Cu2+ は陰極に引かれるので、さっきまで塩素が出ていたアに銅が付くようになります。',
+        hint: '銅が付くのは、陽極と陰極のどちらだったかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'ion-dr1-r1', concept: 'io-electrolyte',
+        prompt: 'レモンのしるに電極を入れて電池と電流計につなぐと、電流が流れました。このことから分かることは？',
+        options: ['レモンのしるには電解質がとけている', 'レモンのしるは純粋な水である', 'レモンのしるには何もとけていない'],
+        answer: 'a',
+        explanation: '電流が流れたのは、レモンのしるに電解質（酸など）がとけていて、イオンがあるからです。純粋な水には電流がほとんど流れません。',
+        hint: '水溶液に電流が流れるのは、何がとけているときだったかな。',
+      }),
+      choice({
+        id: 'ion-dr1-r2', concept: 'io-electrolyte',
+        prompt: '塩化水素は、気体のままでは電流を流しませんが、水にとかした塩酸には電流が流れます。なぜ？',
+        options: ['水にとけて H+ と Cl- に分かれるから', '水にとけると金属になるから', '水そのものに電流が流れるから'],
+        answer: 'a',
+        explanation: '塩化水素は水にとけると、水素イオン H+ と塩化物イオン Cl- に電離します。水溶液の中を動けるイオンができるので、電流が流れます。',
+        hint: '電解質が水にとけると、何に分かれるかな。',
+      }),
+      choice({
+        id: 'ion-dr1-r3', concept: 'io-electrolysis', term: true,
+        prompt: '次の説明に合う言葉はどれ？「電気分解で、電源の＋極につないだ電極」',
+        options: ['陽極', '陰極', '電解質'],
+        answer: 'a',
+        explanation: '電源の＋極につないだ電極を**陽極**といいます。陽極には陰イオン（Cl- など）が引かれます。',
+        hint: '＋の電気を「陽」と表すよ。',
+      }),
+      fill({
+        id: 'ion-dr1-r4', concept: 'io-electrolysis',
+        prompt: '電流の大きさを変えずに塩化銅水溶液を電気分解すると、4 分で陰極に 0.12 g の銅が付きました。',
+        text: '同じように 10 分間電流を流すと、陰極に付く銅は[b1]になる。',
+        blanks: [number('b1', 0.3, 0, 'g')],
+        explanation: '1 分あたり 0.12 ÷ 4 ＝ 0.03 g の銅が付いています。10 分では 0.03 × 10 ＝ 0.30 g です。',
+        hint: 'まず、1 分あたりに付く銅の質量を求めよう。',
+      }),
+      choice({
+        id: 'ion-dr1-r5', concept: 'io-electrolysis',
+        prompt: '塩化銅水溶液や塩酸の電気分解をするときに、気をつけることとして正しいものはどれ？',
+        options: ['塩素が出るので、部屋の換気をする', '出た気体のにおいを、鼻を近づけてかぐ', '電極を手でさわって温度を調べる'],
+        answer: 'a',
+        explanation: '陽極から出る塩素は、刺激臭があり体に有害です。部屋の換気をし、においは手であおぐようにして調べます。',
+        hint: '陽極から出る気体は、体にとってどうだったかな。',
+      }),
+      fill({
+        id: 'ion-dr1-r6', concept: 'io-electrolysis',
+        prompt: 'うすい塩酸を電気分解しました。陰極から出た気体を試験管に集めて、マッチの火を近づけると、音を立てて燃えました。',
+        text: '陰極から出た気体は[b1]である。',
+        blanks: [word('b1', ['水素', '塩素', '酸素'], '水素')],
+        explanation: '塩酸の中の水素イオン H+ は陰極に引かれ、電子を受け取って水素になります。水素は、火を近づけると音を立てて燃えます。陽極からは塩素が出ます。',
+        hint: '陰極に引かれるのは、塩酸の中のどの陽イオンかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-dr2: ドリル 2 原子のつくりとイオンの表し方 ----
+  const ionDr2 = {
+    id: 'ion-dr2', areaId: 'io-ion', free: true, title: 'ドリル 2: 原子のつくりとイオンの表し方', minutes: 6, concepts: ['io-structure', 'io-electrolyte'],
+    lessons: [
+      {
+        id: 'ion-dr2-c1',
+        text: '原子では、陽子の数と電子の数が等しいので、全体は電気を帯びていません。ナトリウム原子（陽子 11 個・電子 11 個）が電子を 1 個失うと、電子は 10 個になり、＋の電気が 1 つ多い **Na+** になります。',
+        // ナトリウム原子とナトリウムイオンの、陽子・電子の数の表
+        figure: scene(gridCells(10, 40, [110, 66, 66, 66], 44, 3).concat(
+          gridTexts([['', '陽子', '電子', '電気'], ['Na 原子', '11 個', '11 個', 'なし'], ['Na+', '11 個', '10 個', '＋1']],
+            [65, 153, 219, 285], [67, 111, 155], 13),
+          [
+            { type: 'text', x: 160, y: 204, text: '電子を 1 個失うと Na+ になる', size: 14, anchor: 'middle', bold: true },
+            { type: 'text', x: 160, y: 226, text: '（陽子の数は変わらない）', size: 12, anchor: 'middle' },
+          ])),
+      },
+      {
+        id: 'ion-dr2-c2',
+        text: 'イオンは**イオン式**で表します。元素記号の右上に、帯びた電気の種類と数を書きます（ここでは Mg2+ のように書きます）。硫酸イオン SO₄2- やアンモニウムイオン NH₄+ のように、原子のまとまりのイオンもあります。',
+        // 陽イオンと陰イオンのイオン式と名前
+        figure: scene([
+          { type: 'rect', x: 10, y: 20, width: 145, height: 210, rx: 8, fill: '#FFF3C4', stroke: 'line' },
+          { type: 'rect', x: 165, y: 20, width: 145, height: 210, rx: 8, fill: 'glass', stroke: 'line' },
+          { type: 'text', x: 82, y: 44, text: '陽イオン', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 237, y: 44, text: '陰イオン', size: 14, anchor: 'middle', bold: true },
+          ...[['H+', '水素イオン'], ['Na+', 'ナトリウムイオン'], ['Cu2+', '銅イオン'], ['NH₄+', 'アンモニウムイオン']]
+            .flatMap(([f, n], i) => [
+              { type: 'text', x: 82, y: 72 + 40 * i, text: f, size: 14, anchor: 'middle', bold: true },
+              { type: 'text', x: 82, y: 88 + 40 * i, text: n, size: 12, anchor: 'middle' },
+            ]),
+          ...[['Cl-', '塩化物イオン'], ['OH-', '水酸化物イオン'], ['SO₄2-', '硫酸イオン']]
+            .flatMap(([f, n], i) => [
+              { type: 'text', x: 237, y: 72 + 40 * i, text: f, size: 14, anchor: 'middle', bold: true },
+              { type: 'text', x: 237, y: 88 + 40 * i, text: n, size: 12, anchor: 'middle' },
+            ]),
+        ]),
+      },
+      {
+        id: 'ion-dr2-c3',
+        text: '電離のようすを式で表すとき、矢印の左右で、原子の種類と数、＋と−の電気の量がそろいます。CuSO₄ → Cu2+ ＋ SO₄2-、MgCl₂ → Mg2+ ＋ 2Cl- のように表します。',
+        // 2 つの電離の式と、左右でそろうもの
+        figure: scene([
+          { type: 'text', x: 160, y: 50, text: 'CuSO₄ → Cu2+ ＋ SO₄2-', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 76, text: '電気: ＋2 と −2 で、あわせて 0', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 126, text: 'MgCl₂ → Mg2+ ＋ 2Cl-', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 152, text: '電気: ＋2 と −1 × 2 で、あわせて 0', size: 12, anchor: 'middle' },
+          { type: 'rect', x: 30, y: 180, width: 260, height: 40, rx: 8, fill: 'lightgreen', stroke: 'line' },
+          { type: 'text', x: 160, y: 205, text: '左右で原子の数と電気の量がそろう', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-dr2-w1', concept: 'io-structure',
+      prompt: '予想しよう。原子をつくる陽子・中性子・電子のうち、いちばん軽い粒はどれだと思う？',
+      options: ['電子', '陽子', '中性子'],
+      answer: 'a',
+      explanation: '電子は、陽子や中性子よりもずっと軽い粒です（陽子の約 1840 分の 1）。原子の質量のほとんどは、中心の原子核にあります。',
+      hint: '原子の中心にある粒と、まわりにある粒をくらべよう。',
+    }),
+    problems: [
+      fill({
+        id: 'ion-dr2-p1', concept: 'io-structure',
+        prompt: 'マグネシウム原子は、陽子を 12 個、電子を 12 個もっています。この原子がマグネシウムイオン Mg2+ になりました。',
+        text: 'Mg2+ がもっている電子は[b1]である。',
+        blanks: [number('b1', 10, 0, '個')],
+        explanation: 'Mg2+ の「2+」は、電子を 2 個失って＋の電気が 2 つ多くなったという意味です。電子は 12 − 2 ＝ 10 個になります。陽子は 12 個のままです。',
+        hint: 'イオン式の右上の「2+」は、電子をいくつ失ったことを表すかな。',
+      }),
+      fill({
+        id: 'ion-dr2-t1', concept: 'io-structure', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'Na+ や Cl- のように、イオンを元素記号と＋・−で表した式を[b1]という。',
+        blanks: [word('b1', ['イオン式', '化学反応式', '電離'], 'イオン式')],
+        explanation: 'イオンを表す式を**イオン式**といいます。元素記号の右上に、帯びた電気の種類（＋か−）と数を書きます。',
+        hint: 'イオンを表すための式だよ。',
+      }),
+      figureChoice({
+        id: 'ion-dr2-p2', concept: 'io-structure',
+        prompt: 'ア Mg2+、イ OH-、ウ NH₄+、エ SO₄2- のイオン式です。−の電気を 2 つ帯びた陰イオンはア〜エのどれ？',
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: 'いろいろなイオン', size: 13, anchor: 'middle' },
+          ion(50, 105, 'Mg2+'), ion(125, 105, 'OH-'), ion(200, 105, 'NH₄+'), ion(275, 105, 'SO₄2-', 27),
+          { type: 'region', id: 'r1', x: 50, y: 180, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 125, y: 180, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 200, y: 180, r: 22, label: 'ウ' },
+          { type: 'region', id: 'r4', x: 275, y: 180, r: 22, label: 'エ' },
+        ]),
+        answer: 'r4',
+        explanation: 'イオン式の右上の「2-」は、−の電気を 2 つ帯びていることを表します。SO₄2-（硫酸イオン）がそれです。Mg2+ は＋を 2 つ、OH- は−を 1 つ、NH₄+ は＋を 1 つ帯びています。',
+        hint: 'イオン式の右上の記号と数字を見よう。',
+      }),
+      choice({
+        id: 'ion-dr2-p3', concept: 'io-structure',
+        prompt: '陽子を 17 個もつ塩素原子が、塩化物イオン Cl- になりました。Cl- の陽子と電子の数はどれ？',
+        options: ['陽子 17 個・電子 18 個', '陽子 18 個・電子 17 個', '陽子 17 個・電子 16 個'],
+        answer: 'a',
+        explanation: '塩素原子は陽子 17 個・電子 17 個です。電子を 1 個受け取って Cl- になるので、電子は 18 個になります。陽子の数は変わりません。',
+        hint: '陰イオンになるとき、増えるのは陽子と電子のどちらかな。',
+      }),
+      fill({
+        id: 'ion-dr2-p4', concept: 'io-electrolyte',
+        prompt: '硫酸銅 CuSO₄ が水にとけて電離するようすを表す式です。空らんに入るものを選ぼう。',
+        text: 'CuSO₄ → Cu2+ ＋ [b1]',
+        blanks: [word('b1', ['SO₄2-', '2SO₄-', 'SO₄-'], 'SO₄2-')],
+        explanation: 'CuSO₄ は、銅イオン Cu2+ と硫酸イオン SO₄2- に分かれます。＋2 と −2 で、電気の量がつり合っています。',
+        hint: 'Cu2+ の＋2 とつり合うには、−の電気がいくつ必要かな。',
+      }),
+      choice({
+        id: 'ion-dr2-p5', concept: 'io-electrolyte',
+        prompt: '電離のようすを表す式で、矢印の左側と右側でそろっていなければならないものはどれ？',
+        options: ['原子の種類と数、電気の量', '分子の数', 'イオンの大きさ'],
+        answer: 'a',
+        explanation: '電離では、原子がなくなったり新しくできたりしません。だから式の左右で原子の種類と数がそろいます。また、物質はもともと電気を帯びていないので、右側の＋と−の電気の量もつり合います。',
+        hint: '電離しても、原子が消えたり増えたりはしないよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'ion-dr2-r1', concept: 'io-structure',
+        prompt: '原子がイオンになるとき、数が変わらないものはどれ？',
+        options: ['陽子の数', '電子の数', '帯びている電気の量'],
+        answer: 'a',
+        explanation: '原子がイオンになるときに、失ったり受け取ったりするのは電子です。原子核の中の陽子の数は変わりません。',
+        hint: 'イオンになるとき、原子の外側の粒が出入りするよ。',
+      }),
+      fill({
+        id: 'ion-dr2-r2', concept: 'io-structure',
+        prompt: 'アルミニウム原子は、陽子を 13 個、電子を 13 個もっています。この原子がアルミニウムイオン Al3+ になりました。',
+        text: 'Al3+ がもっている電子は[b1]である。',
+        blanks: [number('b1', 10, 0, '個')],
+        explanation: 'Al3+ は、電子を 3 個失って＋の電気が 3 つ多くなったイオンです。電子は 13 − 3 ＝ 10 個です。',
+        hint: '「3+」は、電子をいくつ失ったことを表すかな。',
+      }),
+      choice({
+        id: 'ion-dr2-r3', concept: 'io-structure', term: true,
+        prompt: '次の説明に合う言葉はどれ？「原子が電子を受け取って、−の電気を帯びたもの」',
+        options: ['陰イオン', '陽イオン', '中性子'],
+        answer: 'a',
+        explanation: '原子が電子を受け取って−の電気を帯びたものを**陰イオン**といいます。Cl- や OH- がその例です。',
+        hint: '−の電気を「陰」と表すよ。',
+      }),
+      drag({
+        id: 'ion-dr2-r4', concept: 'io-electrolyte',
+        prompt: '塩化カルシウム CaCl₂ が水にとけて電離するようすを表す式です。左右をそろえるには、係数「2」のカードをどの四角に置けばよい？ 動かして置こう。',
+        // 位置はカード（rect）の左上で判定する。四角の左上: Ca2+ の前 (118, 88)、Cl- の前 (226, 88)。
+        // 正解は Cl- の前、不正解例は Ca2+ の前（108px はなれる）
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: '塩化カルシウムの電離', size: 14, anchor: 'middle' },
+          { type: 'text', x: 50, y: 110, text: 'CaCl₂', size: 18, anchor: 'middle' },
+          { type: 'text', x: 100, y: 110, text: '→', size: 18, anchor: 'middle' },
+          { type: 'rect', x: 118, y: 88, width: 30, height: 32, fill: 'white', stroke: 'gray' },
+          { type: 'text', x: 176, y: 110, text: 'Ca2+', size: 18, anchor: 'middle' },
+          { type: 'text', x: 210, y: 110, text: '＋', size: 18, anchor: 'middle' },
+          { type: 'rect', x: 226, y: 88, width: 30, height: 32, fill: 'white', stroke: 'gray' },
+          { type: 'text', x: 280, y: 110, text: 'Cl-', size: 18, anchor: 'middle' },
+          { type: 'rect', id: 'card', x: 145, y: 170, width: 30, height: 32, fill: 'sky', stroke: 'ink', label: '2' },
+        ]),
+        draggable: { itemId: 'card' },
+        target: { x: 226, y: 88 },
+        samples: { correct: { x: 226, y: 88 }, wrong: { x: 118, y: 88 } },
+        explanation: 'CaCl₂ には塩素が 2 個あるので、Cl- が 2 個できます（CaCl₂ → Ca2+ ＋ 2Cl-）。カルシウムイオンは Ca2+ で、＋2 と −1 × 2 がつり合います。',
+        hint: '左の CaCl₂ に塩素原子はいくつあるかな。',
+      }),
+      fill({
+        id: 'ion-dr2-r5', concept: 'io-electrolyte',
+        prompt: '塩化銅 CuCl₂ が電離して、水溶液の中に銅イオン Cu2+ が 100 個できました。',
+        text: 'このとき、塩化物イオン Cl- は[b1]できている。',
+        blanks: [number('b1', 200, 0, '個')],
+        explanation: 'CuCl₂ → Cu2+ ＋ 2Cl- のように、Cu2+ 1 個に対して Cl- が 2 個できます。だから Cl- は 100 × 2 ＝ 200 個です。',
+        hint: '電離の式で、Cu2+ 1 個に対して Cl- はいくつかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-dr3: ドリル 3 指示薬と pH ----
+  const ionDr3 = {
+    id: 'ion-dr3', areaId: 'io-acid', free: true, title: 'ドリル 3: 指示薬と pH', minutes: 6, concepts: ['io-acidbase'],
+    lessons: [
+      {
+        id: 'ion-dr3-c1',
+        text: '酸性・中性・アルカリ性を色の変化で調べる薬品を**指示薬**といいます。リトマス紙・BTB 溶液・フェノールフタレイン溶液のほか、ムラサキキャベツの液も使えます。ムラサキキャベツの液は、酸性で赤色、中性で紫色、アルカリ性で緑色〜黄色（弱いアルカリ性では青色）になります。',
+        // ムラサキキャベツの液の色
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: 'ムラサキキャベツの液の色', size: 14, anchor: 'middle' },
+          { type: 'beaker', x: 60, y: 160, width: 70, height: 90, level: 0.7, liquid: 'pink' },
+          { type: 'beaker', x: 160, y: 160, width: 70, height: 90, level: 0.7, liquid: 'purple' },
+          { type: 'beaker', x: 260, y: 160, width: 70, height: 90, level: 0.7, liquid: 'lightgreen' },
+          { type: 'text', x: 60, y: 186, text: '酸性', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 186, text: '中性', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 260, y: 186, text: 'アルカリ性', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 60, y: 208, text: '赤色', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 208, text: '紫色', size: 12, anchor: 'middle' },
+          { type: 'text', x: 260, y: 208, text: '緑色〜黄色', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'ion-dr3-c2',
+        text: '**pH** が 7 のとき中性で、7 より小さいほど酸性が強く、7 より大きいほどアルカリ性が強くなります。レモンのしるは約 2、食塩水は 7、セッケン水は約 10 です。pH は、pH 試験紙や pH メーターで調べます。',
+        // pH の数直線と、身のまわりの液の pH
+        figure: scene(phBar().concat([
+          { type: 'text', x: 70, y: 84, text: '← 酸性が強い', size: 12, anchor: 'middle' },
+          { type: 'text', x: 250, y: 84, text: 'アルカリ性が強い →', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 60, text: '中性 pH 7', size: 13, anchor: 'middle', bold: true },
+          ...[2, 7, 10].map(ph => ({ type: 'circle', x: phX(ph), y: 112, r: 5, fill: 'ink', stroke: 'none' })),
+          { type: 'text', x: phX(2), y: 176, text: 'レモンのしる 約 2', size: 12, anchor: 'middle' },
+          { type: 'text', x: phX(7), y: 200, text: '食塩水 7', size: 12, anchor: 'middle' },
+          { type: 'text', x: 250, y: 224, text: 'セッケン水 約 10', size: 12, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-dr3-w1', concept: 'io-acidbase',
+      prompt: '予想しよう。紫色のムラサキキャベツの液に、すっぱいレモンのしるを加えると、何色になると思う？',
+      options: ['赤っぽい色', '緑っぽい色', '紫色のまま'],
+      answer: 'a',
+      explanation: 'レモンのしるは酸性です。ムラサキキャベツの液は、酸性で赤っぽい色に変わります。身近な植物の液も、指示薬として使えます。',
+      hint: 'レモンのしるが、酸性・中性・アルカリ性のどれかを考えよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-dr3-p1', concept: 'io-acidbase',
+        prompt: '数直線のア〜エは pH 1・4・7・11 の水溶液です。マグネシウムを入れると水素が出る水溶液のうち、酸性がいちばん弱いのはどれ？',
+        figure: scene(phBar().concat([
+          { type: 'text', x: 160, y: 40, text: 'pH の数直線', size: 13, anchor: 'middle' },
+          ...[[1, 'pH 1'], [4, 'pH 4'], [7, 'pH 7'], [11, 'pH 11']].flatMap(([ph, t]) => [
+            { type: 'text', x: phX(ph), y: 88, text: t, size: 12, anchor: 'middle' },
+            { type: 'line', points: [[phX(ph), 124], [phX(ph), 166]], color: 'gray', width: 2 },
+          ]),
+          { type: 'region', id: 'r1', x: phX(1), y: 188, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: phX(4), y: 188, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: phX(7), y: 188, r: 22, label: 'ウ' },
+          { type: 'region', id: 'r4', x: phX(11), y: 188, r: 22, label: 'エ' },
+        ])),
+        answer: 'r2',
+        explanation: 'マグネシウムを入れると水素が出るのは、酸性の水溶液（pH が 7 より小さい ア と イ）です。pH は 7 に近いほど酸性が弱いので、pH 4 のイが答えです。ウは中性、エはアルカリ性です。',
+        hint: 'まず酸性の水溶液をえらび、その中で 7 に近いものをさがそう。',
+      }),
+      fill({
+        id: 'ion-dr3-t1', concept: 'io-acidbase', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'BTB 溶液やリトマス紙のように、水溶液の性質を色の変化で調べる薬品を[b1]という。',
+        blanks: [word('b1', ['指示薬', '電解質', '塩'], '指示薬')],
+        explanation: '水溶液が酸性・中性・アルカリ性のどれかを、色の変化で調べる薬品を**指示薬**といいます。',
+        hint: '性質を「指し示す」薬だよ。',
+      }),
+      fill({
+        id: 'ion-dr3-p2', concept: 'io-acidbase',
+        prompt: 'ムラサキキャベツの液に、ある水溶液を少し加えると、液が紫色から緑色に変わりました。空らんに入る言葉を選ぼう。',
+        text: '加えた水溶液は[b1]である。',
+        blanks: [word('b1', ['アルカリ性', '酸性', '中性'], 'アルカリ性')],
+        explanation: 'ムラサキキャベツの液は、酸性で赤色、中性で紫色のまま、アルカリ性で緑色〜黄色になります（弱いアルカリ性では青色に見えることもあります）。緑色に変わったので、加えた水溶液はアルカリ性です。',
+        hint: '赤色になるのは酸性、緑色や黄色になるのは何性かな。',
+      }),
+      choice({
+        id: 'ion-dr3-p3', concept: 'io-acidbase',
+        prompt: 'うすい塩酸に水を加えて、さらにうすめていきました。pH はどう変わる？',
+        options: ['大きくなって 7 に近づく', '小さくなって 0 に近づく', '7 をこえて大きくなる'],
+        answer: 'a',
+        explanation: '水でうすめると、水素イオンの割合が減って酸性が弱くなります。pH は大きくなって 7 に近づきますが、水を加えるだけでは 7 をこえてアルカリ性にはなりません。',
+        hint: '酸性が弱くなると、pH は 7 に近づくよ。',
+      }),
+      figureChoice({
+        id: 'ion-dr3-p4', concept: 'io-acidbase',
+        prompt: '水溶液 X は、青色リトマス紙を赤色に変え、BTB 溶液を黄色にしました。X の pH として考えられるのは、数直線のア（pH 3）・イ（pH 7）・ウ（pH 10）のどれ？',
+        figure: scene(phBar().concat([
+          { type: 'text', x: 160, y: 40, text: 'pH の数直線', size: 13, anchor: 'middle' },
+          ...[[3, 'pH 3'], [7, 'pH 7'], [10, 'pH 10']].flatMap(([ph, t]) => [
+            { type: 'text', x: phX(ph), y: 88, text: t, size: 12, anchor: 'middle' },
+            { type: 'line', points: [[phX(ph), 124], [phX(ph), 166]], color: 'gray', width: 2 },
+          ]),
+          { type: 'region', id: 'r1', x: phX(3), y: 188, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: phX(7), y: 188, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: phX(10), y: 188, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r1',
+        explanation: '青色リトマス紙を赤色にし、BTB 溶液を黄色にするのは酸性の水溶液です。酸性の pH は 7 より小さいので、pH 3 のアが答えです。',
+        hint: '2 つの結果から、X が何性かを決めよう。',
+      }),
+      choice({
+        id: 'ion-dr3-p5', concept: 'io-acidbase',
+        prompt: '食酢・食塩水・セッケン水を、pH の小さいものから順に並べたものはどれ？',
+        options: ['食酢・食塩水・セッケン水', 'セッケン水・食塩水・食酢', '食塩水・食酢・セッケン水'],
+        answer: 'a',
+        explanation: '食酢は酸性（pH 約 3）、食塩水は中性（pH 7）、セッケン水はアルカリ性（pH 約 10）です。pH の小さい順は、食酢・食塩水・セッケン水です。',
+        hint: '酸性のものほど pH は小さいよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'ion-dr3-r1', concept: 'io-acidbase',
+        prompt: 'pH 試験紙で水溶液の pH を調べるときのやり方として、正しいものはどれ？',
+        options: ['ガラス棒で液を少しつけ、色を表とくらべる', '試験紙を液に長い時間ひたしておく', '指で液をつけて、色を見る'],
+        answer: 'a',
+        explanation: 'pH 試験紙には、ガラス棒で液を少しつけます。変わった色を、色と pH の対応を表した表とくらべて pH を読みとります。液は指でさわらないようにします。',
+        hint: '薬品は手でさわらずに調べよう。',
+      }),
+      fill({
+        id: 'ion-dr3-r2', concept: 'io-acidbase',
+        prompt: 'pH 9 の水溶液と pH 12 の水溶液があります。空らんに入る数を入れよう。',
+        text: 'アルカリ性が強いのは、pH が[b1]の水溶液である。',
+        blanks: [number('b1', 12, 0, '')],
+        explanation: 'pH は 7 より大きいほどアルカリ性が強くなります。だから pH 12 のほうがアルカリ性が強い水溶液です。',
+        hint: 'アルカリ性は、7 からはなれて大きくなるほど強いよ。',
+      }),
+      fill({
+        id: 'ion-dr3-r3', concept: 'io-acidbase', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '酸性でもアルカリ性でもない、pH が 7 の性質を[b1]という。',
+        blanks: [word('b1', ['中性', '中和', '電離'], '中性')],
+        explanation: '酸性でもアルカリ性でもない性質を**中性**といいます。食塩水や砂糖水は中性で、pH は 7 です。',
+        hint: 'pH 7 は、ちょうどまん中だよ。',
+      }),
+      choice({
+        id: 'ion-dr3-r4', concept: 'io-acidbase',
+        prompt: '水溶液 Y にフェノールフタレイン溶液を加えると、赤色になりました。Y の pH として考えられるのはどれ？',
+        options: ['11', '7', '2'],
+        answer: 'a',
+        explanation: 'フェノールフタレイン溶液が赤色になるのは、アルカリ性の水溶液です。アルカリ性の pH は 7 より大きいので、11 が答えです。',
+        hint: 'フェノールフタレイン溶液は、何性で赤色になるかな。',
+      }),
+      choice({
+        id: 'ion-dr3-r5', concept: 'io-acidbase',
+        prompt: 'うすい水酸化ナトリウム水溶液を水でうすめていくと、pH はどう変わる？',
+        options: ['小さくなって 7 に近づく', '大きくなって 14 に近づく', '7 より小さくなる'],
+        answer: 'a',
+        explanation: '水でうすめると、水酸化物イオンの割合が減ってアルカリ性が弱くなります。pH は小さくなって 7 に近づきますが、7 より小さくはなりません。',
+        hint: 'アルカリ性が弱くなると、pH は 7 に近づくよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-dr4: ドリル 4 中和で起こることと中和の量 ----
+  const ionDr4 = {
+    id: 'ion-dr4', areaId: 'io-acid', free: true, title: 'ドリル 4: 中和で起こることと中和の量', minutes: 7, concepts: ['io-neutral'],
+    lessons: [
+      {
+        id: 'ion-dr4-c1',
+        text: '中和では、H+ と OH- が結びついて水ができ、このとき熱が出ます（中和は**発熱反応**）。酸性の液にアルカリを少し加えただけでも、加えた分の中和は起こっています。液の温度は、中和が終わるまで上がっていきます。',
+        // 加えた水酸化ナトリウム水溶液の量と、液の温度
+        figure: scene(graphAxes('温度', '加えた水酸化ナトリウム水溶液の量').concat([
+          { type: 'line', points: [[50, 170], [175, 70], [300, 92]], color: 'orange', width: 3 },
+          { type: 'line', points: [[175, 70], [175, 200]], color: 'gray', width: 1, dashed: true },
+          { type: 'text', x: 175, y: 52, text: '中和が終わる', size: 12, anchor: 'middle' },
+          { type: 'text', x: 92, y: 106, text: '上がる', size: 13, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'ion-dr4-c2',
+        text: '中和でできる塩には、水にとける塩と、水にとけにくい塩があります。塩化ナトリウムは水にとけるので、液は透明なままです。硫酸と水酸化バリウムの中和でできる硫酸バリウムは水にとけにくく、白い**沈殿**になります。',
+        // 水にとける塩（液は透明）と、水にとけにくい塩（白い沈殿）
+        figure: scene([
+          { type: 'text', x: 85, y: 30, text: '塩化ナトリウム', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 85, y: 48, text: '（水にとける）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 235, y: 30, text: '硫酸バリウム', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 235, y: 48, text: '（水にとけにくい）', size: 12, anchor: 'middle' },
+          { type: 'beaker', x: 85, y: 200, width: 100, height: 120, level: 0.7 },
+          { type: 'beaker', x: 235, y: 200, width: 100, height: 120, level: 0.7 },
+          { type: 'rect', x: 188, y: 180, width: 94, height: 18, fill: 'white', stroke: 'line' },
+          { type: 'text', x: 235, y: 150, text: '白い沈殿', size: 13, anchor: 'middle' },
+          { type: 'line', points: [[235, 156], [235, 178]], width: 2 },
+          { type: 'text', x: 85, y: 150, text: '透明なまま', size: 13, anchor: 'middle' },
+          { type: 'text', x: 85, y: 226, text: '塩酸 ＋ 水酸化ナトリウム', size: 12, anchor: 'middle' },
+          { type: 'text', x: 235, y: 226, text: '硫酸 ＋ 水酸化バリウム', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'ion-dr4-c3',
+        text: 'うすい硫酸に水酸化バリウム水溶液を加えていくと、イオンが水や沈殿に変わって減るので、電流が流れにくくなります。ちょうど中和したとき、電流はほとんど流れません。さらに加えると、イオンが増えてまた流れます。',
+        // 電流の大きさの変化（V 字）
+        figure: scene(graphAxes('電流', '加えた水酸化バリウム水溶液の量').concat([
+          BA_CURVE,
+          { type: 'line', points: [[175, 40], [175, 196]], color: 'gray', width: 1, dashed: true },
+          { type: 'text', x: 175, y: 30, text: 'ちょうど中和（電流がほぼ 0）', size: 12, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-dr4-w1', concept: 'io-neutral',
+      prompt: '予想しよう。うすい塩酸に、うすい水酸化ナトリウム水溶液を少しずつ加えていきます。液の温度はどうなると思う？',
+      options: ['上がる', '下がる', '変わらない'],
+      answer: 'a',
+      explanation: '中和では、H+ と OH- が結びついて水ができるときに熱が出ます。だから液の温度は上がります。このステージで、中和で起こることをくわしく見ていこう。',
+      hint: '中和は、熱を出す化学変化だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-dr4-p1', concept: 'io-neutral',
+        prompt: 'うすい硫酸に水酸化バリウム水溶液を加えたときの、電流の大きさのグラフです。ちょうど中和したのはア〜ウのどの点？',
+        figure: scene(graphAxes('電流', '加えた水酸化バリウム水溶液の量').concat([
+          BA_CURVE,
+          { type: 'region', id: 'r1', x: 75, y: 87, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 175, y: 190, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 275, y: 87, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r2',
+        explanation: 'ちょうど中和すると、H+ は水に、硫酸イオンは硫酸バリウムの沈殿になって、水溶液の中のイオンがほとんどなくなります。だから電流がほとんど流れないイの点が、ちょうど中和したところです。',
+        hint: '水溶液の中のイオンがいちばん少なくなるのは、どこかな。',
+      }),
+      fill({
+        id: 'ion-dr4-t1', concept: 'io-neutral', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水にとけにくい物質ができて、液の中に固体として出てきたものを[b1]という。',
+        blanks: [word('b1', ['沈殿', '電解質', '指示薬'], '沈殿')],
+        explanation: '水にとけにくい物質が、液の中で固体として出てきたものを**沈殿**といいます。硫酸と水酸化バリウムの中和でできる硫酸バリウムは、白い沈殿になります。',
+        hint: '液の底にしずんでたまるよ。',
+      }),
+      choice({
+        id: 'ion-dr4-p2', concept: 'io-neutral',
+        prompt: 'うすい塩酸と水酸化ナトリウム水溶液を混ぜて中和させても、沈殿はできません。なぜ？',
+        options: ['できた塩化ナトリウムが水にとけるから', '中和が起こっていないから', '塩ができないから'],
+        answer: 'a',
+        explanation: 'この中和でも塩（塩化ナトリウム）はできています。塩化ナトリウムは水にとけるので、Na+ と Cl- のまま液の中にあり、沈殿にはなりません。',
+        hint: 'できる塩が、水にとけるかどうかを考えよう。',
+      }),
+      fill({
+        id: 'ion-dr4-p3', concept: 'io-neutral',
+        prompt: 'うすい塩酸 15 cm³ は、うすい水酸化ナトリウム水溶液 10 cm³ でちょうど中和します。',
+        text: '同じ水酸化ナトリウム水溶液 25 cm³ をちょうど中和する、同じ塩酸の体積は[b1]である。',
+        blanks: [number('b1', 37.5, 0, 'cm³')],
+        explanation: '塩酸と水酸化ナトリウム水溶液は、体積の比 15 : 10 ＝ 3 : 2 で中和します。水酸化ナトリウム水溶液 25 cm³ には、塩酸 25 × 3 ÷ 2 ＝ 37.5 cm³ が必要です。',
+        hint: '塩酸と水酸化ナトリウム水溶液の体積の比を使おう。',
+      }),
+      choice({
+        id: 'ion-dr4-p4', concept: 'io-neutral',
+        prompt: 'BTB 溶液を加えたうすい塩酸に、水酸化ナトリウム水溶液を少し加えました。液はまだ黄色です。このとき中和は起こっている？',
+        options: ['起こっている', '中性になるまで起こらない', 'アルカリ性になってから起こる'],
+        answer: 'a',
+        explanation: '加えた水酸化ナトリウムの OH- は、液の中の H+ とすぐに結びついて水になります。H+ がまだ残っているので液は酸性（黄色）ですが、加えた分の中和は起こっています。',
+        hint: '加えた OH- は、液の中で何と出会うかな。',
+      }),
+      choice({
+        id: 'ion-dr4-p5', concept: 'io-neutral',
+        prompt: '胃の中の酸が多すぎるときに飲む薬には、どんな性質の物質が使われている？',
+        options: ['弱いアルカリ性の物質', '強い酸性の物質', '中性の砂糖'],
+        answer: 'a',
+        explanation: '胃の中の酸（塩酸）を弱いアルカリ性の物質で中和して、酸の強さをやわらげます。身のまわりでも、中和が利用されています。',
+        hint: '酸の性質を打ち消すには、何を混ぜればよいかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'ion-dr4-r1', concept: 'io-neutral',
+        prompt: '雨などで酸性になった畑の土に、何をまいて中和する？',
+        options: ['消石灰などのアルカリ性の物質', '食酢などの酸性の物質', '砂糖などの中性の物質'],
+        answer: 'a',
+        explanation: '酸性になった土には、消石灰（水酸化カルシウム）などのアルカリ性の物質をまいて中和し、作物が育ちやすい土にします。',
+        hint: '酸性を打ち消すのは、何性の物質かな。',
+      }),
+      fill({
+        id: 'ion-dr4-r2', concept: 'io-neutral',
+        prompt: 'うすい塩酸 15 cm³ は、うすい水酸化ナトリウム水溶液 10 cm³ でちょうど中和します。',
+        text: '同じ塩酸 6 cm³ をちょうど中和する、同じ水酸化ナトリウム水溶液の体積は[b1]である。',
+        blanks: [number('b1', 4, 0, 'cm³')],
+        explanation: '塩酸と水酸化ナトリウム水溶液は、体積の比 3 : 2 で中和します。塩酸 6 cm³ には、6 × 2 ÷ 3 ＝ 4 cm³ が必要です。',
+        hint: '15 : 10 を、かんたんな比にしてから考えよう。',
+      }),
+      choice({
+        id: 'ion-dr4-r3', concept: 'io-neutral', term: true,
+        prompt: '次の説明に合う言葉はどれ？「中和のように、熱を出してまわりの温度を上げる化学変化」',
+        options: ['発熱反応', '吸熱反応', '電気分解'],
+        answer: 'a',
+        explanation: '熱を出してまわりの温度を上げる化学変化を**発熱反応**といいます。中和も発熱反応です。',
+        hint: '熱を「発する」反応だよ。',
+      }),
+      figureChoice({
+        id: 'ion-dr4-r4', concept: 'io-neutral',
+        prompt: 'うすい硫酸に水酸化バリウム水溶液を少しずつ加え、電流の大きさを調べました。電流の変わり方を表すグラフは、ア〜ウのどれ？',
+        // 3 つの小さなグラフ（縦軸: 電流、横軸: 加えた量）。ア 増え続ける、イ V 字、ウ 変わらない
+        figure: scene([
+          ...[15, 115, 215].flatMap(x0 => [
+            { type: 'line', points: [[x0, 50], [x0, 140], [x0 + 90, 140]], width: 2 },
+          ]),
+          { type: 'line', points: [[15, 130], [100, 60]], color: 'blue', width: 3 },
+          { type: 'line', points: [[115, 60], [160, 136], [200, 60]], color: 'blue', width: 3 },
+          { type: 'line', points: [[215, 90], [300, 90]], color: 'blue', width: 3 },
+          { type: 'text', x: 160, y: 30, text: '縦軸: 電流　横軸: 加えた水酸化バリウム水溶液の量', size: 12, anchor: 'middle' },
+          { type: 'region', id: 'r1', x: 60, y: 186, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 186, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 260, y: 186, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: '加えるにつれてイオンが水や硫酸バリウムの沈殿になるので、電流は小さくなります。ちょうど中和したあとは、加えた Ba2+ と OH- が増えていくので、また大きくなります。だから V 字のイです。',
+        hint: '水溶液の中のイオンの数の変わり方を考えよう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-dr5: ドリル 5 イオン化傾向と金属のイオン ----
+  const ionDr5 = {
+    id: 'ion-dr5', areaId: 'io-ion', free: true, title: 'ドリル 5: イオン化傾向と金属のイオン', minutes: 6, concepts: ['io-battery'],
+    lessons: [
+      {
+        id: 'ion-dr5-c1',
+        text: '金属の陽イオンへのなりやすさを**イオン化傾向**といいます。イオン化傾向が大きい金属を、それより小さい金属のイオンをふくむ水溶液に入れると、大きいほうの金属がイオンになってとけ、小さいほうの金属が出てきます。',
+        // イオン化傾向の大きい順
+        figure: scene([
+          { type: 'arrow', x1: 290, y1: 70, x2: 30, y2: 70, color: 'blue', width: 3 },
+          { type: 'text', x: 160, y: 56, text: '陽イオンになりやすい', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 118, text: 'Mg ＞ Zn ＞ Fe ＞ Cu ＞ Ag', size: 18, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 146, text: '（マグネシウム・亜鉛・鉄・銅・銀）', size: 12, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 172, width: 280, height: 44, rx: 8, fill: 'lightgreen', stroke: 'line' },
+          { type: 'text', x: 160, y: 199, text: '左の金属ほどイオン化傾向が大きい', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'ion-dr5-c2',
+        text: 'マグネシウム・亜鉛・銅の板を、それぞれほかの金属のイオンをふくむ水溶液に入れると、表のようになります。○（金属が付いた）が多い金属ほど、陽イオンになりやすい金属です。',
+        // 金属の板（縦）と、入れた水溶液（横）の結果の表
+        figure: scene(gridCells(10, 30, [100, 70, 70, 70], 40, 4).concat(
+          gridTexts([
+            ['', 'Mg2+', 'Zn2+', 'Cu2+'],
+            ['マグネシウム', '', '○', '○'],
+            ['亜鉛', '×', '', '○'],
+            ['銅', '×', '×', ''],
+          ], [60, 135, 205, 275], [55, 95, 135, 175], 12),
+          [
+            { type: 'text', x: 160, y: 214, text: '縦: 入れた金属の板　横: 水溶液にふくまれるイオン', size: 12, anchor: 'middle' },
+            { type: 'text', x: 160, y: 234, text: '○ 金属が付いた　× 変化なし', size: 12, anchor: 'middle' },
+          ])),
+      },
+      {
+        id: 'ion-dr5-c3',
+        text: '銅線を硝酸銀水溶液に入れると、銅がイオンになってとけ出し、銅線のまわりに銀が木の枝のように付きます。液は銅イオンのために、しだいに青色になります。銅は銀よりも陽イオンになりやすいことが分かります。',
+        // 硝酸銀水溶液に入れた銅線と、付いた銀
+        figure: scene([
+          { type: 'text', x: 160, y: 24, text: '硝酸銀水溶液に銅線を入れる', size: 13, anchor: 'middle' },
+          { type: 'beaker', x: 130, y: 214, width: 120, height: 140, level: 0.75, liquid: 'sky' },
+          { type: 'line', points: [[130, 44], [130, 204]], color: 'brown', width: 4 },
+          { type: 'line', points: [[130, 120], [108, 106]], color: 'gray', width: 3 },
+          { type: 'line', points: [[130, 150], [106, 138]], color: 'gray', width: 3 },
+          { type: 'line', points: [[130, 180], [154, 168]], color: 'gray', width: 3 },
+          { type: 'line', points: [[130, 190], [108, 178]], color: 'gray', width: 3 },
+          { type: 'line', points: [[206, 60], [134, 60]], width: 2 },
+          { type: 'text', x: 210, y: 65, text: '銅線', size: 13 },
+          { type: 'line', points: [[206, 130], [156, 130]], width: 2 },
+          { type: 'text', x: 210, y: 135, text: '銀が付く', size: 13 },
+          { type: 'text', x: 200, y: 200, text: '液がしだいに青色に', size: 12 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-dr5-w1', concept: 'io-battery',
+      prompt: '予想しよう。鉄くぎを青色の硫酸銅水溶液に入れておくと、くぎの表面はどうなると思う？',
+      options: ['赤っぽい銅が付く', '何も変化しない', '白い粉が付く'],
+      answer: 'a',
+      explanation: '鉄は銅よりも陽イオンになりやすいので、鉄がとけて、液の中の銅イオンが銅になってくぎに付きます。このステージで、金属によるちがいを学ぼう。',
+      hint: '鉄と銅では、どちらがイオンになりやすいかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-dr5-p1', concept: 'io-battery',
+        prompt: 'ア 亜鉛板を Mg2+ の液（硫酸マグネシウム水溶液）に、イ マグネシウム板を Zn2+ の液に、ウ 銅板を Zn2+ の液に入れました。板に金属が付くのはどれ？',
+        figure: scene(plateBeakers(['亜鉛板', 'マグネシウム板', '銅板'], ['rock', 'glass', 'brown'], ['Mg2+ の液', 'Zn2+ の液', 'Zn2+ の液']).concat([
+          { type: 'region', id: 'r1', x: 60, y: 214, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 214, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 260, y: 214, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r2',
+        explanation: 'マグネシウムは亜鉛よりも陽イオンになりやすいので、マグネシウムがとけて、亜鉛イオンが亜鉛になって板に付きます。アとウは、板の金属のほうがイオンになりにくいので変化しません。',
+        hint: '板の金属が、液の中の金属よりイオンになりやすいときに変化が起こるよ。',
+      }),
+      fill({
+        id: 'ion-dr5-t1', concept: 'io-battery', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '金属の陽イオンへのなりやすさを[b1]という。',
+        blanks: [word('b1', ['イオン化傾向', '電離', '中和'], 'イオン化傾向')],
+        explanation: '金属の陽イオンへのなりやすさを**イオン化傾向**といいます。マグネシウム・亜鉛・鉄・銅・銀の順に小さくなります。',
+        hint: '「イオンになる傾き（くせ）」という意味の言葉だよ。',
+      }),
+      choice({
+        id: 'ion-dr5-p2', concept: 'io-battery',
+        prompt: '金属 A・B・C の板を、ほかの 2 つの金属のイオンの液に入れました。A は B と C の液で金属が付き、C はどちらでも変化なしでした。イオンになりやすい順は？',
+        options: ['A ＞ B ＞ C', 'C ＞ B ＞ A', 'B ＞ A ＞ C'],
+        answer: 'a',
+        explanation: 'A は B・C のイオンの液で金属が付いたので、A がいちばんイオンになりやすい金属です。C はどちらでも変化しなかったので、いちばんなりにくい金属です。だから A ＞ B ＞ C です。',
+        hint: '金属が付いた回数が多いほど、イオンになりやすい金属だよ。',
+      }),
+      choice({
+        id: 'ion-dr5-p3', concept: 'io-battery',
+        prompt: '無色の硝酸銀水溶液に銅線を入れると、銀が付き、液がしだいに青色になりました。液が青色になったのはなぜ？',
+        options: ['銅がイオンになってとけ出したから', '銀がイオンになってとけ出したから', '銅線の色がとけたから'],
+        answer: 'a',
+        explanation: '銅は銀よりも陽イオンになりやすいので、銅が電子を失って銅イオン Cu2+ になってとけ出します。銅イオンをふくむ液は青色です。銀イオンは電子を受け取って銀になります。',
+        hint: '青色の水溶液にふくまれているイオンを思い出そう。',
+      }),
+      choice({
+        id: 'ion-dr5-p4', concept: 'io-battery',
+        prompt: '青色の硫酸銅水溶液に亜鉛板を入れておくと、液の青色がうすくなりました。なぜ？',
+        options: ['銅イオンが銅になって減ったから', '亜鉛イオンが青色を消したから', '水が蒸発したから'],
+        answer: 'a',
+        explanation: '液の青色は銅イオン Cu2+ の色です。亜鉛がとけて Zn2+ になり、Cu2+ は電子を受け取って銅になるので、Cu2+ が減って青色がうすくなります。',
+        hint: '青色のもとになっているイオンは何かな。',
+      }),
+      fill({
+        id: 'ion-dr5-p5', concept: 'io-battery',
+        prompt: '硫酸銅水溶液に亜鉛板を入れると、亜鉛原子 1 個が出した電子 2 個を Cu2+ 1 個が受け取り、銅原子 1 個になります。',
+        text: '亜鉛原子が 50 個とけたとき、出てくる銅原子は[b1]である。',
+        blanks: [number('b1', 50, 0, '個')],
+        explanation: '亜鉛原子 1 個は電子を 2 個出して Zn2+ になり、Cu2+ 1 個はその電子 2 個を受け取って銅原子になります。1 個に 1 個が対応するので、銅原子も 50 個です。',
+        hint: '亜鉛 1 個が出す電子の数と、銅イオン 1 個が受け取る電子の数をくらべよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'ion-dr5-r1', concept: 'io-battery',
+        prompt: '銅板を硫酸亜鉛水溶液に入れても、変化が起こりません。なぜ？',
+        options: ['銅は亜鉛より陽イオンになりにくいから', '銅は亜鉛より陽イオンになりやすいから', '銅は金属ではないから'],
+        answer: 'a',
+        explanation: '銅は亜鉛よりも陽イオンになりにくい（イオン化傾向が小さい）金属です。だから銅がとけて亜鉛が出てくる変化は起こりません。',
+        hint: 'イオン化傾向の順を思い出そう。',
+      }),
+      fill({
+        id: 'ion-dr5-r2', concept: 'io-battery',
+        prompt: '銅線を硝酸銀水溶液に入れると、銅原子 1 個が出した電子 2 個を、銀イオン Ag+ が 1 個につき 1 個ずつ受け取って銀になります。',
+        text: '銅原子が 30 個とけたとき、出てくる銀原子は[b1]である。',
+        blanks: [number('b1', 60, 0, '個')],
+        explanation: '銅原子 30 個が出す電子は 30 × 2 ＝ 60 個です。Ag+ は 1 個で電子を 1 個受け取るので、銀原子は 60 個できます。',
+        hint: 'まず、銅原子 30 個が出す電子の数を求めよう。',
+      }),
+      choice({
+        id: 'ion-dr5-r3', concept: 'io-battery', term: true,
+        prompt: '「イオン化傾向が大きい金属」とは、どんな金属のこと？',
+        options: ['陽イオンになりやすい金属', '陰イオンになりやすい金属', '水にとけにくい金属'],
+        answer: 'a',
+        explanation: '**イオン化傾向**は、金属の陽イオンへのなりやすさです。イオン化傾向が大きい金属ほど、電子を失って陽イオンになりやすい金属です。',
+        hint: '金属の原子は、電子を失ってイオンになるよ。',
+      }),
+      figureChoice({
+        id: 'ion-dr5-r4', concept: 'io-battery',
+        prompt: 'ア マグネシウム板、イ 亜鉛板、ウ 銅板を、ほかの 2 つの金属のイオンをふくむ水溶液に入れました。どちらの液でも変化しない板はア〜ウのどれ？',
+        figure: scene(plateBeakers(['マグネシウム板', '亜鉛板', '銅板'], ['glass', 'rock', 'brown'], ['Zn2+・Cu2+', 'Mg2+・Cu2+', 'Mg2+・Zn2+']).concat([
+          { type: 'region', id: 'r1', x: 60, y: 214, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 214, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 260, y: 214, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: '3 つの中で、銅（ウ）がいちばん陽イオンになりにくい金属です。だから Mg2+ や Zn2+ の液に入れても、銅はとけず、変化しません。',
+        hint: 'いちばんイオンになりにくい金属をさがそう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-dr6: ドリル 6 ダニエル電池のしくみと燃料電池 ----
+  const ionDr6 = {
+    id: 'ion-dr6', areaId: 'io-ion', free: true, title: 'ドリル 6: ダニエル電池のしくみと燃料電池', minutes: 7, concepts: ['io-battery'],
+    lessons: [
+      {
+        id: 'ion-dr6-c1',
+        anim: 'io-daniell',   // 動く図の使い回し（js/anim-chem.js）。figure は静止図として残す
+        text: '電池は、物質がもつ**化学エネルギー**を電気エネルギーに変えてとり出す装置（**化学電池**）です。ダニエル電池を使い続けると、亜鉛板はとけてうすくなり、銅板には銅が付いて厚くなります。',
+        // ダニエル電池を使い続けたときの、2 枚の金属板の変化
+        figure: scene(daniellItems().concat([
+          { type: 'text', x: 50, y: 106, text: 'うすくなる', size: 12, anchor: 'middle', bold: true },
+          { type: 'text', x: 272, y: 106, text: '厚くなる', size: 12, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'ion-dr6-c2',
+        text: 'ダニエル電池のセロハンには小さな穴があり、イオンが少しずつ通りぬけます。硫酸イオンなどが移動して電気のかたよりを防ぐので、電流が流れ続けます。セロハンのかわりにガラス板で仕切ると、電流は流れません。',
+        // セロハンを通って、硫酸イオンが亜鉛板の側へ動く
+        figure: scene(daniellItems().concat([
+          ion(214, 160, 'SO₄2-', 27),
+          { type: 'arrow', x1: 190, y1: 196, x2: 128, y2: 196, color: 'blue', width: 3 },
+        ])),
+      },
+      {
+        id: 'ion-dr6-c3',
+        text: '**燃料電池**は、水素と酸素が結びついて水ができる化学変化から、電気をとり出します。出るのは水だけで、二酸化炭素を出しません。水素を外から補えば、電気をとり出し続けることができます。',
+        // 燃料電池に入るもの（水素・酸素）と、出るもの（水・電気）
+        figure: scene([
+          { type: 'rect', x: 10, y: 50, width: 80, height: 40, rx: 6, fill: 'sky', label: '水素' },
+          { type: 'rect', x: 10, y: 140, width: 80, height: 40, rx: 6, fill: 'sky', label: '酸素' },
+          { type: 'rect', x: 120, y: 85, width: 90, height: 60, rx: 8, fill: 'yellow', label: '燃料電池' },
+          { type: 'rect', x: 240, y: 50, width: 70, height: 40, rx: 6, fill: 'water', label: '水' },
+          { type: 'rect', x: 240, y: 140, width: 70, height: 40, rx: 6, fill: 'white', label: '電気' },
+          { type: 'arrow', x1: 92, y1: 72, x2: 118, y2: 98, width: 2 },
+          { type: 'arrow', x1: 92, y1: 158, x2: 118, y2: 132, width: 2 },
+          { type: 'arrow', x1: 212, y1: 98, x2: 238, y2: 72, width: 2 },
+          { type: 'arrow', x1: 212, y1: 132, x2: 238, y2: 158, width: 2 },
+          { type: 'text', x: 160, y: 220, text: '出るのは水だけ（二酸化炭素を出さない）', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-dr6-w1', concept: 'io-battery',
+      prompt: '予想しよう。ダニエル電池でモーターを長い時間回し続けると、亜鉛板はどうなると思う？',
+      options: ['とけてうすくなる', '銅が付いて厚くなる', '何も変化しない'],
+      answer: 'a',
+      explanation: '−極の亜鉛板では、亜鉛が電子を失って Zn2+ になり、水溶液にとけ出します。使い続けると、亜鉛板はだんだんうすくなります。',
+      hint: '−極で亜鉛はどうなっていたかな。',
+    }),
+    problems: [
+      drag({
+        id: 'ion-dr6-p1', concept: 'io-battery',
+        prompt: 'ダニエル電池が電流を流している間、硫酸イオン SO₄2- はセロハンを通ってどちらの液へ移る？ イオンを左右に動かし、移っていく先の液のまん中に置こう。',
+        // SO₄2- は、Cu2+ が減って−の電気が多くなる銅板の側（右）から、Zn2+ が増える亜鉛板の側（左）へ移る。
+        // 正解は左の液のまん中 (106, 170)。不正解例は右の液のまん中 (214, 170)（108px はなれる）。はじめの位置 x 160 は正解から 54px
+        figure: scene(daniellItems().concat([
+          { type: 'line', points: [[60, 170], [260, 170]], color: 'gray', width: 1, dashed: true },
+          { type: 'circle', id: 'ion', x: 160, y: 170, r: 27, fill: 'white', stroke: 'ink', label: 'SO₄2-' },
+        ])),
+        draggable: { itemId: 'ion', axis: 'x' },
+        target: { x: 106, y: 170 },
+        samples: { correct: { x: 106, y: 170 }, wrong: { x: 214, y: 170 } },
+        explanation: '銅板の側では Cu2+ が銅になって減るので、−の SO₄2- があまります。亜鉛板の側では Zn2+ が増えます。そこで SO₄2- がセロハンを通って亜鉛板の側（左）へ移り、電気のかたよりを防ぎます。',
+        hint: '陽イオンが増えているのは、亜鉛板と銅板のどちらの液かな。',
+      }),
+      fill({
+        id: 'ion-dr6-t1', concept: 'io-battery', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '物質がもつ化学エネルギーを、化学変化によって電気エネルギーに変えてとり出す装置を[b1]という。',
+        blanks: [word('b1', ['化学電池', '発電機', '電磁石'], '化学電池')],
+        explanation: '化学変化を利用して電気エネルギーをとり出す装置を**化学電池**といいます。ダニエル電池・乾電池・燃料電池などがあります。',
+        hint: '化学変化を使う電池だよ。',
+      }),
+      choice({
+        id: 'ion-dr6-p2', concept: 'io-battery',
+        prompt: 'ダニエル電池を長く使うと、銅板の側の硫酸銅水溶液の青色はどうなる？',
+        options: ['うすくなる', 'こくなる', '変わらない'],
+        answer: 'a',
+        explanation: '＋極の銅板では、Cu2+ が電子を受け取って銅になります。青色のもとの Cu2+ が減るので、液の青色はうすくなります。',
+        hint: '青色のもとは、どのイオンかな。そのイオンは増える？減る？',
+      }),
+      choice({
+        id: 'ion-dr6-p3', concept: 'io-battery',
+        prompt: 'ダニエル電池のセロハンのかわりに、ガラス板で 2 つの水溶液を完全に仕切りました。モーターはどうなる？',
+        options: ['回らない', '速く回る', '逆向きに回る'],
+        answer: 'a',
+        explanation: 'ガラス板はイオンを通さないので、2 つの水溶液の間でイオンが移動できません。電気のかたよりが防げず、電流が流れないので、モーターは回りません。',
+        hint: 'ガラス板は、イオンを通すかな。',
+      }),
+      fill({
+        id: 'ion-dr6-p4', concept: 'io-battery',
+        prompt: '燃料電池では、2H₂ ＋ O₂ → 2H₂O の化学変化が起こります。水素分子が 10 個すべて反応しました。',
+        text: 'このとき反応した酸素分子は[b1]である。',
+        blanks: [number('b1', 5, 0, '個')],
+        explanation: '化学反応式から、水素分子 2 個と酸素分子 1 個が反応します。水素分子 10 個には、酸素分子 10 ÷ 2 ＝ 5 個が反応します。',
+        hint: '化学反応式の H₂ と O₂ の前の数を見よう。',
+      }),
+      choice({
+        id: 'ion-dr6-p5', concept: 'io-battery',
+        prompt: '充電してくり返し使える電池を充電するとき、電池の中で起こることとして正しいものはどれ？',
+        options: ['電気を使ったときと逆向きの化学変化', '新しい金属が外から加わる変化', '水が蒸発するだけの変化'],
+        answer: 'a',
+        explanation: '充電では、外から電流を流して、電気を使ったとき（放電）と逆向きの化学変化を起こします。すると電池の中の物質がもとにもどり、また電気をとり出せるようになります。',
+        hint: '使ったあとの物質を、もとにもどすには？',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'ion-dr6-r1', concept: 'io-battery',
+        prompt: 'ダニエル電池を長く使いました。ア（亜鉛板）とイ（銅板）のうち、使う前より質量が増えている金属板はどちら？',
+        figure: scene(daniellItems().concat([
+          { type: 'region', id: 'r1', x: 86, y: 160, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 234, y: 160, r: 22, label: 'イ' },
+        ])),
+        answer: 'r2',
+        explanation: '＋極の銅板（イ）では、Cu2+ が電子を受け取って銅になり、銅板に付きます。だから銅板の質量は増えます。−極の亜鉛板（ア）は、亜鉛がとけてうすくなります。',
+        hint: '銅板の表面で、何ができて付くかな。',
+      }),
+      choice({
+        id: 'ion-dr6-r2', concept: 'io-battery',
+        prompt: 'ダニエル電池で、亜鉛板の側の液からセロハンを通って、銅板の側の液へ移る陽イオンはどれ？',
+        options: ['亜鉛イオン Zn2+', '銅イオン Cu2+', '電子'],
+        answer: 'a',
+        explanation: '亜鉛板の側では、亜鉛がとけて Zn2+ が増えます。その Zn2+ の一部がセロハンを通って銅板の側へ移り、電気のかたよりを防ぎます。電子は液の中ではなく導線を通ります。',
+        hint: '亜鉛板の側で増えている陽イオンはどれかな。',
+      }),
+      choice({
+        id: 'ion-dr6-r3', concept: 'io-battery', term: true,
+        prompt: '次の説明に合う言葉はどれ？「物質がもっていて、化学変化によって熱や電気などとしてとり出せるエネルギー」',
+        options: ['化学エネルギー', '位置エネルギー', '運動エネルギー'],
+        answer: 'a',
+        explanation: '物質がもっていて、化学変化によってとり出せるエネルギーを**化学エネルギー**といいます。電池は、化学エネルギーを電気エネルギーに変えています。',
+        hint: '化学変化でとり出すエネルギーだよ。',
+      }),
+      fill({
+        id: 'ion-dr6-r4', concept: 'io-battery',
+        prompt: '燃料電池では、2H₂ ＋ O₂ → 2H₂O の化学変化が起こります。水素分子が 6 個すべて反応しました。',
+        text: 'このときできる水分子は[b1]である。',
+        blanks: [number('b1', 6, 0, '個')],
+        explanation: '化学反応式から、水素分子 2 個から水分子 2 個ができます。水素分子 6 個からは、水分子 6 個ができます。',
+        hint: '化学反応式の H₂ と H₂O の前の数をくらべよう。',
       }),
     ],
   };
@@ -2850,9 +3888,12 @@
     mascot: 'C',   // 担当の先生（ぷにカプセル。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'io-ion', title: '水溶液とイオン', order: 1, stages: [ion1, ion2] },
-      { id: 'io-acid', title: '酸・アルカリと中和', order: 2, stages: [ion3, ion4] },
-      { id: 'io-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [ionMp1, ionMp2, ionMp3, ionMp4, ionMp5, ionMp6, ionMp7, ionMp8, ionMp9, ionMp10] },
+      { id: 'io-ion', title: '水溶液とイオン', order: 1, stages: [
+        ion1, ion2, ionMp1, ionMp2, ionMp3, ionMp4, ionMp5, ionMp6, ionDr1, ionDr2, ionDr5, ionDr6,
+      ] },
+      { id: 'io-acid', title: '酸・アルカリと中和', order: 2, stages: [
+        ion3, ion4, ionMp7, ionMp8, ionMp9, ionMp10, ionDr3, ionDr4,
+      ] },
     ],
   };
 

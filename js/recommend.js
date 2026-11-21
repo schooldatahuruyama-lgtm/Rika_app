@@ -54,8 +54,17 @@
     return lowest ? reviewQuest(lowest.concept) : null;
   }
 
-  // 領域の最初のステージは常に解放。それ以外は同じ領域の 1 つ前のステージがクリア済みなら解放
-  // 領域に free: true があれば（ミニプリントの領域）、その領域のステージはすべて最初から解放
+  // ステージが free（いつでも挑戦できる）か。領域の free: true（古い教材・AI 教材）か、ステージの free: true
+  // true 以外（'true'・1 など）は free でない
+  function isFreeStage(area, stage) {
+    return !!(area && area.free === true) || !!(stage && stage.free === true);
+  }
+
+  // 解放の規則
+  // - free のステージ（領域 free かステージ free）は最初から解放
+  // - それ以外（基本のステージ）は、同じ領域の中で自分より前にある free でないステージのうち、
+  //   最後のものがクリア済みなら解放。前に free でないステージがなければ解放
+  //   （プリント・ドリルなど free のステージは、基本のステージの鎖に入らない）
   // 登録されていないステージは false
   function isUnlocked(reg, rec, stageId) {
     for (const u of reg.units()) {
@@ -64,14 +73,19 @@
         const stages = list(area.stages);
         const i = stages.findIndex(s => s && s.id === stageId);
         if (i < 0) continue;
-        if (i === 0 || area.free === true) return true;
-        return record.stageState(rec, stages[i - 1].id).status === 'cleared';
+        if (isFreeStage(area, stages[i])) return true;
+        for (let j = i - 1; j >= 0; j--) {
+          const prev = stages[j];
+          if (!prev || isFreeStage(area, prev)) continue;
+          return record.stageState(rec, prev.id).status === 'cleared';
+        }
+        return true;
       }
     }
     return false;
   }
 
-  const api = { todayQuest, isUnlocked };
+  const api = { todayQuest, isUnlocked, isFreeStage };
 
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.RikaQuest = Object.assign(root.RikaQuest || {}, { recommend: api });

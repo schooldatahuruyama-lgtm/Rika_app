@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通資料の「共通のデータの形」）。
 // 2 領域 × 2 ステージ（力と運動、運動とエネルギー）と、概念 6 つ。
 // 領域 3「ミニプリント」: 先生のミニプリントの問題を書き直した 12 ステージ（motion-mp1〜12）と、概念 2 つ（mo-balance・mo-conversion）を追加。
+// 領域 4「ドリル」: テーマごとの練習 6 ステージ（motion-dr1〜6。2026-11-21 追加。文・図・問題はすべて自作）。概念は既存のものだけ。
 // 図（scene）の item は js/figures.js の汎用の部品（docs/figures-guide.md）で描く。座標は x 右向き・y 下向き、場面は 320×240。
 // 図の約束: 力の矢印は青、合力・分力は緑。
 // drag の解答 { x, y } は動かす部品の基準点（circle なら中心）。samples は手計算した正解例・不正解例。
@@ -983,7 +984,7 @@
 
   // ---- ステージ motion-mp1: プリント 1 水圧と浮力 ----
   const motionMp1 = {
-    id: 'motion-mp1', areaId: 'mo-miniprint', title: 'プリント 1: 水圧と浮力', minutes: 5, concepts: ['mo-buoyancy'],
+    id: 'motion-mp1', areaId: 'mo-force', free: true, title: 'プリント 1: 水圧と浮力', minutes: 5, concepts: ['mo-buoyancy'],
     lessons: [
       {
         id: 'motion-mp1-c1',
@@ -1112,7 +1113,7 @@
 
   // ---- ステージ motion-mp2: プリント 2 力の合成 ----
   const motionMp2 = {
-    id: 'motion-mp2', areaId: 'mo-miniprint', title: 'プリント 2: 力の合成', minutes: 5, concepts: ['mo-compose'],
+    id: 'motion-mp2', areaId: 'mo-force', free: true, title: 'プリント 2: 力の合成', minutes: 5, concepts: ['mo-compose'],
     lessons: [
       {
         id: 'motion-mp2-c1',
@@ -1270,7 +1271,7 @@
 
   // ---- ステージ motion-mp3: プリント 3 力の分解と 2 力のつり合い ----
   const motionMp3 = {
-    id: 'motion-mp3', areaId: 'mo-miniprint', title: 'プリント 3: 力の分解と 2 力のつり合い', minutes: 5, concepts: ['mo-compose', 'mo-balance'],
+    id: 'motion-mp3', areaId: 'mo-force', free: true, title: 'プリント 3: 力の分解と 2 力のつり合い', minutes: 5, concepts: ['mo-compose', 'mo-balance'],
     lessons: [
       {
         id: 'motion-mp3-c1',
@@ -1461,7 +1462,7 @@
 
   // ---- ステージ motion-mp4: プリント 4 作用・反作用とつり合いの区別 ----
   const motionMp4 = {
-    id: 'motion-mp4', areaId: 'mo-miniprint', title: 'プリント 4: 作用・反作用とつり合い', minutes: 5, concepts: ['mo-accel', 'mo-balance'],
+    id: 'motion-mp4', areaId: 'mo-force', free: true, title: 'プリント 4: 作用・反作用とつり合い', minutes: 5, concepts: ['mo-accel', 'mo-balance'],
     lessons: [
       {
         id: 'motion-mp4-c1',
@@ -1617,7 +1618,7 @@
 
   // ---- ステージ motion-mp5: プリント 5 速さと記録タイマー ----
   const motionMp5 = {
-    id: 'motion-mp5', areaId: 'mo-miniprint', title: 'プリント 5: 速さと記録タイマー', minutes: 5, concepts: ['mo-speed', 'mo-accel'],
+    id: 'motion-mp5', areaId: 'mo-force', free: true, title: 'プリント 5: 速さと記録タイマー', minutes: 5, concepts: ['mo-speed', 'mo-accel'],
     lessons: [
       {
         id: 'motion-mp5-c1',
@@ -1772,7 +1773,7 @@
 
   // ---- ステージ motion-mp6: プリント 6 減速・等速直線運動・慣性 ----
   const motionMp6 = {
-    id: 'motion-mp6', areaId: 'mo-miniprint', title: 'プリント 6: 減速・等速直線運動・慣性', minutes: 5, concepts: ['mo-accel'],
+    id: 'motion-mp6', areaId: 'mo-force', free: true, title: 'プリント 6: 減速・等速直線運動・慣性', minutes: 5, concepts: ['mo-accel'],
     lessons: [
       {
         id: 'motion-mp6-c1',
@@ -1944,7 +1945,7 @@
 
   // ---- ステージ motion-mp7: プリント 7 仕事の計算 ----
   const motionMp7 = {
-    id: 'motion-mp7', areaId: 'mo-miniprint', title: 'プリント 7: 仕事の計算', minutes: 5, concepts: ['mo-work'],
+    id: 'motion-mp7', areaId: 'mo-energy', free: true, title: 'プリント 7: 仕事の計算', minutes: 5, concepts: ['mo-work'],
     lessons: [
       {
         id: 'motion-mp7-c1',
@@ -2075,7 +2076,7 @@
 
   // ---- ステージ motion-mp8: プリント 8 滑車・斜面と仕事の原理 ----
   const motionMp8 = {
-    id: 'motion-mp8', areaId: 'mo-miniprint', title: 'プリント 8: 滑車・斜面と仕事の原理', minutes: 5, concepts: ['mo-work'],
+    id: 'motion-mp8', areaId: 'mo-energy', free: true, title: 'プリント 8: 滑車・斜面と仕事の原理', minutes: 5, concepts: ['mo-work'],
     lessons: [
       {
         id: 'motion-mp8-c1',
@@ -2188,7 +2189,7 @@
 
   // ---- ステージ motion-mp9: プリント 9 てこと仕事率 ----
   const motionMp9 = {
-    id: 'motion-mp9', areaId: 'mo-miniprint', title: 'プリント 9: てこと仕事率', minutes: 5, concepts: ['mo-work'],
+    id: 'motion-mp9', areaId: 'mo-energy', free: true, title: 'プリント 9: てこと仕事率', minutes: 5, concepts: ['mo-work'],
     lessons: [
       {
         id: 'motion-mp9-c1',
@@ -2309,7 +2310,7 @@
 
   // ---- ステージ motion-mp10: プリント 10 エネルギーと位置エネルギー ----
   const motionMp10 = {
-    id: 'motion-mp10', areaId: 'mo-miniprint', title: 'プリント 10: 位置エネルギー', minutes: 5, concepts: ['mo-energy'],
+    id: 'motion-mp10', areaId: 'mo-energy', free: true, title: 'プリント 10: 位置エネルギー', minutes: 5, concepts: ['mo-energy'],
     lessons: [
       {
         id: 'motion-mp10-c1',
@@ -2481,7 +2482,7 @@
 
   // ---- ステージ motion-mp11: プリント 11 運動エネルギーと力学的エネルギー ----
   const motionMp11 = {
-    id: 'motion-mp11', areaId: 'mo-miniprint', title: 'プリント 11: 運動エネルギーと力学的エネルギー', minutes: 5, concepts: ['mo-energy'],
+    id: 'motion-mp11', areaId: 'mo-energy', free: true, title: 'プリント 11: 運動エネルギーと力学的エネルギー', minutes: 5, concepts: ['mo-energy'],
     lessons: [
       {
         id: 'motion-mp11-c1',
@@ -2622,7 +2623,7 @@
 
   // ---- ステージ motion-mp12: プリント 12 エネルギーの変換と保存 ----
   const motionMp12 = {
-    id: 'motion-mp12', areaId: 'mo-miniprint', title: 'プリント 12: エネルギーの変換と保存', minutes: 5, concepts: ['mo-conversion'],
+    id: 'motion-mp12', areaId: 'mo-energy', free: true, title: 'プリント 12: エネルギーの変換と保存', minutes: 5, concepts: ['mo-conversion'],
     lessons: [
       {
         id: 'motion-mp12-c1',
@@ -2752,6 +2753,1032 @@
         blanks: [number('b1', 30, 0.1, '%')],
         explanation: '変換効率 ＝ 6 ÷ 20 × 100 ＝ 30 % です。残りの 14 J は、おもに熱エネルギーになっています。',
         hint: '目的のエネルギー ÷ もとのエネルギー × 100。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 4: ドリル（2026-11-21 追加。テーマごとの練習。文・図・問題はすべて自作）
+  // ================================================================
+
+  // ---- ドリルの図の道具 ----
+
+  // 表（x0 から、見出しの列の幅 headW・値の列の幅 colW、y0 から行の高さ rowH）。rows は [見出し, 値, 値, ...] の配列
+  function drillTable(x0, headW, colW, y0, rowH, rows) {
+    const items = [];
+    rows.forEach((row, r) => {
+      const y = y0 + r * rowH;
+      row.forEach((cell, c) => {
+        const x = c === 0 ? x0 : x0 + headW + (c - 1) * colW;
+        const w = c === 0 ? headW : colW;
+        items.push({ type: 'rect', x, y, width: w, height: rowH, fill: r === 0 || c === 0 ? 'glass' : 'white', stroke: 'line' });
+        items.push(note(x + w / 2, y + rowH / 2 + 5, cell, 13, 'middle'));
+      });
+    });
+    return items;
+  }
+
+  // 仕事と時間のカード 3 枚（cards は [仕事の文, 時間の文] の配列）と、下の ア・イ・ウ
+  function powerCards(cards) {
+    const items = [note(20, 30, '同じ人が使う 3 つの機械の記録', 13)];
+    cards.forEach((c, i) => {
+      const x = 20 + 100 * i;
+      items.push(
+        { type: 'rect', x, y: 44, width: 80, height: 96, fill: 'white', stroke: 'line', rx: 6 },
+        note(x + 40, 82, c[0], 15, 'middle'),
+        note(x + 40, 118, c[1], 15, 'middle'),
+      );
+    });
+    items.push(spot('r1', 60, 186, 'ア'), spot('r2', 160, 186, 'イ'), spot('r3', 260, 186, 'ウ'));
+    return items;
+  }
+
+  // 摩擦のない斜面（A 0.8 m から 基準面 0 m。1 m ＝ 200px）と、高さ 0.6・0.4・0.2 m の点
+  function energySlope() {
+    return [
+      { type: 'polygon', points: [[40, 50], [280, 210], [40, 210]], fill: 'sand', stroke: 'line' },
+      { type: 'circle', x: 46, y: 38, r: 10, fill: 'sky', stroke: 'ink' },
+      note(62, 36, 'A（高さ 0.8 m）', 13),
+      ...[[100, 90], [160, 130], [220, 170]].map(p => ({ type: 'circle', x: p[0], y: p[1], r: 4, fill: 'ink', stroke: 'ink' })),
+      note(160, 232, '基準面（高さ 0 m）', 13, 'middle'),
+    ];
+  }
+
+  // 水そうの側面の 3 つの穴（x 180、y 80・130・180）
+  function holeTank() {
+    return [
+      { type: 'rect', x: 60, y: 40, width: 120, height: 180, fill: 'water', stroke: 'line' },
+      note(56, 48, '水面', 12, 'end'),
+      ...[80, 130, 180].map(y => ({ type: 'circle', x: 180, y, r: 4, fill: 'white', stroke: 'ink' })),
+    ];
+  }
+
+  // 3 力のつり合いを作る方眼（点 O (160,120)、1 目盛り 40px）。力 A の先 a、力 B の先 b
+  function balanceGrid(a, b) {
+    return [
+      ...grid(40, 280, 20, 220, 40),
+      { type: 'arrow', x1: 160, y1: 120, x2: a[0], y2: a[1], color: 'blue' },
+      { type: 'arrow', x1: 160, y1: 120, x2: b[0], y2: b[1], color: 'blue' },
+      { type: 'circle', x: 160, y: 120, r: 5, fill: 'blue', stroke: 'blue' },
+      note(152, 140, 'O', 14, 'end'),
+      note((160 + a[0]) / 2, 142, '力 A', 13, 'middle'),
+      note(168, (120 + b[1]) / 2 + 4, '力 B', 13),
+      { type: 'circle', id: 'mark', x: 300, y: 214, r: 10, fill: 'blue', stroke: 'blue' },
+    ];
+  }
+
+  // ---- ステージ motion-dr1: ドリル 1 速さと記録タイマー ----
+  const motionDr1 = {
+    id: 'motion-dr1', areaId: 'mo-force', free: true, title: 'ドリル 1: 速さの計算と記録タイマー', minutes: 6, concepts: ['mo-speed'],
+    lessons: [
+      {
+        id: 'motion-dr1-c1',
+        text: '**速さ**は「移動距離 ÷ かかった時間」で求めます。単位は m/s（メートル毎秒）や km/h（キロメートル毎時）です。1 m/s で 1 時間（3600 秒）進むと 3.6 km なので、m/s の値に 3.6 をかけると km/h の値になります。',
+        // 4 秒で 60 m 進む車 → 15 m/s
+        figure: scene([
+          note(20, 40, '速さ ＝ 移動距離 ÷ かかった時間', 14),
+          { type: 'line', points: [[20, 170], [300, 170]], color: 'line', width: 3 },
+          { type: 'rect', x: 30, y: 138, width: 44, height: 30, fill: 'sky', label: '0 秒' },
+          { type: 'rect', x: 246, y: 138, width: 44, height: 30, fill: 'sky', label: '4 秒' },
+          { type: 'arrow', x1: 52, y1: 112, x2: 268, y2: 112, color: 'blue', label: '60 m' },
+          note(160, 210, '60 m ÷ 4 秒 ＝ 15 m/s', 14, 'middle'),
+        ]),
+      },
+      {
+        id: 'motion-dr1-c2',
+        text: '**記録タイマー**は、一定の時間ごとに紙テープに点を打ちます。1 秒間に 50 回打つものなら、となりの打点の間は 0.02 秒、5 打点ぶんで 0.1 秒です。打点の間隔が広いほど速く、間隔が同じなら速さは一定です。',
+        // 上: 間隔一定（20px）。下: 間隔が 8px から 4px ずつ広がる
+        figure: scene([
+          note(20, 40, '1 秒間に 50 打点 → 5 打点で 0.1 秒', 14),
+          note(20, 72, '間隔が同じ: 速さは一定', 13),
+          ...tape(96, dots(40, [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20])),
+          note(20, 152, '間隔が広がる: だんだん速くなる', 13),
+          ...tape(176, dots(40, [8, 12, 16, 20, 24, 28, 32, 36])),
+        ]),
+      },
+      {
+        id: 'motion-dr1-c3',
+        text: '区間全体を一定の速さで動いたと考えたときの速さを**平均の速さ**、ごく短い時間の移動から求めた、その時刻の速さを**瞬間の速さ**といいます。自動車の速度計が示すのは瞬間の速さです。',
+        // A 町から B 町まで 30 km を 1 時間
+        figure: scene([
+          note(20, 36, 'A 町 → B 町（30 km を 1 時間）', 14),
+          { type: 'line', points: [[30, 90], [290, 90]], color: 'line', width: 3 },
+          { type: 'circle', x: 30, y: 90, r: 6, fill: 'blue', stroke: 'blue' },
+          { type: 'circle', x: 290, y: 90, r: 6, fill: 'blue', stroke: 'blue' },
+          note(30, 118, 'A', 14, 'middle'),
+          note(290, 118, 'B', 14, 'middle'),
+          note(20, 164, '平均の速さ: 30 km ÷ 1 時間 ＝ 30 km/h', 13),
+          note(20, 196, '速度計のその時の値: 瞬間の速さ', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'motion-dr1-w1', concept: 'mo-speed',
+      prompt: '予想しよう。秒速 10 m で走る自動車と、時速 30 km で走る自動車があります。速いのはどちらだと思う？',
+      options: ['秒速 10 m の自動車', '時速 30 km の自動車', 'どちらも同じ速さ'],
+      answer: 'a',
+      explanation: '秒速 10 m は、1 時間（3600 秒）で 36000 m ＝ 36 km 進む速さなので、時速 36 km です。時速 30 km より速いですね。単位をそろえてくらべる方法を、このステージで練習しよう。',
+      hint: '1 時間は 3600 秒。秒速 10 m で 1 時間進むと何 km かな。',
+    }),
+    problems: [
+      fill({
+        id: 'motion-dr1-p1', concept: 'mo-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '台車が 0.4 秒間に 32 cm 進んだ。この間の平均の速さは[b1]である。',
+        blanks: [number('b1', 80, 0, 'cm/s')],
+        explanation: '速さ ＝ 移動距離 ÷ 時間 ＝ 32 cm ÷ 0.4 s ＝ 80 cm/s です。',
+        hint: '距離を時間でわろう。0.4 でわるのは、10 倍して 4 でわるのと同じだよ。',
+      }),
+      figureChoice({
+        id: 'motion-dr1-p2', concept: 'mo-speed',
+        prompt: '台車の運動を記録したテープを 5 打点ごとに切って順にはりました（1〜6 本目）。ア 1〜2 本目、イ 3〜5 本目、ウ 6 本目 のうち、台車が一定の速さで動いた区間はどれ？',
+        // 1 cm ＝ 20px。長さ 2・4・6・6・6・4 cm
+        figure: scene([
+          { type: 'line', points: [[30, 200], [300, 200]], width: 2 },
+          ...[2, 4, 6, 6, 6, 4].map((len, i) => ({ type: 'rect', x: 40 + 40 * i, y: 200 - 20 * len, width: 30, height: 20 * len, fill: 'white', stroke: 'line' })),
+          ...[1, 2, 3, 4, 5, 6].map(i => note(15 + 40 * i, 220, String(i), 12, 'middle')),
+          note(296, 220, '本目', 12, 'end'),
+          spot('r1', 75, 92, 'ア'),
+          spot('r2', 175, 50, 'イ'),
+          spot('r3', 255, 92, 'ウ'),
+        ]),
+        answer: 'r2',
+        explanation: '5 打点ぶんの時間（0.1 秒）は、どのテープも同じです。3〜5 本目はテープの長さが同じなので、同じ時間に同じ距離を進んでいます。つまり、一定の速さで動いています。1〜2 本目は速くなり、6 本目はおそくなっています。',
+        hint: 'テープの長さが変わらないところをさがそう。',
+      }),
+      fill({
+        id: 'motion-dr1-p3', concept: 'mo-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '時速 72 km で走る自動車は、1 秒間に[b1]進む。',
+        blanks: [number('b1', 20, 0, 'm')],
+        explanation: '72 km ＝ 72000 m を 1 時間（3600 秒）で進むので、1 秒間には 72000 ÷ 3600 ＝ 20 m 進みます。km/h の値を 3.6 でわっても求められます。',
+        hint: 'km を m に、時間を秒になおしてから、わり算しよう。',
+      }),
+      choice({
+        id: 'motion-dr1-p4', concept: 'mo-speed',
+        prompt: '表は、駅を出発した電車が 20 秒ごとに進んだ距離です。出発から 60 秒間の平均の速さはどれ？',
+        figure: scene([
+          note(16, 50, '電車が 20 秒ごとに進んだ距離', 14),
+          ...drillTable(16, 84, 68, 70, 40, [
+            ['時間', '0〜20 秒', '20〜40 秒', '40〜60 秒'],
+            ['距離', '100 m', '250 m', '250 m'],
+          ]),
+        ]),
+        options: ['12.5 m/s', '10 m/s', '5 m/s'],
+        answer: 'b',
+        explanation: '平均の速さは「全体の距離 ÷ 全体の時間」です。全体の距離は 100 ＋ 250 ＋ 250 ＝ 600 m なので、600 m ÷ 60 s ＝ 10 m/s です。12.5 m/s は後半の 20 秒間だけの速さです。',
+        hint: '3 つの距離を合計して、60 秒でわろう。',
+      }),
+      figureChoice({
+        id: 'motion-dr1-p5', concept: 'mo-speed',
+        prompt: '1 秒間に 50 回打点する記録タイマーで、3 台の台車を記録しました。打点の間隔は、ア 0.2 cm、イ 0.4 cm、ウ 0.6 cm です。速さが 20 cm/s の台車のテープはどれ？',
+        // 1 cm ＝ 50px。間隔 10px・20px・30px
+        figure: scene([
+          note(20, 30, '3 本のテープ（打点の間隔はどこも同じ）', 13),
+          ...tape(70, dots(40, Array(18).fill(10)), 230),
+          ...tape(140, dots(40, Array(9).fill(20)), 230),
+          ...tape(210, dots(40, Array(6).fill(30)), 230),
+          spot('r1', 290, 70, 'ア'),
+          spot('r2', 290, 140, 'イ'),
+          spot('r3', 290, 210, 'ウ'),
+        ]),
+        answer: 'r2',
+        explanation: 'となりの打点の間の時間は 1 ÷ 50 ＝ 0.02 秒です。20 cm/s で進むと、0.02 秒間に 20 × 0.02 ＝ 0.4 cm 進むので、間隔 0.4 cm のイです。',
+        hint: 'となりの打点の間は何秒かを、まず考えよう。',
+      }),
+      fill({
+        id: 'motion-dr1-t1', concept: 'mo-speed', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '速さの単位 m/s は[b1]と読む。',
+        blanks: [word('b1', ['メートル毎秒', 'メートル毎時', 'キロメートル毎時'], 'メートル毎秒')],
+        explanation: 'm/s は**メートル毎秒**と読み、1 秒間に何 m 進むかを表します。km/h はキロメートル毎時で、1 時間に何 km 進むかを表します。',
+        hint: 's は秒（second）を表すよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'motion-dr1-r1', concept: 'mo-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '台車が 0.2 秒間に 18 cm 進んだ。この間の平均の速さは[b1]である。',
+        blanks: [number('b1', 90, 0, 'cm/s')],
+        explanation: '18 cm ÷ 0.2 s ＝ 90 cm/s です。',
+        hint: '0.2 でわるのは、5 をかけるのと同じだよ。',
+      }),
+      choice({
+        id: 'motion-dr1-r2', concept: 'mo-speed',
+        prompt: '1 秒間に 50 回打点する記録タイマーで、打点の間隔がどこも 0.6 cm でした。台車の速さはどれ？',
+        options: ['0.6 cm/s', '30 cm/s', '12 cm/s'],
+        answer: 'b',
+        explanation: 'となりの打点の間は 0.02 秒なので、0.6 cm ÷ 0.02 s ＝ 30 cm/s です。',
+        hint: '1 秒間に 50 打点なら、打点の間は 1 ÷ 50 秒。',
+      }),
+      fill({
+        id: 'motion-dr1-r3', concept: 'mo-speed',
+        prompt: '空らんに入る数を入れよう。',
+        text: '秒速 15 m で走り続ける自動車は、1 時間に[b1]進む。',
+        blanks: [number('b1', 54, 0, 'km')],
+        explanation: '1 時間は 3600 秒なので、15 m × 3600 ＝ 54000 m ＝ 54 km です。m/s の値に 3.6 をかけても求められます（15 × 3.6 ＝ 54）。',
+        hint: '1 時間は何秒かな。最後に m を km になおそう。',
+      }),
+      fill({
+        id: 'motion-dr1-r4', concept: 'mo-speed', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '速さの単位 km/h は[b1]と読む。',
+        blanks: [word('b1', ['キロメートル毎時', 'キロメートル毎秒', 'メートル毎秒'], 'キロメートル毎時')],
+        explanation: 'km/h は**キロメートル毎時**と読み、1 時間に何 km 進むかを表します。時速と同じ意味です。',
+        hint: 'h は時間（hour）を表すよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ motion-dr2: ドリル 2 斜面の運動・慣性・作用反作用 ----
+  const motionDr2 = {
+    id: 'motion-dr2', areaId: 'mo-force', free: true, title: 'ドリル 2: 斜面の運動・慣性・作用と反作用', minutes: 6, concepts: ['mo-accel', 'mo-balance'],
+    lessons: [
+      {
+        id: 'motion-dr2-c1',
+        anim: 'mo-slope-accel',   // 動く図の使い回し（js/anim-*.js）。figure は静止図として残す
+        text: '斜面を下る台車には、重力の**斜面に平行な分力**が運動の向きにはたらき続けるので、速さは一定の割合で増えます。反対に斜面を上る台車では、この分力が運動と反対向きなので、速さはしだいに小さくなります。',
+        // 斜面（右下がり）上の球と、斜面に平行な分力（緑）
+        figure: scene([
+          note(20, 36, '下り: 速さが一定の割合で増える', 14),
+          { type: 'polygon', points: [[20, 80], [20, 210], [300, 210]], fill: 'sand', stroke: 'line' },
+          { type: 'circle', x: 106, y: 104, r: 14, fill: 'sky', stroke: 'ink' },
+          { type: 'arrow', x1: 106, y1: 104, x2: 169, y2: 134, color: 'green' },
+          note(178, 124, '斜面に平行な分力', 13),
+        ]),
+      },
+      {
+        id: 'motion-dr2-c2',
+        text: '物体に力がはたらかないか、はたらく力がつり合っているとき、静止している物体は静止を続け、動いている物体は**等速直線運動**を続けます。これを**慣性の法則**といいます。',
+        // 摩擦のない氷の上を、同じ時間に同じ距離ずつ進む球
+        figure: scene([
+          note(20, 50, '力がはたらかない → 等速直線運動', 14),
+          { type: 'arrow', x1: 40, y1: 100, x2: 280, y2: 100, color: 'blue', label: '同じ時間に同じ距離' },
+          { type: 'line', points: [[20, 170], [300, 170]], color: 'line', width: 3 },
+          ...[50, 130, 210, 290].map(x => ({ type: 'circle', x, y: 156, r: 14, fill: 'sky', stroke: 'ink' })),
+          ...['0 秒', '1 秒', '2 秒', '3 秒'].map((t, i) => note(50 + 80 * i, 196, t, 13, 'middle')),
+        ]),
+      },
+      {
+        id: 'motion-dr2-c3',
+        text: 'ボートのオールで水を後ろへ押すと、水がオールを前へ押し返すので、ボートは前へ進みます。このように 2 つの物体がたがいにおよぼし合う力を**作用・反作用**といい、大きさが等しく、向きは反対です。',
+        figure: scene([
+          note(16, 30, '作用と反作用は別々の物体にはたらく', 13),
+          { type: 'arrow', x1: 230, y1: 100, x2: 300, y2: 100, color: 'blue', label: '進む向き' },
+          { type: 'rect', x: 10, y: 150, width: 300, height: 80, fill: 'water', stroke: 'line' },
+          { type: 'polygon', points: [[90, 128], [250, 128], [232, 152], [108, 152]], fill: 'brown' },
+          { type: 'line', points: [[150, 100], [60, 190]], width: 4 },
+          { type: 'arrow', x1: 76, y1: 176, x2: 136, y2: 176, color: 'green' },
+          note(146, 200, '反作用: 水がオールを押す', 12),
+          { type: 'arrow', x1: 66, y1: 200, x2: 20, y2: 200, color: 'blue' },
+          note(14, 226, '作用: オールが水を押す', 12),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'motion-dr2-w1', concept: 'mo-accel',
+      prompt: '予想しよう。だるま落としで、いちばん下の段だけをすばやく横にたたき出すと、上の段はどうなると思う？',
+      options: ['ほぼ真下に落ちる', 'たたいた向きにいっしょに飛ぶ', 'たたいた向きと反対に飛ぶ'],
+      answer: 'a',
+      explanation: '上の段は、それまでの「静止」の状態を続けようとします（慣性）。すばやくたたけば、横向きの力はほとんど上の段に伝わらないので、ほぼ真下に落ちます。慣性について、このステージで確かめよう。',
+      hint: '止まっている物体は、止まったままでいようとするよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'motion-dr2-p1', concept: 'mo-accel',
+        prompt: '台車が、ア 下りの斜面、イ 水平面、ウ 上りの斜面 の順に進みます（摩擦や空気の抵抗はない）。台車の速さがだんだん小さくなるのはどこ？',
+        figure: scene([
+          { type: 'polygon', points: [[20, 60], [100, 180], [210, 180], [300, 90], [300, 230], [20, 230]], fill: 'sand', stroke: 'line' },
+          { type: 'circle', x: 30, y: 62, r: 10, fill: 'sky', stroke: 'ink' },
+          spot('r1', 83, 105, 'ア'),
+          spot('r2', 155, 150, 'イ'),
+          spot('r3', 235, 115, 'ウ'),
+        ]),
+        answer: 'r3',
+        explanation: '上りの斜面では、重力の斜面に平行な分力が、運動と反対向き（斜面の下向き）にはたらくので、速さはだんだん小さくなります。下りの斜面ではだんだん大きくなり、摩擦のない水平面では等速直線運動になります。',
+        hint: '斜面に平行な分力が、運動と反対向きになるのはどこかな。',
+      }),
+      drag({
+        id: 'motion-dr2-p2', concept: 'mo-accel',
+        prompt: '摩擦のない水平面で、球が等速直線運動をしています。図は 0.1 秒ごとの球の位置（0〜0.3 秒）です。0.5 秒のときの位置に、青い印を左右に動かして置こう。',
+        // 0.1 秒ごとに 40px。0.5 秒は x=240。不正解例は 0.4 秒の位置 x=200（40px）
+        figure: scene([
+          note(20, 40, '0.1 秒ごとの球の位置', 14),
+          ...[40, 80, 120, 160, 200, 240, 280].map(x => ({ type: 'line', points: [[x, 96], [x, 140]], color: 'gray', width: 1, dashed: true })),
+          { type: 'line', points: [[20, 140], [300, 140]], color: 'line', width: 3 },
+          ...[40, 80, 120, 160].map(x => ({ type: 'circle', x, y: 120, r: 10, fill: 'gray', stroke: 'ink' })),
+          note(40, 164, '0 秒', 13, 'middle'),
+          note(160, 164, '0.3 秒', 13, 'middle'),
+          { type: 'circle', id: 'mark', x: 300, y: 120, r: 10, fill: 'blue', stroke: 'blue' },
+        ]),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 240, y: 120 },
+        samples: { correct: { x: 240, y: 120 }, wrong: { x: 200, y: 120 } },
+        explanation: '等速直線運動では、同じ時間に同じ距離だけ進みます。0.1 秒ごとに 1 目盛りずつ進んでいるので、0.5 秒では 0 秒の位置から 5 目盛りのところです。',
+        hint: '0.1 秒で何目盛り進んでいるかな。0.4 秒、0.5 秒と数えよう。',
+      }),
+      choice({
+        id: 'motion-dr2-p3', concept: 'mo-balance',
+        prompt: 'ボートに乗った人が、オールで水を後ろへ押すと、ボートが前へ進みます。ボートを前へ進ませる力はどれ？',
+        options: ['オールが水を後ろへ押す力', '水がオールを前へ押し返す力', 'ボートにはたらく浮力'],
+        answer: 'b',
+        explanation: 'オールが水を押す力（作用）は水にはたらき、水がオールを押し返す力（反作用）はオール、つまりボートにはたらきます。ボートが進むのは、ボートが受ける反作用の力によります。',
+        hint: 'ボート（オール）が「受ける」力はどれかを考えよう。',
+      }),
+      fill({
+        id: 'motion-dr2-p4', concept: 'mo-accel',
+        prompt: '斜面を下る台車の 0.1 秒ごとの移動距離は、2.0 cm、4.0 cm、6.0 cm、8.0 cm でした。空らんに入る数を入れよう。',
+        text: 'この 0.4 秒間の台車の平均の速さは[b1]である。',
+        blanks: [number('b1', 50, 0, 'cm/s')],
+        explanation: '0.4 秒間に進んだ距離は 2.0 ＋ 4.0 ＋ 6.0 ＋ 8.0 ＝ 20 cm です。平均の速さは 20 cm ÷ 0.4 s ＝ 50 cm/s です。移動距離が 2.0 cm ずつ増えているので、速さは一定の割合で増えています。',
+        hint: 'まず 4 つの距離を合計しよう。',
+      }),
+      choice({
+        id: 'motion-dr2-p5', concept: 'mo-balance',
+        prompt: 'その場でジャンプするとき、人のからだを上へ動かす力はどれ？',
+        options: ['人にはたらく重力', '人が床を下へ押す力', '床が人を上へ押し返す力'],
+        answer: 'c',
+        explanation: '人が床を強く下へ押す（作用）と、床が同じ大きさで人を上へ押し返します（反作用）。からだを上へ動かすのは、人が受ける「床が人を押す力」です。人が床を押す力は床にはたらく力です。',
+        hint: '人のからだに「はたらく」上向きの力をさがそう。',
+      }),
+      fill({
+        id: 'motion-dr2-t1', concept: 'mo-accel', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電車が急ブレーキをかけると乗客のからだが前へかたむくのは、からだに[b1]があるからである。',
+        blanks: [word('b1', ['慣性', '摩擦', '浮力'], '慣性')],
+        explanation: '物体がそれまでの運動を続けようとする性質を**慣性**といいます。電車が止まっても、からだは前へ動き続けようとするので、前へかたむきます。',
+        hint: '「それまでの運動を続けようとする性質」の名前だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'motion-dr2-r1', concept: 'mo-accel',
+        prompt: '摩擦のない上りの斜面を、台車が上っていきます。台車の速さはどうなる？',
+        options: ['しだいに大きくなる', 'しだいに小さくなる', '一定のまま変わらない'],
+        answer: 'b',
+        explanation: '上りの斜面では、重力の斜面に平行な分力が、運動と反対向きにはたらき続けます。そのため、台車の速さはしだいに小さくなります。',
+        hint: '斜面に平行な分力は、上向き・下向きのどちらかな。',
+      }),
+      fill({
+        id: 'motion-dr2-r2', concept: 'mo-accel',
+        prompt: '空らんに入る数を入れよう。',
+        text: '30 cm/s の一定の速さで等速直線運動をしている球は、2.5 秒間に[b1]進む。',
+        blanks: [number('b1', 75, 0, 'cm')],
+        explanation: '等速直線運動では、移動距離 ＝ 速さ × 時間 です。30 cm/s × 2.5 s ＝ 75 cm です。移動距離は時間に比例します。',
+        hint: '速さに時間をかけよう。',
+      }),
+      choice({
+        id: 'motion-dr2-r3', concept: 'mo-balance',
+        prompt: 'プールで、かべを足でけると、からだが前へ進みます。からだを進ませる力はどれ？',
+        options: ['かべが足を押し返す力', '足がかべを押す力', '水がからだにおよぼす浮力'],
+        answer: 'a',
+        explanation: '足がかべを押す力（作用）はかべにはたらき、かべが足を押し返す力（反作用）はからだにはたらきます。からだが前へ進むのは、反作用の力を受けるからです。',
+        hint: 'からだが「受ける」力を考えよう。',
+      }),
+      fill({
+        id: 'motion-dr2-r4', concept: 'mo-balance', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '物体 A が物体 B を押すとき、B が A を押し返す力を、A が B を押す力に対する[b1]という。',
+        blanks: [word('b1', ['反作用', '合力', '分力'], '反作用')],
+        explanation: '一方の力を作用とすると、もう一方の力を**反作用**といいます。2 力は別々の物体にはたらき、大きさが等しく、向きは反対です。',
+        hint: '「作用」と対になる言葉だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ motion-dr3: ドリル 3 水圧と浮力 ----
+  const motionDr3 = {
+    id: 'motion-dr3', areaId: 'mo-force', free: true, title: 'ドリル 3: 水圧と浮力', minutes: 6, concepts: ['mo-buoyancy'],
+    lessons: [
+      {
+        id: 'motion-dr3-c1',
+        text: '**水圧**は、その位置より上にある水の重さによって生じるので、深いほど大きくなります。水そうの側面に穴をあけると、下の穴ほど水が勢いよく飛び出します。',
+        figure: scene([
+          note(20, 22, '下の穴ほど勢いよく出る', 14),
+          ...holeTank(),
+          { type: 'line', points: [[184, 80], [198, 92], [206, 112], [210, 140]], color: 'blue', width: 2 },
+          { type: 'line', points: [[184, 130], [206, 138], [226, 156], [240, 188]], color: 'blue', width: 2 },
+          { type: 'line', points: [[184, 180], [216, 185], [246, 198], [272, 224]], color: 'blue', width: 2 },
+          note(52, 84, '浅い', 13, 'end'),
+          note(52, 184, '深い', 13, 'end'),
+        ]),
+      },
+      {
+        id: 'motion-dr3-c2',
+        anim: 'mo-buoyancy',   // 動く図の使い回し（js/anim-*.js）。figure は静止図として残す
+        text: '水中の物体では、下の面が水圧から受ける上向きの力が、上の面が受ける下向きの力より大きいので、その差が上向きの**浮力**になります。浮力は、水中にある部分の**体積**が大きいほど大きく、全体が沈んだあとは深さに関係しません。',
+        figure: scene([
+          note(20, 22, '浮力 ＝ 下の面と上の面が受ける力の差', 13),
+          { type: 'rect', x: 20, y: 34, width: 280, height: 196, fill: 'water', stroke: 'line' },
+          { type: 'rect', x: 110, y: 90, width: 100, height: 80, fill: 'gray' },
+          { type: 'arrow', x1: 160, y1: 64, x2: 160, y2: 88, color: 'blue' },
+          { type: 'arrow', x1: 160, y1: 222, x2: 160, y2: 172, color: 'blue' },
+          { type: 'arrow', x1: 76, y1: 130, x2: 108, y2: 130, color: 'blue' },
+          { type: 'arrow', x1: 244, y1: 130, x2: 212, y2: 130, color: 'blue' },
+          note(172, 72, '上の面: 小さい', 12),
+          note(172, 206, '下の面: 大きい', 12),
+        ]),
+      },
+      {
+        id: 'motion-dr3-c3',
+        text: '水に浮いて静止している物体では、物体にはたらく**重力**と浮力がつり合っているので、浮力は重力と同じ大きさです。水中で浮力が重力より小さい物体は、沈んでいきます。',
+        figure: scene([
+          note(20, 36, '浮いて静止: 浮力 ＝ 重力', 14),
+          { type: 'rect', x: 20, y: 110, width: 280, height: 120, fill: 'water', stroke: 'line' },
+          { type: 'rect', x: 120, y: 80, width: 80, height: 50, fill: 'brown' },
+          { type: 'arrow', x1: 148, y1: 105, x2: 148, y2: 175, color: 'blue' },
+          note(140, 194, '重力', 13, 'end'),
+          { type: 'arrow', x1: 172, y1: 130, x2: 172, y2: 60, color: 'blue' },
+          note(182, 66, '浮力', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'motion-dr3-w1', concept: 'mo-buoyancy',
+      prompt: '予想しよう。ペットボトルの側面の上・まん中・下に穴をあけて水を入れると、水がいちばん勢いよく飛び出すのはどの穴だと思う？',
+      options: ['上の穴', 'まん中の穴', '下の穴'],
+      answer: 'c',
+      explanation: '下の穴ほど、その上にある水が多いので、水圧が大きくなります。だから、下の穴ほど水が勢いよく飛び出します。水圧と浮力の関係を、このステージで練習しよう。',
+      hint: 'どの穴の上に、水がいちばん多くあるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'motion-dr3-p1', concept: 'mo-buoyancy',
+        prompt: '同じ物体を糸でつるし、ア 全体を浅く、イ 全体を深く、ウ 半分だけ 水に沈めました。物体にはたらく浮力がいちばん小さいのはどれ？',
+        figure: scene([
+          { type: 'rect', x: 10, y: 40, width: 300, height: 190, fill: 'water', stroke: 'line' },
+          note(14, 34, '水面', 12),
+          { type: 'line', points: [[65, 0], [65, 70]], width: 2 },
+          { type: 'rect', x: 40, y: 70, width: 50, height: 40, fill: 'gray' },
+          { type: 'line', points: [[160, 0], [160, 170]], width: 2 },
+          { type: 'rect', x: 135, y: 170, width: 50, height: 40, fill: 'gray' },
+          { type: 'line', points: [[255, 0], [255, 20]], width: 2 },
+          { type: 'rect', x: 230, y: 20, width: 50, height: 40, fill: 'gray' },
+          spot('r1', 65, 140, 'ア'),
+          spot('r2', 105, 190, 'イ'),
+          spot('r3', 255, 100, 'ウ'),
+        ]),
+        answer: 'r3',
+        explanation: '浮力は、水中にある部分の体積が大きいほど大きくなります。全体が沈んだアとイは、深さがちがっても浮力は同じです。半分しか沈んでいないウの浮力がいちばん小さくなります。',
+        hint: '浮力は「深さ」と「水中の体積」のどちらで決まるかな。',
+      }),
+      fill({
+        id: 'motion-dr3-p2', concept: 'mo-buoyancy',
+        prompt: '表は、高さ 6 cm の物体をばねばかりにつるし、底を水面から沈めていったときの記録です。空らんに入る数を入れよう。',
+        figure: scene([
+          note(10, 50, 'ばねばかりの値（物体の高さ 6 cm）', 14),
+          ...drillTable(10, 110, 38, 70, 40, [
+            ['底の深さ（cm）', '0', '2', '4', '6', '8'],
+            ['値（N）', '2.0', '1.8', '1.6', '1.4', '1.4'],
+          ]),
+        ]),
+        text: '底の深さが 4 cm のとき、物体にはたらく浮力の大きさは[b1]である。',
+        blanks: [number('b1', 0.4, 0, 'N')],
+        explanation: '深さ 0 cm（空気中）の値 2.0 N が物体の重さです。浮力 ＝ 2.0 − 1.6 ＝ 0.4 N です。',
+        hint: '浮力 ＝ 空気中の値 − 水中の値。',
+      }),
+      choice({
+        id: 'motion-dr3-p3', concept: 'mo-buoyancy',
+        prompt: '表で、底の深さを 6 cm から 8 cm にしても、ばねばかりの値は 1.4 N のままでした。その理由はどれ？',
+        figure: scene([
+          note(10, 50, 'ばねばかりの値（物体の高さ 6 cm）', 14),
+          ...drillTable(10, 110, 38, 70, 40, [
+            ['底の深さ（cm）', '0', '2', '4', '6', '8'],
+            ['値（N）', '2.0', '1.8', '1.6', '1.4', '1.4'],
+          ]),
+        ]),
+        options: ['深いほど水圧が小さくなるから', '全体が沈むと浮力は変わらないから', '物体の重さが軽くなったから'],
+        answer: 'b',
+        explanation: '物体の高さは 6 cm なので、深さ 6 cm で全体が水中に入ります。そのあとは、水中の体積が変わらないので、浮力（0.6 N）も変わりません。',
+        hint: '物体の高さは 6 cm。深さ 6 cm でどうなったかな。',
+      }),
+      fill({
+        id: 'motion-dr3-p4', concept: 'mo-buoyancy',
+        prompt: '空らんに入る数を入れよう。',
+        text: '重さ 3 N の木片が、水に浮いて静止している。木片にはたらく浮力の大きさは[b1]である。',
+        blanks: [number('b1', 3, 0, 'N')],
+        explanation: '浮いて静止している物体では、浮力と重力がつり合っています。だから、浮力は重力と同じ 3 N です。',
+        hint: '静止しているとき、上向きと下向きの力の大きさはどうなっているかな。',
+      }),
+      choice({
+        id: 'motion-dr3-p5', concept: 'mo-buoyancy',
+        prompt: '体積が同じ鉄の球とアルミニウムの球を、ばねばかりにつるして全体を水に沈めました。それぞれにはたらく浮力はどうなる？',
+        options: ['鉄の球のほうが大きい', 'アルミニウムの球のほうが大きい', 'どちらも同じ'],
+        answer: 'c',
+        explanation: '浮力の大きさは、水中にある部分の体積で決まり、物体の重さや材料には関係しません。体積が同じなら、浮力も同じです。',
+        hint: '浮力は、物体の重さで決まるかな、体積で決まるかな。',
+      }),
+      fill({
+        id: 'motion-dr3-t1', concept: 'mo-buoyancy', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '浮力は、水中の物体の下の面と上の面が受ける[b1]の差によって生じる。',
+        blanks: [word('b1', ['水圧', '重力', '摩擦力'], '水圧')],
+        explanation: '深いほど**水圧**が大きいので、物体の下の面は上の面より大きな水圧を受けます。その差が上向きの浮力です。',
+        hint: '深いほど大きくなる圧力だよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'motion-dr3-r1', concept: 'mo-buoyancy',
+        prompt: '空らんに入る数を入れよう。',
+        text: '面積 0.02 m² の水そうの底に、重さ 40 N の水がのっている。底が受ける水圧は[b1]である。',
+        blanks: [number('b1', 2000, 0, 'Pa')],
+        explanation: '圧力 ＝ 面を垂直に押す力 ÷ 面積 です。40 N ÷ 0.02 m² ＝ 2000 Pa です。水圧も、水の重さによる圧力です。',
+        hint: '力を面積でわろう。',
+      }),
+      choice({
+        id: 'motion-dr3-r2', concept: 'mo-buoyancy',
+        prompt: '水中で手をはなすと沈んでいく物体について、正しいのはどれ？',
+        options: ['浮力が重力より小さい', '浮力がはたらいていない', '浮力が重力より大きい'],
+        answer: 'a',
+        explanation: '水中の物体にも浮力ははたらいています。浮力が重力より小さいと、物体は沈みます。浮力が重力より大きいと浮き上がります。',
+        hint: '沈む物体にも浮力ははたらいているよ。',
+      }),
+      figureChoice({
+        id: 'motion-dr3-r3', concept: 'mo-buoyancy',
+        prompt: '水そうの側面のア（上）・イ（まん中）・ウ（下）の穴をふさいでいます。穴をふさいでいる栓が受ける水圧がいちばん小さいのはどれ？',
+        figure: scene([
+          ...holeTank(),
+          spot('r1', 215, 80, 'ア'),
+          spot('r2', 215, 130, 'イ'),
+          spot('r3', 215, 180, 'ウ'),
+        ]),
+        answer: 'r1',
+        explanation: '水圧は、上にある水の重さによって生じるので、浅いほど小さくなります。いちばん浅いアの栓が受ける水圧がいちばん小さくなります。',
+        hint: '上にある水がいちばん少ない穴はどれかな。',
+      }),
+      fill({
+        id: 'motion-dr3-r4', concept: 'mo-buoyancy', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水に浮いて静止している物体では、物体にはたらく重力と[b1]がつり合っている。',
+        blanks: [word('b1', ['浮力', '水圧', '摩擦力'], '浮力')],
+        explanation: '浮いて静止している物体では、下向きの重力と上向きの**浮力**がつり合っています。',
+        hint: '水中の物体にはたらく上向きの力の名前だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ motion-dr4: ドリル 4 力の合成と分解・つり合い ----
+  const motionDr4 = {
+    id: 'motion-dr4', areaId: 'mo-force', free: true, title: 'ドリル 4: 力の合成と分解・つり合い', minutes: 7, concepts: ['mo-compose', 'mo-balance'],
+    lessons: [
+      {
+        id: 'motion-dr4-c1',
+        text: '1 つの物体に 3 つの力がはたらいて静止しているとき、2 つの力の**合力**は、残りの 1 つの力とつり合っています。2 本の糸でつるしたおもりでは、2 本の糸が引く力の合力が、重力とつり合います。',
+        // 結び目 (160,110)。糸の力（青、50px）2 本の合力（緑、80px）と重力（青、80px）
+        figure: scene([
+          { type: 'rect', x: 40, y: 10, width: 240, height: 8, fill: 'gray', stroke: 'line' },
+          { type: 'line', points: [[90, 18], [160, 110], [230, 18]], color: 'brown', width: 2 },
+          { type: 'line', points: [[160, 110], [160, 130]], width: 2 },
+          { type: 'rect', x: 135, y: 130, width: 50, height: 40, fill: 'gray' },
+          { type: 'arrow', x1: 160, y1: 110, x2: 130, y2: 70, color: 'blue' },
+          { type: 'arrow', x1: 160, y1: 110, x2: 190, y2: 70, color: 'blue' },
+          { type: 'arrow', x1: 160, y1: 110, x2: 160, y2: 30, color: 'green' },
+          { type: 'arrow', x1: 160, y1: 150, x2: 160, y2: 230, color: 'blue' },
+          note(122, 76, '糸の力', 12, 'end'),
+          note(168, 42, '合力', 12),
+          note(168, 226, '重力', 12),
+        ]),
+      },
+      {
+        id: 'motion-dr4-c2',
+        text: '2 本の糸でおもりをつるすとき、糸のあいだの角度を大きくすると、糸がおもりを引く力（**張力**）は大きくなります。合力は重力と同じ大きさのままなので、分力が大きくなるのです。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 10, width: 130, height: 8, fill: 'gray', stroke: 'line' },
+          { type: 'line', points: [[65, 18], [85, 140], [105, 18]], color: 'brown', width: 2 },
+          { type: 'rect', x: 70, y: 140, width: 30, height: 30, fill: 'gray' },
+          { type: 'rect', x: 170, y: 10, width: 140, height: 8, fill: 'gray', stroke: 'line' },
+          { type: 'line', points: [[175, 18], [240, 90], [305, 18]], color: 'brown', width: 2 },
+          { type: 'rect', x: 225, y: 90, width: 30, height: 30, fill: 'gray' },
+          note(85, 200, '角度が小さい', 13, 'middle'),
+          note(240, 160, '角度が大きい', 13, 'middle'),
+          note(240, 184, '→ 糸の力が大きい', 13, 'middle'),
+        ]),
+      },
+      {
+        id: 'motion-dr4-c3',
+        text: '斜面上に静止している物体では、重力の斜面に平行な分力と**摩擦力**が、斜面に垂直な分力と**垂直抗力**が、それぞれつり合っています。',
+        figure: scene([
+          ...slopeBlock(),
+          { type: 'arrow', x1: 131, y1: 127, x2: 167, y2: 109, color: 'green' },
+          { type: 'arrow', x1: 131, y1: 127, x2: 111, y2: 87, color: 'green' },
+          note(174, 106, '摩擦力', 13),
+          note(104, 80, '垂直抗力', 13, 'end'),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'motion-dr4-w1', concept: 'mo-compose',
+      prompt: '予想しよう。重いバッグを 2 人で持ちます。2 人の手のあいだを広げて、ひもが V 字に開くようにすると、1 人が出す力はどうなると思う？',
+      options: ['小さくなる', '大きくなる', '変わらない'],
+      answer: 'b',
+      explanation: '2 人の力の合力は、いつもバッグの重さと同じでなければなりません。2 力のあいだの角度が大きいほど合力は小さくなるので、同じ合力を出すには 1 人の力を大きくする必要があります。',
+      hint: '2 力の角度が大きいと、合力はどうなったかな。',
+    }),
+    problems: [
+      drag({
+        id: 'motion-dr4-p1', concept: 'mo-balance',
+        prompt: '方眼の点 O に、力 A（右向き）と力 B（上向き）がはたらいています。力 C を加えて 3 力をつり合わせます。力 C の矢印の先に、青い印を動かして置こう。',
+        // O(160,120)、A の先 (240,120)、B の先 (160,40)。合力の先 (240,40)。C の先 ＝ (80,200)。不正解例は合力の先 (240,40)
+        figure: scene(balanceGrid([240, 120], [160, 40])),
+        draggable: { itemId: 'mark', axis: 'xy' },
+        target: { x: 80, y: 200 },
+        samples: { correct: { x: 80, y: 200 }, wrong: { x: 240, y: 40 } },
+        explanation: 'まず力 A と力 B の合力を平行四辺形でかくと、右へ 2・上へ 2 目盛りの矢印になります。力 C は、この合力とつり合うので、同じ大きさで反対向き（左へ 2・下へ 2 目盛り）です。',
+        hint: '力 A と力 B の合力をかいてから、その反対向きを考えよう。',
+      }),
+      choice({
+        id: 'motion-dr4-p2', concept: 'mo-compose',
+        prompt: 'おもりを 2 本の糸でつるし、糸のあいだの角度を 60° から 120° に広げました。糸 1 本がおもりを引く力の大きさはどうなる？',
+        options: ['小さくなる', '大きくなる', '変わらない'],
+        answer: 'b',
+        explanation: '2 本の糸の力の合力は、いつもおもりの重さと同じです。2 力のあいだの角度が大きいほど、同じ合力を出すのに必要な力が大きくなるので、糸 1 本の力は大きくなります。',
+        hint: '合力の大きさは変わらないよ。角度が大きいと、2 力はどれだけ必要かな。',
+      }),
+      fill({
+        id: 'motion-dr4-p3', concept: 'mo-compose',
+        prompt: '空らんに入る数を入れよう。',
+        text: '重さ 6 N のおもりを、2 本の糸で真上に同じ大きさの力で引いて支えた。糸 1 本がおもりを引く力は[b1]である。',
+        blanks: [number('b1', 3, 0, 'N')],
+        explanation: '2 本の糸の力は同じ向き（真上）なので、合力は 2 力の和です。合力が重さ 6 N とつり合うので、1 本の力は 6 ÷ 2 ＝ 3 N です。',
+        hint: '同じ向きの 2 力の合力は和。それが 6 N になるよ。',
+      }),
+      figureChoice({
+        id: 'motion-dr4-p4', concept: 'mo-balance',
+        prompt: '斜面上に静止している木片にはたらく力です（ア 斜面に沿って上向き、イ 斜面に垂直で外向き、ウ 斜面に沿って下向き）。摩擦力はどれ？',
+        figure: scene([
+          ...slopeBlock(),
+          { type: 'arrow', x1: 131, y1: 127, x2: 185, y2: 100, color: 'green' },
+          { type: 'arrow', x1: 131, y1: 127, x2: 104, y2: 73, color: 'green' },
+          { type: 'arrow', x1: 131, y1: 127, x2: 77, y2: 154, color: 'green' },
+          spot('r1', 210, 86, 'ア'),
+          spot('r2', 92, 46, 'イ'),
+          spot('r3', 56, 152, 'ウ'),
+        ]),
+        answer: 'r1',
+        explanation: '木片は、重力の斜面に平行な分力によって斜面を下へすべろうとします。摩擦力はそれをさまたげる向き、つまり斜面に沿って上向き（ア）にはたらき、平行な分力とつり合います。イは垂直抗力、ウは重力の斜面に平行な分力です。',
+        hint: '摩擦力は、物体が動こうとする向きと反対にはたらくよ。',
+      }),
+      choice({
+        id: 'motion-dr4-p5', concept: 'mo-compose',
+        prompt: '斜面の傾きを小さくしていくと、物体にはたらく重力の「斜面に垂直な分力」はどうなる？',
+        options: ['小さくなる', '変わらない', '大きくなる'],
+        answer: 'c',
+        explanation: '斜面の傾きが小さくなるほど、重力は斜面に垂直な向きに近づくので、垂直な分力は大きくなり、平行な分力は小さくなります。傾きが 0（水平）のとき、垂直な分力は重力と同じになります。',
+        hint: '水平な床（傾き 0）のときを考えてみよう。',
+      }),
+      fill({
+        id: 'motion-dr4-t1', concept: 'mo-compose', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '糸やひもが、つないだ物体を引く力を[b1]という。',
+        blanks: [word('b1', ['張力', '弾性力', '垂直抗力'], '張力')],
+        explanation: '糸やひもが物体を引く力を**張力**といいます。2 本の糸でつるすとき、2 本の張力の合力が重力とつり合います。',
+        hint: '糸が「ぴんと張る」ときの力だよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'motion-dr4-r1', concept: 'mo-compose',
+        prompt: '1 つの力を 2 つの向きの分力に分解するとき、分力はどのように求める？',
+        options: ['もとの力を対角線とする平行四辺形の 2 辺', 'もとの力を 1 辺とする平行四辺形の対角線', 'もとの力を半分にした 2 つの力'],
+        answer: 'a',
+        explanation: '力の分解は、合成の逆です。もとの力が対角線になるように、分けたい 2 つの向きを 2 辺とする平行四辺形をかくと、その 2 辺が分力です。',
+        hint: '合成では、2 力が 2 辺、合力が対角線だったね。',
+      }),
+      drag({
+        id: 'motion-dr4-r2', concept: 'mo-compose',
+        prompt: '方眼の点 O に、力 A（右向き）と力 B（上向き）がはたらいています。力 C を加えて 3 力をつり合わせます。力 C の矢印の先に、青い印を動かして置こう。',
+        // O(160,120)、A の先 (240,120)、B の先 (160,80)。合力の先 (240,80)。C の先 ＝ (80,160)。不正解例は合力の先 (240,80)
+        figure: scene(balanceGrid([240, 120], [160, 80])),
+        draggable: { itemId: 'mark', axis: 'xy' },
+        target: { x: 80, y: 160 },
+        samples: { correct: { x: 80, y: 160 }, wrong: { x: 240, y: 80 } },
+        explanation: '力 A と力 B の合力は、右へ 2・上へ 1 目盛りの矢印です。力 C はこの合力と同じ大きさで反対向きなので、O から左へ 2・下へ 1 目盛りのところが矢印の先です。',
+        hint: 'まず合力をかいて、O をはさんだ反対側に同じ長さで置こう。',
+      }),
+      choice({
+        id: 'motion-dr4-r3', concept: 'mo-balance',
+        prompt: '斜面上に静止している木片で、重力の「斜面に垂直な分力」とつり合っている力はどれ？',
+        options: ['摩擦力', '垂直抗力', '重力の斜面に平行な分力'],
+        answer: 'b',
+        explanation: '斜面に垂直な分力は、斜面が物体を垂直に押し返す垂直抗力とつり合っています。斜面に平行な分力とつり合っているのは摩擦力です。',
+        hint: '斜面が物体を「垂直に」押し返す力はどれかな。',
+      }),
+      fill({
+        id: 'motion-dr4-r4', concept: 'mo-balance', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '斜面や床が、その上の物体を面に垂直な向きに押し返す力を[b1]という。',
+        blanks: [word('b1', ['垂直抗力', '張力', '浮力'], '垂直抗力')],
+        explanation: '面が物体を垂直に押し返す力を**垂直抗力**といいます。床の上で静止している物体では、重力とつり合っています。',
+        hint: '「垂直」に「抗う（さからう）」力だよ。',
+      }),
+      fill({
+        id: 'motion-dr4-r5', concept: 'mo-balance',
+        prompt: '空らんに入る数を入れよう。',
+        text: '天井から 1 本の糸でつるした重さ 2.5 N のおもりが静止している。糸がおもりを引く力は[b1]である。',
+        blanks: [number('b1', 2.5, 0, 'N')],
+        explanation: 'おもりは静止しているので、糸が引く上向きの力（張力）と、下向きの重力がつり合っています。だから糸の力は 2.5 N です。',
+        hint: '静止している物体にはたらく 2 力はつり合っているよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ motion-dr5: ドリル 5 仕事・仕事の原理・仕事率 ----
+  const motionDr5 = {
+    id: 'motion-dr5', areaId: 'mo-energy', free: true, title: 'ドリル 5: 仕事の計算・仕事の原理・仕事率', minutes: 6, concepts: ['mo-work'],
+    lessons: [
+      {
+        id: 'motion-dr5-c1',
+        text: '物体に力を加えて、その力の向きに動かしたとき、力は物体に**仕事**をしたといいます。仕事〔J〕＝ 力の大きさ〔N〕× 力の向きに動いた距離〔m〕です。動いた向きが力の向きと垂直なら、仕事は 0 です。',
+        figure: scene([
+          note(20, 36, '仕事 ＝ 力 × 力の向きに動いた距離', 14),
+          { type: 'line', points: [[20, 190], [300, 190]], color: 'line', width: 3 },
+          { type: 'rect', x: 120, y: 70, width: 60, height: 40, fill: 'white', stroke: 'gray' },
+          { type: 'rect', x: 120, y: 150, width: 60, height: 40, fill: 'sand' },
+          { type: 'arrow', x1: 150, y1: 150, x2: 150, y2: 116, color: 'blue' },
+          note(100, 140, '力', 14, 'end'),
+          { type: 'arrow', x1: 220, y1: 190, x2: 220, y2: 110, color: 'gray' },
+          note(230, 154, '動いた距離', 13),
+        ]),
+      },
+      {
+        id: 'motion-dr5-c2',
+        text: '滑車や斜面、てこなどの道具を使うと、加える力は小さくできますが、動かす距離が長くなり、仕事の大きさは変わりません。これを**仕事の原理**といいます。',
+        figure: scene([
+          note(20, 40, '斜面: 力は小さく、距離は長い', 14),
+          note(20, 64, '仕事（力 × 距離）は同じ', 14),
+          { type: 'polygon', points: [[20, 210], [300, 210], [300, 90]], fill: 'sand', stroke: 'line' },
+          { type: 'arrow', x1: 100, y1: 176, x2: 220, y2: 124, color: 'green' },
+          { type: 'line', points: [[310, 90], [310, 210]], color: 'gray', width: 2, dashed: true },
+          note(296, 82, '高さ', 13, 'end'),
+        ]),
+      },
+      {
+        id: 'motion-dr5-c3',
+        text: '1 秒間あたりにする仕事を**仕事率**といいます。仕事率〔W〕＝ 仕事〔J〕÷ かかった時間〔s〕です。同じ仕事でも、短い時間でするほど仕事率は大きくなります。',
+        figure: scene([
+          note(20, 40, '仕事率 ＝ 仕事 ÷ かかった時間', 14),
+          note(20, 84, 'A: 600 J を 10 秒 → 60 W', 13),
+          { type: 'rect', x: 20, y: 94, width: 180, height: 26, fill: 'sky', stroke: 'line' },
+          note(20, 160, 'B: 600 J を 30 秒 → 20 W', 13),
+          { type: 'rect', x: 20, y: 170, width: 60, height: 26, fill: 'sky', stroke: 'line' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'motion-dr5-w1', concept: 'mo-work',
+      prompt: '予想しよう。重い荷物を台の上へ運ぶとき、まっすぐ持ち上げる場合と、ゆるやかな坂で押し上げる場合では、加える力はどうだと思う？',
+      options: ['坂で押し上げるほうが小さい', 'まっすぐ持ち上げるほうが小さい', 'どちらも同じ'],
+      answer: 'a',
+      explanation: 'ゆるやかな坂（斜面）を使うと、加える力は小さくてすみます。ただし、坂に沿って長い距離を動かすので、仕事の大きさは同じです。仕事の原理を、このステージで練習しよう。',
+      hint: '自転車で坂道を上るとき、ゆるやかな道と急な道ではどちらが楽かな。',
+    }),
+    problems: [
+      fill({
+        id: 'motion-dr5-p1', concept: 'mo-work',
+        prompt: '空らんに入る数を入れよう。',
+        text: '物体を 25 N の力で引いて、力の向きに 1.6 m 動かした。このときの仕事は[b1]である。',
+        blanks: [number('b1', 40, 0, 'J')],
+        explanation: '仕事 ＝ 力 × 力の向きに動いた距離 ＝ 25 N × 1.6 m ＝ 40 J です。',
+        hint: '力と距離をかけよう。',
+      }),
+      figureChoice({
+        id: 'motion-dr5-p2', concept: 'mo-work',
+        prompt: 'ア 100 J の仕事を 5 秒、イ 120 J を 4 秒、ウ 200 J を 10 秒 でした 3 つの機械があります。仕事率がいちばん大きいのはどれ？',
+        figure: scene(powerCards([['100 J', '5 秒'], ['120 J', '4 秒'], ['200 J', '10 秒']])),
+        answer: 'r2',
+        explanation: '仕事率 ＝ 仕事 ÷ 時間 です。ア 100 ÷ 5 ＝ 20 W、イ 120 ÷ 4 ＝ 30 W、ウ 200 ÷ 10 ＝ 20 W なので、イがいちばん大きいです。仕事の大きさだけでは、仕事率は決まりません。',
+        hint: 'それぞれ、仕事を時間でわってくらべよう。',
+      }),
+      fill({
+        id: 'motion-dr5-p3', concept: 'mo-work',
+        prompt: '重さ 30 N の物体を、摩擦のない長さ 3 m の斜面にそって、高さ 1.2 m まで引き上げます。空らんに入る数を入れよう。',
+        text: '斜面にそって物体を引く力は[b1]である。',
+        blanks: [number('b1', 12, 0, 'N')],
+        explanation: '直接持ち上げるときの仕事は 30 N × 1.2 m ＝ 36 J です。仕事の原理より、斜面を使っても仕事は 36 J なので、引く力は 36 J ÷ 3 m ＝ 12 N です。',
+        hint: 'まず、直接持ち上げるときの仕事を求めよう。',
+      }),
+      fill({
+        id: 'motion-dr5-p4', concept: 'mo-work',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'モーターで重さ 50 N の物体を 2 m 持ち上げるのに 4 秒かかった。モーターの仕事率は[b1]である。',
+        blanks: [number('b1', 25, 0, 'W')],
+        explanation: '仕事は 50 N × 2 m ＝ 100 J です。仕事率 ＝ 100 J ÷ 4 s ＝ 25 W です。',
+        hint: '仕事を求めてから、時間でわろう。',
+      }),
+      choice({
+        id: 'motion-dr5-p5', concept: 'mo-work',
+        prompt: 'A さんは「動滑車を使えば、仕事の大きさも半分になる」と言いました。正しい考えはどれ？（滑車の重さや摩擦は考えない）',
+        options: ['力も仕事も半分になる', '力は半分、距離が 2 倍で仕事は同じ', '力は同じで、仕事が半分になる'],
+        answer: 'b',
+        explanation: '動滑車を使うと、ひもを引く力は半分になりますが、ひもを引く距離は 2 倍になります。力 × 距離 の仕事は変わりません（仕事の原理）。',
+        hint: '力が半分になると、距離はどうなったかな。',
+      }),
+      fill({
+        id: 'motion-dr5-t1', concept: 'mo-work', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'てこを使うと小さな力で物体を持ち上げられるが、押し下げる距離が長くなり、仕事の大きさは変わらない。これを[b1]という。',
+        blanks: [word('b1', ['仕事の原理', '慣性の法則', '作用・反作用の法則'], '仕事の原理')],
+        explanation: '道具を使っても仕事の大きさが変わらないことを**仕事の原理**といいます。滑車・斜面・てこのどれでも成り立ちます。',
+        hint: '「仕事」が変わらない、という決まりだよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'motion-dr5-r1', concept: 'mo-work',
+        prompt: '空らんに入る数を入れよう。（100 g の物体にはたらく重力の大きさを 1 N とする）',
+        text: '質量 1.2 kg の物体を、0.5 m の高さまで持ち上げたときの仕事は[b1]である。',
+        blanks: [number('b1', 6, 0, 'J')],
+        explanation: '1.2 kg ＝ 1200 g なので、物体にはたらく重力は 12 N です。仕事は 12 N × 0.5 m ＝ 6 J です。',
+        hint: 'まず、1.2 kg の物体にはたらく重力が何 N かを考えよう。',
+      }),
+      fill({
+        id: 'motion-dr5-r2', concept: 'mo-work',
+        prompt: '空らんに入る数を入れよう。',
+        text: '仕事率 40 W のモーターが、10 秒間にする仕事は[b1]である。',
+        blanks: [number('b1', 400, 0, 'J')],
+        explanation: '仕事率は 1 秒間あたりの仕事なので、仕事 ＝ 仕事率 × 時間 ＝ 40 W × 10 s ＝ 400 J です。',
+        hint: '1 秒間に 40 J の仕事をするよ。10 秒では？',
+      }),
+      figureChoice({
+        id: 'motion-dr5-r3', concept: 'mo-work',
+        prompt: 'ア 60 J の仕事を 3 秒、イ 90 J を 6 秒、ウ 150 J を 5 秒 でした 3 つの機械があります。仕事率がいちばん大きいのはどれ？',
+        figure: scene(powerCards([['60 J', '3 秒'], ['90 J', '6 秒'], ['150 J', '5 秒']])),
+        answer: 'r3',
+        explanation: 'ア 60 ÷ 3 ＝ 20 W、イ 90 ÷ 6 ＝ 15 W、ウ 150 ÷ 5 ＝ 30 W なので、ウがいちばん大きいです。',
+        hint: '仕事 ÷ 時間 を 3 つとも計算しよう。',
+      }),
+      fill({
+        id: 'motion-dr5-r4', concept: 'mo-work', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '仕事の大きさを、仕事にかかった時間でわった値を[b1]という。',
+        blanks: [word('b1', ['仕事率', '速さ', '電力量'], '仕事率')],
+        explanation: '仕事 ÷ 時間、つまり 1 秒間あたりの仕事を**仕事率**といい、単位はワット（W）です。',
+        hint: '仕事の「能率」を表す言葉だよ。',
+      }),
+      choice({
+        id: 'motion-dr5-r5', concept: 'mo-work',
+        prompt: '摩擦のない斜面で、物体を同じ高さまで引き上げます。斜面の長さを 2 倍にすると、斜面にそって引く力はどうなる？',
+        options: ['2 倍になる', '変わらない', '半分になる'],
+        answer: 'c',
+        explanation: '同じ高さまで引き上げる仕事は変わりません（仕事の原理）。距離が 2 倍になるので、力は半分になります。',
+        hint: '力 × 距離 が変わらないとすると……。',
+      }),
+    ],
+  };
+
+  // ---- ステージ motion-dr6: ドリル 6 力学的エネルギーとエネルギーの移り変わり ----
+  const motionDr6 = {
+    id: 'motion-dr6', areaId: 'mo-energy', free: true, title: 'ドリル 6: 力学的エネルギーとエネルギーの移り変わり', minutes: 7, concepts: ['mo-energy', 'mo-conversion'],
+    lessons: [
+      {
+        id: 'motion-dr6-c1',
+        text: '**位置エネルギー**と**運動エネルギー**の和を力学的エネルギーといいます。摩擦や空気の抵抗がなければ、物体が斜面を下っても、位置エネルギーが運動エネルギーに移り変わるだけで、和は一定に保たれます。',
+        figure: scene([
+          ...energySlope(),
+          note(150, 70, '位置 ＋ 運動 ＝ 一定', 14),
+          note(60, 196, '下るほど 位置 → 運動', 13),
+        ]),
+      },
+      {
+        id: 'motion-dr6-c2',
+        text: 'エネルギーには、電気・熱・光・音・化学・弾性などの形があり、たがいに移り変わります。**水力発電**では、ダムの水の位置エネルギーが、水車を回す運動エネルギーを経て電気エネルギーになります。',
+        figure: scene([
+          note(20, 50, '水力発電のエネルギーの移り変わり', 14),
+          { type: 'rect', x: 10, y: 90, width: 80, height: 44, fill: 'sky', label: '位置' },
+          { type: 'arrow', x1: 92, y1: 112, x2: 118, y2: 112, color: 'blue' },
+          { type: 'rect', x: 120, y: 90, width: 80, height: 44, fill: 'sky', label: '運動' },
+          { type: 'arrow', x1: 202, y1: 112, x2: 228, y2: 112, color: 'blue' },
+          { type: 'rect', x: 230, y: 90, width: 80, height: 44, fill: 'yellow', label: '電気' },
+          note(50, 160, 'ダムの水', 13, 'middle'),
+          note(160, 160, '水車', 13, 'middle'),
+          note(270, 160, '発電機', 13, 'middle'),
+        ]),
+      },
+      {
+        id: 'motion-dr6-c3',
+        text: '実際には、摩擦や空気の抵抗によって、力学的エネルギーの一部が**熱エネルギー**や音に変わります。だから、ふりこはしだいに低くまでしか上がらなくなります。それでも、エネルギーの総量は変わりません。',
+        // はなした位置（-50°）→ 反対側（40°）→ もどった位置（-30°）
+        figure: scene([
+          ...swingPath(),
+          ...[-50, 40, -30].map(d => ({ type: 'line', points: [[160, 18], bob(d)], color: 'gray', width: 1 })),
+          ...[-50, 40, -30].map(d => ({ type: 'circle', x: bob(d)[0], y: bob(d)[1], r: 10, fill: 'gray', stroke: 'ink' })),
+          note(45, 144, 'はなす', 13, 'middle'),
+          note(256, 162, '反対側', 13, 'middle'),
+          note(85, 178, 'もどる', 13, 'middle'),
+          note(20, 226, '一部が熱や音に → だんだん低く', 13),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'motion-dr6-w1', concept: 'mo-energy',
+      prompt: '予想しよう。ジェットコースターが、走り出す前に、まずいちばん高い所まで引き上げられるのはなぜだと思う？',
+      options: ['走るための位置エネルギーをためるため', '車体を軽くするため', '空気の抵抗をなくすため'],
+      answer: 'a',
+      explanation: '高い所にある物体ほど、大きな位置エネルギーをもちます。ジェットコースターは、この位置エネルギーを運動エネルギーに変えながら走ります。エネルギーの移り変わりを、このステージで確かめよう。',
+      hint: '高い所にある物体がもつエネルギーは何かな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'motion-dr6-p1', concept: 'mo-energy',
+        prompt: '摩擦のない斜面で、高さ 0.8 m の A から物体を静かにはなしました。ア 高さ 0.6 m、イ 0.4 m、ウ 0.2 m のうち、位置エネルギーと運動エネルギーが等しくなる点は？',
+        figure: scene([
+          ...energySlope(),
+          spot('r1', 117, 65, 'ア'),
+          spot('r2', 177, 105, 'イ'),
+          spot('r3', 237, 145, 'ウ'),
+        ]),
+        answer: 'r2',
+        explanation: '位置エネルギーは高さに比例します。高さが 0.8 m の半分の 0.4 m（イ）では、位置エネルギーがはじめの半分に減り、減った半分が運動エネルギーになっています。だから 2 つは等しくなります。',
+        hint: 'はじめの位置エネルギーの半分が、運動エネルギーに変わるのはどの高さかな。',
+      }),
+      fill({
+        id: 'motion-dr6-p2', concept: 'mo-energy',
+        prompt: '摩擦や空気の抵抗のないレールの上で、はじめ静止していた球を転がします。空らんに入る数を入れよう。',
+        text: '球の位置エネルギーが 12 J から 5 J に減ったとき、球の運動エネルギーは[b1]である。',
+        blanks: [number('b1', 7, 0, 'J')],
+        explanation: '力学的エネルギーは一定に保たれるので、減った位置エネルギー 12 − 5 ＝ 7 J が、運動エネルギーになっています。はじめは静止していたので、運動エネルギーは 0 J から 7 J になりました。',
+        hint: '位置エネルギーが減った分は、どこへいったかな。',
+      }),
+      choice({
+        id: 'motion-dr6-p3', concept: 'mo-conversion',
+        prompt: '水力発電で、エネルギーが移り変わる順として正しいのはどれ？',
+        options: ['運動 → 位置 → 電気', '位置 → 運動 → 電気', '電気 → 運動 → 位置'],
+        answer: 'b',
+        explanation: '高い所にあるダムの水は位置エネルギーをもっています。水が流れ落ちて水車を回す（運動エネルギー）と、発電機が電気エネルギーをつくります。',
+        hint: 'ダムの水は、まず高い所にあるね。',
+      }),
+      choice({
+        id: 'motion-dr6-p4', concept: 'mo-conversion',
+        prompt: 'ふりこをしばらくふらせておくと、しだいに低くまでしか上がらなくなります。その理由はどれ？',
+        options: ['力学的エネルギーの一部が熱や音に変わるから', 'エネルギーの総量が減っていくから', 'おもりにはたらく重力が小さくなるから'],
+        answer: 'a',
+        explanation: '摩擦や空気の抵抗によって、力学的エネルギーの一部が熱や音のエネルギーに変わります。力学的エネルギーは減りますが、熱や音もふくめたエネルギーの総量は変わりません。',
+        hint: '減ったエネルギーは、消えたのではなく別の形になったよ。',
+      }),
+      fill({
+        id: 'motion-dr6-p5', concept: 'mo-energy',
+        prompt: '空気の抵抗はないものとします。空らんに入る数を入れよう。',
+        text: '重さ 4 N の球を高さ 0.5 m から落とした。床に当たる直前の球の運動エネルギーは[b1]である。',
+        blanks: [number('b1', 2, 0, 'J')],
+        explanation: '高さ 0.5 m の球の位置エネルギーは、球を 0.5 m 持ち上げる仕事と同じ 4 N × 0.5 m ＝ 2 J です。床に当たる直前には、これがすべて運動エネルギーになっています。',
+        hint: '球を 0.5 m 持ち上げる仕事を求めよう。',
+      }),
+      fill({
+        id: 'motion-dr6-t1', concept: 'mo-conversion', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電池や食べ物、燃料などの物質がもっているエネルギーを[b1]という。',
+        blanks: [word('b1', ['化学エネルギー', '熱エネルギー', '弾性エネルギー'], '化学エネルギー')],
+        explanation: '物質がもっていて、化学変化によって取り出せるエネルギーを**化学エネルギー**といいます。燃料を燃やすと熱や光に、電池では電気に変わります。',
+        hint: '化学変化で取り出せるエネルギーだよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'motion-dr6-r1', concept: 'mo-energy',
+        prompt: '摩擦や空気の抵抗はないものとします。空らんに入る数を入れよう。',
+        text: '位置エネルギーが 10 J の物体を斜面の上で静かにはなした。位置エネルギーが 4 J になる点での運動エネルギーは[b1]である。',
+        blanks: [number('b1', 6, 0, 'J')],
+        explanation: '力学的エネルギー（位置 ＋ 運動）は 10 J のまま一定です。位置エネルギーが 4 J なら、運動エネルギーは 10 − 4 ＝ 6 J です。',
+        hint: '位置と運動の和は、いつも 10 J だよ。',
+      }),
+      figureChoice({
+        id: 'motion-dr6-r2', concept: 'mo-energy',
+        prompt: '摩擦のない斜面で、高さ 0.8 m の A から物体を静かにはなしました。ア 高さ 0.6 m、イ 0.4 m、ウ 0.2 m のうち、運動エネルギーが位置エネルギーの 3 倍になる点は？',
+        figure: scene([
+          ...energySlope(),
+          spot('r1', 117, 65, 'ア'),
+          spot('r2', 177, 105, 'イ'),
+          spot('r3', 237, 145, 'ウ'),
+        ]),
+        answer: 'r3',
+        explanation: '高さ 0.2 m（ウ）では、位置エネルギーははじめの 4 分の 1 です。残りの 4 分の 3 が運動エネルギーになっているので、運動エネルギーは位置エネルギーの 3 倍です。',
+        hint: '力学的エネルギーを 4 つに分けて考えよう。',
+      }),
+      choice({
+        id: 'motion-dr6-r3', concept: 'mo-conversion',
+        prompt: '電気エネルギーを、おもに音エネルギーに変える道具はどれ？',
+        options: ['発電機', 'スピーカー', '光電池'],
+        answer: 'b',
+        explanation: 'スピーカーは、電気エネルギーで振動板をふるわせて音を出します。発電機は運動エネルギーを電気エネルギーに、光電池は光エネルギーを電気エネルギーに変えます。',
+        hint: '音を出す道具はどれかな。',
+      }),
+      fill({
+        id: 'motion-dr6-r4', concept: 'mo-conversion', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '引きのばしたばねやゴムなど、変形した物体がもっているエネルギーを[b1]という。',
+        blanks: [word('b1', ['弾性エネルギー', '化学エネルギー', '電気エネルギー'], '弾性エネルギー')],
+        explanation: '変形した物体が、もとにもどろうとしてもつエネルギーを**弾性エネルギー**といいます。ゴムを引いてはなすと、物体を飛ばす仕事ができます。',
+        hint: 'ばねの「弾性力」と同じ言葉が入るよ。',
+      }),
+      choice({
+        id: 'motion-dr6-r5', concept: 'mo-conversion',
+        prompt: 'たき火で木を燃やすと、木がもっていた化学エネルギーは、おもに何に変わる？',
+        options: ['電気エネルギー', '位置エネルギー', '熱エネルギーと光エネルギー'],
+        answer: 'c',
+        explanation: '木が燃えると、化学エネルギーがおもに熱エネルギーと光エネルギーに変わり、まわりをあたため、明るくします。',
+        hint: 'たき火にあたると、何を感じるかな。',
       }),
     ],
   };
@@ -3005,9 +4032,9 @@
     mascot: 'E',   // 担当の先生（キューブ先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'mo-force', title: '力と運動', order: 1, stages: [motion1, motion2] },
-      { id: 'mo-energy', title: '運動とエネルギー', order: 2, stages: [motion3, motion4] },
-      { id: 'mo-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [motionMp1, motionMp2, motionMp3, motionMp4, motionMp5, motionMp6, motionMp7, motionMp8, motionMp9, motionMp10, motionMp11, motionMp12] },
+      // 2026-11-21: 分野でまとめた。基本 → プリント → ドリル（プリント・ドリルは free のステージ）
+      { id: 'mo-force', title: '力と運動', order: 1, stages: [motion1, motion2, motionMp1, motionMp2, motionMp3, motionMp4, motionMp5, motionMp6, motionDr1, motionDr2, motionDr3, motionDr4] },
+      { id: 'mo-energy', title: '運動とエネルギー', order: 2, stages: [motion3, motion4, motionMp7, motionMp8, motionMp9, motionMp10, motionMp11, motionMp12, motionDr5, motionDr6] },
     ],
   };
 

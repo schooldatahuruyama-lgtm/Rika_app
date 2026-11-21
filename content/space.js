@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通資料の「共通のデータの形」を参照）。
 // 2 領域 × 2 ステージ（地球の動きと天体の見え方: 日周運動、年周運動と季節 / 太陽系: 月の満ち欠けと日食・月食、太陽と太陽系）と、概念 6 つ。
 // 領域 3「ミニプリント」: 先生のミニプリントの問題を書き直した 10 ステージ（space-mp1〜10）と、概念 1 つ（sp-universe）を追加。
+// 領域 4「ドリル」: 中学理科の天体のテーマに合わせて自作した 5 ステージ（space-dr1〜5）。新しい概念はなし。
 // 概念 id・領域 id は全単元で一意にするため、接頭辞 sp- を付ける。
 // 図（scene）の item は js/figures.js の定義に従う（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
@@ -1154,7 +1155,7 @@
 
   // ---- ステージ space-mp1: プリント 1 太陽系の惑星と太陽 ----
   const spaceMp1 = {
-    id: 'space-mp1', areaId: 'sp-miniprint', title: 'プリント 1: 太陽系の惑星と太陽', minutes: 5, concepts: ['sp-sun'],
+    id: 'space-mp1', areaId: 'sp-solar', free: true, title: 'プリント 1: 太陽系の惑星と太陽', minutes: 5, concepts: ['sp-sun'],
     lessons: [
       {
         id: 'space-mp1-c1',
@@ -1339,7 +1340,7 @@
 
   // ---- ステージ space-mp2: プリント 2 銀河と地球の自転 ----
   const spaceMp2 = {
-    id: 'space-mp2', areaId: 'sp-miniprint', title: 'プリント 2: 銀河と地球の自転', minutes: 5, concepts: ['sp-sun', 'sp-rotation'],
+    id: 'space-mp2', areaId: 'sp-earth', free: true, title: 'プリント 2: 銀河と地球の自転', minutes: 5, concepts: ['sp-sun', 'sp-rotation'],
     lessons: [
       {
         id: 'space-mp2-c1',
@@ -1512,7 +1513,7 @@
 
   // ---- ステージ space-mp3: プリント 3 透明半球と黄道 ----
   const spaceMp3 = {
-    id: 'space-mp3', areaId: 'sp-miniprint', title: 'プリント 3: 透明半球と黄道', minutes: 5, concepts: ['sp-hemisphere', 'sp-revolution'],
+    id: 'space-mp3', areaId: 'sp-earth', free: true, title: 'プリント 3: 透明半球と黄道', minutes: 5, concepts: ['sp-hemisphere', 'sp-revolution'],
     lessons: [
       {
         id: 'space-mp3-c1',
@@ -1680,7 +1681,7 @@
 
   // ---- ステージ space-mp4: プリント 4 季節と南中高度 ----
   const spaceMp4 = {
-    id: 'space-mp4', areaId: 'sp-miniprint', title: 'プリント 4: 季節と南中高度', minutes: 5, concepts: ['sp-season'],
+    id: 'space-mp4', areaId: 'sp-earth', free: true, title: 'プリント 4: 季節と南中高度', minutes: 5, concepts: ['sp-season'],
     lessons: [
       {
         id: 'space-mp4-c1',
@@ -1822,7 +1823,7 @@
 
   // ---- ステージ space-mp5: プリント 5 星の日周運動と年周運動 ----
   const spaceMp5 = {
-    id: 'space-mp5', areaId: 'sp-miniprint', title: 'プリント 5: 星の日周運動と年周運動', minutes: 5, concepts: ['sp-rotation', 'sp-revolution'],
+    id: 'space-mp5', areaId: 'sp-earth', free: true, title: 'プリント 5: 星の日周運動と年周運動', minutes: 5, concepts: ['sp-rotation', 'sp-revolution'],
     lessons: [
       {
         id: 'space-mp5-c1',
@@ -1989,7 +1990,7 @@
   }
   const STAR_CHOICES = '（ア オリオン座、イ しし座、ウ さそり座、エ ペガスス座）';
   const spaceMp6 = {
-    id: 'space-mp6', areaId: 'sp-miniprint', title: 'プリント 6: 夜に見える星座と方角', minutes: 5, concepts: ['sp-revolution'],
+    id: 'space-mp6', areaId: 'sp-earth', free: true, title: 'プリント 6: 夜に見える星座と方角', minutes: 5, concepts: ['sp-revolution'],
     lessons: [
       {
         id: 'space-mp6-c1',
@@ -2125,7 +2126,7 @@
 
   // ---- ステージ space-mp7: プリント 7 星の位置と時刻・月日の計算 ----
   const spaceMp7 = {
-    id: 'space-mp7', areaId: 'sp-miniprint', title: 'プリント 7: 星の位置と時刻・月日の計算', minutes: 5, concepts: ['sp-rotation', 'sp-revolution'],
+    id: 'space-mp7', areaId: 'sp-earth', free: true, title: 'プリント 7: 星の位置と時刻・月日の計算', minutes: 5, concepts: ['sp-rotation', 'sp-revolution'],
     lessons: [
       {
         id: 'space-mp7-c1',
@@ -2277,7 +2278,7 @@
 
   // ---- ステージ space-mp8: プリント 8 宇宙の見方の歴史と時差 ----
   const spaceMp8 = {
-    id: 'space-mp8', areaId: 'sp-miniprint', title: 'プリント 8: 宇宙の見方の歴史と時差', minutes: 5, concepts: ['sp-universe', 'sp-rotation'],
+    id: 'space-mp8', areaId: 'sp-earth', free: true, title: 'プリント 8: 宇宙の見方の歴史と時差', minutes: 5, concepts: ['sp-universe', 'sp-rotation'],
     lessons: [
       {
         id: 'space-mp8-c1',
@@ -2441,7 +2442,7 @@
 
   // ---- ステージ space-mp9: プリント 9 惑星の見え方と金星の満ち欠け ----
   const spaceMp9 = {
-    id: 'space-mp9', areaId: 'sp-miniprint', title: 'プリント 9: 惑星の見え方と金星の満ち欠け', minutes: 5, concepts: ['sp-sun'],
+    id: 'space-mp9', areaId: 'sp-solar', free: true, title: 'プリント 9: 惑星の見え方と金星の満ち欠け', minutes: 5, concepts: ['sp-sun'],
     lessons: [
       {
         id: 'space-mp9-c1',
@@ -2569,7 +2570,7 @@
 
   // ---- ステージ space-mp10: プリント 10 月の満ち欠けと日食・月食 ----
   const spaceMp10 = {
-    id: 'space-mp10', areaId: 'sp-miniprint', title: 'プリント 10: 月の満ち欠けと日食・月食', minutes: 5, concepts: ['sp-moon'],
+    id: 'space-mp10', areaId: 'sp-solar', free: true, title: 'プリント 10: 月の満ち欠けと日食・月食', minutes: 5, concepts: ['sp-moon'],
     lessons: [
       {
         id: 'space-mp10-c1',
@@ -2707,6 +2708,973 @@
         answer: 'a',
         explanation: '皆既日食で太陽の表面がかくれると、ふだんは明るすぎて見えないコロナが、月のまわりに見えます。',
         hint: '太陽の外側に広がる大気だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
+  // 領域 4: ドリル（中学理科のテーマ「天体の 1 日の動き」「天体の 1 年の動き」「月や惑星の運動と見え方」「太陽系と恒星」に合わせて自作した練習問題）
+  // ステージは「ドリル 1」〜「ドリル 5」。既存の問いと重ならないよう、天球・経度と南中時刻・南中時刻のずれ・光の当たり方・
+  // 月の位置の変化と自転・投影板・天文単位・太陽系外縁天体・流星・銀河系の形と光年を中心にした
+  // ================================================================
+
+  // ---- 北の空（北極星 (160, 110) を中心に、星は半径 90 の円をえがく。東が右、西が左） ----
+  const NSKY_C = [160, 110], NSKY_R = 90;
+  function northStarAt(deg) { return onCircle(NSKY_C[0], NSKY_C[1], NSKY_R, deg); }
+  function northSky() {
+    return [
+      { type: 'rect', x: 0, y: 0, width: 320, height: 226, fill: '#F3F6FB', stroke: 'none' },
+      { type: 'line', points: [[4, 226], [316, 226]], color: 'brown', width: 3 },
+      arcLine(NSKY_C[0], NSKY_C[1], NSKY_R, 0, 360, { color: 'gray', width: 1.5, dashed: true }),
+      { type: 'circle', x: NSKY_C[0], y: NSKY_C[1], r: 5, fill: 'yellow', stroke: 'orange' },
+      txt(172, 106, '北極星', 12),
+      txt(160, 238, '北', 13, 'middle', true),
+      txt(310, 220, '東', 13, 'end', true),
+      txt(10, 220, '西', 13, null, true),
+    ];
+  }
+
+  // ---- 光の束が地面を照らすようす（地面 y 190。alt は太陽の高度。光は左上から） ----
+  function beam(cx, alt) {
+    const w = 24, d = 80;
+    const L = w / Math.sin(alt * D);
+    const g1 = cx - L / 2, g2 = cx + L / 2;
+    const ox = d * Math.cos(alt * D), oy = d * Math.sin(alt * D);
+    return [
+      { type: 'polygon', points: [[g1, 190], [g2, 190], [g2 - ox, 190 - oy], [g1 - ox, 190 - oy]].map(p => [r1(p[0]), r1(p[1])]), fill: '#FFE9A8', stroke: 'orange' },
+      { type: 'line', points: [[r1(g1), 190], [r1(g2), 190]], color: 'red', width: 5 },
+    ];
+  }
+  function ground() { return { type: 'line', points: [[4, 190], [316, 190]], color: 'brown', width: 3 }; }
+
+  // ---- 夕方 6 時の南〜西の空（南を向いて見る。西が右） ----
+  function eveningSky() {
+    return [
+      { type: 'rect', x: 0, y: 0, width: 320, height: 200, fill: '#F3F6FB', stroke: 'none' },
+      { type: 'line', points: [[4, 200], [316, 200]], color: 'brown', width: 3 },
+      txt(150, 220, '南', 13, 'middle', true),
+      txt(230, 220, '南西', 13, 'middle', true),
+      txt(304, 220, '西', 13, 'middle', true),
+      txt(4, 20, '夕方 6 時に南を向いて見た空', 12),
+    ];
+  }
+
+  // ---- 銀河系を真横から見た図（中心 (160, 120)） ----
+  function galaxySide() {
+    return [
+      { type: 'ellipse', x: 160, y: 120, rx: 140, ry: 16, fill: '#E6E0F5', stroke: 'line' },
+      { type: 'ellipse', x: 160, y: 120, rx: 34, ry: 24, fill: '#D6CCEF', stroke: 'line' },
+      txt(160, 30, '銀河系を真横から見た図', 12, 'middle'),
+    ];
+  }
+
+  // ---- ステージ space-dr1: ドリル 1 天体の 1 日の動き ----
+  const spaceDr1 = {
+    id: 'space-dr1', areaId: 'sp-earth', free: true, title: 'ドリル 1: 天体の 1 日の動き', minutes: 6, concepts: ['sp-rotation', 'sp-hemisphere'],
+    lessons: [
+      {
+        id: 'space-dr1-c1',
+        text: '星や太陽はとても遠くにあるので、観測者を中心とする大きな球面にはりついているように見えます。この見かけの球面を**天球**といい、観測者の真上の点を**天頂**といいます。天球は、地軸をのばした線を軸にして、東から西へ回って見えます。',
+        // 透明半球と同じ向き（北側から南を向いて見下ろす）。観測者は中心、天頂は真上
+        figure: scene(hemisphereBase().concat([
+          { type: 'line', points: [[HX, 108], [HX, 62]], color: 'gray', width: 1.5, dashed: true },
+          { type: 'circle', x: HX, y: HY, r: 4, fill: 'ink', stroke: 'none' },
+          txt(176, 166, '観測者', 12),
+          { type: 'circle', x: HX, y: 57, r: 5, fill: 'blue', stroke: 'none' },
+          txt(172, 52, '天頂', 13, null, true),
+          txt(4, 20, '天球（半分をかいた図）', 12),
+          txt(316, 20, '天体は東から西へ回る', 12, 'end'),
+        ])),
+      },
+      {
+        id: 'space-dr1-c2',
+        text: '北の空の星は、**北極星**を中心に、1 時間に約 15° ずつ反時計回りに回って見えます。2 時間では約 30°、6 時間では約 90° 回ります。回った角度を 15° でわると、観察した時間が分かります。',
+        // 北の空。20 時の星（下）が 22 時には反時計回りに 30° 回る
+        figure: scene(northSky().concat([
+          arcLine(NSKY_C[0], NSKY_C[1], NSKY_R, 272, 298, { color: 'blue', width: 3, arrow: true }),
+          { type: 'circle', x: northStarAt(270)[0], y: northStarAt(270)[1], r: 5, fill: 'ink', stroke: 'none' },
+          { type: 'circle', x: northStarAt(300)[0], y: northStarAt(300)[1], r: 5, fill: 'ink', stroke: 'none' },
+          txt(150, 216, '20 時', 12, 'end'),
+          txt(214, 204, '22 時', 12),
+          txt(208, 160, '30°', 13, null, true),
+          txt(4, 20, '北の空：1 時間に約 15° 反時計回り', 12),
+        ])),
+      },
+      {
+        id: 'space-dr1-c3',
+        text: '地球は西から東へ自転するので、東にある地点ほど早く太陽が南中します。360° を 24 時間で回るので、経度が 15° ちがうと 1 時間、1° ちがうと 4 分、南中する時刻がずれます。',
+        // 東経 130°・135°・140° の地点で、太陽が南中する時刻（東経 135° で 12 時に南中する日）
+        figure: scene([
+          { type: 'arrow', x1: 60, y1: 50, x2: 260, y2: 50, color: 'blue' },
+          txt(160, 40, '自転の向き（西から東）', 12, 'middle'),
+          txt(20, 126, '西', 14, 'middle', true),
+          txt(300, 126, '東', 14, 'middle', true),
+          { type: 'line', points: [[40, 120], [280, 120]], color: 'gray', width: 2 },
+          { type: 'circle', x: 70, y: 120, r: 5, fill: 'orange', stroke: 'ink' },
+          { type: 'circle', x: 160, y: 120, r: 5, fill: 'orange', stroke: 'ink' },
+          { type: 'circle', x: 250, y: 120, r: 5, fill: 'orange', stroke: 'ink' },
+          txt(70, 104, '東経 130°', 12, 'middle'),
+          txt(160, 104, '東経 135°', 12, 'middle'),
+          txt(250, 104, '東経 140°', 12, 'middle'),
+          txt(70, 146, '12 時 20 分', 12, 'middle'),
+          txt(160, 146, '12 時', 12, 'middle'),
+          txt(250, 146, '11 時 40 分', 12, 'middle'),
+          txt(160, 190, '太陽が南中する時刻', 13, 'middle', true),
+          txt(160, 210, '東の地点ほど早い（1° で 4 分）', 12, 'middle'),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'space-dr1-w1', concept: 'sp-rotation',
+      prompt: '予想しよう。同じ日に、東京と、東京より西にある福岡で、太陽が南中する時刻をくらべるとどうなると思う？',
+      options: ['福岡のほうがおそい', '福岡のほうが早い', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '地球は西から東へ自転しているので、東にある東京のほうが先に太陽が南中し、西にある福岡はおそくなります。このステージで、ずれの大きさも計算してみよう。',
+      hint: '朝日は、東の地点から先にのぼるよ。',
+    }),
+    problems: [
+      fill({
+        id: 'space-dr1-t1', concept: 'sp-rotation', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '天球の上で、観測者の真上にあたる点を[b1]という。',
+        blanks: [word('b1', ['天頂', '天球', '地軸'], '天頂')],
+        explanation: '観測者の真上の点は**天頂**です。天球は、観測者を中心とした見かけの大きな球面のことです。',
+        hint: '「天」の「いただき（てっぺん）」と書くよ。',
+      }),
+      fill({
+        id: 'space-dr1-p1', concept: 'sp-rotation',
+        prompt: '空らんに入る数を入れよう。',
+        text: '北の空で、ある星が北極星を中心に 60° 回って見えた。観察していた時間は約[b1]である。',
+        blanks: [number('b1', 4, 0, '時間')],
+        explanation: '星は 1 時間に約 15° 回って見えるので、60° ÷ 15° ＝ 4 で、約 4 時間です。',
+        hint: '回った角度を、1 時間に回る角度でわろう。',
+      }),
+      figureChoice({
+        id: 'space-dr1-p2', concept: 'sp-rotation',
+        prompt: '北の空で、20 時に図の●の星を観察しました。22 時にこの星が見える位置はア〜ウのどれ？（ア 時計回りに 30°、イ 反時計回りに 30°、ウ 反時計回りに 90° 動いた位置）',
+        figure: scene(northSky().concat([
+          { type: 'circle', x: northStarAt(270)[0], y: northStarAt(270)[1], r: 5, fill: 'ink', stroke: 'none' },
+          txt(160, 216, '20 時', 12, 'middle'),
+          region('r1', northStarAt(240)[0], northStarAt(240)[1], 'ア'),
+          region('r2', northStarAt(300)[0], northStarAt(300)[1], 'イ'),
+          region('r3', northStarAt(0)[0], northStarAt(0)[1], 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: '北の空の星は、北極星を中心に反時計回りに 1 時間に約 15° 回ります。2 時間では 30° なので、イです。北極星の下の星は、西（左）から東（右）へ動きます。',
+        hint: '北の空の星が回る向きと、2 時間で回る角度を考えよう。',
+      }),
+      choice({
+        id: 'space-dr1-p3', concept: 'sp-rotation',
+        prompt: '東経 135° の地点で太陽が 12 時に南中した日、東経 140° の地点で太陽が南中する時刻はどれ？',
+        options: ['11 時 40 分ごろ', '12 時 20 分ごろ', '11 時 55 分ごろ'],
+        answer: 'a',
+        explanation: '経度が 1° ちがうと南中時刻は 4 分ずれます。5° 東にあるので 4 分 × 5 ＝ 20 分早く、11 時 40 分ごろです。',
+        hint: '東にある地点ほど、早く南中するよ。',
+      }),
+      drag({
+        id: 'space-dr1-p4', concept: 'sp-hemisphere',
+        prompt: '春分の日、透明半球に 9 時〜11 時の太陽の位置（●）を記録し、点線で曲線をのばしました。「太陽」の丸を動かして、太陽が南中する位置に重ねよう。',
+        // 南中は曲線のいちばん高い所（真南の上）。中心 O（観測者）は不正解の例
+        figure: scene(hemisphereBase().concat(sunPathItems(0, 9, 11)).concat([
+          { type: 'circle', id: 'sun', x: 290, y: 40, r: 12, fill: 'yellow', stroke: 'orange', label: '太陽' },
+        ])),
+        draggable: { itemId: 'sun', axis: 'xy' },
+        target: { x: sunAt(0, 12)[0], y: sunAt(0, 12)[1] },
+        samples: { correct: { x: sunAt(0, 12)[0], y: sunAt(0, 12)[1] }, wrong: { x: HX, y: HY } },
+        explanation: '太陽が南中するのは、真南にきて、その日いちばん高くなるときです。曲線の上で、南の真上にあたるいちばん高い所です。',
+        hint: '曲線の上で、いちばん高い所をさがそう。',
+      }),
+      fill({
+        id: 'space-dr1-p5', concept: 'sp-hemisphere',
+        prompt: '空らんに入る数を入れよう。',
+        text: '透明半球の曲線で、日の出から日の入りまでの長さは 30 cm、1 時間ごとの印の間隔は 2.5 cm だった。この日の昼の長さは約[b1]である。',
+        blanks: [number('b1', 12, 0, '時間')],
+        explanation: '印の間隔 2.5 cm が 1 時間にあたるので、30 cm ÷ 2.5 cm ＝ 12 で、約 12 時間です。',
+        hint: '曲線全体の長さは、1 時間分の長さの何倍かな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'space-dr1-r1', concept: 'sp-rotation',
+        prompt: '天球が 1 日に 1 回転するように見えるとき、その回転の軸はどれ？',
+        options: ['地軸をのばした線', '観測者と天頂を結ぶ線', '太陽と地球を結ぶ線'],
+        answer: 'a',
+        explanation: '天球の見かけの回転は地球の自転によるので、軸は地軸をのばした線です。北の空では、その先の近くにある北極星を中心に星が回ります。',
+        hint: '北極星がほとんど動かないのはなぜかを思い出そう。',
+      }),
+      fill({
+        id: 'space-dr1-r2', concept: 'sp-rotation',
+        prompt: '空らんに入る数を入れよう。',
+        text: '北の空で、ある星が北極星を中心に 45° 回って見えた。観察していた時間は約[b1]である。',
+        blanks: [number('b1', 3, 0, '時間')],
+        explanation: '1 時間に約 15° 回るので、45° ÷ 15° ＝ 3 で、約 3 時間です。',
+        hint: '45° は 15° の何倍かな。',
+      }),
+      fill({
+        id: 'space-dr1-r3', concept: 'sp-hemisphere',
+        prompt: '空らんに入る数を入れよう。',
+        text: '夏のある日、透明半球の曲線で、日の出から日の入りまでの長さは 42 cm、1 時間ごとの印の間隔は 3 cm だった。昼の長さは約[b1]である。',
+        blanks: [number('b1', 14, 0, '時間')],
+        explanation: '42 cm ÷ 3 cm ＝ 14 なので、昼の長さは約 14 時間です。夏は昼が長いことと合っています。',
+        hint: '曲線全体を、1 時間分の長さでわろう。',
+      }),
+      choice({
+        id: 'space-dr1-r4', concept: 'sp-hemisphere',
+        prompt: '透明半球の曲線をのばして、底の円（地平線）と交わる点を日の出の位置とするのはなぜ？',
+        options: ['太陽が地平線を通る位置だから', 'ペン先の影が中心にくる位置だから', '太陽が南中する位置だから'],
+        answer: 'a',
+        explanation: '透明半球の底の円は地平線にあたります。太陽の通り道が地平線と交わる所が、日の出・日の入りの位置です。',
+        hint: '日の出は、太陽が地平線から顔を出すときだよ。',
+      }),
+      choice({
+        id: 'space-dr1-r5', concept: 'sp-rotation', term: true,
+        prompt: '次の説明に合う言葉はどれ？「星や太陽を、観測者を中心とする大きな球面にはりついているように表したもの」',
+        options: ['天球', '天頂', '透明半球'],
+        answer: 'a',
+        explanation: '見かけの大きな球面を**天球**といいます。透明半球は、天球の半分を表して太陽の動きを記録する道具です。',
+        hint: '「天」の「球」と書くよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-dr2: ドリル 2 天体の 1 年の動き ----
+  const spaceDr2 = {
+    id: 'space-dr2', areaId: 'sp-earth', free: true, title: 'ドリル 2: 天体の 1 年の動き', minutes: 6, concepts: ['sp-revolution', 'sp-season'],
+    lessons: [
+      {
+        id: 'space-dr2-c1',
+        text: '地球が公転するので、同じ星が南中する時刻は 1 日に約 4 分ずつ早くなります。30 日では約 2 時間早くなります。また、太陽は星座の中を、1 年かけて西から東へ動いていくように見えます。',
+        // 同じ星が南中する時刻（時刻の目もり 18〜24 時、1 時間 40 px）
+        figure: scene([
+          txt(160, 30, '同じ星が南中する時刻', 13, 'middle', true),
+          { type: 'line', points: [[40, 150], [280, 150]], color: 'ink', width: 2 },
+          ...[18, 19, 20, 21, 22, 23, 24].map((h, i) => txt(40 + 40 * i, 172, String(h), 12, 'middle')),
+          ...[0, 1, 2, 3, 4, 5, 6].map(i => ({ type: 'line', points: [[40 + 40 * i, 144], [40 + 40 * i, 156]], color: 'ink', width: 1.5 })),
+          txt(300, 172, '時', 12, 'middle'),
+          { type: 'circle', x: 200, y: 150, r: 6, fill: 'blue', stroke: 'none' },
+          { type: 'circle', x: 160, y: 150, r: 6, fill: 'blue', stroke: 'none' },
+          { type: 'circle', x: 120, y: 150, r: 6, fill: 'blue', stroke: 'none' },
+          txt(200, 134, '今日', 12, 'middle'),
+          txt(160, 116, '15 日後', 12, 'middle'),
+          txt(120, 134, '30 日後', 12, 'middle'),
+          { type: 'arrow', x1: 210, y1: 96, x2: 110, y2: 96, color: 'blue' },
+          txt(160, 84, '1 日に約 4 分ずつ早くなる', 12, 'middle'),
+          txt(160, 210, '30 日で約 2 時間早くなる', 13, 'middle', true),
+        ]),
+      },
+      {
+        id: 'space-dr2-c2',
+        text: '太陽の高度が高いほど、同じ面積の地面が受ける光の量が多くなり、地面があたたまりやすくなります。夏は南中高度が高く、昼の時間も長いので、気温が高くなります。',
+        // 同じ幅の光の束。高度が高いと照らす広さ（赤い線）がせまい
+        figure: scene([
+          ground(),
+          ...beam(110, 30),
+          ...beam(230, 70),
+          txt(110, 212, '高度が低い（冬）', 12, 'middle'),
+          txt(230, 212, '高度が高い（夏）', 12, 'middle'),
+          txt(160, 232, '赤い線：同じ光が照らす広さ', 12, 'middle'),
+          txt(4, 20, '同じ幅の光の束', 12),
+        ]),
+      },
+      {
+        id: 'space-dr2-c3',
+        anim: 'sp-noon-altitude',   // 動く図の使い回し（js/anim-*.js）。figure は静止図として残す
+        text: '春分・秋分の日の南中高度は「90° − 緯度」で求められます。夏至の日はそれより 23.4° 高く、冬至の日は 23.4° 低くなります。地軸が傾いたまま公転しているので、季節によって南中高度が変わります。',
+        // 北緯 35° の地点の南中高度（NOON の 3 つの位置）
+        figure: scene(noonBase().concat([
+          { type: 'line', points: [[150, 200], NOON.summer], color: 'gray', width: 1.5 },
+          { type: 'line', points: [[150, 200], NOON.equinox], color: 'gray', width: 1.5 },
+          { type: 'line', points: [[150, 200], NOON.winter], color: 'gray', width: 1.5 },
+          { type: 'circle', x: NOON.summer[0], y: NOON.summer[1], r: 8, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: NOON.equinox[0], y: NOON.equinox[1], r: 8, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: NOON.winter[0], y: NOON.winter[1], r: 8, fill: 'yellow', stroke: 'orange' },
+          txt(192, 56, '夏至 78.4°', 12),
+          txt(246, 78, '春分・秋分', 12),
+          txt(246, 94, '55°', 12),
+          txt(282, 140, '冬至', 12),
+          txt(282, 156, '31.6°', 12),
+          txt(4, 20, '北緯 35° の地点', 12),
+          txt(4, 38, '春分・秋分 ＝ 90° − 緯度', 12),
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'space-dr2-w1', concept: 'sp-season',
+      prompt: '予想しよう。夏のほうが冬より気温が高くなるおもな理由は、何だと思う？',
+      options: ['太陽が高く、地面が光を多く受けるから', '夏は地球が太陽にとても近づくから', '夏は太陽が大きくなるから'],
+      answer: 'a',
+      explanation: '夏は太陽の南中高度が高いので、同じ面積の地面が受ける光が多く、昼も長くなります。地球と太陽の距離は、季節の原因ではありません。このステージで確かめよう。',
+      hint: '懐中電灯で床をまっすぐ照らすときと、ななめに照らすときをくらべてみよう。',
+    }),
+    problems: [
+      fill({
+        id: 'space-dr2-t1', concept: 'sp-season', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '秋に、太陽が真東からのぼって真西にしずみ、昼と夜の長さがほぼ等しくなる日を[b1]という。',
+        blanks: [word('b1', ['秋分', '春分', '冬至'], '秋分')],
+        explanation: '秋のその日を**秋分**、春のその日を春分といいます。どちらも南中高度は「90° − 緯度」です。',
+        hint: '秋の日で、「分」がつく言葉だよ。',
+      }),
+      choice({
+        id: 'space-dr2-p1', concept: 'sp-revolution',
+        prompt: '毎日、同じ星が南中する時刻を記録すると、その時刻は 1 日ごとにどう変わる？',
+        options: ['約 4 分ずつ早くなる', '約 4 分ずつおそくなる', '毎日同じ時刻になる'],
+        answer: 'a',
+        explanation: '地球が公転するので、同じ星の南中時刻は 1 日に約 4 分ずつ早くなります。30 日で約 2 時間早くなります。',
+        hint: '1 か月で約 2 時間ずれることから考えよう。',
+      }),
+      fill({
+        id: 'space-dr2-p2', concept: 'sp-revolution',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'ある星が今夜 22 時に南中した。15 日後、この星が南中する時刻は、22 時より約[b1]早い。',
+        blanks: [number('b1', 60, 0, '分')],
+        explanation: '1 日に約 4 分ずつ早くなるので、4 分 × 15 ＝ 60 分早くなり、21 時ごろに南中します。',
+        hint: '1 日に早くなる分数に、日数をかけよう。',
+      }),
+      figureChoice({
+        id: 'space-dr2-p3', concept: 'sp-season',
+        prompt: '同じ幅の光の束が、高度のちがう太陽から地面を照らしています（ア 高度 30°、イ 高度 55°、ウ 高度 78°）。同じ面積の地面が受ける光の量が最も多いのはどれ？',
+        figure: scene([
+          ground(),
+          ...beam(95, 30),
+          ...beam(185, 55),
+          ...beam(270, 78),
+          txt(60, 130, '30°', 12, 'middle'),
+          txt(165, 100, '55°', 12, 'middle'),
+          txt(266, 100, '78°', 12, 'middle'),
+          txt(4, 20, '赤い線：光が照らす広さ', 12),
+          region('r1', 95, 216, 'ア'),
+          region('r2', 185, 216, 'イ'),
+          region('r3', 270, 216, 'ウ'),
+        ]),
+        answer: 'r3',
+        explanation: '同じ量の光が照らす広さは、高度が高いほどせまくなります。せまい所に光が集まるので、同じ面積が受ける光の量はウがいちばん多くなります。',
+        hint: '赤い線がいちばん短いものをさがそう。',
+      }),
+      fill({
+        id: 'space-dr2-p4', concept: 'sp-season',
+        prompt: '空らんに入る数を入れよう。',
+        text: '北緯 40° の地点で、春分の日の太陽の南中高度は[b1]である。',
+        blanks: [number('b1', 50, 0, '°')],
+        explanation: '春分・秋分の日の南中高度は 90° − 緯度 なので、90° − 40° ＝ 50° です。',
+        hint: '「90° − 緯度」を使おう。',
+      }),
+      drag({
+        id: 'space-dr2-p5', concept: 'sp-season',
+        prompt: '図の 3 つの点は、北緯 35° の地点での夏至・春分（秋分）・冬至の日の南中した太陽の位置です。「太陽」の丸を動かして、冬至の日の位置に重ねよう。',
+        // 冬至は 3 つの点のうち、いちばん低い点（31.6°）。夏至の点は不正解の例
+        figure: scene(noonBase().concat([
+          { type: 'circle', x: NOON.summer[0], y: NOON.summer[1], r: 6, fill: 'white', stroke: 'orange' },
+          { type: 'circle', x: NOON.equinox[0], y: NOON.equinox[1], r: 6, fill: 'white', stroke: 'orange' },
+          { type: 'circle', x: NOON.winter[0], y: NOON.winter[1], r: 6, fill: 'white', stroke: 'orange' },
+          { type: 'circle', id: 'sun', x: 40, y: 50, r: 12, fill: 'yellow', stroke: 'orange', label: '太陽' },
+        ])),
+        draggable: { itemId: 'sun', axis: 'xy' },
+        target: { x: NOON.winter[0], y: NOON.winter[1] },
+        samples: { correct: { x: NOON.winter[0], y: NOON.winter[1] }, wrong: { x: NOON.summer[0], y: NOON.summer[1] } },
+        explanation: '冬至の日は、南中高度が 1 年でいちばん低くなります（北緯 35° で 90° − 35° − 23.4° ＝ 31.6°）。いちばん低い点が冬至です。',
+        hint: '冬は、昼でも太陽が低いね。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'space-dr2-r1', concept: 'sp-revolution',
+        prompt: '地球から見ると、太陽は星座の中を 1 年かけて、どの向きに動いていくように見える？',
+        options: ['西から東へ', '東から西へ', '北から南へ'],
+        answer: 'a',
+        explanation: '地球が西から東へ公転するので、太陽は星座の中を西から東へ動いていくように見えます。この通り道が黄道です。',
+        hint: '地球の公転の向きと同じ向きだよ。',
+      }),
+      fill({
+        id: 'space-dr2-r2', concept: 'sp-revolution',
+        prompt: '空らんに入る数を入れよう。',
+        text: '同じ星が南中する時刻は、10 日で約[b1]早くなる。',
+        blanks: [number('b1', 40, 0, '分')],
+        explanation: '1 日に約 4 分ずつ早くなるので、4 分 × 10 ＝ 40 分です。',
+        hint: '1 日に約 4 分だよ。',
+      }),
+      choice({
+        id: 'space-dr2-r3', concept: 'sp-season',
+        prompt: 'もし地軸が傾かずに公転面に垂直だったら、日本の南中高度と昼の長さは 1 年を通してどうなる？',
+        options: ['いつも春分・秋分の日と同じ', 'いつも夏至の日と同じ', 'いつも冬至の日と同じ'],
+        answer: 'a',
+        explanation: '地軸が傾いていなければ、太陽はいつも赤道の真上を照らすので、南中高度と昼の長さは 1 年中、春分・秋分の日と同じになり、季節の変化がなくなります。',
+        hint: '春分・秋分の日は、地軸の傾きが太陽に対して関係しない日だよ。',
+      }),
+      choice({
+        id: 'space-dr2-r4', concept: 'sp-season',
+        prompt: '日本が夏至のころ、南半球にあるオーストラリアの季節はどれ？',
+        options: ['冬', '夏', '春'],
+        answer: 'a',
+        explanation: '夏至のころ、北半球は太陽のほうへ傾いていますが、南半球は太陽と反対へ傾いています。そのため南半球は南中高度が低く、冬になります。',
+        hint: '北半球と南半球では、地軸の傾きの向きが太陽に対して反対になるよ。',
+      }),
+      choice({
+        id: 'space-dr2-r5', concept: 'sp-season', term: true,
+        prompt: '次の説明に合う言葉はどれ？「北半球で、太陽が真東からのぼって真西にしずみ、昼と夜の長さがほぼ等しくなる春の日」',
+        options: ['春分', '秋分', '夏至'],
+        answer: 'a',
+        explanation: '春のその日を**春分**といいます。秋の同じような日が秋分です。',
+        hint: '春の日だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-dr3: ドリル 3 月や惑星の運動と見え方 ----
+  // 夕方の空の月の位置（1 日目の位置と、東へ・西へずれた位置）
+  const EVE_MOON = { east: [160, 110], first: [215, 135], west: [270, 165] };
+  const spaceDr3 = {
+    id: 'space-dr3', areaId: 'sp-solar', free: true, title: 'ドリル 3: 月や惑星の運動と見え方', minutes: 6, concepts: ['sp-moon', 'sp-sun'],
+    lessons: [
+      {
+        id: 'space-dr3-c1',
+        text: '毎日同じ時刻に月を見ると、月の位置は 1 日に約 12° ずつ西から東へずれていきます。そのため、月がのぼる時刻は 1 日に約 50 分ずつおくれます。月が、地球の自転と同じ向きに公転しているからです。',
+        // 夕方 6 時の月。3 日目は西の低い所、7 日目は南の空
+        figure: scene(eveningSky().concat([
+          { type: 'circle', x: 270, y: 165, r: 9, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: 215, y: 135, r: 9, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: 160, y: 110, r: 9, fill: 'yellow', stroke: 'orange' },
+          txt(270, 190, '3 日目', 12, 'middle'),
+          txt(215, 160, '5 日目', 12, 'middle'),
+          txt(160, 134, '7 日目', 12, 'middle'),
+          { type: 'arrow', x1: 250, y1: 112, x2: 170, y2: 76, color: 'blue' },
+          txt(220, 74, '東へずれる', 12),
+        ])),
+      },
+      {
+        id: 'space-dr3-c2',
+        text: '月は、公転と同じ向きに、公転と同じ周期で**自転**しています。そのため、月はいつも同じ面を地球に向けていて、地球から月の裏側を見ることはできません。',
+        // 月の公転（真上から見た図）。●の印はいつも地球のほうを向く
+        figure: scene([
+          arcLine(160, 120, MOON_R, 0, 360, { color: 'gray', width: 1.5, dashed: true }),
+          arcLine(160, 120, 100, 300, 330, { color: 'blue', width: 3, arrow: true }),
+          { type: 'circle', x: 160, y: 120, r: 16, fill: 'sky', stroke: 'line' },
+          txt(160, 150, '地球', 12, 'middle'),
+          ...[0, 90, 180, 270].flatMap(a => {
+            const [x, y] = moonAt(a);
+            const [mx, my] = onCircle(x, y, 7, a + 180);
+            return [
+              { type: 'circle', x, y, r: 12, fill: '#E9E2C8', stroke: 'line' },
+              { type: 'circle', x: mx, y: my, r: 3.5, fill: 'ink', stroke: 'none' },
+            ];
+          }),
+          txt(4, 20, '●：月のいつも地球に向いている面', 12),
+          txt(316, 232, '真上から見た図', 12, 'end'),
+        ]),
+      },
+      {
+        id: 'space-dr3-c3',
+        anim: 'sp-eclipse-line',   // 動く図の使い回し（js/anim-*.js）。figure は静止図として残す
+        text: '月の通り道は、地球の公転面に対して少し（約 5°）傾いています。そのため、新月や満月のたびに日食や月食が起こるわけではなく、太陽・月・地球が一直線に並んだときだけ起こります。',
+        // 横から見た図。月の通り道（傾いた線）が地球の公転面（点線）とずれている
+        figure: scene([
+          { type: 'circle', x: 30, y: 120, r: 24, fill: 'yellow', stroke: 'orange' },
+          txt(30, 160, '太陽', 12, 'middle'),
+          { type: 'line', points: [[60, 120], [314, 120]], color: 'gray', width: 1.5, dashed: true },
+          txt(316, 138, '地球の公転面', 12, 'end'),
+          { type: 'circle', x: 220, y: 120, r: 14, fill: 'sky', stroke: 'line' },
+          txt(220, 150, '地球', 12, 'middle'),
+          { type: 'line', points: [[130, 146], [310, 94]], color: 'blue', width: 2 },
+          txt(316, 82, '月の通り道', 12, 'end'),
+          { type: 'circle', x: 150, y: 140, r: 7, fill: DARK, stroke: 'line' },
+          txt(150, 166, '新月の月', 12, 'middle'),
+          txt(4, 210, '月が公転面からずれていると', 12),
+          txt(4, 228, '新月でも日食は起こらない', 12),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'space-dr3-w1', concept: 'sp-moon',
+      prompt: '予想しよう。毎日、夕方 6 時に月を観察すると、月の位置は日がたつにつれてどう変わると思う？',
+      options: ['少しずつ東へずれていく', '少しずつ西へずれていく', 'いつも同じ位置に見える'],
+      answer: 'a',
+      explanation: '月は地球のまわりを公転しているので、同じ時刻の月の位置は 1 日に約 12° ずつ東へずれていきます。このステージで確かめよう。',
+      hint: '三日月から上弦の月へ、夕方に見える位置は西から南へ移っていくよ。',
+    }),
+    problems: [
+      fill({
+        id: 'space-dr3-t1', concept: 'sp-moon', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '太陽・地球・月が一直線に並び、月全体が地球の影に入る月食を[b1]月食という。',
+        blanks: [word('b1', ['皆既', '部分', '金環'], '皆既')],
+        explanation: '月全体が地球の影に入るのが**皆既月食**、一部だけが入るのが部分月食です。金環は日食で使う言葉です。',
+        hint: '「すべて」という意味の「皆」がつく言葉だよ。',
+      }),
+      fill({
+        id: 'space-dr3-p1', concept: 'sp-moon',
+        prompt: '空らんに入る数を入れよう。',
+        text: '夕方 6 時に月を観察した。3 日後の同じ時刻には、月は東へ約[b1]ずれた位置に見える。',
+        blanks: [number('b1', 36, 0, '°')],
+        explanation: '同じ時刻の月の位置は 1 日に約 12° 東へずれるので、12° × 3 ＝ 36° です。',
+        hint: '1 日に約 12° ずれるよ。',
+      }),
+      figureChoice({
+        id: 'space-dr3-p2', concept: 'sp-moon',
+        prompt: '1 日目の夕方 6 時、月はイの位置に見えました。2 日後の夕方 6 時に月が見える位置はア〜ウのどれ？（ア イより東、イ 同じ位置、ウ イより西）',
+        figure: scene(eveningSky().concat([
+          region('r1', EVE_MOON.east[0], EVE_MOON.east[1], 'ア'),
+          region('r2', EVE_MOON.first[0], EVE_MOON.first[1], 'イ'),
+          region('r3', EVE_MOON.west[0], EVE_MOON.west[1], 'ウ'),
+        ])),
+        answer: 'r1',
+        explanation: '月は地球の自転と同じ向きに公転しているので、同じ時刻の月は 1 日に約 12° ずつ東へずれます。2 日後は東のアです。',
+        hint: '月は、毎日少しずつ東へ動いていくよ。',
+      }),
+      choice({
+        id: 'space-dr3-p3', concept: 'sp-moon',
+        prompt: '新月のたびに日食が起こるわけではないのはなぜ？',
+        options: ['月の通り道が少し傾いているから', '新月の月は地球から遠いから', '新月の月は光を反射しないから'],
+        answer: 'a',
+        explanation: '月の通り道は、地球の公転面に対して約 5° 傾いています。そのため、新月のときでも、太陽・月・地球が一直線に並ばないことが多いのです。',
+        hint: '真横から見た月の通り道を思い出そう。',
+      }),
+      fill({
+        id: 'space-dr3-p4', concept: 'sp-sun',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '惑星が星座の星の中を少しずつ位置を変えて見えるのは、惑星も地球も太陽のまわりを[b1]しているからである。',
+        blanks: [word('b1', ['公転', '自転', '発光'], '公転')],
+        explanation: '星座の星はとても遠い恒星なので位置が変わりませんが、惑星は地球と同じように太陽のまわりを**公転**しているので、星座の中で位置が変わって見えます。',
+        hint: '太陽のまわりを回る動きの名前だよ。',
+      }),
+      choice({
+        id: 'space-dr3-p5', concept: 'sp-sun',
+        prompt: '望遠鏡で見ると、金星は大きく満ち欠けするのに、木星はほとんど満ち欠けしません。なぜ？',
+        options: ['木星は地球の外側の遠くを回るから', '木星は自ら光を出しているから', '木星は太陽の光を反射しないから'],
+        answer: 'a',
+        explanation: '木星は地球より外側の遠くを公転する外惑星なので、地球からはほぼ太陽の光が当たった面だけが見え、ほとんど欠けて見えません。',
+        hint: '内惑星と外惑星で、地球から見える面がどうちがうか考えよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'space-dr3-r1', concept: 'sp-moon',
+        prompt: '地球からは、いつも月の同じ面しか見えません。その理由として正しいものはどれ？',
+        options: ['月の自転と公転の周期が同じだから', '月が自転していないから', '月の裏側に光が当たらないから'],
+        answer: 'a',
+        explanation: '月は、公転と同じ向きに、公転と同じ周期で自転しています。そのため、いつも同じ面を地球に向けています。',
+        hint: '月は自転していないわけではないよ。',
+      }),
+      fill({
+        id: 'space-dr3-r2', concept: 'sp-moon',
+        prompt: '空らんに入る数を入れよう。',
+        text: '月がのぼる時刻は 1 日に約 50 分ずつおくれる。6 日後には約[b1]おくれる。',
+        blanks: [number('b1', 5, 0, '時間')],
+        explanation: '50 分 × 6 ＝ 300 分 ＝ 5 時間 なので、約 5 時間おくれます。',
+        hint: '分で計算してから、60 分 ＝ 1 時間 で直そう。',
+      }),
+      figureChoice({
+        id: 'space-dr3-r3', concept: 'sp-moon',
+        prompt: '夕方 6 時に南を向いて空を見ました（ア 南の高い空、イ 南西の空、ウ 西の低い空）。上弦の月（右半分が光った月）が見えるのはどれ？',
+        figure: scene(eveningSky().concat([
+          region('r1', 150, 90, 'ア'),
+          region('r2', 230, 140, 'イ'),
+          region('r3', 296, 172, 'ウ'),
+        ])),
+        answer: 'r1',
+        explanation: '上弦の月は、太陽から東へ 90° はなれた位置にあるので、太陽がしずむ夕方 6 時ごろに南中します。だから南の空のアです。西の低い空（ウ）に見えるのは三日月のころです。',
+        hint: '上弦の月は、夕方 6 時ごろに南中するよ。',
+      }),
+      choice({
+        id: 'space-dr3-r4', concept: 'sp-sun',
+        prompt: '星座の星と惑星を何日も続けて観察したときのちがいとして、正しいものはどれ？',
+        options: ['惑星は星座の中を少しずつ動いていく', '星座の星だけが星座の中を動いていく', 'どちらも星座の中の位置は変わらない'],
+        answer: 'a',
+        explanation: '星座をつくる恒星どうしの位置は変わりませんが、惑星は公転しているので、星座の中を少しずつ移動して見えます。',
+        hint: '「惑う星」と書く理由を考えよう。',
+      }),
+      choice({
+        id: 'space-dr3-r5', concept: 'sp-sun', term: true,
+        prompt: '次の説明に合う言葉はどれ？「夕方の西の空に明るくかがやいて見える金星」',
+        options: ['よいの明星', '明けの明星', '北極星'],
+        answer: 'a',
+        explanation: '夕方の西の空の金星を**よいの明星**、明け方の東の空の金星を明けの明星といいます。',
+        hint: '「よい」は夕方から夜のはじめのことだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-dr4: ドリル 4 太陽系と恒星（太陽と惑星の特徴） ----
+  // 4 つの惑星の表（直径は地球を 1 とする。密度の単位は g/cm³）
+  const PLANET_TABLE = [['地球', '1.0', '5.5'], ['火星', '0.53', '3.9'], ['木星', '11.2', '1.3'], ['土星', '9.4', '0.7']];
+  const spaceDr4 = {
+    id: 'space-dr4', areaId: 'sp-solar', free: true, title: 'ドリル 4: 太陽と惑星の特徴', minutes: 6, concepts: ['sp-sun'],
+    lessons: [
+      {
+        id: 'space-dr4-c1',
+        text: '太陽は、目をいためるので、肉眼や望遠鏡で直接見てはいけません。天体望遠鏡に**投影板**をつけ、うつした像を記録用紙にかきます。黒点の位置を何日か続けて記録すると、黒点が移動していくようすが分かります。',
+        // 天体望遠鏡と投影板。投影板の記録用紙に太陽の像と黒点
+        figure: scene([
+          { type: 'line', points: [[30, 200], [170, 120]], color: 'gray', width: 14 },
+          { type: 'line', points: [[170, 120], [214, 104]], color: 'ink', width: 2 },
+          { type: 'rect', x: 214, y: 50, width: 96, height: 100, fill: 'white', stroke: 'ink' },
+          { type: 'circle', x: 262, y: 100, r: 34, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: 250, y: 92, r: 4, fill: '#5A4A2A', stroke: 'none' },
+          { type: 'circle', x: 274, y: 110, r: 3, fill: '#5A4A2A', stroke: 'none' },
+          txt(60, 160, '天体望遠鏡', 12, 'middle'),
+          txt(262, 170, '投影板', 13, 'middle', true),
+          txt(240, 188, '（記録用紙に像をうつす）', 12, 'middle'),
+          txt(4, 20, '太陽を直接見てはいけない', 13, null, true),
+        ]),
+      },
+      {
+        id: 'space-dr4-c2',
+        anim: 'sp-sunspot',   // 動く図の使い回し（js/anim-*.js）。figure は静止図として残す
+        text: '黒点は、太陽の自転によって少しずつ移動し、約 1 か月で太陽を 1 周します。移動した角度を日数でわると 1 日に回る角度が分かり、360° をその角度でわると、自転の周期を求められます。',
+        // 太陽の像の上を移動する黒点（1 日目・3 日目・5 日目）
+        figure: scene([
+          { type: 'circle', x: 110, y: 125, r: 80, fill: 'yellow', stroke: 'orange' },
+          { type: 'ellipse', x: 59, y: 125, rx: 4, ry: 7, fill: '#5A4A2A', stroke: 'none' },
+          { type: 'ellipse', x: 91, y: 125, rx: 6, ry: 7, fill: '#5A4A2A', stroke: 'none' },
+          { type: 'ellipse', x: 127, y: 125, rx: 7, ry: 7, fill: '#5A4A2A', stroke: 'none' },
+          txt(59, 108, '1 日目', 12, 'middle'),
+          txt(91, 150, '3 日目', 12, 'middle'),
+          txt(127, 108, '5 日目', 12, 'middle'),
+          { type: 'arrow', x1: 64, y1: 170, x2: 140, y2: 170, color: 'blue' },
+          txt(200, 90, '黒点が移動する', 12),
+          txt(200, 110, '→ 太陽は自転して', 12),
+          txt(200, 128, 'いる', 12),
+          txt(200, 160, '約 1 か月で 1 周', 13, null, true),
+        ]),
+      },
+      {
+        id: 'space-dr4-c3',
+        text: '地球と太陽の平均の距離（約 1 億 5000 万 km）を 1 とする単位を**天文単位**といいます。光は 1 秒間に約 30 万 km 進みます。金星は厚い二酸化炭素の大気におおわれ、火星は赤っぽく、土星は大きな環をもちます。',
+        // 太陽と地球の距離、3 つの惑星の特徴
+        figure: scene([
+          { type: 'circle', x: -20, y: 64, r: 50, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: 290, y: 64, r: 10, fill: 'sky', stroke: 'line' },
+          txt(290, 90, '地球', 12, 'middle'),
+          { type: 'line', points: [[36, 64], [274, 64]], color: 'gray', width: 1.5, dashed: true },
+          txt(155, 54, '1 天文単位（約 1 億 5000 万 km）', 12, 'middle'),
+          { type: 'circle', x: 60, y: 160, r: 18, fill: '#F2E3B3', stroke: 'line' },
+          { type: 'circle', x: 160, y: 160, r: 14, fill: '#D9734E', stroke: 'line' },
+          { type: 'ellipse', x: 260, y: 160, rx: 36, ry: 8, fill: 'none', stroke: 'line' },
+          { type: 'circle', x: 260, y: 160, r: 18, fill: '#E8D8B0', stroke: 'line' },
+          txt(60, 200, '金星', 13, 'middle', true),
+          txt(60, 218, '厚い二酸化炭素', 12, 'middle'),
+          txt(60, 234, 'の大気', 12, 'middle'),
+          txt(160, 200, '火星', 13, 'middle', true),
+          txt(160, 218, '赤っぽい', 12, 'middle'),
+          txt(260, 200, '土星', 13, 'middle', true),
+          txt(260, 218, '大きな環', 12, 'middle'),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'space-dr4-w1', concept: 'sp-sun',
+      prompt: '予想しよう。太陽を出た光が地球にとどくまでに、どのくらいの時間がかかると思う？',
+      options: ['約 8 分', '約 1 秒', '約 1 日'],
+      answer: 'a',
+      explanation: '太陽の光は、約 1 億 5000 万 km を約 8 分 20 秒かけて地球にとどきます。いま見ている太陽は、約 8 分前の姿です。',
+      hint: '光はとても速いけれど、太陽はとても遠いよ。',
+    }),
+    problems: [
+      fill({
+        id: 'space-dr4-t1', concept: 'sp-sun', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地球と太陽の平均の距離（約 1 億 5000 万 km）を 1 とする距離の単位を[b1]という。',
+        blanks: [word('b1', ['天文単位', '光年', '公転周期'], '天文単位')],
+        explanation: '地球と太陽の平均の距離を 1 とする単位が**天文単位**です。太陽系の中の距離を表すのに使います。光年は、光が 1 年間に進む距離です。',
+        hint: '天文学で使う「単位」だよ。',
+      }),
+      choice({
+        id: 'space-dr4-p1', concept: 'sp-sun',
+        prompt: '天体望遠鏡で太陽を観察するときの方法として、正しいものはどれ？',
+        options: ['投影板に像をうつして観察する', '接眼レンズを直接のぞく', 'サングラスをかけてのぞく'],
+        answer: 'a',
+        explanation: '太陽の光はとても強く、直接見ると目をいためます。望遠鏡に投影板をつけ、うつした像を記録用紙で観察します。サングラスでも安全ではありません。',
+        hint: '太陽は、どんなときも直接見ないよ。',
+      }),
+      fill({
+        id: 'space-dr4-p2', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう。',
+        text: '黒点が 9 日で 120° 移動した。この割合で動くと、太陽が 1 回自転するのに約[b1]かかる。',
+        blanks: [number('b1', 27, 0, '日')],
+        explanation: '360° は 120° の 3 倍なので、9 日 × 3 ＝ 27 日です。太陽は約 1 か月で 1 回自転しています。',
+        hint: '360° は 120° の何倍かな。',
+      }),
+      fill({
+        id: 'space-dr4-p3', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう。',
+        text: '光は 1 秒間に約 30 万 km 進む。太陽から地球まで約 1 億 5000 万 km あるので、太陽の光が地球にとどくまで約[b1]かかる。',
+        blanks: [number('b1', 500, 0, '秒')],
+        explanation: '1 億 5000 万 km ÷ 30 万 km ＝ 500 なので、約 500 秒（約 8 分 20 秒）です。',
+        hint: '1 億 5000 万は 30 万の何倍かな。',
+      }),
+      figureChoice({
+        id: 'space-dr4-p4', concept: 'sp-sun',
+        prompt: '表は、4 つの惑星の直径（地球を 1 とする）と密度です（ア 地球、イ 火星、ウ 木星、エ 土星）。密度が水（1.0 g/cm³）より小さい惑星はどれ？',
+        figure: scene([
+          { type: 'rect', x: 64, y: 14, width: 250, height: 222, fill: 'white', stroke: 'line' },
+          txt(110, 38, '惑星', 13, 'middle', true),
+          txt(190, 38, '直径', 13, 'middle', true),
+          txt(270, 38, '密度 g/cm³', 12, 'middle', true),
+          ...PLANET_TABLE.flatMap((row, i) => {
+            const y = 72 + 46 * i;
+            return [
+              { type: 'line', points: [[64, y - 22], [314, y - 22]], color: 'gray', width: 1 },
+              txt(110, y + 5, row[0], 13, 'middle'),
+              txt(190, y + 5, row[1], 13, 'middle'),
+              txt(270, y + 5, row[2], 13, 'middle'),
+            ];
+          }),
+          region('r1', 34, 72, 'ア'),
+          region('r2', 34, 118, 'イ'),
+          region('r3', 34, 164, 'ウ'),
+          region('r4', 34, 210, 'エ'),
+        ]),
+        answer: 'r4',
+        explanation: '表で密度が 1.0 g/cm³ より小さいのは、0.7 の土星（エ）だけです。木星型惑星は、水素などの軽い気体を多くふくむので、密度が小さくなります。',
+        hint: '密度の列で、1.0 より小さい数をさがそう。',
+      }),
+      choice({
+        id: 'space-dr4-p5', concept: 'sp-sun',
+        prompt: '厚い二酸化炭素の大気におおわれ、表面の温度が約 460 ℃ にもなる惑星はどれ？',
+        options: ['金星', '火星', '水星'],
+        answer: 'a',
+        explanation: '金星は厚い二酸化炭素の大気におおわれていて、熱がにげにくいので、表面は約 460 ℃ にもなります。',
+        hint: 'よいの明星・明けの明星として見える惑星だよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'space-dr4-r1', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう。',
+        text: '黒点が 4 日で 60° 移動した。この割合で動くと、太陽が 1 回自転するのに約[b1]かかる。',
+        blanks: [number('b1', 24, 0, '日')],
+        explanation: '1 日に 60° ÷ 4 ＝ 15° 動くので、360° ÷ 15° ＝ 24 で、約 24 日です。',
+        hint: 'まず 1 日に動く角度を求めよう。',
+      }),
+      choice({
+        id: 'space-dr4-r2', concept: 'sp-sun',
+        prompt: '投影板にうつした太陽の像が、記録用紙の円から少しずつずれていくのはなぜ？',
+        options: ['地球が自転しているから', '太陽が自転しているから', '黒点が動いているから'],
+        answer: 'a',
+        explanation: '地球の自転によって、太陽は空を東から西へ動いて見えます。そのため像がずれていくので、望遠鏡の向きを合わせながら記録します。',
+        hint: '太陽が 1 日に空を動いて見える理由と同じだよ。',
+      }),
+      figureChoice({
+        id: 'space-dr4-r3', concept: 'sp-sun',
+        prompt: '表は 4 つの惑星の直径（地球を 1 とする）と密度です（ア 地球、イ 火星、ウ 木星、エ 土星）。直径が地球の約半分で、地球より密度が小さい惑星はどれ？',
+        figure: scene([
+          { type: 'rect', x: 64, y: 14, width: 250, height: 222, fill: 'white', stroke: 'line' },
+          txt(110, 38, '惑星', 13, 'middle', true),
+          txt(190, 38, '直径', 13, 'middle', true),
+          txt(270, 38, '密度 g/cm³', 12, 'middle', true),
+          ...PLANET_TABLE.flatMap((row, i) => {
+            const y = 72 + 46 * i;
+            return [
+              { type: 'line', points: [[64, y - 22], [314, y - 22]], color: 'gray', width: 1 },
+              txt(110, y + 5, row[0], 13, 'middle'),
+              txt(190, y + 5, row[1], 13, 'middle'),
+              txt(270, y + 5, row[2], 13, 'middle'),
+            ];
+          }),
+          region('r1', 34, 72, 'ア'),
+          region('r2', 34, 118, 'イ'),
+          region('r3', 34, 164, 'ウ'),
+          region('r4', 34, 210, 'エ'),
+        ]),
+        answer: 'r2',
+        explanation: '直径が 0.53 で地球の約半分、密度が 3.9 g/cm³ で地球（5.5）より小さいのは火星（イ）です。火星の表面は酸化鉄をふくむ岩石や砂におおわれ、赤っぽく見えます。',
+        hint: '直径の列で 0.5 に近い数をさがそう。',
+      }),
+      choice({
+        id: 'space-dr4-r4', concept: 'sp-sun',
+        prompt: '大きな環（リング）をもち、密度が水より小さい惑星はどれ？',
+        options: ['土星', '火星', '水星'],
+        answer: 'a',
+        explanation: '土星は、氷や岩のつぶでできた大きな環をもちます。密度は約 0.7 g/cm³ で、水より小さい惑星です。',
+        hint: '太陽から 6 番目の惑星だよ。',
+      }),
+      choice({
+        id: 'space-dr4-r5', concept: 'sp-sun', term: true,
+        prompt: '次の説明に合う言葉はどれ？「天体望遠鏡に取りつけて、太陽の像をうつして観察するための板」',
+        options: ['投影板', '反射板', '黒板'],
+        answer: 'a',
+        explanation: '太陽の像をうつす板を**投影板**といいます。記録用紙をはって、黒点の位置などを記録します。',
+        hint: '「うつす（投影する）」板だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-dr5: ドリル 5 太陽系と恒星（惑星のなかま・小天体・銀河系） ----
+  const spaceDr5 = {
+    id: 'space-dr5', areaId: 'sp-solar', free: true, title: 'ドリル 5: 惑星のなかまと銀河系', minutes: 6, concepts: ['sp-sun', 'sp-universe'],
+    lessons: [
+      {
+        id: 'space-dr5-c1',
+        text: '太陽系の惑星は、小さくて岩石や金属でできた密度の大きい**地球型惑星**（水星〜火星）と、大きくて水素などの気体を多くふくむ密度の小さい**木星型惑星**（木星〜海王星）に分けられます。木星型惑星は環や多くの衛星をもちます。',
+        // 2 つのなかまの表
+        figure: scene([
+          { type: 'rect', x: 8, y: 20, width: 148, height: 200, fill: '#F4F1E8', stroke: 'line' },
+          { type: 'rect', x: 164, y: 20, width: 148, height: 200, fill: '#EEF3FB', stroke: 'line' },
+          txt(82, 46, '地球型惑星', 14, 'middle', true),
+          txt(82, 76, '水星・金星', 12, 'middle'),
+          txt(82, 94, '地球・火星', 12, 'middle'),
+          txt(82, 130, '小さい', 12, 'middle'),
+          txt(82, 148, '密度が大きい', 12, 'middle'),
+          txt(82, 184, '岩石と金属', 12, 'middle'),
+          txt(238, 46, '木星型惑星', 14, 'middle', true),
+          txt(238, 76, '木星・土星', 12, 'middle'),
+          txt(238, 94, '天王星・海王星', 12, 'middle'),
+          txt(238, 130, '大きい', 12, 'middle'),
+          txt(238, 148, '密度が小さい', 12, 'middle'),
+          txt(238, 184, '気体が多い', 12, 'middle'),
+          txt(238, 202, '環・多くの衛星', 12, 'middle'),
+        ]),
+      },
+      {
+        id: 'space-dr5-c2',
+        text: '海王星の外側には、冥王星などの**太陽系外縁天体**が公転しています。すい星が残したちりなどが地球の大気に飛びこんで光るのが**流星**で、燃えつきずに地上に落ちたものを**隕石**といいます。',
+        // 上: 太陽系のはしの天体、下: 流星と隕石
+        figure: scene([
+          { type: 'circle', x: -10, y: 60, r: 34, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: 150, y: 60, r: 8, fill: '#9CC3E6', stroke: 'line' },
+          txt(150, 88, '海王星', 12, 'middle'),
+          ...[[214, 50], [236, 70], [258, 46], [276, 66], [298, 54]].map(([x, y]) => ({ type: 'circle', x, y, r: 3, fill: 'gray', stroke: 'none' })),
+          txt(256, 26, '太陽系外縁天体', 12, 'middle'),
+          txt(256, 92, '（冥王星など）', 12, 'middle'),
+          { type: 'line', points: [[4, 110], [316, 110]], color: 'gray', width: 1, dashed: true },
+          { type: 'rect', x: 0, y: 200, width: 320, height: 40, fill: '#E8D8B0', stroke: 'none' },
+          { type: 'line', points: [[70, 130], [140, 172]], color: 'orange', width: 3, arrow: true },
+          txt(60, 126, '流星', 13, 'end', true),
+          txt(150, 162, '大気の中で光る', 12),
+          { type: 'polygon', points: [[236, 200], [244, 188], [258, 186], [266, 196], [262, 200]], fill: '#6B5B4A', stroke: 'none' },
+          txt(250, 178, '隕石', 13, 'middle', true),
+          txt(160, 226, '地面', 12, 'middle'),
+        ]),
+      },
+      {
+        id: 'space-dr5-c3',
+        text: '1 **光年**は、光が 1 年間に進む距離で、約 9.5 兆 km です。銀河系はうずを巻いた円盤の形で、太陽系は中心からはなれた円盤の中にあります。そのため円盤の方向に星が重なり、天の川が帯のように見えます。銀河系の外にもアンドロメダ銀河などの銀河があります。',
+        // 銀河系を真横から見た図と、太陽系の位置
+        figure: scene(galaxySide().concat([
+          { type: 'circle', x: 233, y: 120, r: 5, fill: 'orange', stroke: 'ink' },
+          txt(233, 156, '太陽系', 13, 'middle', true),
+          { type: 'arrow', x1: 222, y1: 120, x2: 120, y2: 120, color: 'blue' },
+          { type: 'arrow', x1: 244, y1: 120, x2: 300, y2: 120, color: 'blue' },
+          txt(160, 186, '円盤の方向を見ると星が重なる → 天の川', 12, 'middle'),
+          txt(160, 210, '直径 約 10 万光年', 12, 'middle'),
+          txt(160, 230, '1 光年 ＝ 約 9.5 兆 km', 12, 'middle'),
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'space-dr5-w1', concept: 'sp-sun',
+      prompt: '予想しよう。夜空に見える流れ星（流星）の正体は何だと思う？',
+      options: ['ちりが大気に飛びこんで光ったもの', '恒星が落ちてくるもの', '月のかけらが光ったもの'],
+      answer: 'a',
+      explanation: '流星は、宇宙のちりなどが地球の大気に飛びこみ、大気とこすれて高温になって光るものです。このステージで、太陽系の小さな天体や銀河系について確かめよう。',
+      hint: '流れ星は一瞬で消えるね。とても小さなものが光っているよ。',
+    }),
+    problems: [
+      fill({
+        id: 'space-dr5-t1', concept: 'sp-sun', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '海王星より外側を公転している、冥王星などの天体を[b1]という。',
+        blanks: [word('b1', ['太陽系外縁天体', '小惑星', '衛星'], '太陽系外縁天体')],
+        explanation: '海王星の外側を回る、冥王星などの天体を**太陽系外縁天体**といいます。小惑星は、おもに火星と木星のあいだにあります。',
+        hint: '太陽系の「外のふち」にある天体だよ。',
+      }),
+      drag({
+        id: 'space-dr5-p1', concept: 'sp-sun',
+        prompt: '「海王星」のカードを動かして、あてはまるなかまの箱の点線の丸に重ねよう（左の箱は地球型惑星、右の箱は木星型惑星）。',
+        // 右の箱（木星型惑星）の点線の丸が正解。左の箱の丸は不正解の例
+        figure: scene([
+          { type: 'rect', x: 8, y: 20, width: 148, height: 150, fill: '#F4F1E8', stroke: 'line' },
+          { type: 'rect', x: 164, y: 20, width: 148, height: 150, fill: '#EEF3FB', stroke: 'line' },
+          txt(82, 44, '地球型惑星', 14, 'middle', true),
+          txt(238, 44, '木星型惑星', 14, 'middle', true),
+          txt(82, 66, '例: 金星', 12, 'middle'),
+          txt(238, 66, '例: 土星', 12, 'middle'),
+          { type: 'circle', x: 82, y: 120, r: 28, fill: 'none', stroke: 'gray' },
+          { type: 'circle', x: 238, y: 120, r: 28, fill: 'none', stroke: 'gray' },
+          { type: 'rect', id: 'card', x: 120, y: 190, width: 80, height: 32, fill: 'white', stroke: 'blue', label: '海王星' },
+        ]),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 238, y: 120 },
+        samples: { correct: { x: 238, y: 120 }, wrong: { x: 82, y: 120 } },
+        explanation: '海王星は、大きくて密度が小さく、水素などの気体を多くふくむ**木星型惑星**です。環や衛星ももっています。',
+        hint: '海王星は、木星より外側を回る大きな惑星だよ。',
+      }),
+      choice({
+        id: 'space-dr5-p2', concept: 'sp-sun',
+        prompt: '木星型惑星の密度が、地球型惑星より小さいのはなぜ？',
+        options: ['水素などの軽い物質が多いから', '中心が空っぽになっているから', '太陽から遠く、温度が低いから'],
+        answer: 'a',
+        explanation: '木星型惑星は、水素やヘリウムなどの軽い気体を多くふくむので、大きいわりに密度が小さくなります。地球型惑星は岩石や金属でできているので、密度が大きくなります。',
+        hint: '惑星をつくっている物質のちがいを考えよう。',
+      }),
+      figureChoice({
+        id: 'space-dr5-p3', concept: 'sp-universe',
+        prompt: '銀河系を真横から見た図です（ア 中心のふくらみ、イ 中心から半分ほどはなれた円盤の中、ウ 円盤のはし）。太陽系があるのはどれ？',
+        figure: scene(galaxySide().concat([
+          region('r1', 160, 120, 'ア'),
+          region('r2', 233, 120, 'イ'),
+          region('r3', 294, 120, 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: '太陽系は、銀河系の中心からはなれた、円盤の中にあります（イ）。中心でも、はしでもありません。',
+        hint: '天の川が、夜空をぐるりと 1 周する帯に見えることを手がかりにしよう。',
+      }),
+      choice({
+        id: 'space-dr5-p4', concept: 'sp-universe',
+        prompt: '夜空の天の川が、帯のように細長く見えるのはなぜ？',
+        options: ['銀河系の円盤の中から円盤の方向を見るから', '天の川の星だけが細長く並んでいるから', '地球の大気が帯のように光るから'],
+        answer: 'a',
+        explanation: '太陽系は円盤の形をした銀河系の中にあります。円盤の方向を見ると、たくさんの恒星が重なって見えるので、天の川は帯のように見えます。',
+        hint: '円盤の中にいて、円盤にそった向きを見ると、どう見えるかな。',
+      }),
+      fill({
+        id: 'space-dr5-p5', concept: 'sp-universe',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 光年を約 9.5 兆 km とする。地球から約 38 兆 km はなれた恒星までの距離は、約[b1]である。',
+        blanks: [number('b1', 4, 0, '光年')],
+        explanation: '38 兆 km ÷ 9.5 兆 km ＝ 4 なので、約 4 光年です。この恒星の光は、約 4 年かかって地球にとどきます。',
+        hint: '38 兆は 9.5 兆の何倍かな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'space-dr5-r1', concept: 'sp-sun',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '環（リング）や多くの衛星をもち、密度が小さい惑星のなかまを[b1]という。',
+        blanks: [word('b1', ['木星型惑星', '地球型惑星', '太陽系外縁天体'], '木星型惑星')],
+        explanation: '木星・土星・天王星・海王星の**木星型惑星**は、どれも環をもち、たくさんの衛星をもっています。',
+        hint: '大きな惑星のなかまだよ。',
+      }),
+      choice({
+        id: 'space-dr5-r2', concept: 'sp-sun', term: true,
+        prompt: '次の説明に合う言葉はどれ？「宇宙から飛びこんだ物体が、燃えつきずに地上に落ちてきたもの」',
+        options: ['隕石', 'すい星', '小惑星'],
+        answer: 'a',
+        explanation: '燃えつきずに地上に落ちたものを**隕石**といいます。大気の中で光って見えるものは流星です。',
+        hint: '「石」がつく言葉だよ。',
+      }),
+      choice({
+        id: 'space-dr5-r3', concept: 'sp-universe',
+        prompt: '太陽系は、銀河系のどこにある？',
+        options: ['中心からはなれた円盤の中', '銀河系の中心', '銀河系の外'],
+        answer: 'a',
+        explanation: '太陽系は、銀河系の中心からはなれた円盤の中にあります。だから、円盤の方向に天の川が帯のように見えます。',
+        hint: '天の川がどう見えるかを思い出そう。',
+      }),
+      fill({
+        id: 'space-dr5-r4', concept: 'sp-universe',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 光年を約 9.5 兆 km とする。地球から約 57 兆 km はなれた恒星までの距離は、約[b1]である。',
+        blanks: [number('b1', 6, 0, '光年')],
+        explanation: '57 兆 km ÷ 9.5 兆 km ＝ 6 なので、約 6 光年です。',
+        hint: '57 兆を 9.5 兆でわろう。',
+      }),
+      choice({
+        id: 'space-dr5-r5', concept: 'sp-universe',
+        prompt: '銀河系の外にある銀河の例として、正しいものはどれ？',
+        options: ['アンドロメダ銀河', '天の川', 'オリオン座'],
+        answer: 'a',
+        explanation: 'アンドロメダ銀河は、銀河系の外にある銀河です。天の川は銀河系の星の集まりを内側から見たもので、オリオン座は銀河系の中の恒星でできた星座です。',
+        hint: '名前に「銀河」とついているね。',
       }),
     ],
   };
@@ -2963,9 +3931,9 @@
     mascot: 'D',   // 担当の先生（もくもく先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'sp-earth', title: '地球の動きと天体の見え方', order: 1, stages: [space1, space2] },
-      { id: 'sp-solar', title: '太陽系', order: 2, stages: [space3, space4] },
-      { id: 'sp-miniprint', title: 'ミニプリント', order: 3, free: true, stages: [spaceMp1, spaceMp2, spaceMp3, spaceMp4, spaceMp5, spaceMp6, spaceMp7, spaceMp8, spaceMp9, spaceMp10] },
+      // 2026-11-21: 分野でまとめた。基本 → プリント → ドリル（プリント・ドリルは free のステージ）
+      { id: 'sp-earth', title: '地球の動きと天体の見え方', order: 1, stages: [space1, space2, spaceMp2, spaceMp3, spaceMp4, spaceMp5, spaceMp6, spaceMp7, spaceMp8, spaceDr1, spaceDr2] },
+      { id: 'sp-solar', title: '太陽系', order: 2, stages: [space3, space4, spaceMp1, spaceMp9, spaceMp10, spaceDr3, spaceDr4, spaceDr5] },
     ],
   };
 
