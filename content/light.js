@@ -3033,6 +3033,256 @@
   };
 
   // ================================================================
+  // クイズ（Kahoot の公開クイズの「ねらい」を参考に自作した問題。docs/reports/content/light.md）
+  // ================================================================
+
+  const KQ_KANA = 'アイウエ';
+  const kqRound = (v) => Math.round(v * 10) / 10;
+  // 中心 (cx, cy) から、真下（法線の下向き）から右回りに deg 度、長さ r の点。up: true なら真上から右回りに deg 度
+  function kqPoint(cx, cy, deg, r, up) {
+    const a = deg * Math.PI / 180;
+    return [kqRound(cx + r * Math.sin(a)), kqRound(up ? cy - r * Math.cos(a) : cy + r * Math.cos(a))];
+  }
+
+  // 3 つの面に平行な光が当たるようす（左から ア 平らな鏡・イ 細かい凹凸のある面・ウ ガラスの板）
+  function kqSurfaces(regions) {
+    const items = [];
+    // ア: 平らな面。2 本の光が同じ向きに反射する
+    items.push({ type: 'line', points: [[15, 150], [95, 150]], width: 3 });
+    [40, 70].forEach(hx => {
+      items.push({ type: 'ray', x1: hx - 30, y1: 100, x2: hx, y2: 150, arrow: true });
+      items.push({ type: 'ray', x1: hx, y1: 150, x2: hx + 24, y2: 110, arrow: true });
+    });
+    // イ: 細かい凹凸の面。2 本の光がちがう向きに反射する
+    items.push({ type: 'line', points: [[120, 150], [130, 142], [140, 152], [150, 141], [160, 151], [170, 143], [180, 152], [190, 141], [200, 150]], width: 3 });
+    items.push({ type: 'ray', x1: 115, y1: 100, x2: 145, y2: 147, arrow: true });
+    items.push({ type: 'ray', x1: 145, y1: 147, x2: 122, y2: 112, arrow: true });
+    items.push({ type: 'ray', x1: 145, y1: 100, x2: 175, y2: 147, arrow: true });
+    items.push({ type: 'ray', x1: 175, y1: 147, x2: 210, y2: 124, arrow: true });
+    // ウ: ガラスの板。光は中へ入って進む
+    items.push({ type: 'rect', x: 225, y: 150, width: 80, height: 40, fill: 'glass' });
+    [250, 280].forEach(hx => {
+      items.push({ type: 'ray', x1: hx - 30, y1: 100, x2: hx, y2: 150 });
+      items.push({ type: 'ray', x1: hx, y1: 150, x2: hx + 17, y2: 188, arrow: true });
+    });
+    if (regions) {
+      [55, 160, 265].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 216, r: 22, label: KQ_KANA[i] }));
+    }
+    return scene(items);
+  }
+
+  // 半円形ガラス（平らな面が上、中心 (cx, cy)、半径 R）。下半分がガラス、上が空気
+  function kqSemi(cx, cy, R) {
+    const points = [];
+    for (let i = 0; i <= 18; i++) points.push(kqPoint(cx, cy, -90 + i * 10, R, false));
+    return [
+      { type: 'polygon', points, fill: 'glass' },
+      { type: 'label', x: 12, y: 30, text: '空気' },
+      { type: 'label', x: 12, y: cy + 30, text: 'ガラス' },
+    ];
+  }
+
+  // 選ぶ光の道すじ（点線）と選ぶ場所。cands は [[角度, 選ぶ場所までの長さ, 上向きか], ...]（ア・イ・ウの順）
+  function kqCands(cx, cy, cands) {
+    const items = [];
+    cands.forEach(([deg, r, up], i) => {
+      const [x, y] = kqPoint(cx, cy, deg, r, up);
+      items.push(guide(cx, cy, x, y));
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KQ_KANA[i] });
+    });
+    return items;
+  }
+
+  // light-kq1-p3: 空気中から平らな面の中心へ入射角 45°。ガラスの中は 約 28°（屈折率 1.5）。
+  // ア 45°（まっすぐのばした線）、イ 28°（正しい）、ウ 62°（法線から離れる向き）
+  function kqSemiIn() {
+    const [sx, sy] = kqPoint(160, 100, 45, 100, true);
+    return scene([].concat(kqSemi(160, 100, 100), [
+      { type: 'normal', x: 160, y: 100, angle: 0 },
+      { type: 'ray', x1: 320 - sx, y1: sy, x2: 160, y2: 100, arrow: true },
+    ], kqCands(160, 100, [[45, 135, false], [28, 95, false], [62, 100, false]])));
+  }
+
+  // light-kq1-r3: ガラスの中から平らな面の中心へ入射角 30°。空気中へ 約 49° で出る。
+  // ア 8°（法線に近づく向き）、イ 30°（まっすぐのばした線）、ウ 49°（正しい）
+  function kqSemiOut() {
+    const [sx, sy] = kqPoint(160, 130, 30, 90, false);
+    return scene([].concat(kqSemi(160, 130, 90), [
+      { type: 'normal', x: 160, y: 130, angle: 0 },
+      { type: 'ray', x1: 320 - sx, y1: sy, x2: 160, y2: 130, arrow: true },
+    ], kqCands(160, 130, [[8, 110, true], [30, 120, true], [49, 90, true]])));
+  }
+
+  // light-kq1-r4: ガラスの中から平らな面の中心へ入射角 55°（約 42° より大きい）→ 全反射。
+  // ア 80°（空気中へ出る）、イ 55°（まっすぐのばした線）、ウ 反射してガラスの中へ（正しい）
+  function kqSemiTotal() {
+    const [sx, sy] = kqPoint(160, 130, 55, 90, false);
+    return scene([].concat(kqSemi(160, 130, 90), [
+      { type: 'normal', x: 160, y: 130, angle: 0 },
+      { type: 'ray', x1: 320 - sx, y1: sy, x2: 160, y2: 130, arrow: true },
+    ], kqCands(160, 130, [[80, 110, true], [55, 110, true], [55, 80, false]])));
+  }
+
+  // ---- ステージ light-kq1: クイズ 1（乱反射、半円形ガラスでの屈折、全反射） ----
+  const lightKq1 = {
+    id: 'light-kq1', areaId: 'refract', free: true, title: 'クイズ 1: 乱反射・屈折・全反射', minutes: 7,
+    concepts: ['reflect-law', 'refract-dir', 'total-reflect'],
+    lessons: [
+      {
+        id: 'light-kq1-c1',
+        text: '紙や布の表面には細かい凹凸があり、当たった光はいろいろな向きにはね返ります。これを**乱反射**といいます。1 本 1 本の光は反射の法則に従っていて、どの向きからでも物が見えます。',
+        figure: scene([
+          { type: 'line', points: [[40, 170], [70, 150], [100, 172], [130, 148], [160, 170], [190, 150], [220, 172], [250, 148], [280, 170]], width: 3 },
+          { type: 'ray', x1: 40, y1: 60, x2: 85, y2: 160, arrow: true },
+          { type: 'ray', x1: 85, y1: 160, x2: 50, y2: 110, arrow: true },
+          { type: 'ray', x1: 120, y1: 60, x2: 145, y2: 159, arrow: true },
+          { type: 'ray', x1: 145, y1: 159, x2: 200, y2: 90, arrow: true },
+          { type: 'ray', x1: 200, y1: 60, x2: 235, y2: 160, arrow: true },
+          { type: 'ray', x1: 235, y1: 160, x2: 300, y2: 130, arrow: true },
+          { type: 'label', x: 160, y: 214, text: 'いろいろな向きにはね返る', anchor: 'middle', size: 14 },
+        ]),
+      },
+      {
+        id: 'light-kq1-c2',
+        text: '空気からガラスへななめに進む光は境界面で**屈折**し、**屈折角**は入射角より小さくなります。半円形ガラスの中心を通る光は、曲がった面に垂直に出入りするので、そこでは折れ曲がりません。',
+        figure: (() => {
+          const [sx, sy] = kqPoint(160, 100, 45, 100, true);
+          const [ex, ey] = kqPoint(160, 100, 28, 100, false);
+          const [ox, oy] = kqPoint(160, 100, 28, 135, false);
+          return scene([].concat(kqSemi(160, 100, 100), [
+            { type: 'normal', x: 160, y: 100, angle: 0 },
+            { type: 'ray', x1: 320 - sx, y1: sy, x2: 160, y2: 100, arrow: true },
+            { type: 'ray', x1: 160, y1: 100, x2: ex, y2: ey, arrow: true },
+            { type: 'ray', x1: ex, y1: ey, x2: ox, y2: oy, arrow: true },
+          ]));
+        })(),
+      },
+      {
+        id: 'light-kq1-c3',
+        text: '水そうを横から、水面より少し下の位置で見上げると、水面に魚が映って見えます。魚から出た光が水面で**全反射**して、目に届くためです。光ファイバーも、この現象を利用しています。',
+        figure: scene([
+          { type: 'rect', x: 30, y: 40, width: 250, height: 170, fill: 'white' },
+          { type: 'rect', x: 32, y: 70, width: 246, height: 138, fill: 'water', stroke: 'none' },
+          { type: 'line', points: [[32, 70], [278, 70]], color: 'blue', width: 2 },
+          { type: 'ellipse', x: 110, y: 170, rx: 18, ry: 9, fill: 'orange' },
+          { type: 'ray', x1: 110, y1: 170, x2: 200, y2: 70, arrow: true },
+          { type: 'ray', x1: 200, y1: 70, x2: 284, y2: 163, arrow: true },
+          { type: 'eye', x: 298, y: 178 },
+          { type: 'label', x: 40, y: 32, text: '水面に魚が映って見える', size: 14 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'light-kq1-w1', concept: 'reflect-law',
+      prompt: '予想しよう。鏡に当たった光は決まった向きにだけはね返るのに、白い紙はどの向きから見ても明るい。紙の表面はどうなっていると思う？',
+      options: ['細かい凹凸がある', '鏡よりもつるつるで平ら', '自分で光を出している'],
+      answer: 'a',
+      explanation: '紙の表面には細かい凹凸があり、光をいろいろな向きにはね返します。このステージで、そのしくみを確かめよう。',
+      hint: '紙を虫めがねで見たときの表面を思いうかべよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'light-kq1-p1', concept: 'reflect-law',
+        prompt: 'ア〜ウは、平行な光が 3 つの面に当たったようすです。乱反射が起こっているのはどれ？',
+        figure: kqSurfaces(true),
+        answer: 'r2',
+        explanation: 'イは表面に細かい凹凸があるので、平行に来た光がいろいろな向きにはね返っています。アは平らな面で同じ向きに反射し、ウは光がガラスの中へ進んでいます。',
+        hint: 'はね返った光の向きがそろっていないものをさがそう。',
+      }),
+      fill({
+        id: 'light-kq1-t1', concept: 'reflect-law', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '表面に細かい凹凸がある物に当たった光が、いろいろな向きにはね返ることを[b1]という。',
+        blanks: [word('b1', ['乱反射', '全反射', '屈折'], '乱反射')],
+        explanation: '光がいろいろな向きにはね返ることを**乱反射**といいます。乱反射した光が目に届くので、光を出さない物も、どの向きからでも見えます。',
+        hint: '「乱れて」反射する、という名前だよ。',
+      }),
+      fill({
+        id: 'light-kq1-p2', concept: 'reflect-law',
+        prompt: '空らんに入る数を入れよう。凹凸の面でも、1 本 1 本の光は反射の法則に従う。',
+        text: '凹凸の面の小さな斜面に、法線と 30° の角をなす向きで光が当たった。この光の反射角は[b1]である。',
+        blanks: [number('b1', 30, 0, '°')],
+        explanation: '乱反射でも、光が当たった小さな面ごとに、入射角 ＝ 反射角 が成り立ちます。面の向きがばらばらなので、反射した光の向きがそろわないのです。',
+        hint: '反射の法則では、入射角と反射角はどうなるかな。',
+      }),
+      figureChoice({
+        id: 'light-kq1-p3', concept: 'refract-dir',
+        prompt: '空気中から、半円形ガラスの平らな面の中心へ光を当てた。ガラスの中を進む光は、点線ア〜ウのどれ？（アは入射した光をまっすぐのばした線）',
+        figure: kqSemiIn(),
+        answer: 'r2',
+        explanation: '空気からガラスへ進む光は、法線に近づく向きに折れ曲がります（屈折角 ＜ 入射角）。だからイです。ガラスの中の光は円の中心を通るので、曲がった面からはそのまま出ます。',
+        hint: '空気からガラスへ進むと、光は法線に近づくかな、離れるかな。',
+      }),
+      choice({
+        id: 'light-kq1-p4', concept: 'total-reflect',
+        prompt: '水そうを横から少し見上げると、水面に魚が映って見えた。このとき水面で起きていることはどれ？',
+        options: ['魚からの光が全反射している', '魚からの光が屈折して空気中へ出ている', '魚が自分で光を出している'],
+        answer: 'a',
+        explanation: '水中の魚から出た光が、大きな入射角で水面に当たると、空気中へ出ずにすべて反射します（全反射）。その光が目に届くので、水面に魚が映って見えます。',
+        hint: '水から空気へ進む光が、水面ではね返る現象の名前を思い出そう。',
+      }),
+      fill({
+        id: 'light-kq1-p5', concept: 'total-reflect',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '水から空気へ進む光の入射角を大きくしていくと、空気中へ出る光は弱くなり、水面で反射する光は[b1]なる。',
+        blanks: [word('b1', ['強く', '弱く', '見えなく'], '強く')],
+        explanation: '入射角を大きくするほど、反射する光が強くなり、空気中へ出る光は弱くなります。ある角度より大きくなると、光はすべて反射します。これが全反射です。',
+        hint: '最後には、光が全部はね返ることを思い出そう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'light-kq1-r1', concept: 'reflect-law',
+        prompt: '映画館のスクリーンの表面は、わざと細かい凹凸にしてある。その理由はどれ？',
+        options: ['どの席からも映像が見えるようにするため', '光を 1 つの向きに集めるため', '光を通りぬけさせるため'],
+        answer: 'a',
+        explanation: '凹凸の面で光が乱反射すると、光がいろいろな向きへ広がります。だから、どの席に座っても、スクリーンからの光が目に届きます。',
+        hint: '光がいろいろな向きにはね返ると、どうなるかな。',
+      }),
+      choice({
+        id: 'light-kq1-r2', concept: 'refract-dir', term: true,
+        prompt: '次の説明に合う言葉はどれ？「境界面で折れ曲がって進む光と、法線とのなす角」',
+        options: ['入射角', '屈折角', '反射角'],
+        answer: 'b',
+        explanation: '屈折した光と法線のなす角を**屈折角**といいます。入射角は境界面に当たる前の光と法線のなす角です。',
+        hint: '「屈折」した光の角だよ。',
+      }),
+      figureChoice({
+        id: 'light-kq1-r3', concept: 'refract-dir',
+        prompt: 'ガラスの中から、平らな面の中心へ光が進み、空気中へ出た。出たあとの光は、点線ア〜ウのどれ？（イは光をまっすぐのばした線）',
+        figure: kqSemiOut(),
+        answer: 'r3',
+        explanation: 'ガラスから空気へ進む光は、法線から離れる向きに折れ曲がります（屈折角 ＞ 入射角）。だからウです。',
+        hint: 'ガラスから空気へ進むときは、空気からガラスへのときと反対に曲がるよ。',
+      }),
+      figureChoice({
+        id: 'light-kq1-r4', concept: 'total-reflect',
+        prompt: 'ガラスの中から、平らな面の中心へ大きな入射角（55°）で光が進んだ。このあと光は、点線ア〜ウのどれを進む？（イは光をまっすぐのばした線）',
+        figure: kqSemiTotal(),
+        answer: 'r3',
+        explanation: 'ガラスから空気へ進む光は、入射角が約 42° より大きいと空気中へ出られず、境界面ですべて反射します（全反射）。だからガラスの中へはね返るウです。',
+        hint: '入射角がとても大きいとき、光は空気中へ出られるかな。',
+      }),
+      fill({
+        id: 'light-kq1-r5', concept: 'reflect-law',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '乱反射でも、1 本 1 本の光について、入射角と[b1]は等しい。',
+        blanks: [word('b1', ['反射角', '屈折角', '光軸'], '反射角')],
+        explanation: '乱反射は、反射の法則が成り立たなくなるのではありません。面の向きがばらばらなので、入射角 ＝ 反射角 のまま、光がいろいろな向きへ進みます。',
+        hint: '反射の法則を思い出そう。',
+      }),
+      choice({
+        id: 'light-kq1-r6', concept: 'total-reflect',
+        prompt: '次のうち、全反射を利用していないものはどれ？',
+        options: ['光ファイバーの通信', '虫めがね', '双眼鏡の中のプリズム'],
+        answer: 'b',
+        explanation: '虫めがねは、凸レンズで光を屈折させて大きく見る道具です。光ファイバーや、双眼鏡の中のプリズムは、全反射で光の向きを変えています。',
+        hint: '光を「曲げて集める」道具はどれかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -3044,7 +3294,7 @@
     areas: [
       { id: 'straight', title: '光の直進', order: 1, stages: [straight1, straight2] },
       { id: 'reflect', title: '光の反射', order: 2, stages: [reflect1, reflect2, lightMp1] },
-      { id: 'refract', title: '光の屈折', order: 3, stages: [refract1, refract2, lightMp2, lightDr1] },
+      { id: 'refract', title: '光の屈折', order: 3, stages: [refract1, refract2, lightMp2, lightDr1, lightKq1] },
       { id: 'lens', title: '凸レンズ', order: 4, stages: [lens1, lens2, lightMp3, lightMp4, lightDr2] },
     ],
   };

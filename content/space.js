@@ -3,6 +3,7 @@
 // 2 領域 × 2 ステージ（地球の動きと天体の見え方: 日周運動、年周運動と季節 / 太陽系: 月の満ち欠けと日食・月食、太陽と太陽系）と、概念 6 つ。
 // 領域 3「ミニプリント」: 先生のミニプリントの問題を書き直した 10 ステージ（space-mp1〜10）と、概念 1 つ（sp-universe）を追加。
 // 領域 4「ドリル」: 中学理科の天体のテーマに合わせて自作した 5 ステージ（space-dr1〜5）。新しい概念はなし。
+// クイズ: 公開クイズの出題のねらいだけを参考に自作した 6 ステージ（space-kq1〜6、2026-11-22）。新しい概念はなし。
 // 概念 id・領域 id は全単元で一意にするため、接頭辞 sp- を付ける。
 // 図（scene）の item は js/figures.js の定義に従う（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
@@ -3680,6 +3681,1039 @@
   };
 
   // ================================================================
+  // クイズ（2026-11-22 追加）: ほかの先生が公開しているクイズの「何を問うか」「用語・数値の例」「よくある誤答」だけを参考に、
+  // 問題文・選択肢・解説・図はすべて自作した練習問題。ステージは「クイズ 1」〜「クイズ 6」。
+  // 既存の問い（基本・プリント・ドリル）と重ならないよう、理由を問う・条件を変えて考える問いを中心にした
+  // ================================================================
+
+  // ---- 1 日の太陽の高度のグラフ（春分の日・北緯 35°。原点 (40, 200)、横 1 時間 20px、縦 1° 2px） ----
+  function sunAlt(decl, t) {
+    const d = decl * D, h = 15 * (t - 12) * D;
+    return Math.asin(Math.sin(LAT) * Math.sin(d) + Math.cos(LAT) * Math.cos(d) * Math.cos(h)) / D;
+  }
+  function altPt(t) { return [r1(40 + (t - 6) * 20), r1(200 - 2 * Math.max(0, sunAlt(0, t)))]; }
+  function altGraph() {
+    const pts = [];
+    for (let t = 6; t <= 18; t += 0.5) pts.push(altPt(t));
+    const items = [
+      { type: 'line', points: [[40, 30], [40, 200], [296, 200]], color: 'ink', width: 2 },
+      { type: 'line', points: pts, color: 'orange', width: 3 },
+      txt(44, 24, '太陽の高度', 12),
+      txt(316, 236, '時刻', 12, 'end'),
+      txt(34, 204, '0°', 12, 'end'),
+      txt(34, 144, '30°', 12, 'end'),
+      txt(34, 84, '60°', 12, 'end'),
+    ];
+    [6, 9, 12, 15, 18].forEach(t => items.push(txt(40 + (t - 6) * 20, 218, t + ' 時', 12, 'middle')));
+    for (let t = 6; t <= 18; t++) { const [x, y] = altPt(t); items.push({ type: 'circle', x, y, r: 3, fill: 'ink', stroke: 'none' }); }
+    return items;
+  }
+
+  // ---- 北の空の星の動き（北極星をかかない。円弧の中心 (160, 110)） ----
+  function northTrails() {
+    const items = [
+      { type: 'rect', x: 0, y: 0, width: 320, height: 226, fill: '#F3F6FB', stroke: 'none' },
+      { type: 'line', points: [[4, 226], [316, 226]], color: 'brown', width: 3 },
+      txt(160, 238, '北', 13, 'middle', true),
+      txt(310, 220, '東', 13, 'end', true),
+      txt(10, 220, '西', 13, null, true),
+    ];
+    [[36, 200], [62, 20], [90, 230]].forEach(([r, a0]) => items.push(arcLine(NSKY_C[0], NSKY_C[1], r, a0, a0 + 60, { color: 'blue', width: 2, arrow: true })));
+    return items;
+  }
+
+  // ---- 月食・日食を考える図（横から見た図。太陽 (36, 120)、地球 (170, 120)。月を置く候補は点線の丸） ----
+  const ECL_SPOT = { between: [105, 120], behind: [250, 120], side: [170, 56] };
+  function eclipseSide() {
+    const items = [
+      { type: 'line', points: [[60, 120], [314, 120]], color: 'gray', width: 1.5, dashed: true },
+      { type: 'circle', x: 36, y: 120, r: 24, fill: 'yellow', stroke: 'orange' },
+      txt(36, 160, '太陽', 12, 'middle'),
+      ...litBody(170, 120, 14, 180, 'sky', NIGHT),
+      txt(170, 150, '地球', 12, 'middle'),
+      txt(4, 20, '横から見た図（大きさ・距離は正しくない）', 12),
+    ];
+    Object.keys(ECL_SPOT).forEach(k => items.push({ type: 'circle', x: ECL_SPOT[k][0], y: ECL_SPOT[k][1], r: 10, fill: 'none', stroke: 'gray' }));
+    items.push({ type: 'circle', id: 'moon', x: 290, y: 200, r: 10, fill: '#E9E2C8', stroke: 'line', label: '月' });
+    return items;
+  }
+
+  // ---- 金星の位置（真上から見た図。太陽 (160, 90)、金星の軌道の半径 60、地球 (160, 210)） ----
+  // 地球から引いた線が軌道にふれる点（太陽からいちばんはなれて見える位置）は (108, 120) と (212, 120)
+  const VEN2 = { near: [160, 150], left: [108, 120], far: [160, 30], right: [212, 120] };
+  function venusTop(keys) {
+    const items = [
+      { type: 'circle', x: 160, y: 90, r: 60, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 160, y: 90, r: 16, fill: 'yellow', stroke: 'orange' },
+      txt(160, 72, '太陽', 12, 'middle'),
+      ...litBody(160, 210, 12, 90, 'sky', NIGHT),
+      txt(180, 232, '地球', 12),
+      txt(316, 20, '北極側から見た図', 12, 'end'),
+    ];
+    keys.forEach(k => {
+      const [x, y] = VEN2[k];
+      items.push(...litBody(x, y, 7, Math.atan2(-(90 - y), 160 - x) / D, 'yellow', DARK));
+    });
+    return items;
+  }
+
+  // ---- 太陽・地球・火星の軌道（真上から見た図。太陽 (160, 120)、地球の軌道 50、火星の軌道 95） ----
+  const MARS_SPOT = { far: [160, 25], left: [65, 120], right: [255, 120], opp: [160, 215] };
+  function marsTop() {
+    const items = [
+      { type: 'circle', x: 160, y: 120, r: 50, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 160, y: 120, r: 95, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 160, y: 120, r: 14, fill: 'yellow', stroke: 'orange' },
+      txt(160, 102, '太陽', 12, 'middle'),
+      ...litBody(160, 170, 10, 90, 'sky', NIGHT),
+      txt(176, 176, '地球', 12),
+      txt(4, 20, '北極側から見た図', 12),
+      txt(316, 20, '外側の円：火星の軌道', 12, 'end'),
+    ];
+    Object.keys(MARS_SPOT).forEach(k => items.push({ type: 'circle', x: MARS_SPOT[k][0], y: MARS_SPOT[k][1], r: 4, fill: 'gray', stroke: 'none' }));
+    return items;
+  }
+
+  // ---- 望遠鏡で見た金星（右側が光る。cx の位置に、半径 r、光る部分の内側のふくらみ k（-1 細い〜1 丸い）） ----
+  function venusPhase(cx, cy, r, k) {
+    const pts = [];
+    for (let a = -90; a <= 90; a += 10) pts.push([r1(cx + r * Math.cos(a * D)), r1(cy - r * Math.sin(a * D))]);
+    for (let a = 90; a >= -90; a -= 10) pts.push([r1(cx - k * r * Math.cos(a * D)), r1(cy - r * Math.sin(a * D))]);
+    return [
+      { type: 'circle', x: cx, y: cy, r, fill: 'none', stroke: 'gray' },
+      { type: 'polygon', points: pts, fill: 'yellow', stroke: 'orange' },
+    ];
+  }
+
+  // ---- 黒点の見え方（太陽の右はしの一部と黒点。cx を中心に半径 40） ----
+  function limbSpot(cx, rx, ry) {
+    return [
+      { type: 'circle', x: cx, y: 100, r: 40, fill: 'yellow', stroke: 'orange' },
+      { type: 'ellipse', x: cx + 31, y: 100, rx, ry, fill: '#5A4A2A', stroke: 'none' },
+    ];
+  }
+
+  // ---- 太陽系の内側の軌道（真上から見た図の一部。太陽 (30, 120)。内側から水星・金星・地球・火星・木星） ----
+  const ORB_R = [20, 34, 50, 82, 196];
+  function innerOrbits() {
+    const items = [{ type: 'circle', x: 30, y: 120, r: 10, fill: 'yellow', stroke: 'orange' }];
+    ORB_R.forEach((r, i) => {
+      items.push(arcLine(30, 120, r, -75, 75, { color: 'gray', width: 1.5 }));
+      const [x, y] = onCircle(30, 120, r, 40 - i * 14);
+      items.push({ type: 'circle', x, y, r: i === 4 ? 8 : 4, fill: '#D9C9A8', stroke: 'line' });
+    });
+    items.push(txt(316, 20, '真上から見た図（太陽は左）', 12, 'end'));
+    return items;
+  }
+
+  // ---- 銀河系を真横から見た図に、中心から右はしまでの目もり（1 万光年ごと。0 → x 160、5 万光年 → x 300） ----
+  function galaxyRuler() {
+    const items = galaxySide().concat([
+      { type: 'line', points: [[160, 168], [300, 168]], color: 'ink', width: 2 },
+      txt(160, 190, '0', 12, 'middle'),
+      txt(316, 190, '5 万光年', 12, 'end'),
+      txt(160, 210, '（中心）', 12, 'middle'),
+    ]);
+    for (let i = 0; i <= 5; i++) items.push({ type: 'line', points: [[160 + 28 * i, 162], [160 + 28 * i, 174]], color: 'ink', width: 2 });
+    return items;
+  }
+
+  // ---- ステージ space-kq1: クイズ 1 天体の 1 日の動き ----
+  const spaceKq1 = {
+    id: 'space-kq1', areaId: 'sp-earth', free: true, title: 'クイズ 1: 天体の 1 日の動き', minutes: 6, concepts: ['sp-rotation', 'sp-hemisphere'],
+    lessons: [
+      {
+        id: 'space-kq1-c1',
+        text: '天体の位置は、東・西・南・北などの向きを表す**方位**と、地平線から天体までの角度である**高度**で表します。太陽の高度は、朝と夕方に低く、南中するときにいちばん高くなります。',
+        // 春分の日の太陽の高度の変化（北緯 35°）
+        figure: scene(altGraph().concat([txt(160, 70, '12 時ごろに南中', 12, 'middle')])),
+      },
+      {
+        id: 'space-kq1-c2',
+        text: '地軸を北へのばした先の近くに**北極星**があるので、北の空の星は北極星を中心に回って見えます。南半球では北極星は見えず、地軸を南へのばした方向（南の空）を中心に星が回ります。',
+        // 北の空。星は北極星を中心に反時計回り
+        figure: scene(northSky().concat([
+          arcLine(NSKY_C[0], NSKY_C[1], 50, 200, 260, { color: 'blue', width: 2, arrow: true }),
+          arcLine(NSKY_C[0], NSKY_C[1], NSKY_R, -40, 20, { color: 'blue', width: 2, arrow: true }),
+          txt(4, 20, '北の空：北極星を中心に反時計回り', 12),
+        ])),
+      },
+      {
+        id: 'space-kq1-c3',
+        text: '天体は 24 時間で 360° 回って見えるので、1 時間に 15°、4 分で 1° 動きます。夜の観察では、暗さに慣れた目をもどさないよう、懐中電灯に赤いセロファンをかぶせて手元を照らします。',
+        // 南の空。印は 15° ごと
+        figure: scene(skyArc().concat([
+          SKY_NOTE,
+          txt(4, 20, '1 時間に 15°、4 分で 1°', 13, null, true),
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'space-kq1-w1', concept: 'sp-rotation',
+      prompt: '予想しよう。夜に星を観察するとき、懐中電灯に赤いセロファンをかぶせることがあります。何のためだと思う？',
+      options: ['暗さに慣れた目を、まぶしさでもどさないため', '星が赤くはっきり見えるようにするため', '電池を長もちさせるため'],
+      answer: 'a',
+      explanation: '目は暗い所に少しずつ慣れて、暗い星も見えるようになります。赤い弱い光なら、その慣れをこわさずに手元の記録用紙を照らせます。',
+      hint: '明るい部屋から外に出ると、しばらく星が見えにくいね。',
+    }),
+    problems: [
+      fill({
+        id: 'space-kq1-t1', concept: 'sp-hemisphere', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地平線から天体までの角度を、その天体の[b1]という。',
+        blanks: [word('b1', ['高度', '方位', '緯度'], '高度')],
+        explanation: '地平線から天体までの角度を**高度**といいます。南中したときの高度が南中高度です。方位は、東・西・南・北などの向きのことです。',
+        hint: '「高さ」を角度で表したものだよ。',
+      }),
+      fill({
+        id: 'space-kq1-p1', concept: 'sp-rotation',
+        prompt: '空らんに入る数を入れよう。',
+        text: '南の空の星は 1 時間に約 15° 動いて見える。20 分間では約[b1]動く。',
+        blanks: [number('b1', 5, 0, '°')],
+        explanation: '20 分は 1 時間の 3 分の 1 なので、15° ÷ 3 ＝ 5° です。4 分で 1° と考えても、20 分 ÷ 4 分 ＝ 5° になります。',
+        hint: '20 分は、1 時間の何分の 1 かな。',
+      }),
+      figureChoice({
+        id: 'space-kq1-p2', concept: 'sp-hemisphere',
+        prompt: '春分の日に、1 時間ごとに太陽の高度を測ってグラフにしました（ア 9 時、イ 12 時、ウ 15 時の点）。太陽が南中したときを表す点はどれ？',
+        figure: scene(altGraph().concat([
+          region('r1', altPt(9)[0], altPt(9)[1], 'ア'),
+          region('r2', altPt(12)[0], altPt(12)[1], 'イ'),
+          region('r3', altPt(15)[0], altPt(15)[1], 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: '太陽が真南にくる南中のとき、太陽の高度は 1 日でいちばん高くなります。グラフのいちばん高い点のイです。',
+        hint: '南中するとき、太陽の高さはどうなっているかな。',
+      }),
+      choice({
+        id: 'space-kq1-p3', concept: 'sp-rotation',
+        prompt: '南半球（たとえばオーストラリア）で夜空を見ると、星は空のどこを中心に回って見える？',
+        options: ['南の空の、地軸を南へのばした方向', '北の空の北極星', '観測者の真上（天頂）'],
+        answer: 'a',
+        explanation: '星が回って見えるのは地球の自転のためで、中心はいつも地軸をのばした方向です。南半球では北極星は地平線の下にあり、南の空の一点を中心に星が回ります。',
+        hint: '星が回る中心は、自転の軸をのばした方向だよ。',
+      }),
+      drag({
+        id: 'space-kq1-p4', concept: 'sp-rotation',
+        prompt: '北の空で、星が動いたあとを記録しました（矢印は動いた向き）。「北極星」の丸を動かして、北極星がある位置に置こう。',
+        // 3 本の円弧の中心 (160, 110) が正解。円弧の上の点 (160, 200) は不正解の例
+        figure: scene(northTrails().concat([
+          { type: 'circle', id: 'polaris', x: 290, y: 30, r: 8, fill: 'yellow', stroke: 'orange', label: '北極星' },
+        ])),
+        draggable: { itemId: 'polaris', axis: 'xy' },
+        target: { x: NSKY_C[0], y: NSKY_C[1] },
+        samples: { correct: { x: NSKY_C[0], y: NSKY_C[1] }, wrong: { x: 160, y: 200 } },
+        explanation: '北極星は地軸を北へのばした先の近くにあるので、ほとんど動きません。北の空では、星が北極星のまわりを反時計回りに回るので、円弧の中心に北極星があります。',
+        hint: '3 本の円弧は、同じ点を中心にしているよ。',
+      }),
+      fill({
+        id: 'space-kq1-p5', concept: 'sp-rotation',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '太陽が東から西へ動いて見えることも、昼と夜がくり返されることも、地球の[b1]によって起こる。',
+        blanks: [word('b1', ['自転', '公転', '地軸の傾き'], '自転')],
+        explanation: 'どちらも地球が 1 日に 1 回自転することで起こります。太陽が動いて見えるのも、地点が太陽のほうを向いたりはなれたりするのも、同じ自転の見え方です。',
+        hint: '1 日で 1 回くり返すことに注目しよう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'space-kq1-r1', concept: 'sp-rotation',
+        prompt: '空らんに入る数を入れよう。',
+        text: '天体は 1 時間に約 15° 動いて見える。10° 動くのにかかる時間は約[b1]である。',
+        blanks: [number('b1', 40, 0, '分')],
+        explanation: '1° 動くのに 60 分 ÷ 15 ＝ 4 分かかります。10° では 4 分 × 10 ＝ 40 分です。',
+        hint: 'まず、1° 動くのに何分かかるかを考えよう。',
+      }),
+      choice({
+        id: 'space-kq1-r2', concept: 'sp-hemisphere',
+        prompt: '透明半球で 1 日の太陽の動きを記録するとき、置く場所としてふさわしいのはどこ？',
+        options: ['日当たりがよく、まわりに高い建物のない水平な所', '風の当たらない、建物のかげの所', '窓ぎわの、少しかたむいた机の上'],
+        answer: 'a',
+        explanation: '朝から夕方まで太陽の光が当たり続ける所でないと、記録がとぎれます。また、水平に置かないと、方位や高度が正しく記録できません。',
+        hint: '1 日中、太陽が見えていないといけないね。',
+      }),
+      choice({
+        id: 'space-kq1-r3', concept: 'sp-hemisphere',
+        prompt: '透明半球の太陽の記録を、地平線の下までのばしていくと、1 つの円になります。このことから分かることはどれ？',
+        options: ['太陽は天球上を 1 日で 1 周するように見える', '太陽は夜のあいだ、同じ所に止まっている', '太陽は 1 年で天球を 1 周する'],
+        answer: 'a',
+        explanation: '地球が 1 日に 1 回自転するので、太陽は夜も地平線の下を動き続け、天球上を 1 日で 1 周するように見えます。',
+        hint: '夜のあいだ、太陽は地平線の下でどうしているかな。',
+      }),
+      choice({
+        id: 'space-kq1-r4', concept: 'sp-hemisphere', term: true,
+        prompt: '次の説明に合う言葉はどれ？「東・西・南・北のように、観測者から見た向きを表したもの」',
+        options: ['方位', '高度', '天頂'],
+        answer: 'a',
+        explanation: '向きを表すものを**方位**といいます。天体の位置は、方位と高度の 2 つで表します。',
+        hint: '方位磁針（コンパス）で調べるものだよ。',
+      }),
+      choice({
+        id: 'space-kq1-r5', concept: 'sp-rotation',
+        prompt: '北の空で、北極星がほとんど動かないように見えるのはなぜ？',
+        options: ['地軸を北へのばした先の近くにあるから', 'ほかの星より地球に近いから', 'とても明るく光っているから'],
+        answer: 'a',
+        explanation: '天体の動きは地球の自転による見かけの動きで、自転の軸の方向にある星はほとんど動きません。北極星は、ちょうど地軸を北へのばした先の近くにあります。',
+        hint: 'こまを回したとき、軸の先はほとんど動かないね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-kq2: クイズ 2 天体の 1 年の動き ----
+  const WINTER = -23.4;   // 冬至の太陽の赤緯
+  const SUMMER_RISE_DOTS = [SUMMER_RISE, sunAt(0, 6), sunAt(WINTER, riseTime(WINTER))];
+  const spaceKq2 = {
+    id: 'space-kq2', areaId: 'sp-earth', free: true, title: 'クイズ 2: 天体の 1 年の動き', minutes: 6, concepts: ['sp-revolution', 'sp-season'],
+    lessons: [
+      {
+        id: 'space-kq2-c1',
+        text: '地球が公転するので、太陽は星座の間を 1 日に約 1°（360° ÷ 365 日）ずつ、西から東へ動いて見えます。真夜中に南中する星座は、地球から見て太陽と反対側にあります。',
+        // 公転する地球と四季の星座（A の地球から見ると、オリオン座は真夜中、さそり座は太陽の方向）
+        figure: scene(orbitBase(true).concat(starDots()).concat([
+          { type: 'line', points: [[212, 120], [40, 120]], color: 'orange', width: 2, dashed: true },
+          txt(160, 160, '地球が A のとき', 12, 'middle'),
+        ])),
+      },
+      {
+        id: 'space-kq2-c2',
+        text: '同じ日でも、緯度が高い（北にある）地点ほど、太陽の南中高度は低くなります。夏至の日の南中高度は、北緯 35° の地点で 78.4°、北緯 43° の地点では 70.4° です。',
+        // 北緯 35° と 43° の夏至の南中高度
+        figure: scene(noonBase().concat([
+          { type: 'line', points: [[150, 200], onCircle(150, 200, 140, 78.4)], color: 'orange', width: 2 },
+          { type: 'line', points: [[150, 200], onCircle(150, 200, 140, 70.4)], color: 'blue', width: 2 },
+          { type: 'circle', x: onCircle(150, 200, 140, 78.4)[0], y: onCircle(150, 200, 140, 78.4)[1], r: 8, fill: 'yellow', stroke: 'orange' },
+          { type: 'circle', x: onCircle(150, 200, 140, 70.4)[0], y: onCircle(150, 200, 140, 70.4)[1], r: 8, fill: 'yellow', stroke: 'blue' },
+          txt(206, 70, '北緯 43°：70.4°', 12),
+          txt(104, 48, '北緯 35°：78.4°', 12, 'end'),
+        ])),
+      },
+      {
+        id: 'space-kq2-c3',
+        text: '夏至の日の太陽は、真東より北寄りからのぼり、真西より北寄りにしずみます。冬至の日は南寄りからのぼって南寄りにしずみ、通り道は低く短くなるので、昼が短くなります。',
+        // 透明半球に、夏至と冬至の太陽の通り道
+        figure: scene(hemisphereBase().concat([
+          { type: 'line', points: pathPts(SUMMER, riseTime(SUMMER), 24 - riseTime(SUMMER)), color: 'orange', width: 2 },
+          { type: 'line', points: pathPts(WINTER, riseTime(WINTER), 24 - riseTime(WINTER)), color: 'blue', width: 2 },
+          txt(160, 40, '夏至', 12, 'middle'),
+          txt(160, 104, '冬至', 12, 'middle'),
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'space-kq2-w1', concept: 'sp-revolution',
+      prompt: '予想しよう。もし地球の公転が今より速かったら、同じ時刻に見える星座の移り変わりはどうなると思う？',
+      options: ['今より速く移り変わる', '今よりゆっくり移り変わる', '移り変わらなくなる'],
+      answer: 'a',
+      explanation: '星座の移り変わり（年周運動）は、地球の公転による見かけの動きです。公転が速ければ、移り変わりも速くなります。',
+      hint: '星座の移り変わりは、地球のどんな運動で起こるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'space-kq2-t1', concept: 'sp-revolution', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '太陽の見かけの通り道（黄道）にそって並んでいる 12 の星座を[b1]という。',
+        blanks: [word('b1', ['黄道 12 星座', '冬の大三角', '春の大曲線'], '黄道 12 星座')],
+        explanation: '黄道にそって並ぶ 12 の星座を**黄道 12 星座**といいます。太陽は 1 年かけて、この星座の間を動いていくように見えます。',
+        hint: '「黄道」という言葉が入るよ。',
+      }),
+      figureChoice({
+        id: 'space-kq2-p1', concept: 'sp-revolution',
+        prompt: '公転する地球と星座の方向を真上から見た図です。真夜中にさそり座が南中する日、太陽と同じ方向にあって見えない星座はどれ？' + STAR_CHOICES,
+        figure: scene(orbitBase(false).concat(starDots()).concat([
+          region('r1', STARS.orion[0], STARS.orion[1], 'ア'),
+          region('r2', STARS.leo[0], STARS.leo[1], 'イ'),
+          region('r3', STARS.scorpius[0], STARS.scorpius[1], 'ウ'),
+          region('r4', STARS.pegasus[0], STARS.pegasus[1], 'エ'),
+        ])),
+        answer: 'r1',
+        explanation: '真夜中に南中する星座は、地球から見て太陽と反対側にあります。さそり座が真夜中に南中するとき、地球は図の左の位置にあり、太陽と同じ方向にあるのはアのオリオン座です。',
+        hint: 'まず、さそり座が真夜中に見える地球の位置をさがそう。',
+      }),
+      fill({
+        id: 'space-kq2-p2', concept: 'sp-season',
+        prompt: '空らんに入る数を入れよう。',
+        text: '同じ夏至の日、北緯 31° の地点と北緯 41° の地点では、太陽の南中高度が[b1]ちがう。',
+        blanks: [number('b1', 10, 0, '°')],
+        explanation: '夏至の南中高度は「90° − 緯度 ＋ 23.4°」で、緯度が 1° 高くなると南中高度は 1° 低くなります。緯度の差が 10° なので、南中高度も 10° ちがいます。',
+        hint: '南中高度の式で、緯度だけがちがうね。',
+      }),
+      drag({
+        id: 'space-kq2-p3', concept: 'sp-season',
+        prompt: '透明半球の底の円にある 3 つの点は、日の出の位置の候補です。「太陽」の丸を動かして、夏至の日の日の出の位置に重ねよう。',
+        // 夏至の日の出（北東寄り）が正解。不正解の例は夏至の日の入り（北西寄り）
+        figure: scene(hemisphereBase().concat(SUMMER_RISE_DOTS.map(([x, y]) => ({ type: 'circle', x, y, r: 4, fill: 'gray', stroke: 'none' }))).concat([
+          { type: 'circle', id: 'sun', x: 290, y: 40, r: 12, fill: 'yellow', stroke: 'orange', label: '太陽' },
+        ])),
+        draggable: { itemId: 'sun', axis: 'xy' },
+        target: { x: SUMMER_RISE[0], y: SUMMER_RISE[1] },
+        samples: { correct: { x: SUMMER_RISE[0], y: SUMMER_RISE[1] }, wrong: { x: SUMMER_SET[0], y: SUMMER_SET[1] } },
+        explanation: '夏至の日の太陽は、真東より北寄り（北東寄り）からのぼります。図は北側から南を見下ろしているので、東の端より手前（北）側の点です。',
+        hint: '夏至の日の出は、真東より北と南のどちら寄りかな。',
+      }),
+      fill({
+        id: 'space-kq2-p4', concept: 'sp-revolution',
+        prompt: '空らんに入る数を入れよう。',
+        text: '地球は約 365 日で太陽のまわりを 360° 公転する。太陽が星座の間を動いて見える角度は、1 日で約[b1]である。',
+        blanks: [number('b1', 1, 0, '°')],
+        explanation: '360° ÷ 365 日で、1 日に約 1° です。そのため、1 か月（約 30 日）では約 30° になります。',
+        hint: '360 を 365 でわると、だいたいいくつかな。',
+      }),
+      choice({
+        id: 'space-kq2-p5', concept: 'sp-season',
+        prompt: '冬至の日の太陽の通り道を、夏至の日とくらべた説明として、正しいものはどれ？',
+        options: ['南寄りで低く、昼の長さが短い', '北寄りで高く、昼の長さが長い', '向きは同じで、高さだけが低い'],
+        answer: 'a',
+        explanation: '冬至の日の太陽は、南寄りからのぼって低い所を通り、南寄りにしずみます。通り道が短いので、昼の長さも短くなります。',
+        hint: '冬は、日の出がおそく日の入りが早いね。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'space-kq2-r1', concept: 'sp-revolution',
+        prompt: '公転する地球と星座の方向を真上から見た図です。真夜中にしし座が南中する日、太陽と同じ方向にあって見えない星座はどれ？' + STAR_CHOICES,
+        figure: scene(orbitBase(false).concat(starDots()).concat([
+          region('r1', STARS.orion[0], STARS.orion[1], 'ア'),
+          region('r2', STARS.leo[0], STARS.leo[1], 'イ'),
+          region('r3', STARS.scorpius[0], STARS.scorpius[1], 'ウ'),
+          region('r4', STARS.pegasus[0], STARS.pegasus[1], 'エ'),
+        ])),
+        answer: 'r4',
+        explanation: 'しし座が真夜中に南中するとき、地球はしし座側（図の上）の位置にあります。その地球から太陽のほうを見ると、向こうにあるのはエのペガスス座です。',
+        hint: '真夜中に見える星座と、太陽の方向の星座は反対側にあるよ。',
+      }),
+      fill({
+        id: 'space-kq2-r2', concept: 'sp-revolution',
+        prompt: '空らんに入る数を入れよう。',
+        text: '同じ時刻の星座は、1 か月に約 30° 西へずれる。もし地球の公転の速さが今の 2 倍なら、1 か月にずれる角度は約[b1]になる。',
+        blanks: [number('b1', 60, 0, '°')],
+        explanation: '星座のずれは公転によるものなので、公転が 2 倍の速さなら、ずれる角度も 2 倍の約 60° になります。',
+        hint: '公転の速さとずれる角度は比例するよ。',
+      }),
+      choice({
+        id: 'space-kq2-r3', concept: 'sp-season',
+        prompt: '同じ日の太陽の南中高度を、北海道（北緯約 43°）と沖縄（北緯約 26°）でくらべるとどうなる？',
+        options: ['北海道のほうが低い', '北海道のほうが高い', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '緯度が高い（北にある）地点ほど、太陽の南中高度は低くなります。北にある北海道のほうが低いです。',
+        hint: '南中高度の式「90° − 緯度」を思い出そう。',
+      }),
+      choice({
+        id: 'space-kq2-r4', concept: 'sp-season', term: true,
+        prompt: '次の説明に合う言葉はどれ？「北半球で、太陽の南中高度が 1 年でいちばん低く、昼がいちばん短くなる日」',
+        options: ['冬至', '夏至', '秋分'],
+        answer: 'a',
+        explanation: '南中高度がいちばん低く、昼がいちばん短い日は**冬至**（12 月 22 日ごろ）です。',
+        hint: '冬の名前が入っているよ。',
+      }),
+      choice({
+        id: 'space-kq2-r5', concept: 'sp-season',
+        prompt: '北緯 35° の地点で、ある日の太陽の南中高度は 70° だった。この日がふくまれる季節として、最も近いものはどれ？',
+        options: ['夏', '冬', '春分・秋分の日'],
+        answer: 'a',
+        explanation: '北緯 35° では、春分・秋分の南中高度は 55°、夏至は 78.4°、冬至は 31.6° です。70° は 55° より高いので、夏至に近い夏のころです。',
+        hint: '春分・秋分の 55° より高いか低いかで考えよう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-kq3: クイズ 3 月の満ち欠けと食 ----
+  const spaceKq3 = {
+    id: 'space-kq3', areaId: 'sp-solar', free: true, title: 'クイズ 3: 月の満ち欠けと日食・月食', minutes: 6, concepts: ['sp-moon'],
+    lessons: [
+      {
+        id: 'space-kq3-c1',
+        text: '月の公転の周期は約 27.3 日ですが、満ち欠けの周期は約 29.5 日です。月が 1 周するあいだに地球も公転して太陽の方向がずれるので、同じ形にもどるまで少し長くかかります。',
+        // 2 つの日数をくらべる帯
+        figure: scene([
+          { type: 'rect', x: 20, y: 70, width: 255, height: 30, fill: 'sky', stroke: 'line' },
+          { type: 'rect', x: 20, y: 140, width: 276, height: 30, fill: 'yellow', stroke: 'orange' },
+          txt(24, 60, '月が地球のまわりを 1 周：約 27.3 日', 12),
+          txt(24, 130, '満ち欠けがひとめぐり：約 29.5 日', 12),
+          txt(160, 210, '地球も公転するので、少し長くかかる', 12, 'middle'),
+        ]),
+      },
+      {
+        id: 'space-kq3-c2',
+        text: '月の出・南中・月の入りの時刻は、形で決まります。上弦の月は夕方に南中し、満月は夕方にのぼって真夜中に南中、下弦の月は真夜中にのぼって明け方に南中し、正午ごろしずみます。',
+        // 形ごとの、月の出・南中・月の入りのおよその時刻
+        figure: scene([
+          txt(110, 30, '月の出', 12, 'middle', true),
+          txt(190, 30, '南中', 12, 'middle', true),
+          txt(270, 30, '月の入り', 12, 'middle', true),
+          txt(10, 70, '上弦の月', 12), txt(110, 70, '12 時', 12, 'middle'), txt(190, 70, '18 時', 12, 'middle'), txt(270, 70, '0 時', 12, 'middle'),
+          txt(10, 120, '満月', 12), txt(110, 120, '18 時', 12, 'middle'), txt(190, 120, '0 時', 12, 'middle'), txt(270, 120, '6 時', 12, 'middle'),
+          txt(10, 170, '下弦の月', 12), txt(110, 170, '0 時', 12, 'middle'), txt(190, 170, '6 時', 12, 'middle'), txt(270, 170, '12 時', 12, 'middle'),
+          txt(160, 220, '時刻はおよそ（24 時制）', 12, 'middle'),
+        ]),
+      },
+      {
+        id: 'space-kq3-c3',
+        text: '月食で月にうつる地球の影のふちは円く、地球が球形だと分かります。皆既月食では、地球の大気を通って曲がった赤い光が月にとどき、月が赤黒く見えます。日食は、月の小さな影が落ちる所でしか見られません。',
+        // 横から見た図。地球の影の中に月が入る
+        figure: scene([
+          { type: 'line', points: [[60, 120], [314, 120]], color: 'gray', width: 1.5, dashed: true },
+          { type: 'circle', x: 36, y: 120, r: 24, fill: 'yellow', stroke: 'orange' },
+          txt(36, 160, '太陽', 12, 'middle'),
+          { type: 'polygon', points: [[170, 106], [300, 114], [300, 126], [170, 134]], fill: '#C3C8D0', stroke: 'none' },
+          ...litBody(170, 120, 14, 180, 'sky', NIGHT),
+          txt(170, 150, '地球', 12, 'middle'),
+          { type: 'circle', x: 250, y: 120, r: 9, fill: '#9C4A3A', stroke: 'line' },
+          txt(250, 100, '月（赤黒い）', 12, 'middle'),
+          txt(250, 150, '地球の影', 12, 'middle'),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'space-kq3-w1', concept: 'sp-moon',
+      prompt: '予想しよう。皆既月食のとき、月は真っ黒にならず、赤黒く見えます。なぜだと思う？',
+      options: ['地球の大気を通って曲がった赤い光がとどくから', '月が自分で赤く光り出すから', '地球の影が赤い色をしているから'],
+      answer: 'a',
+      explanation: '太陽の光のうち赤い光は、地球の大気を通りぬけるときに曲がり、影の中の月にも少しとどきます。そのため、月は赤黒く見えます。',
+      hint: '夕焼けが赤いのも、大気を長く通った光だね。',
+    }),
+    problems: [
+      fill({
+        id: 'space-kq3-t1', concept: 'sp-moon', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '月が太陽の中央に重なっても、月が太陽より小さく見えるため、太陽が輪のように見える日食を[b1]という。',
+        blanks: [word('b1', ['金環日食', '皆既日食', '部分日食'], '金環日食')],
+        explanation: '月が地球から遠い時期には、月が太陽より少し小さく見えます。そのため、太陽が金の輪のように見える**金環日食**になります。',
+        hint: '「金の輪」と書く言葉が入るよ。',
+      }),
+      figureChoice({
+        id: 'space-kq3-p1', concept: 'sp-moon',
+        prompt: '地球と月の公転を北極側から見た図です（太陽の光は左から、月は反時計回り）。真夜中に東の地平線からのぼってくる月の位置はどれ？（ア 右、イ 上、ウ 下）',
+        figure: scene(moonOrbit().concat([
+          region('r1', moonAt(0)[0], moonAt(0)[1], 'ア'),
+          region('r2', moonAt(90)[0], moonAt(90)[1], 'イ'),
+          region('r3', moonAt(270)[0], moonAt(270)[1], 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: '真夜中に東からのぼるのは、明け方に南中する下弦の月です。下弦の月は、図の上の位置にあるときに見えます。',
+        hint: '真夜中にのぼる月は、明け方には南の空にくるよ。',
+      }),
+      fill({
+        id: 'space-kq3-p2', concept: 'sp-moon',
+        prompt: '空らんに入る数を入れよう。',
+        text: '下弦の月は明け方の 6 時ごろに南中する。この月が西の地平線にしずむのは、およそ[b1]ごろ（24 時制）である。',
+        blanks: [number('b1', 12, 0, '時')],
+        explanation: '月も太陽と同じように、のぼってから約 6 時間で南中し、南中から約 6 時間でしずみます。6 時 ＋ 6 時間 ＝ 12 時ごろです。',
+        hint: '南中してからしずむまで、約何時間かな。',
+      }),
+      choice({
+        id: 'space-kq3-p3', concept: 'sp-moon',
+        prompt: '月が地球のまわりを 1 周する日数（約 27.3 日）より、満ち欠けの周期（約 29.5 日）のほうが長いのはなぜ？',
+        options: ['そのあいだに地球も公転し、太陽の方向がずれるから', '月の公転の速さが日によって変わるから', '月が公転と同じ周期で自転しているから'],
+        answer: 'a',
+        explanation: '月が 1 周するあいだに、地球も太陽のまわりを少し進みます。太陽の方向がずれた分だけ月がよけいに進まないと、同じ形にもどりません。',
+        hint: '満ち欠けは、太陽・地球・月の位置関係で決まるよ。',
+      }),
+      drag({
+        id: 'space-kq3-p4', concept: 'sp-moon',
+        prompt: '太陽と地球を横から見た図です。「月」の丸を動かして、月食が起こるときの月の位置（点線の丸のどれか）に置こう。',
+        // 地球の後ろ（太陽と反対側）が正解。太陽と地球のあいだは不正解の例
+        figure: scene(eclipseSide()),
+        draggable: { itemId: 'moon', axis: 'xy' },
+        target: { x: ECL_SPOT.behind[0], y: ECL_SPOT.behind[1] },
+        samples: { correct: { x: ECL_SPOT.behind[0], y: ECL_SPOT.behind[1] }, wrong: { x: ECL_SPOT.between[0], y: ECL_SPOT.between[1] } },
+        explanation: '月食は、太陽・地球・月の順に一直線に並び、月が地球の影に入る現象です。月は地球をはさんで太陽と反対側にあります。',
+        hint: '月が地球の影に入るのは、どちら側にあるときかな。',
+      }),
+      choice({
+        id: 'space-kq3-p5', concept: 'sp-moon',
+        prompt: '日食が見られる地域が、月食にくらべてずっとせまいのはなぜ？',
+        options: ['地球に落ちる月の影が小さいから', '日食は夜の側でしか見られないから', '太陽が月より小さく見えるから'],
+        answer: 'a',
+        explanation: '日食は、月の影が落ちる所でだけ見られます。月は地球より小さいので、影は地球の一部にしか落ちません。月食は、月が見えている夜の側ならどこからでも見られます。',
+        hint: '日食は、月の影の中に入った所で見えるよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'space-kq3-r1', concept: 'sp-moon',
+        prompt: '月食のとき、月にうつる地球の影のふちが円い形をしていることから分かることはどれ？',
+        options: ['地球が球形をしていること', '月が球形をしていること', '太陽が月より大きいこと'],
+        answer: 'a',
+        explanation: 'どの向きから光が当たっても影のふちが円くなるのは、地球が球形だからです。昔の人も、月食の影から地球が丸いと考えました。',
+        hint: 'うつっているのは、だれの影かな。',
+      }),
+      fill({
+        id: 'space-kq3-r2', concept: 'sp-moon',
+        prompt: '空らんに入る数を入れよう。',
+        text: '満月は真夜中の 0 時ごろに南中する。満月が東の地平線からのぼるのは、およそ[b1]ごろ（24 時制）である。',
+        blanks: [number('b1', 18, 0, '時')],
+        explanation: '月はのぼってから約 6 時間で南中します。0 時の 6 時間前なので、18 時（夕方 6 時）ごろです。満月は太陽が西にしずむころ、東からのぼります。',
+        hint: '南中する時刻から、6 時間さかのぼろう。',
+      }),
+      drag({
+        id: 'space-kq3-r3', concept: 'sp-moon',
+        prompt: '太陽と地球を横から見た図です。「月」の丸を動かして、日食が起こるときの月の位置（点線の丸のどれか）に置こう。',
+        // 太陽と地球のあいだが正解。地球の後ろは不正解の例
+        figure: scene(eclipseSide()),
+        draggable: { itemId: 'moon', axis: 'xy' },
+        target: { x: ECL_SPOT.between[0], y: ECL_SPOT.between[1] },
+        samples: { correct: { x: ECL_SPOT.between[0], y: ECL_SPOT.between[1] }, wrong: { x: ECL_SPOT.behind[0], y: ECL_SPOT.behind[1] } },
+        explanation: '日食は、太陽・月・地球の順に一直線に並び、月が太陽をかくす現象です。月は太陽と地球のあいだにあります（新月のころ）。',
+        hint: '月が太陽をかくすには、どこにあればよいかな。',
+      }),
+      choice({
+        id: 'space-kq3-r4', concept: 'sp-moon', term: true,
+        prompt: '次の説明に合う言葉はどれ？「地球の影に月の一部分だけが入り、欠けて見える月食」',
+        options: ['部分月食', '皆既月食', '金環日食'],
+        answer: 'a',
+        explanation: '月が少しだけ地球の影に入るものを**部分月食**、すっぽり入るものを皆既月食といいます。',
+        hint: '「一部分」だけが欠けるね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-kq4: クイズ 4 金星と惑星の見え方 ----
+  const spaceKq4 = {
+    id: 'space-kq4', areaId: 'sp-solar', free: true, title: 'クイズ 4: 金星と惑星の見え方', minutes: 6, concepts: ['sp-sun'],
+    lessons: [
+      {
+        id: 'space-kq4-c1',
+        text: '金星は地球より内側を公転するので、地球から見て太陽から大きくはなれません。地球に近いときは大きく細く、太陽からいちばんはなれて見えるころは半月の形、遠いときは小さく丸に近く見えます。',
+        // 金星の 3 つの位置と見え方
+        figure: scene(venusTop(['near', 'left', 'far']).concat([
+          { type: 'line', points: [[160, 210], [108, 120]], color: 'gray', width: 1.5, dashed: true },
+          txt(186, 156, '大きく細い', 12),
+          txt(98, 114, '半月の形', 12, 'end'),
+          txt(186, 34, '小さく丸い', 12),
+        ])),
+      },
+      {
+        id: 'space-kq4-c2',
+        text: '外側を公転する火星は、地球をはさんで太陽と反対側にくると、真夜中に南の空に見えます。公転周期は太陽から遠い惑星ほど長く、金星は約 225 日、地球は約 365 日、火星は約 687 日です。',
+        // 太陽・地球・火星。火星が太陽と反対側にあるとき
+        figure: scene(marsTop().concat([
+          { type: 'circle', x: MARS_SPOT.opp[0], y: MARS_SPOT.opp[1], r: 9, fill: '#D9774A', stroke: 'line' },
+          txt(176, 222, '火星', 12),
+          txt(4, 232, '真夜中に見える', 12),
+        ])),
+      },
+      {
+        id: 'space-kq4-c3',
+        text: '金星が満ち欠けし、見かけの大きさも大きく変わることは、金星が地球と同じように太陽のまわりを公転していると考えるとうまく説明できます。月や惑星は、太陽の光を**反射**して光っています。',
+        // 望遠鏡で見た金星（同じ倍率）
+        figure: scene(venusPhase(70, 110, 34, -0.7).concat(venusPhase(180, 110, 21, 0)).concat(venusPhase(270, 110, 11, 0.7)).concat([
+          txt(70, 170, '近い', 12, 'middle'),
+          txt(180, 170, '中くらい', 12, 'middle'),
+          txt(270, 170, '遠い', 12, 'middle'),
+          txt(4, 20, '望遠鏡で見た金星（同じ倍率）', 12),
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'space-kq4-w1', concept: 'sp-sun',
+      prompt: '予想しよう。地球から見た金星の方向が、太陽の方向とぴったり重なるとき、金星は見えると思う？',
+      options: ['太陽の光にまぎれて見えない', 'いちばん明るく見える', '真夜中に南の空に見える'],
+      answer: 'a',
+      explanation: '太陽と同じ方向にある金星は、昼の空で太陽の強い光にまぎれてしまい、観察できません。',
+      hint: '昼間に星が見えないのはなぜかな。',
+    }),
+    problems: [
+      fill({
+        id: 'space-kq4-t1', concept: 'sp-sun', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '明け方、東の空に明るくかがやいて見える金星を[b1]という。',
+        blanks: [word('b1', ['明けの明星', 'よいの明星', '一番星'], '明けの明星')],
+        explanation: '明け方の東の空に見える金星を**明けの明星**、夕方の西の空に見える金星をよいの明星といいます。',
+        hint: '夜が「明ける」ころに見えるよ。',
+      }),
+      figureChoice({
+        id: 'space-kq4-p1', concept: 'sp-sun',
+        prompt: '太陽・金星・地球を北極側から見た図です。金星がア〜ウの位置にあるとき、地球から見て半月の形に見えるのはどれ？（ア 太陽と地球のあいだ、イ 太陽の左下、ウ 太陽の向こう側）',
+        figure: scene(venusTop(['near', 'left', 'far']).concat([
+          region('r1', VEN2.near[0], VEN2.near[1], 'ア'),
+          region('r2', VEN2.left[0], VEN2.left[1], 'イ'),
+          region('r3', VEN2.far[0], VEN2.far[1], 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: 'イは、地球から見て金星が太陽からいちばんはなれて見える位置で、光っている半分のうち、ちょうど半分が地球に向くので半月の形に見えます。アは細く（ほとんど見えない）、ウは太陽の向こうで見えません。',
+        hint: '地球から見て、光っている側がどれだけ見えるかを考えよう。',
+      }),
+      choice({
+        id: 'space-kq4-p2', concept: 'sp-sun',
+        prompt: '金星が満ち欠けし、見かけの大きさも大きく変わることは、どう考えるとうまく説明できる？',
+        options: ['金星が太陽のまわりを公転している', '金星が地球のまわりを公転している', '金星が自ら光を出している'],
+        answer: 'a',
+        explanation: '金星が太陽のまわりを公転していると、太陽・金星・地球の位置関係と、地球からの距離が大きく変わります。そのため、形も大きさも変わって見えます。',
+        hint: '形と大きさの両方が変わる理由を考えよう。',
+      }),
+      fill({
+        id: 'space-kq4-p3', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう（小数第 1 位まで）。',
+        text: '火星の公転周期は約 687 日、地球は約 365 日である。火星の公転周期は、地球の約[b1]である。',
+        blanks: [number('b1', 1.9, 0, '倍')],
+        explanation: '687 ÷ 365 ＝ 1.88… なので、約 1.9 倍です。太陽から遠い惑星ほど、公転周期は長くなります。',
+        hint: '687 を 365 でわろう。',
+      }),
+      drag({
+        id: 'space-kq4-p4', concept: 'sp-sun',
+        prompt: '太陽・地球と火星の軌道を北極側から見た図です。「火星」の丸を動かして、地球から見て真夜中に南の空に見える位置（灰色の点のどれか）に置こう。',
+        // 地球をはさんで太陽と反対側の点が正解。太陽の向こう側の点は不正解の例
+        figure: scene(marsTop().concat([
+          { type: 'circle', id: 'mars', x: 290, y: 200, r: 9, fill: '#D9774A', stroke: 'line', label: '火星' },
+        ])),
+        draggable: { itemId: 'mars', axis: 'xy' },
+        target: { x: MARS_SPOT.opp[0], y: MARS_SPOT.opp[1] },
+        samples: { correct: { x: MARS_SPOT.opp[0], y: MARS_SPOT.opp[1] }, wrong: { x: MARS_SPOT.far[0], y: MARS_SPOT.far[1] } },
+        explanation: '真夜中の地点は、地球の太陽と反対側です。火星が地球をはさんで太陽と反対側にあると、真夜中に南の空に見えます。外惑星だからこそ、この位置にくることができます。',
+        hint: '真夜中に南の空に見えるのは、太陽と反対の方向にある天体だよ。',
+      }),
+      fill({
+        id: 'space-kq4-p5', concept: 'sp-sun',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '月や金星などは自ら光を出さず、太陽の光を[b1]して光って見える。',
+        blanks: [word('b1', ['反射', '屈折', '吸収'], '反射')],
+        explanation: '月や惑星は、太陽の光を**反射**して光っています。そのため、太陽の光が当たっている側だけが光って見え、満ち欠けが起こります。',
+        hint: '鏡が光をはね返すはたらきと同じだよ。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'space-kq4-r1', concept: 'sp-sun',
+        prompt: '望遠鏡で見た金星の形と大きさです（同じ倍率）。金星が、地球から見て太陽からいちばんはなれて見えるころの見え方はどれ？（ア 大きく細い、イ 半月の形、ウ 小さく丸い）',
+        figure: scene(venusPhase(70, 110, 34, -0.7).concat(venusPhase(180, 110, 21, 0)).concat(venusPhase(270, 110, 11, 0.7)).concat([
+          region('r1', 70, 190, 'ア'),
+          region('r2', 180, 190, 'イ'),
+          region('r3', 270, 190, 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: '太陽からいちばんはなれて見えるころの金星は、光っている面のちょうど半分が見えるので、イの半月の形です。アは地球に近いころ、ウは遠いころの見え方です。',
+        hint: '地球に近いほど大きく細く、遠いほど小さく丸く見えるよ。',
+      }),
+      choice({
+        id: 'space-kq4-r2', concept: 'sp-sun',
+        prompt: '外惑星の火星が、真夜中に南の空に見えるのは、太陽・地球・火星がどんな位置関係のとき？',
+        options: ['地球をはさんで、太陽と火星が反対側にある', '火星が太陽の向こう側にある', '太陽・地球・火星が直角に並んでいる'],
+        answer: 'a',
+        explanation: '真夜中の地点からは、太陽と反対の方向が見えます。火星が地球をはさんで太陽と反対側にあるとき、真夜中に南の空に見えます。',
+        hint: '真夜中に南中する天体は、太陽と反対側にあるよ。',
+      }),
+      fill({
+        id: 'space-kq4-r3', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう（小数第 1 位まで）。',
+        text: '金星の公転周期は約 225 日、地球は約 365 日である。金星の公転周期は、地球の約[b1]である。',
+        blanks: [number('b1', 0.6, 0, '倍')],
+        explanation: '225 ÷ 365 ＝ 0.61… なので、約 0.6 倍です。太陽に近い金星は、地球より短い期間で 1 周します。',
+        hint: '225 を 365 でわろう。',
+      }),
+      choice({
+        id: 'space-kq4-r4', concept: 'sp-sun', term: true,
+        prompt: '次の説明に合う言葉はどれ？「火星や木星のように、地球より外側を公転する惑星」',
+        options: ['外惑星', '内惑星', '衛星'],
+        answer: 'a',
+        explanation: '地球より外側を公転する惑星を**外惑星**、内側を公転する水星・金星を内惑星といいます。',
+        hint: '地球の「外」側だね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-kq5: クイズ 5 太陽のすがた ----
+  const spaceKq5 = {
+    id: 'space-kq5', areaId: 'sp-solar', free: true, title: 'クイズ 5: 太陽のすがた', minutes: 6, concepts: ['sp-sun'],
+    lessons: [
+      {
+        id: 'space-kq5-c1',
+        text: '太陽は、おもに**水素**と**ヘリウム**からなる、高温の気体のかたまりです。中心部では、水素がヘリウムに変わる**核融合**が起こっていて、そのエネルギーで光や熱を出しています。',
+        // 太陽（コロナ・プロミネンス・黒点）
+        figure: scene(sunFigure().concat([
+          txt(316, 120, '高温の気体', 12, 'end'),
+          txt(316, 140, 'のかたまり', 12, 'end'),
+          txt(316, 180, '水素・ヘリウム', 12, 'end'),
+        ])),
+      },
+      {
+        id: 'space-kq5-c2',
+        text: '黒点は約 4000 ℃ で、まわりの表面（約 6000 ℃）より温度が低いので黒く見えます。黒点の数はおよそ 11 年の周期で増えたり減ったりし、数が多い時期は太陽の活動が活発です。',
+        // 黒点の数の変化（およその形）。1990 年・2001 年・2014 年ごろに多い
+        figure: scene([
+          { type: 'line', points: [[30, 40], [30, 190], [304, 190]], color: 'ink', width: 2 },
+          { type: 'line', points: [[30, 70], [62, 120], [97, 180], [140, 70], [183, 175], [222, 180], [268, 90], [300, 150]], color: 'orange', width: 3 },
+          txt(34, 34, '黒点の数', 12),
+          txt(30, 210, '1990 年', 12, 'middle'),
+          txt(140, 210, '2001 年', 12, 'middle'),
+          txt(268, 210, '2014 年', 12, 'middle'),
+          txt(200, 50, 'およそ 11 年ごとに多くなる', 12, 'middle'),
+        ]),
+      },
+      {
+        id: 'space-kq5-c3',
+        text: '太陽の中央で円く見えた黒点は、ふちに近づくと細長く見えます。これは太陽が**球形**だからです。太陽の外側には、表面よりずっと高温（100 万 ℃ 以上）のうすい大気の**コロナ**が広がっています。',
+        // 中央の黒点は円く、ふちの黒点は細長い
+        figure: scene([
+          { type: 'circle', x: 130, y: 120, r: 100, fill: '#FFF1C9', stroke: 'none' },
+          { type: 'circle', x: 130, y: 120, r: 80, fill: 'yellow', stroke: 'orange' },
+          { type: 'ellipse', x: 130, y: 120, rx: 8, ry: 8, fill: '#5A4A2A', stroke: 'none' },
+          { type: 'ellipse', x: 200, y: 120, rx: 3, ry: 8, fill: '#5A4A2A', stroke: 'none' },
+          txt(130, 145, '中央：円い', 12, 'middle'),
+          txt(316, 100, 'ふち：細長い', 12, 'end'),
+          txt(4, 20, 'コロナ（外側のうすい大気）', 12),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'space-kq5-w1', concept: 'sp-sun',
+      prompt: '予想しよう。太陽は、何でできていると思う？',
+      options: ['高温の気体のかたまり', 'とけた鉄のかたまり', '岩石のかたまり'],
+      answer: 'a',
+      explanation: '太陽は、おもに水素とヘリウムからなる高温の気体のかたまりです。地球のような固い地面はありません。',
+      hint: '表面の温度は約 6000 ℃ もあるよ。',
+    }),
+    problems: [
+      fill({
+        id: 'space-kq5-t1', concept: 'sp-sun', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '太陽の中心部で、水素がヘリウムに変わるときに大きなエネルギーが出る反応を[b1]という。',
+        blanks: [word('b1', ['核融合', '燃焼', '光合成'], '核融合')],
+        explanation: '太陽の中心部では、水素がヘリウムに変わる**核融合**が起こり、大きなエネルギーが出ています。物が酸素と結びつく燃焼とはちがいます。',
+        hint: '原子の「核」が「融合」する（とけ合う）反応だよ。',
+      }),
+      figureChoice({
+        id: 'space-kq5-p1', concept: 'sp-sun',
+        prompt: '太陽の中央で円く見えた黒点が、自転によって右のふちの近くまで動きました。ふちの近くでの黒点の見え方はどれ？（ア 円いまま、イ 横にちぢんで細長い、ウ 大きく円い）',
+        figure: scene(limbSpot(60, 5, 5).concat(limbSpot(160, 2, 6)).concat(limbSpot(260, 9, 9)).concat([
+          region('r1', 60, 180, 'ア'),
+          region('r2', 160, 180, 'イ'),
+          region('r3', 260, 180, 'ウ'),
+          txt(4, 20, '右のふちの近くにきた黒点', 12),
+        ])),
+        answer: 'r2',
+        explanation: '太陽は球形なので、ふちの近くの黒点は、球の表面をななめから見ることになり、横にちぢんで細長く見えます。イです。',
+        hint: 'ボールにはったシールを、ボールのはしで見るとどう見えるかな。',
+      }),
+      fill({
+        id: 'space-kq5-p2', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう。',
+        text: '黒点の数は、およそ 11 年の周期で増減する。2014 年ごろに黒点が多かったとすると、次に多くなるのはおよそ[b1]ごろである。',
+        blanks: [number('b1', 2025, 0, '年')],
+        explanation: '2014 ＋ 11 ＝ 2025 なので、2025 年ごろです。黒点が多い時期は、太陽の活動が活発な時期です。',
+        hint: '2014 年に、周期の 11 年をたそう。',
+      }),
+      choice({
+        id: 'space-kq5-p3', concept: 'sp-sun',
+        prompt: '黒点の数が多い時期の太陽のようすとして、正しいものはどれ？',
+        options: ['活動が活発になっている', '活動が弱まっている', '表面の温度が下がっている'],
+        answer: 'a',
+        explanation: '黒点が多い時期は太陽の活動が活発で、表面の爆発（フレア）などもよく起こります。',
+        hint: '黒点は、太陽の活動のようすを表すめやすだよ。',
+      }),
+      choice({
+        id: 'space-kq5-p4', concept: 'sp-sun',
+        prompt: '太陽の外側に広がるコロナの温度は、太陽の表面（約 6000 ℃）とくらべてどうなっている？',
+        options: ['表面よりずっと高い', '表面よりずっと低い', '表面とほぼ同じ'],
+        answer: 'a',
+        explanation: 'コロナは 100 万 ℃ 以上もあり、表面よりずっと高温です。うすいので、ふだんは表面の明るさにかくれていて、皆既日食のときによく見えます。',
+        hint: '数字のけたが大きくちがうよ。',
+      }),
+      drag({
+        id: 'space-kq5-p5', concept: 'sp-sun',
+        prompt: '太陽の像の上を移動していく黒点を、1 日目と 3 日目に記録しました。「黒点」の丸を動かして、5 日目に見える位置に置こう。',
+        // 1 日に約 13° 回るとして、中央に近いほど間隔が広がる。5 日目 (133, 120) が正解。上へ動かした (133, 60) は不正解の例
+        figure: scene([
+          { type: 'circle', x: 130, y: 120, r: 90, fill: 'yellow', stroke: 'orange' },
+          { type: 'ellipse', x: 61, y: 120, rx: 4, ry: 7, fill: '#5A4A2A', stroke: 'none' },
+          { type: 'ellipse', x: 93, y: 120, rx: 6, ry: 7, fill: '#5A4A2A', stroke: 'none' },
+          txt(61, 104, '1 日目', 12, 'middle'),
+          txt(93, 146, '3 日目', 12, 'middle'),
+          { type: 'circle', id: 'spot', x: 290, y: 210, r: 8, fill: '#5A4A2A', stroke: 'ink', label: '黒点' },
+        ]),
+        draggable: { itemId: 'spot', axis: 'xy' },
+        target: { x: 133, y: 120 },
+        samples: { correct: { x: 133, y: 120 }, wrong: { x: 133, y: 60 } },
+        explanation: '黒点は、太陽の自転で同じ向き（図では左から右）に、同じ高さのまま動いていきます。中央に近づくほど、同じ日数で動く間隔が少し広く見えます。',
+        hint: '1 日目から 3 日目へ動いた向きに、続けて動かそう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'space-kq5-r1', concept: 'sp-sun',
+        prompt: '空らんに入る数を入れよう。',
+        text: '黒点の温度は約 4000 ℃、そのまわりの表面は約 6000 ℃ である。黒点は、まわりより約[b1]低い。',
+        blanks: [number('b1', 2000, 0, '℃')],
+        explanation: '6000 − 4000 ＝ 2000 なので、約 2000 ℃ 低いです。黒点もとても高温ですが、まわりより暗いので黒く見えます。',
+        hint: '2 つの温度の差を求めよう。',
+      }),
+      choice({
+        id: 'space-kq5-r2', concept: 'sp-sun',
+        prompt: '黒点が、太陽の中央では円く、ふちの近くでは細長く見えることから分かることはどれ？',
+        options: ['太陽が球形であること', '黒点の温度が低いこと', '太陽が気体でできていること'],
+        answer: 'a',
+        explanation: '同じ黒点の形が場所によって変わって見えるのは、太陽の表面が球面だからです。黒点が動いていくことからは、太陽が自転していることが分かります。',
+        hint: '形の変わり方は、表面の形と関係があるよ。',
+      }),
+      fill({
+        id: 'space-kq5-r3', concept: 'sp-sun',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '太陽は、おもに水素と[b1]でできている。',
+        blanks: [word('b1', ['ヘリウム', '酸素', '窒素'], 'ヘリウム')],
+        explanation: '太陽は、おもに水素と**ヘリウム**でできています。中心部では、水素がヘリウムに変わる反応が起こっています。',
+        hint: '風船に入れると浮かぶ気体だよ。',
+      }),
+      choice({
+        id: 'space-kq5-r4', concept: 'sp-sun', term: true,
+        prompt: '次の説明に合う言葉はどれ？「太陽の表面で、まわりより低温なので暗く黒っぽく見える所」',
+        options: ['黒点', 'プロミネンス', 'コロナ'],
+        answer: 'a',
+        explanation: 'まわりより温度が低く、黒く見える部分を**黒点**といいます。',
+        hint: '「黒い点」と書くよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ space-kq6: クイズ 6 太陽系と銀河系 ----
+  const spaceKq6 = {
+    id: 'space-kq6', areaId: 'sp-solar', free: true, title: 'クイズ 6: 太陽系と銀河系', minutes: 6, concepts: ['sp-sun', 'sp-universe'],
+    lessons: [
+      {
+        id: 'space-kq6-c1',
+        text: '火星と木星の軌道のあいだには、**小惑星**が多く集まっています。水星は大気がほとんどないので、昼は 400 ℃ をこえ、夜は −170 ℃ ほどまで下がり、温度差がとても大きくなります。',
+        // 太陽系の内側の軌道と小惑星
+        figure: scene(innerOrbits().concat([
+          ...[-40, -20, 0, 20, 40].map(a => { const [x, y] = onCircle(30, 120, 140, a); return { type: 'circle', x, y, r: 2.5, fill: 'gray', stroke: 'none' }; }),
+          txt(176, 70, '小惑星', 12),
+          txt(118, 200, '火星', 12, 'middle'),
+          txt(232, 210, '木星', 12, 'middle'),
+        ])),
+      },
+      {
+        id: 'space-kq6-c2',
+        text: '光が 1 年間に進む距離を **1 光年**（約 9.5 兆 km）といいます。100 光年はなれた星の光は、100 年かけて地球にとどきます。今見ている星の光は、ずっと昔に星を出た光です。',
+        // 星から地球へ光がとどく
+        figure: scene([
+          { type: 'circle', x: 40, y: 120, r: 10, fill: 'yellow', stroke: 'orange' },
+          txt(40, 150, '星', 12, 'middle'),
+          { type: 'arrow', x1: 56, y1: 120, x2: 262, y2: 120, color: 'orange' },
+          { type: 'circle', x: 280, y: 120, r: 12, fill: 'sky', stroke: 'line' },
+          txt(280, 150, '地球', 12, 'middle'),
+          txt(160, 100, '100 光年', 13, 'middle', true),
+          txt(160, 180, '光がとどくまで 100 年', 12, 'middle'),
+        ]),
+      },
+      {
+        id: 'space-kq6-c3',
+        text: '**銀河系**は、約 2000 億個の恒星が集まった円盤の形の集団で、直径は約 10 万光年です。太陽系は、銀河系の中心から約 3 万光年はなれた所にあります。',
+        // 銀河系を真横から見た図と、中心からの距離
+        figure: scene(galaxyRuler().concat([
+          { type: 'circle', x: 244, y: 120, r: 5, fill: 'orange', stroke: 'ink' },
+          txt(244, 104, '太陽系', 12, 'middle'),
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'space-kq6-w1', concept: 'sp-universe',
+      prompt: '予想しよう。今夜見えている星の光は、いつ星を出た光だと思う？',
+      options: ['何年も前、星によっては何百年も前', 'ほんの数秒前', 'ちょうど 1 日前'],
+      answer: 'a',
+      explanation: '恒星はとても遠くにあるので、光が地球にとどくまで何年も、何百年もかかります。今見ている光は、ずっと昔に星を出た光です。',
+      hint: '光の速さでも、遠い星からは長い時間がかかるよ。',
+    }),
+    problems: [
+      fill({
+        id: 'space-kq6-t1', concept: 'sp-universe', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '光が 1 年間に進む距離を 1 として、星までの距離を表す単位を[b1]という。',
+        blanks: [word('b1', ['光年', '天文単位', '光速'], '光年')],
+        explanation: '光が 1 年間に進む距離（約 9.5 兆 km）を 1 とする単位を**光年**といいます。「年」がついていますが、時間ではなく距離の単位です。',
+        hint: '「光」と「年」を組み合わせた言葉だよ。',
+      }),
+      fill({
+        id: 'space-kq6-p1', concept: 'sp-universe',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'ある恒星は、地球から 430 光年はなれている。今見えているこの星の光は、約[b1]前に星を出た光である。',
+        blanks: [number('b1', 430, 0, '年')],
+        explanation: '430 光年は、光が 430 年かけて進む距離です。今見えている光は、約 430 年前に星を出た光です。',
+        hint: '1 光年は、光が 1 年で進む距離だね。',
+      }),
+      figureChoice({
+        id: 'space-kq6-p2', concept: 'sp-sun',
+        prompt: '太陽系の一部を真上から見た図です（内側から水星・金星・地球・火星・木星の軌道）。小惑星が多く集まっているのはどこ？（ア 地球と火星のあいだ、イ 火星と木星のあいだ、ウ 木星の外側）',
+        figure: scene(innerOrbits().concat([
+          region('r1', 96, 120, 'ア'),
+          region('r2', 170, 120, 'イ'),
+          region('r3', 280, 120, 'ウ'),
+        ])),
+        answer: 'r2',
+        explanation: '小惑星の多くは、火星と木星の軌道のあいだを公転しています。イです。',
+        hint: '地球型惑星と木星型惑星のさかい目あたりだよ。',
+      }),
+      choice({
+        id: 'space-kq6-p3', concept: 'sp-sun',
+        prompt: '次のうち、太陽と同じように自ら光を出している恒星はどれ？',
+        options: ['シリウス', '木星', '月'],
+        answer: 'a',
+        explanation: 'シリウスは、おおいぬ座の明るい恒星です。木星は惑星、月は衛星で、どちらも太陽の光を反射して光っています。',
+        hint: '惑星や衛星は、自ら光を出さないよ。',
+      }),
+      drag({
+        id: 'space-kq6-p4', concept: 'sp-universe',
+        prompt: '銀河系を真横から見た図です。中心から右はしまでが約 5 万光年です（目もりは 1 万光年ごと）。「太陽系」の印を左右に動かして、中心から右へ、太陽系のある位置に置こう。',
+        // 中心から 3 万光年（x = 160 + 28 × 3 = 244）が正解。中心 (160) は不正解の例
+        figure: scene(galaxyRuler().concat([
+          { type: 'circle', id: 'ss', x: 40, y: 120, r: 7, fill: 'orange', stroke: 'ink', label: '太陽系' },
+        ])),
+        draggable: { itemId: 'ss', axis: 'x' },
+        target: { x: 244, y: 120 },
+        samples: { correct: { x: 244, y: 120 }, wrong: { x: 160, y: 120 } },
+        explanation: '太陽系は、銀河系の中心から約 3 万光年はなれた所にあります。目もり 3 つ分（3 万光年）の所です。中心ではありません。',
+        hint: '銀河系の中心から約 3 万光年だよ。',
+      }),
+      fill({
+        id: 'space-kq6-p5', concept: 'sp-sun',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '水星は[b1]がほとんどないので、昼と夜の温度差がとても大きい。',
+        blanks: [word('b1', ['大気', '衛星', '環'], '大気')],
+        explanation: '大気には、熱をたくわえたり運んだりするはたらきがあります。水星は大気がほとんどないので、昼は高温、夜は低温になります。',
+        hint: '地球をふとんのように包んでいるものだよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'space-kq6-r1', concept: 'sp-universe',
+        prompt: '空らんに入る数を入れよう。',
+        text: '銀河系の直径は約 10 万光年である。光が銀河系のはしからはしまで進むには、約[b1]かかる。',
+        blanks: [number('b1', 100000, 0, '年')],
+        explanation: '10 万光年は、光が 10 万年（100000 年）かけて進む距離です。銀河系がどれほど大きいかが分かります。',
+        hint: '光年の数と、光が進むのにかかる年数は同じだよ。',
+      }),
+      choice({
+        id: 'space-kq6-r2', concept: 'sp-universe',
+        prompt: '「光年」は、何を表す単位？',
+        options: ['距離', '時間', '明るさ'],
+        answer: 'a',
+        explanation: '光年は、光が 1 年間に進む距離を 1 とした、距離の単位です。「年」がついていても、時間の単位ではありません。',
+        hint: '「光が 1 年で進む○○」だよ。',
+      }),
+      choice({
+        id: 'space-kq6-r3', concept: 'sp-sun',
+        prompt: '次のうち、小惑星の例として正しいものはどれ？',
+        options: ['イトカワ', '木星', '月'],
+        answer: 'a',
+        explanation: 'イトカワは、探査機「はやぶさ」が砂を持ち帰った小惑星です。木星は惑星、月は地球の衛星です。',
+        hint: '日本の探査機が訪れた天体だよ。',
+      }),
+      choice({
+        id: 'space-kq6-r4', concept: 'sp-sun',
+        prompt: '地球型惑星の説明として、まちがっているものはどれ？',
+        options: ['木星型惑星より直径が大きい', 'おもに岩石と金属でできている', '密度が大きい'],
+        answer: 'a',
+        explanation: '地球型惑星は木星型惑星より小さく、おもに岩石や金属からなり、密度が大きい惑星です。まちがっているのは「直径が大きい」です。',
+        hint: 'まちがっているものを 1 つ選ぶよ。',
+      }),
+      choice({
+        id: 'space-kq6-r5', concept: 'sp-sun', term: true,
+        prompt: '次の説明に合う言葉はどれ？「氷やちりでできた天体で、太陽のそばを通るときに長い尾ができるもの」',
+        options: ['すい星', '小惑星', '流星'],
+        answer: 'a',
+        explanation: '氷やちりでできていて、太陽に近づくと尾を引く天体を**すい星**といいます。',
+        hint: '「ほうき星」ともよばれるよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（類題の不足を補う確認問題つき）
   // ================================================================
 
@@ -3932,8 +4966,9 @@
     concepts,
     areas: [
       // 2026-11-21: 分野でまとめた。基本 → プリント → ドリル（プリント・ドリルは free のステージ）
-      { id: 'sp-earth', title: '地球の動きと天体の見え方', order: 1, stages: [space1, space2, spaceMp2, spaceMp3, spaceMp4, spaceMp5, spaceMp6, spaceMp7, spaceMp8, spaceDr1, spaceDr2] },
-      { id: 'sp-solar', title: '太陽系', order: 2, stages: [space3, space4, spaceMp1, spaceMp9, spaceMp10, spaceDr3, spaceDr4, spaceDr5] },
+      // 2026-11-22: クイズ（space-kq1〜kq6、free のステージ）を各分野のドリルのあとに足した
+      { id: 'sp-earth', title: '地球の動きと天体の見え方', order: 1, stages: [space1, space2, spaceMp2, spaceMp3, spaceMp4, spaceMp5, spaceMp6, spaceMp7, spaceMp8, spaceDr1, spaceDr2, spaceKq1, spaceKq2] },
+      { id: 'sp-solar', title: '太陽系', order: 2, stages: [space3, space4, spaceMp1, spaceMp9, spaceMp10, spaceDr3, spaceDr4, spaceDr5, spaceKq3, spaceKq4, spaceKq5, spaceKq6] },
     ],
   };
 

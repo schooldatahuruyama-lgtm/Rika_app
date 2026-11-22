@@ -2084,6 +2084,616 @@
   };
 
   // ================================================================
+  // クイズ（Kahoot の公開クイズの「何を問うか」だけを参考に自作。2026-11-22 追加。docs/reports/content/plants.md）
+  // ================================================================
+
+  // drag 用: 植物の名前のカードを、左右 2 つの箱のどちらかへ入れる
+  // 箱の左上: 左 (20, 110)、右 (170, 110)（幅 130・高さ 110）。カード（80×32）を箱のまん中に置くと、
+  // カードの左上は 左 (45, 160)、右 (195, 160)
+  function kqBoxesScene(title, left, right, name) {
+    const items = [{ type: 'text', x: 160, y: 24, text: title, size: 13, anchor: 'middle' }];
+    [[left, 20], [right, 170]].forEach(([t, x]) => {
+      items.push({ type: 'rect', x, y: 110, width: 130, height: 110, fill: 'white', rx: 6 });
+      items.push({ type: 'text', x: x + 65, y: 134, text: t, size: 13, anchor: 'middle', bold: true });
+    });
+    items.push({ type: 'rect', id: 'card', x: 120, y: 48, width: 80, height: 32, fill: 'yellow', rx: 4, label: name });
+    return scene(items);
+  }
+  const KQ_BOX_LEFT = { x: 45, y: 160 };
+  const KQ_BOX_RIGHT = { x: 195, y: 160 };
+
+  // 2 種類の花粉を拡大したようす。左 (90, 110): とげのある丸い花粉、右 (230, 110): 両側に空気の袋がついた花粉（マツ）
+  // names: 下に説明を書く（カード用）。書かないときは下にア・イの選ぶ場所
+  function kqPollenScene(names) {
+    const items = [{ type: 'text', x: 160, y: 26, text: '花粉を拡大したようす', size: 13, anchor: 'middle' }];
+    // 左: とげのある丸い花粉
+    for (let a = 0; a < 360; a += 30) {
+      const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180);
+      items.push({ type: 'line', points: [[90 + Math.round(30 * c), 110 + Math.round(30 * s)], [90 + Math.round(40 * c), 110 + Math.round(40 * s)]], color: 'brown', width: 2 });
+    }
+    items.push({ type: 'circle', x: 90, y: 110, r: 30, fill: 'yellow' });
+    // 右: 本体の両側に空気の袋
+    items.push({ type: 'circle', x: 198, y: 102, r: 20, fill: 'white' });
+    items.push({ type: 'circle', x: 262, y: 102, r: 20, fill: 'white' });
+    items.push({ type: 'ellipse', x: 230, y: 114, rx: 26, ry: 20, fill: 'yellow' });
+    if (names) {
+      items.push(
+        { type: 'text', x: 90, y: 180, text: 'とげやねばりけ', size: 12, anchor: 'middle' },
+        { type: 'text', x: 90, y: 198, text: '（虫の体につく）', size: 12, anchor: 'middle' },
+        { type: 'text', x: 230, y: 180, text: '空気の入った袋', size: 12, anchor: 'middle' },
+        { type: 'text', x: 230, y: 198, text: '（風に乗る）', size: 12, anchor: 'middle' },
+      );
+    } else {
+      items.push(
+        { type: 'region', id: 'r1', x: 90, y: 196, r: 22, label: 'ア' },
+        { type: 'region', id: 'r2', x: 230, y: 196, r: 22, label: 'イ' },
+      );
+    }
+    return scene(items);
+  }
+
+  // 花の断面（flower()）に、柱頭・やく・子房・胚珠の名前を書いたもの
+  function kqFlowerNamed() {
+    return scene(flower().concat([
+      leader(167, 88, 222, 62), { type: 'text', x: 226, y: 62, text: '柱頭', size: 13 },
+      leader(118, 98, 74, 70), { type: 'text', x: 70, y: 70, text: 'やく', size: 13, anchor: 'end' },
+      leader(182, 182, 250, 222), { type: 'text', x: 254, y: 226, text: '子房', size: 13 },
+      leader(150, 186, 96, 222), { type: 'text', x: 92, y: 226, text: '胚珠', size: 13, anchor: 'end' },
+    ]));
+  }
+
+  // マツのりん片 2 枚。左 (90, 110): 雌花のりん片（根もとに胚珠が 2 つ）、右 (230, 110): 雄花のりん片（裏に花粉のうが 2 つ）
+  // names: 下に名前を書く（カード用）。書かないときは下にア・イの選ぶ場所
+  function kqPineScales(names) {
+    const items = [
+      { type: 'text', x: 160, y: 26, text: 'マツのりん片を拡大したようす', size: 13, anchor: 'middle' },
+      { type: 'polygon', points: [[90, 50], [130, 80], [122, 150], [58, 150], [50, 80]], fill: 'purple' },
+      { type: 'ellipse', x: 76, y: 140, rx: 9, ry: 7, fill: 'white' },
+      { type: 'ellipse', x: 104, y: 140, rx: 9, ry: 7, fill: 'white' },
+      { type: 'polygon', points: [[230, 70], [258, 90], [252, 150], [208, 150], [202, 90]], fill: 'lightgreen' },
+      { type: 'ellipse', x: 218, y: 134, rx: 10, ry: 14, fill: 'yellow' },
+      { type: 'ellipse', x: 242, y: 134, rx: 10, ry: 14, fill: 'yellow' },
+    ];
+    if (names) {
+      items.push(
+        { type: 'text', x: 90, y: 180, text: '雌花のりん片', size: 12, anchor: 'middle' },
+        { type: 'text', x: 90, y: 198, text: '白い粒は胚珠', size: 12, anchor: 'middle' },
+        { type: 'text', x: 230, y: 180, text: '雄花のりん片', size: 12, anchor: 'middle' },
+        { type: 'text', x: 230, y: 198, text: '黄色の袋は花粉のう', size: 12, anchor: 'middle' },
+      );
+    } else {
+      items.push(
+        { type: 'region', id: 'r1', x: 90, y: 196, r: 22, label: 'ア' },
+        { type: 'region', id: 'r2', x: 230, y: 196, r: 22, label: 'イ' },
+      );
+    }
+    return scene(items);
+  }
+
+  // マツの枝（pineBranch()）に、雌花・雄花・1 年前の雌花の名前を書いたもの
+  function kqPineNamed() {
+    return scene(pineBranch().concat([
+      leader(214, 40, 240, 40), { type: 'text', x: 244, y: 44, text: '雌花', size: 13, bg: true },
+      leader(172, 136, 214, 136), { type: 'text', x: 218, y: 140, text: '雄花', size: 13, bg: true },
+      leader(102, 194, 130, 210), { type: 'text', x: 134, y: 216, text: '1 年前の雌花（育ちかけ）', size: 13, bg: true },
+    ]));
+  }
+
+  // イヌワラビ（fern()）に、葉・地下茎・根の名前を書いたもの
+  function kqFernNamed() {
+    return scene(fern().concat([
+      leader(56, 88, 113, 90), { type: 'text', x: 52, y: 92, text: '葉', size: 13, anchor: 'end', bg: true },
+      leader(284, 160, 250, 160), { type: 'text', x: 288, y: 164, text: '地下茎', size: 13, bg: true, anchor: 'middle' },
+      leader(36, 206, 70, 198), { type: 'text', x: 32, y: 222, text: '根', size: 13, bg: true },
+      { type: 'text', x: 160, y: 20, text: '根・茎・葉に維管束が通る', size: 13, anchor: 'middle' },
+    ]));
+  }
+
+  // ---- ステージ plants-kq1: クイズ 1（花粉の運ばれ方・柱頭のはたらき・果実と種子の数） ----
+  const plKq1 = {
+    id: 'plants-kq1', areaId: 'pl-flower', free: true, title: 'クイズ 1: 花粉の運ばれ方と果実', minutes: 6, concepts: ['pl-flower'],
+    lessons: [
+      {
+        id: 'plants-kq1-c1',
+        text: '花粉は、虫や風によって運ばれます。虫が運ぶ花を**虫媒花**といい、目立つ花弁やみつがあり、花粉は虫の体につきやすいつくりです。風が運ぶ花を**風媒花**といい、花は目立たず、軽い花粉をたくさんつくります。',
+        figure: kqPollenScene(true),
+      },
+      {
+        id: 'plants-kq1-c2',
+        text: '**柱頭**は、運ばれてきた花粉を受けとる場所です。受粉すると、1 つの子房から 1 つの果実が、子房の中の胚珠 1 つから種子 1 つができます。',
+        figure: kqFlowerNamed(),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-kq1-w1', concept: 'pl-flower',
+      prompt: '予想しよう。イネやトウモロコシの花には、目立つ花弁がありません。花粉は何に運ばれると思う？',
+      options: ['チョウやハチ', '風', '雨水'],
+      answer: 'b',
+      explanation: 'イネやトウモロコシは、風に花粉を運んでもらう花です。虫を呼ぶ必要がないので、目立つ花弁やみつがありません。',
+      hint: '虫を引きつけるものが無い花だね。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-kq1-p1', concept: 'pl-flower',
+        prompt: '2 種類の花粉を拡大した図です。風に乗って遠くまで運ばれやすいのはどちら？（ア: とげのある丸い花粉、イ: 両側に袋がついた花粉）',
+        figure: kqPollenScene(false),
+        answer: 'r2',
+        explanation: 'イの両側の袋には空気が入っていて、花粉が風に乗りやすくなっています。マツの花粉がこの形です。アは虫の体にくっつきやすい形です。',
+        hint: '風船のようなものがついているのはどちらかな。',
+      }),
+      fill({
+        id: 'plants-kq1-t1', concept: 'pl-flower', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'アブラナのように、花粉をこん虫に運んでもらう花を[b1]という。',
+        blanks: [word('b1', ['虫媒花', '風媒花', '離弁花'], '虫媒花')],
+        explanation: '虫が花粉を運ぶ花を**虫媒花**といいます。目立つ花弁やみつで、虫を引きよせます。',
+        hint: '「虫」の字が入る言葉だよ。',
+      }),
+      fill({
+        id: 'plants-kq1-p2', concept: 'pl-flower',
+        prompt: '1 つの花の子房に胚珠が 10 個ありました。受粉のあと、そのうち 7 個が種子になりました。',
+        text: 'この花からできる果実の数は[b1]である。',
+        blanks: [number('b1', 1, 0, '個')],
+        explanation: '果実は子房が育ったものです。子房は 1 つなので、果実も 1 個です。中に種子が 7 個入っています。',
+        hint: '果実のもとは子房、種子のもとは胚珠だよ。',
+      }),
+      choice({
+        id: 'plants-kq1-p3', concept: 'pl-flower',
+        prompt: 'めしべの先にある柱頭の、いちばん大切なはたらきはどれ？',
+        options: ['花粉をつくる', '運ばれてきた花粉を受けとる', 'みつを出して虫を呼ぶ'],
+        answer: 'b',
+        explanation: '柱頭は、運ばれてきた花粉を受けとる場所です。花粉をつくるのはおしべのやくです。',
+        hint: '受粉は、花粉がどこにつくことだったかな。',
+      }),
+      drag({
+        id: 'plants-kq1-p4', concept: 'pl-flower',
+        prompt: '「ススキ」のカードを、当てはまる箱へ動かそう。ススキの花は目立たず、みつも出しません。',
+        // カードの左上が 右の箱（風媒花）のまん中 (195, 160) に来れば正解。不正解例は左の箱 (45, 160)
+        figure: kqBoxesScene('カードを、花粉の運ばれ方の箱へ', '虫媒花', '風媒花', 'ススキ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_RIGHT,
+        samples: { correct: KQ_BOX_RIGHT, wrong: KQ_BOX_LEFT },
+        explanation: 'ススキは、軽い花粉をたくさん風に飛ばして受粉する風媒花です。目立つ花弁やみつがないのは、虫を呼ぶ必要がないからです。',
+        hint: '虫を引きよせるものが無いと、花粉は何に運ばれるかな。',
+      }),
+      choice({
+        id: 'plants-kq1-p5', concept: 'pl-flower',
+        prompt: 'アブラナの花弁があざやかな黄色をしているのは、受粉にとってどんな役に立つと考えられる？',
+        options: ['虫を花に引きよせる', '風をたくさん受ける', '雨から種子を守る'],
+        answer: 'a',
+        explanation: 'アブラナは虫媒花です。目立つ色の花弁やみつで虫を呼び、体についた花粉を運んでもらいます。',
+        hint: 'アブラナの花粉は、だれに運んでもらうのかな。',
+      }),
+    ],
+    retryPool: [
+      drag({
+        id: 'plants-kq1-r1', concept: 'pl-flower',
+        prompt: '「タンポポ」のカードを、当てはまる箱へ動かそう。タンポポの花には、チョウやハチがよく集まります。',
+        // カードの左上が 左の箱（虫媒花）のまん中 (45, 160) に来れば正解。不正解例は右の箱 (195, 160)
+        figure: kqBoxesScene('カードを、花粉の運ばれ方の箱へ', '虫媒花', '風媒花', 'タンポポ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_LEFT,
+        samples: { correct: KQ_BOX_LEFT, wrong: KQ_BOX_RIGHT },
+        explanation: 'タンポポは、目立つ花とみつで虫を呼ぶ虫媒花です。花に来た虫の体に花粉がついて、ほかの花へ運ばれます。',
+        hint: '虫が集まる花は、どちらのなかまかな。',
+      }),
+      fill({
+        id: 'plants-kq1-r2', concept: 'pl-flower',
+        prompt: '花が 5 つ受粉しました。どの花も子房に胚珠が 4 個あり、すべてが種子になりました。',
+        text: 'できた種子は全部で[b1]である。',
+        blanks: [number('b1', 20, 0, '個')],
+        explanation: '胚珠 1 個から種子 1 個ができます。1 つの花で 4 個、花が 5 つなので 4 × 5 ＝ 20 個です。果実は花の数と同じ 5 個です。',
+        hint: '1 つの花でできる種子の数に、花の数をかけよう。',
+      }),
+      choice({
+        id: 'plants-kq1-r3', concept: 'pl-flower',
+        prompt: '風媒花の花のようすとして、当てはまるものはどれ？',
+        options: ['大きく目立つ花弁がある', 'みつをたくさん出す', '目立たず、花粉の量が多い'],
+        answer: 'c',
+        explanation: '風媒花は虫を呼ばなくてよいので、花は目立たないことが多いです。そのかわり、軽い花粉をたくさんつくって風に飛ばします。',
+        hint: '風まかせだと、花粉はどこに届くか分からないね。',
+      }),
+      fill({
+        id: 'plants-kq1-t2', concept: 'pl-flower', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'トウモロコシのように、花粉を風に運んでもらう花を[b1]という。',
+        blanks: [word('b1', ['風媒花', '虫媒花', '合弁花'], '風媒花')],
+        explanation: '風が花粉を運ぶ花を**風媒花**といいます。イネ・ススキ・マツなども風媒花です。',
+        hint: '「風」の字が入る言葉だよ。',
+      }),
+      figureChoice({
+        id: 'plants-kq1-r4', concept: 'pl-flower',
+        prompt: '2 種類の花粉を拡大した図です。虫の体にくっついて運ばれやすいのはどちら？（ア: とげのある丸い花粉、イ: 両側に袋がついた花粉）',
+        figure: kqPollenScene(false),
+        answer: 'r1',
+        explanation: 'アのとげやねばりけのある花粉は、虫の体の毛にくっつきやすい形です。イは空気の袋で風に乗る花粉です。',
+        hint: '虫の毛に引っかかりやすいのは、どちらの形かな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-kq2: クイズ 2（マツのりん片・花粉の運ばれ方・裸子植物と被子植物） ----
+  const plKq2 = {
+    id: 'plants-kq2', areaId: 'pl-flower', free: true, title: 'クイズ 2: マツのりん片と種子', minutes: 6, concepts: ['pl-seed'],
+    lessons: [
+      {
+        id: 'plants-kq2-c1',
+        text: 'マツの雌花のりん片には、胚珠が 2 つずつむき出しでついています。雄花のりん片の裏には**花粉のう**という袋があり、中に花粉ができます。花粉は風で運ばれ、雌花の胚珠に直接つきます。',
+        figure: kqPineScales(true),
+      },
+      {
+        id: 'plants-kq2-c2',
+        text: '受粉した雌花は、1 年以上かけて育ち、**まつかさ**になります。りん片のあいだには種子ができますが、子房がないので果実はできません。',
+        figure: kqPineNamed(),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-kq2-w1', concept: 'pl-seed',
+      prompt: '予想しよう。春のマツ林では、黄色い粉が車の上につもることがあります。この粉は何だと思う？',
+      options: ['マツの花粉', 'マツの種子', '土ぼこり'],
+      answer: 'a',
+      explanation: 'マツの雄花からは、たくさんの花粉が風で飛ばされます。黄色い粉は、そのマツの花粉です。',
+      hint: 'マツの雄花は、春に何を飛ばすかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-kq2-p1', concept: 'pl-seed',
+        prompt: 'マツのりん片 2 枚を拡大した図です。花粉のうがついている、雄花のりん片はどちら？（ア: 根もとに白い粒が 2 つ、イ: 裏に黄色い袋が 2 つ）',
+        figure: kqPineScales(false),
+        answer: 'r2',
+        explanation: '雄花のりん片の裏には、花粉ができる袋（花粉のう）があります（イ）。アの白い粒は、雌花のりん片についている胚珠です。',
+        hint: '花粉が入っているのは袋のほうだよ。',
+      }),
+      fill({
+        id: 'plants-kq2-t1', concept: 'pl-seed', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'マツの雌花が受粉のあと育ち、りん片のあいだに種子ができたものを[b1]という。',
+        blanks: [word('b1', ['まつかさ', '果実', '花粉のう'], 'まつかさ')],
+        explanation: '受粉した雌花は 1 年以上かけて育ち、**まつかさ**になります。子房がないので、果実ではありません。',
+        hint: '秋にマツの木の下に落ちている、茶色のかたいものだよ。',
+      }),
+      drag({
+        id: 'plants-kq2-p2', concept: 'pl-seed',
+        prompt: '「ソテツ」のカードを、当てはまる箱へ動かそう。ソテツの胚珠は、子房に包まれずにむき出しです。',
+        // カードの左上が 右の箱（裸子植物）のまん中 (195, 160) に来れば正解。不正解例は左の箱 (45, 160)
+        figure: kqBoxesScene('カードを、なかまの箱へ', '被子植物', '裸子植物', 'ソテツ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_RIGHT,
+        samples: { correct: KQ_BOX_RIGHT, wrong: KQ_BOX_LEFT },
+        explanation: '胚珠がむき出しの植物は裸子植物です。ソテツは、マツ・イチョウ・スギと同じ裸子植物のなかまです。',
+        hint: '胚珠がむき出しのなかまの名前を思い出そう。',
+      }),
+      choice({
+        id: 'plants-kq2-p3', concept: 'pl-seed',
+        prompt: 'マツの花粉が運ばれて受粉するとき、花粉が直接つくのはどこ？',
+        options: ['めしべの柱頭', '雌花のりん片の胚珠', '雄花の花粉のう'],
+        answer: 'b',
+        explanation: 'マツには柱頭のあるめしべがありません。花粉は、雌花のりん片にむき出しでついている胚珠に直接つきます。',
+        hint: 'マツの雌花には、子房や柱頭があったかな。',
+      }),
+      fill({
+        id: 'plants-kq2-p4', concept: 'pl-seed',
+        prompt: 'マツの雌花のりん片 1 枚には、胚珠が 2 個ついています。りん片 40 枚の胚珠がすべて種子になったとします。',
+        text: 'できる種子の数は[b1]である。',
+        blanks: [number('b1', 80, 0, '個')],
+        explanation: '胚珠 1 個から種子 1 個ができます。りん片 1 枚で 2 個なので、2 × 40 ＝ 80 個です。',
+        hint: 'りん片 1 枚あたりの胚珠の数に、りん片の数をかけよう。',
+      }),
+      choice({
+        id: 'plants-kq2-p5', concept: 'pl-seed',
+        prompt: 'マツの花粉に、空気の入った小さな袋がついていることは、どんな点で役に立つ？',
+        options: ['虫の体にくっつきやすい', '風に乗って遠くまで運ばれやすい', '水の中でとけにくい'],
+        answer: 'b',
+        explanation: '空気の袋があると花粉が軽くなり、風に乗って遠くの雌花まで運ばれやすくなります。マツは風媒花です。',
+        hint: 'マツの花粉を運ぶのは、虫かな、風かな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'plants-kq2-r1', concept: 'pl-seed',
+        prompt: 'マツのりん片 2 枚を拡大した図です。受粉のあと種子になるものがついているのはどちら？（ア: 根もとに白い粒が 2 つ、イ: 裏に黄色い袋が 2 つ）',
+        figure: kqPineScales(false),
+        answer: 'r1',
+        explanation: 'アは雌花のりん片で、白い粒は胚珠です。胚珠は受粉のあと種子になります。イは雄花のりん片で、袋は花粉のうです。',
+        hint: '種子のもとになるのは胚珠だったね。',
+      }),
+      fill({
+        id: 'plants-kq2-r2', concept: 'pl-seed',
+        prompt: 'まつかさから種子が 50 個とれました。りん片 1 枚には胚珠が 2 個あり、どれも種子になったとします。',
+        text: '種子ができたりん片の数は[b1]である。',
+        blanks: [number('b1', 25, 0, '枚')],
+        explanation: 'りん片 1 枚から種子が 2 個できるので、50 ÷ 2 ＝ 25 枚です。',
+        hint: '種子の数を、りん片 1 枚あたりの数でわろう。',
+      }),
+      drag({
+        id: 'plants-kq2-r3', concept: 'pl-seed',
+        prompt: '「ウメ」のカードを、当てはまる箱へ動かそう。ウメの実（果実）の中には、かたい種子が入っています。',
+        // カードの左上が 左の箱（被子植物）のまん中 (45, 160) に来れば正解。不正解例は右の箱 (195, 160)
+        figure: kqBoxesScene('カードを、なかまの箱へ', '被子植物', '裸子植物', 'ウメ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_LEFT,
+        samples: { correct: KQ_BOX_LEFT, wrong: KQ_BOX_RIGHT },
+        explanation: '果実ができるのは、子房があるからです。子房の中に胚珠がある植物は被子植物で、ウメはサクラと同じなかまです。',
+        hint: '果実ができるには、何が必要だったかな。',
+      }),
+      fill({
+        id: 'plants-kq2-t2', concept: 'pl-seed', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'マツの雄花のりん片についていて、中で花粉がつくられる袋を[b1]という。',
+        blanks: [word('b1', ['花粉のう', '胞子のう', '胚珠'], '花粉のう')],
+        explanation: '花粉が入った袋を**花粉のう**といいます。シダ植物の胞子のうとは、入っているものがちがいます。',
+        hint: '中に入っているものの名前が、袋の名前になっているよ。',
+      }),
+      choice({
+        id: 'plants-kq2-r4', concept: 'pl-seed',
+        prompt: 'マツとサクラの、受粉から種子ができるまでを比べました。サクラにだけ起こることはどれ？',
+        options: ['花粉が運ばれて受粉する', '胚珠が育って種子になる', '子房が育って果実になる'],
+        answer: 'c',
+        explanation: 'どちらも受粉して、胚珠が種子になります。マツには子房がないので、果実ができるのはサクラだけです。',
+        hint: 'マツの雌花に無いつくりは何だったかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-kq3: クイズ 3（子葉・葉脈・根・茎の断面のつながり、合弁花類と離弁花類） ----
+  const plKq3 = {
+    id: 'plants-kq3', areaId: 'body', free: true, title: 'クイズ 3: 葉・根・茎から予想する', minutes: 6, concepts: ['pl-monodi'],
+    lessons: [
+      {
+        id: 'plants-kq3-c1',
+        text: '被子植物の子葉・葉脈・根・茎の**維管束**の並び方は、組みになっています。子葉 2 枚なら網状脈・主根と側根・輪の形、子葉 1 枚なら平行脈・ひげ根・散らばる形です。1 つ分かれば、ほかも予想できます。',
+        figure: mpPartsScene('茎の断面（緑の点は維管束）', ['ringStem', 'scatterStem'], true),
+      },
+      {
+        id: 'plants-kq3-c2',
+        text: '双子葉類は、花弁のつき方でさらに分けます。花弁が根もとでつながっているなかまを**合弁花類**（アサガオ・ツツジ・タンポポ）、1 枚ずつ離れているなかまを**離弁花類**（アブラナ・サクラ・エンドウ）といいます。',
+        figure: SEED_TREE_NAMES,
+      },
+    ],
+    warmup: choice({
+      id: 'plants-kq3-w1', concept: 'pl-monodi',
+      prompt: '予想しよう。アサガオの花の、花弁を 1 枚だけつまんで取ろうとすると、どうなると思う？',
+      options: ['1 枚だけきれいに取れる', 'つながっていて、全体がいっしょに取れる', '花弁がもともと無い'],
+      answer: 'b',
+      explanation: 'アサガオの花弁は、根もとで 1 つにつながっています。だから 1 枚だけ取ることはできません。このようななかまを合弁花類といいます。',
+      hint: 'アサガオの花は、ラッパのような形だね。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-kq3-p1', concept: 'pl-monodi',
+        prompt: 'ツユクサの葉は平行脈でした。茎を横に切った断面はどちらと予想できる？（ア: 維管束が輪の形に並ぶ、イ: 維管束が全体に散らばる）',
+        figure: mpPartsScene('茎の断面（緑の点は維管束）', ['ringStem', 'scatterStem']),
+        answer: 'r2',
+        explanation: '平行脈の葉をもつのは単子葉類です。単子葉類の茎では、維管束が全体に散らばっています（イ）。',
+        hint: '平行脈は、単子葉類と双子葉類のどちらの特徴だったかな。',
+      }),
+      fill({
+        id: 'plants-kq3-t1', concept: 'pl-monodi', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '双子葉類のうち、ツツジのように花弁が根もとでつながっているなかまを[b1]という。',
+        blanks: [word('b1', ['合弁花類', '離弁花類', '単子葉類'], '合弁花類')],
+        explanation: '花弁がつながっているなかまを**合弁花類**といいます。アサガオ・タンポポも合弁花類です。',
+        hint: '「合わさった花弁」という意味だよ。',
+      }),
+      fill({
+        id: 'plants-kq3-p2', concept: 'pl-monodi',
+        prompt: 'アサガオ・イネ・ホウセンカ・トウモロコシ・ツユクサ・タンポポ・ユリの 7 種類があります。',
+        text: 'このうち、根が主根と側根になっている植物は[b1]である。',
+        blanks: [number('b1', 3, 0, '種類')],
+        explanation: '主根と側根をもつのは双子葉類のアサガオ・ホウセンカ・タンポポの 3 種類です。イネ・トウモロコシ・ツユクサ・ユリは単子葉類で、ひげ根です。',
+        hint: '子葉が 2 枚のなかまを数えよう。',
+      }),
+      choice({
+        id: 'plants-kq3-p3', concept: 'pl-monodi',
+        prompt: 'ある植物をほり出すと、根は太い主根と細い側根でした。この植物について正しい予想はどれ？',
+        options: ['子葉は 2 枚', '葉脈は平行脈', '茎の維管束は散らばる'],
+        answer: 'a',
+        explanation: '主根と側根は双子葉類の特徴です。双子葉類なら、子葉は 2 枚、葉脈は網状脈、茎の維管束は輪の形に並びます。',
+        hint: '主根と側根をもつのは、どちらのなかまかな。',
+      }),
+      drag({
+        id: 'plants-kq3-p4', concept: 'pl-monodi',
+        prompt: '「エンドウ」のカードを、当てはまる箱へ動かそう。エンドウの花弁は、1 枚ずつはずれます。',
+        // カードの左上が 右の箱（離弁花類）のまん中 (195, 160) に来れば正解。不正解例は左の箱 (45, 160)
+        figure: kqBoxesScene('カードを、双子葉類のなかまの箱へ', '合弁花類', '離弁花類', 'エンドウ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_RIGHT,
+        samples: { correct: KQ_BOX_RIGHT, wrong: KQ_BOX_LEFT },
+        explanation: 'エンドウの花弁はばらばらに取れるので、離弁花類です。アブラナやサクラも同じなかまです。',
+        hint: '花弁がばらばらに取れるなかまの名前は？',
+      }),
+      choice({
+        id: 'plants-kq3-p5', concept: 'pl-monodi',
+        prompt: 'ツツジとサクラの花を比べます。どちらも子葉が 2 枚のなかまです。2 つを見分けるには、何を調べればよい？',
+        options: ['葉脈の形', '根の形', '花弁がつながっているか'],
+        answer: 'c',
+        explanation: '双子葉類どうしなので、葉脈や根の形は同じです。サクラは花弁が離れている離弁花類、ツツジはつながっている合弁花類です。',
+        hint: '双子葉類どうしで同じになる特徴は、分けるのに使えないね。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'plants-kq3-r1', concept: 'pl-monodi',
+        prompt: 'ある植物の茎の断面では、維管束が全体に散らばっていました。この植物の根はどちらと予想できる？（ア: 主根と側根、イ: ひげ根）',
+        figure: mpPartsScene('根のようす', ['tapRoot', 'fibrousRoot']),
+        answer: 'r2',
+        explanation: '維管束が散らばっているのは単子葉類の茎です。単子葉類の根は、同じくらいの太さの根がたくさん出るひげ根です（イ）。',
+        hint: '維管束が散らばるのは、どちらのなかまだったかな。',
+      }),
+      fill({
+        id: 'plants-kq3-r2', concept: 'pl-monodi',
+        prompt: 'イネ・アブラナ・ユリ・サクラ・トウモロコシ・ツユクサの 6 種類があります。',
+        text: 'このうち、子葉が 1 枚の植物は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: '子葉が 1 枚の単子葉類は、イネ・ユリ・トウモロコシ・ツユクサの 4 種類です。アブラナとサクラは双子葉類です。',
+        hint: '葉が細長く、平行脈の植物を数えよう。',
+      }),
+      drag({
+        id: 'plants-kq3-r3', concept: 'pl-monodi',
+        prompt: '「ツツジ」のカードを、当てはまる箱へ動かそう。ツツジの花は、ろうとのような形で、花弁が 1 つにつながっています。',
+        // カードの左上が 左の箱（合弁花類）のまん中 (45, 160) に来れば正解。不正解例は右の箱 (195, 160)
+        figure: kqBoxesScene('カードを、双子葉類のなかまの箱へ', '合弁花類', '離弁花類', 'ツツジ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_LEFT,
+        samples: { correct: KQ_BOX_LEFT, wrong: KQ_BOX_RIGHT },
+        explanation: '花弁がつながっているので、ツツジは合弁花類です。アサガオやタンポポも同じなかまです。',
+        hint: '花弁がつながっているなかまの名前は？',
+      }),
+      fill({
+        id: 'plants-kq3-t2', concept: 'pl-monodi', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '種子が発芽して、いちばん初めに出てくる葉を[b1]という。',
+        blanks: [word('b1', ['子葉', '本葉', '葉脈'], '子葉')],
+        explanation: 'いちばん初めに出る葉を**子葉**といいます。子葉の数で、単子葉類（1 枚）と双子葉類（2 枚）に分けます。',
+        hint: '単子葉類・双子葉類の名前にも入っている言葉だよ。',
+      }),
+      choice({
+        id: 'plants-kq3-r4', concept: 'pl-monodi',
+        prompt: '葉のすじが網の目のようで、花弁がばらばらに取れる植物があります。この植物のなかまを、いちばんくわしく答えたものはどれ？',
+        options: ['単子葉類', '双子葉類の合弁花類', '双子葉類の離弁花類'],
+        answer: 'c',
+        explanation: '網状脈なので双子葉類です。さらに花弁が離れているので、離弁花類に分けられます。',
+        hint: '葉脈で 1 回、花弁で 1 回、順に分けよう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ plants-kq4: クイズ 4（シダ植物とコケ植物のちがい・維管束・胞子・分類） ----
+  const plKq4 = {
+    id: 'plants-kq4', areaId: 'body', free: true, title: 'クイズ 4: シダ・コケのちがいと分類', minutes: 6, concepts: ['pl-spore', 'pl-classify'],
+    lessons: [
+      {
+        id: 'plants-kq4-c1',
+        text: 'シダ植物には根・茎・葉の区別があり、その中を水や養分の通り道である**維管束**が通っています。コケ植物には根・茎・葉の区別がなく、維管束もありません。',
+        figure: kqFernNamed(),
+      },
+      {
+        id: 'plants-kq4-c2',
+        text: '種子植物とシダ植物には維管束があり、コケ植物にはありません。種子をつくるか、根・茎・葉の区別（維管束）があるかを順に見て分けます。',
+        figure: plantFlow(),
+      },
+      {
+        id: 'plants-kq4-c3',
+        text: '**胞子**は種子よりずっと小さく軽いので、風で遠くまで運ばれます。今から約 3 億年前には大きなシダ植物が栄え、それが地中にうもれて変化したものが**石炭**です。',
+        figure: fernUnderside(),
+      },
+    ],
+    warmup: choice({
+      id: 'plants-kq4-w1', concept: 'pl-spore',
+      prompt: '予想しよう。ゼニゴケを、日当たりのよい、かわいた砂地に植えかえました。ゼニゴケはどうなると思う？',
+      options: ['よく育つ', '水が足りず、かれやすい', '花をさかせる'],
+      answer: 'b',
+      explanation: 'コケ植物は、体の表面から水を取り入れます。かわいた所では水が足りなくなり、かれやすくなります。',
+      hint: 'コケ植物が多く見られるのは、どんな場所だったかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'plants-kq4-p1', concept: 'pl-spore',
+        prompt: 'イヌワラビのからだの図です。光合成をおもに行う部分はどれ？（ア: 地面から上にのびる部分、イ: 地面の下を横にのびる太い部分、ウ: 地面の下の細い部分）',
+        figure: scene(fern().concat([
+          leader(56, 88, 113, 90),
+          leader(284, 160, 250, 160),
+          leader(36, 206, 70, 198),
+          { type: 'region', id: 'r1', x: 56, y: 88, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 284, y: 160, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 36, y: 206, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r1',
+        explanation: '地面から上に出ている部分（ア）は葉で、日光を受けて光合成をします。イは地下茎、ウは根です。',
+        hint: '光合成には日光が必要だよ。日光が当たるのはどこかな。',
+      }),
+      fill({
+        id: 'plants-kq4-t1', concept: 'pl-spore', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '根・茎・葉の中を通り、水や養分の通り道になっている管の束を[b1]という。',
+        blanks: [word('b1', ['維管束', '仮根', '胞子のう'], '維管束')],
+        explanation: '水や養分の通り道の束を**維管束**といいます。シダ植物と種子植物にはあり、コケ植物にはありません。',
+        hint: '茎の断面で、緑の点として見えたものだよ。',
+      }),
+      drag({
+        id: 'plants-kq4-p2', concept: 'pl-classify',
+        prompt: '「ゼニゴケ」のカードを、当てはまる箱へ動かそう。ゼニゴケには根・茎・葉の区別がありません。',
+        // カードの左上が 右の箱（維管束なし）のまん中 (195, 160) に来れば正解。不正解例は左の箱 (45, 160)
+        figure: kqBoxesScene('カードを、維管束があるかどうかの箱へ', '維管束あり', '維管束なし', 'ゼニゴケ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_RIGHT,
+        samples: { correct: KQ_BOX_RIGHT, wrong: KQ_BOX_LEFT },
+        explanation: 'ゼニゴケはコケ植物で、根・茎・葉の区別も維管束もありません。水は体の表面から取り入れます。',
+        hint: '根・茎・葉の区別がない植物には、水の通り道の管があるかな。',
+      }),
+      fill({
+        id: 'plants-kq4-p3', concept: 'pl-classify',
+        prompt: 'アブラナ・マツ・イヌワラビ・ゼニゴケ・スギナ・スギゴケ・イネの 7 種類があります。',
+        text: 'このうち、維管束がある植物は[b1]である。',
+        blanks: [number('b1', 5, 0, '種類')],
+        explanation: '維管束があるのは、種子植物のアブラナ・マツ・イネと、シダ植物のイヌワラビ・スギナの 5 種類です。コケ植物のゼニゴケ・スギゴケにはありません。',
+        hint: 'コケ植物をのぞいて数えよう。',
+      }),
+      choice({
+        id: 'plants-kq4-p4', concept: 'pl-spore',
+        prompt: '花がなく、根・茎・葉も見分けられない植物がありました。この植物について、正しい組み合わせはどれ？',
+        options: ['胞子でふえ、体の表面から', '種子でふえ、根から', '胞子でふえ、根から'],
+        answer: 'a',
+        explanation: '根・茎・葉の区別がないのはコケ植物です。コケ植物は胞子でふえ、水は体の表面全体から取り入れます。',
+        hint: '根・茎・葉の区別がないなら、「根から」は当てはまらないね。',
+      }),
+      choice({
+        id: 'plants-kq4-p5', concept: 'pl-classify',
+        prompt: '「種子でふえるか」という観点だけで、植物を 2 組に分けます。同じ組になる 2 つはどれ？',
+        options: ['スギナとイチョウ', 'イチョウとツユクサ', 'スギゴケとツユクサ'],
+        answer: 'b',
+        explanation: 'イチョウ（裸子植物）とツユクサ（被子植物）は、どちらも種子をつくります。スギナとスギゴケは胞子でふえます。',
+        hint: '裸子植物も被子植物も、種子をつくるなかまだよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'plants-kq4-r1', concept: 'pl-spore',
+        prompt: '胞子が種子よりずっと小さくて軽いことは、なかまをふやすうえで、どんな点で役に立つ？',
+        options: ['風で遠くまで運ばれやすい', '虫に食べられやすい', '土の中に深くもぐりやすい'],
+        answer: 'a',
+        explanation: '小さく軽い胞子は、風に乗って遠くまで運ばれます。しめった場所に落ちると、そこで育ちます。',
+        hint: '軽いものは、風でどうなるかな。',
+      }),
+      fill({
+        id: 'plants-kq4-r2', concept: 'pl-spore',
+        prompt: '今から約 3 億年前の大きなシダ植物は、地中にうもれ、長い年月をかけて燃料に変わりました。',
+        text: 'この燃料は[b1]である。',
+        blanks: [word('b1', ['石炭', '石油', '天然ガス'], '石炭')],
+        explanation: '大昔のシダ植物などがうもれて変化したものが**石炭**です。今も燃料として使われています。',
+        hint: '黒くてかたい、燃える石だよ。',
+      }),
+      drag({
+        id: 'plants-kq4-r3', concept: 'pl-classify',
+        prompt: '「スギナ」のカードを、当てはまる箱へ動かそう。スギナは胞子でふえ、根・茎・葉の区別があります。',
+        // カードの左上が 左の箱（維管束あり）のまん中 (45, 160) に来れば正解。不正解例は右の箱 (195, 160)
+        figure: kqBoxesScene('カードを、維管束があるかどうかの箱へ', '維管束あり', '維管束なし', 'スギナ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: KQ_BOX_LEFT,
+        samples: { correct: KQ_BOX_LEFT, wrong: KQ_BOX_RIGHT },
+        explanation: 'スギナはシダ植物です。種子はつくりませんが、根・茎・葉の区別があり、維管束もあります。',
+        hint: '根・茎・葉の区別があるシダ植物には、水の通り道があるよ。',
+      }),
+      fill({
+        id: 'plants-kq4-t2', concept: 'pl-classify', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '胞子でなかまをふやし、根・茎・葉の区別と維管束をもつ植物のなかまを[b1]という。',
+        blanks: [word('b1', ['シダ植物', 'コケ植物', '裸子植物'], 'シダ植物')],
+        explanation: '胞子でふえ、維管束があるなかまを**シダ植物**といいます。イヌワラビ・スギナ・ゼンマイなどです。',
+        hint: 'イヌワラビのなかまの名前だよ。',
+      }),
+      choice({
+        id: 'plants-kq4-r4', concept: 'pl-classify',
+        prompt: '維管束をもつ植物のなかまを、すべて合わせたものはどれ？',
+        options: ['種子植物だけ', '種子植物とシダ植物', 'シダ植物とコケ植物'],
+        answer: 'b',
+        explanation: '維管束は、種子植物とシダ植物にあります。コケ植物にはないので、体の表面から水を取り入れます。',
+        hint: '維管束がないのは、どのなかまだけだったかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -2093,8 +2703,8 @@
     mascot: 'F',   // 担当の先生（まめ博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'pl-flower', title: '花と種子', order: 1, stages: [plants1, plants2, plMp1, plMp2, plDr1] },
-      { id: 'body', title: 'からだのつくりと分類', order: 2, stages: [plants3, plants4, plMp3, plMp4, plDr2] },
+      { id: 'pl-flower', title: '花と種子', order: 1, stages: [plants1, plants2, plMp1, plMp2, plDr1, plKq1, plKq2] },
+      { id: 'body', title: 'からだのつくりと分類', order: 2, stages: [plants3, plants4, plMp3, plMp4, plDr2, plKq3, plKq4] },
     ],
   };
 

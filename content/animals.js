@@ -1836,6 +1836,585 @@
   };
 
   // ================================================================
+  // クイズ（ほかの先生が公開しているクイズの「何を問うか」だけを参考に自作した問題。docs/reports/content/animals.md）
+  // ================================================================
+
+  // カエルの幼生（おたまじゃくし）から成体への変態（解説用）
+  function metamorphosisScene() {
+    return scene([
+      { type: 'polygon', points: [[72, 118], [112, 104], [112, 132]], fill: 'brown' },
+      { type: 'ellipse', x: 62, y: 118, rx: 20, ry: 14, fill: 'brown' },
+      { type: 'circle', x: 52, y: 114, r: 2, fill: 'ink' },
+      { type: 'arrow', x1: 130, y1: 118, x2: 182, y2: 118, color: 'blue' },
+      { type: 'text', x: 156, y: 104, text: '変態', size: 14, anchor: 'middle', bold: true },
+    ].concat(frog(250, 120), [
+      { type: 'text', x: 72, y: 176, text: '幼生（おたまじゃくし）', size: 12, anchor: 'middle' },
+      { type: 'text', x: 72, y: 196, text: '水中・えらと皮ふ', size: 12, anchor: 'middle' },
+      { type: 'text', x: 250, y: 176, text: '成体（カエル）', size: 12, anchor: 'middle' },
+      { type: 'text', x: 250, y: 196, text: '陸上や水辺・肺と皮ふ', size: 12, anchor: 'middle' },
+    ]));
+  }
+
+  // 魚類 → 両生類 → ハチュウ類 で、生活の場所と卵・体の表面がどう変わるか（解説用）
+  function waterToLandScene() {
+    const items = [{ type: 'text', x: 160, y: 36, text: '水中から陸上へ', size: 14, anchor: 'middle', bold: true }];
+    [['魚類', '水中', '殻のない卵', 'うろこ'], ['両生類', '水中と陸上', '殻のない卵', 'しめった皮ふ'], ['ハチュウ類', '陸上', '殻のある卵', 'かたいうろこ']]
+      .forEach(([name, place, egg, skin], i) => {
+        const cx = 56 + 104 * i;
+        items.push(
+          { type: 'rect', x: cx - 46, y: 56, width: 92, height: 36, fill: 'white', label: name },
+          { type: 'text', x: cx, y: 124, text: place, size: 12, anchor: 'middle' },
+          { type: 'text', x: cx, y: 150, text: egg, size: 12, anchor: 'middle' },
+          { type: 'text', x: cx, y: 176, text: skin, size: 12, anchor: 'middle' },
+        );
+      });
+    items.push(
+      { type: 'line', points: [[102, 74], [112, 74]], width: 2, arrow: true },
+      { type: 'line', points: [[206, 74], [216, 74]], width: 2, arrow: true },
+      { type: 'text', x: 160, y: 214, text: '陸上では、かわきから体や卵を守るつくりが役立つ', size: 12, anchor: 'middle' },
+    );
+    return scene(items);
+  }
+
+  // 気温と体温のグラフに、恒温動物と変温動物の線を引いたもの（解説用）
+  function hibernateScene() {
+    return scene(tempGraph().concat([
+      { type: 'line', points: [[gx(0), gy(38)], [gx(40), gy(38)]], color: 'orange', width: 3 },
+      { type: 'line', points: [[gx(0), gy(0)], [gx(40), gy(40)]], color: 'blue', width: 3 },
+      { type: 'text', x: 70, y: 40, text: '恒温動物（イヌ）', size: 12, color: 'orange' },
+      { type: 'text', x: 150, y: 170, text: '変温動物（ヘビ）', size: 12, color: 'blue' },
+    ]));
+  }
+
+  // drag 用: 呼吸のしかたで分ける 3 列の表。動物の名前のカード（80×30）を、列へ動かす
+  // 列の中心: 一生えら呼吸 (66, 145)、子はえら・親は肺 (162, 145)、一生肺呼吸 (258, 145)
+  // カードの左上は 中心 − (40, 15): (26, 130)、(122, 130)、(218, 130)
+  function breathBoardScene(name) {
+    return scene([
+      { type: 'text', x: 210, y: 26, text: '呼吸のしかたで分ける', size: 13, anchor: 'middle' },
+      { type: 'text', x: 66, y: 66, text: '一生えら呼吸', size: 12, anchor: 'middle' },
+      { type: 'text', x: 162, y: 58, text: '子はえら', size: 12, anchor: 'middle' },
+      { type: 'text', x: 162, y: 74, text: '親は肺と皮ふ', size: 12, anchor: 'middle' },
+      { type: 'text', x: 258, y: 66, text: '一生肺呼吸', size: 12, anchor: 'middle' },
+      { type: 'rect', x: 18, y: 80, width: 96, height: 130, fill: 'white' },
+      { type: 'rect', x: 114, y: 80, width: 96, height: 130, fill: 'white' },
+      { type: 'rect', x: 210, y: 80, width: 96, height: 130, fill: 'white' },
+      { type: 'rect', id: 'card', x: 8, y: 8, width: 80, height: 30, fill: 'yellow', rx: 4, label: name },
+    ]);
+  }
+
+  // ア カエル・イ ハト・ウ イヌ と、それぞれの下の選ぶ場所
+  const KQ_WINTER_Q = scene([].concat(frog(60, 96), bird(160, 96), dog(260, 100), [
+    { type: 'text', x: 60, y: 148, text: 'カエル', size: 13, anchor: 'middle' },
+    { type: 'text', x: 160, y: 148, text: 'ハト', size: 13, anchor: 'middle' },
+    { type: 'text', x: 260, y: 148, text: 'イヌ', size: 13, anchor: 'middle' },
+  ], regionsRow([60, 160, 260], 188)));
+
+  // ア・イ・ウ…の選ぶ場所を横に並べる（xs は中心の x、y は共通）
+  function regionsRow(xs, y) {
+    return xs.map((x, i) => ({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: 'アイウエ'[i] }));
+  }
+
+  // ---- ステージ animals-kq1: クイズ 1（セキツイ動物の特徴を考える: 変態・陸上への広がり・冬眠・呼吸） ----
+  const anKq1 = {
+    id: 'animals-kq1', areaId: 'vertebrate', free: true, title: 'クイズ 1: セキツイ動物の特徴を考える', minutes: 6, concepts: ['an-traits', 'an-groups'],
+    lessons: [
+      {
+        id: 'animals-kq1-c1',
+        text: 'カエルの子（おたまじゃくし）は**幼生**とよばれ、水中でえらと皮ふを使って呼吸します。成長するとき、体のつくりや生活のしかたが大きく変わることを**変態**といいます。',
+        figure: metamorphosisScene(),
+      },
+      {
+        id: 'animals-kq1-c2',
+        text: '魚類・両生類・ハチュウ類と比べていくと、陸上の生活に合う特徴がふえていきます。ハチュウ類のかたいうろこや殻のある卵は、体や卵を**乾燥**から守ります。',
+        figure: waterToLandScene(),
+      },
+      {
+        id: 'animals-kq1-c3',
+        text: 'ヘビやカエルなどの**変温動物**は、寒くなると体温も下がって動けなくなるので、土の中などでじっとして冬をこします（**冬眠**）。鳥類やホニュウ類は、体温をほぼ一定に保てます。',
+        figure: hibernateScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'animals-kq1-w1', concept: 'an-traits',
+      prompt: '予想しよう。ウミガメは、一生の大部分を海でくらします。ウミガメは、卵をどこにうむと思う？',
+      options: ['海の底', '海岸の砂浜', '川の中'],
+      answer: 'b',
+      explanation: 'ウミガメはハチュウ類なので、陸上の砂浜に上がって、殻のある卵をうみます。なかまの特徴が、くらし方とどうつながるかを、このステージで考えよう。',
+      hint: 'カメはどのなかまだったかな。そのなかまの卵には殻があるね。',
+    }),
+    problems: [
+      fill({
+        id: 'animals-kq1-t1', concept: 'an-traits', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '子から親になるとき、体のつくりや生活のしかたが大きく変わることを[b1]という。',
+        blanks: [word('b1', ['脱皮', '変態', '胎生'], '変態')],
+        explanation: 'おたまじゃくし（幼生）がカエル（成体）になるように、体のつくりやくらし方が大きく変わることを**変態**といいます。',
+        hint: 'おたまじゃくしがカエルに変わるときの言葉だよ。',
+      }),
+      drag({
+        id: 'animals-kq1-p1', concept: 'an-traits',
+        prompt: '表は、呼吸のしかたで動物を分けるものです。「イモリ」のカードを、当てはまる列へ動かして入れよう。',
+        // イモリ（両生類）: 子はえら・親は肺と皮ふ → カードの左上 (122, 130)。不正解例は 一生肺呼吸 (218, 130)
+        figure: breathBoardScene('イモリ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 122, y: 130 },
+        samples: { correct: { x: 122, y: 130 }, wrong: { x: 218, y: 130 } },
+        explanation: 'イモリは両生類です。子は水中でえらと皮ふで呼吸し、親になると肺と皮ふで呼吸します。形が似ているヤモリはハチュウ類で、一生肺で呼吸します。',
+        hint: 'イモリは、カエルと同じなかまだよ。',
+      }),
+      fill({
+        id: 'animals-kq1-p2', concept: 'an-traits',
+        prompt: 'イモリ・ハト・ヘビ・クジラ・フナ・ワニ・ウサギの 7 種類の動物がいます。',
+        text: 'このうち、変温動物は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: '変温動物は、イモリ（両生類）・ヘビ（ハチュウ類）・フナ（魚類）・ワニ（ハチュウ類）の 4 種類です。ハト（鳥類）とクジラ・ウサギ（ホニュウ類）は恒温動物です。',
+        hint: '魚類・両生類・ハチュウ類のなかまを数えよう。',
+      }),
+      choice({
+        id: 'animals-kq1-p3', concept: 'an-traits',
+        prompt: 'ハトとカメは、どちらも殻のある卵を陸上にうみます。ハトにだけ見られることはどれ？',
+        options: ['親が卵をあたためる', '卵に殻がある', '卵を陸上にうむ'],
+        answer: 'a',
+        explanation: '鳥類のハトは、親が卵をだいてあたため、かえった子に食べ物を運んで育てます。カメは砂の中に卵をうむと、そのままにします。',
+        hint: '2 つに共通していることでは、区別できないね。',
+      }),
+      figureChoice({
+        id: 'animals-kq1-p4', concept: 'an-traits',
+        prompt: '図の ア カエル、イ ハト、ウ イヌ のうち、冬に気温が下がると体温も下がり、動けなくなって冬眠するのはどれ？',
+        figure: KQ_WINTER_Q,
+        answer: 'r1',
+        explanation: 'カエルは変温動物なので、寒くなると体温が下がって動けなくなり、土の中などで冬眠します。ハトとイヌは恒温動物で、冬も体温をほぼ一定に保てます。',
+        hint: '体温がまわりの温度で変わるなかまはどれかな。',
+      }),
+      choice({
+        id: 'animals-kq1-p5', concept: 'an-groups',
+        prompt: 'クジラは海を泳ぎ、魚に似た形をしていますが、ホニュウ類です。そう分けられる理由の組み合わせはどれ？',
+        options: ['肺で呼吸し、胎生である', 'えらで呼吸し、胎生である', '肺で呼吸し、卵生である'],
+        answer: 'a',
+        explanation: 'クジラは肺で呼吸し、子を体内で育ててからうみ（胎生）、乳で育てます。だから、すむ場所や形が魚に似ていても、ホニュウ類です。',
+        hint: 'クジラが、ときどき海面で息つぎをすることを思い出そう。',
+      }),
+    ],
+    retryPool: [
+      drag({
+        id: 'animals-kq1-r1', concept: 'an-traits',
+        prompt: '表は、呼吸のしかたで動物を分けるものです。「イルカ」のカードを、当てはまる列へ動かして入れよう。',
+        // イルカ（ホニュウ類）: 一生肺呼吸 → カードの左上 (218, 130)。不正解例は 一生えら呼吸 (26, 130)
+        figure: breathBoardScene('イルカ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 218, y: 130 },
+        samples: { correct: { x: 218, y: 130 }, wrong: { x: 26, y: 130 } },
+        explanation: 'イルカは水中でくらしますが、ホニュウ類なので一生肺で呼吸します。そのため、ときどき水面に出て空気を吸います。',
+        hint: 'イルカは、クジラと同じなかまだよ。',
+      }),
+      fill({
+        id: 'animals-kq1-r2', concept: 'an-groups',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ダチョウは空を飛べないが、体が[b1]でおおわれ、殻のある卵をうむので、鳥類に分けられる。',
+        blanks: [word('b1', ['羽毛', 'うろこ', '毛'], '羽毛')],
+        explanation: 'ダチョウは飛べませんが、体が羽毛でおおわれ、殻のある卵をうむ鳥類です。飛ぶかどうかではなく、体の特徴でなかまを決めます。',
+        hint: '鳥類の体の表面は、何でおおわれているかな。',
+      }),
+      choice({
+        id: 'animals-kq1-r3', concept: 'an-groups',
+        prompt: 'ヤモリとイモリは、形がよく似ています。ヤモリがハチュウ類だと分かる特徴はどれ？',
+        options: ['体がかたいうろこでおおわれている', '皮ふがいつもしめっている', '子が水中でえら呼吸をする'],
+        answer: 'a',
+        explanation: 'ヤモリは体がかたいうろこでおおわれ、陸上に殻のある卵をうむハチュウ類です。皮ふがしめっていて、子が水中でえら呼吸をするのは、両生類のイモリです。',
+        hint: 'トカゲやヘビの体の表面と同じだよ。',
+      }),
+      choice({
+        id: 'animals-kq1-t2', concept: 'an-traits', term: true,
+        prompt: '次の説明に合う言葉はどれ？「おたまじゃくしのように、親とは体のつくりやくらし方がちがう、親になる前の時期の子」',
+        options: ['幼生', '成体', '胎児'],
+        answer: 'a',
+        explanation: '親とは体のつくりやくらし方がちがう、親になる前の子を**幼生**といいます。親になったものは成体といいます。',
+        hint: '「幼い」という字が入る言葉だよ。',
+      }),
+      fill({
+        id: 'animals-kq1-r4', concept: 'an-groups',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '魚類・両生類・ハチュウ類の順に比べると、体のつくりは[b1]でくらすのに合ったものへと変わっている。',
+        blanks: [word('b1', ['水中', '陸上', '空中'], '陸上')],
+        explanation: '魚類は水中、両生類は水中と陸上、ハチュウ類は陸上でくらします。かわきに強い体や殻のある卵など、陸上でくらすのに合う特徴がふえています。',
+        hint: '殻のある卵は、どこでうむのに役立つかな。',
+      }),
+    ],
+  };
+
+  // 消化管の長さのちがい（イメージ。数値は書かない）（解説用）
+  function gutScene() {
+    return scene([
+      { type: 'text', x: 160, y: 36, text: '体の大きさのわりの、消化管の長さ', size: 13, anchor: 'middle' },
+      { type: 'text', x: 106, y: 94, text: 'ライオン', size: 13, anchor: 'end' },
+      { type: 'rect', x: 116, y: 74, width: 56, height: 28, fill: 'pink' },
+      { type: 'text', x: 106, y: 154, text: 'シマウマ', size: 13, anchor: 'end' },
+      { type: 'rect', x: 116, y: 134, width: 190, height: 28, fill: 'pink' },
+      { type: 'text', x: 160, y: 204, text: '植物を食べる動物ほど長い', size: 13, anchor: 'middle' },
+    ]);
+  }
+
+  // かぎ爪とひづめ（解説用）
+  function footScene() {
+    return scene([
+      { type: 'ellipse', x: 86, y: 104, rx: 46, ry: 28, fill: 'brown' },
+      { type: 'polygon', points: [[44, 116], [30, 138], [52, 126]], fill: 'ink' },
+      { type: 'polygon', points: [[70, 128], [60, 152], [80, 134]], fill: 'ink' },
+      { type: 'polygon', points: [[100, 128], [94, 152], [112, 132]], fill: 'ink' },
+      { type: 'polygon', points: [[124, 116], [130, 140], [136, 112]], fill: 'ink' },
+      { type: 'rect', x: 220, y: 40, width: 32, height: 90, fill: 'gray' },
+      { type: 'polygon', points: [[214, 130], [258, 130], [266, 160], [206, 160]], fill: 'ink' },
+      { type: 'text', x: 86, y: 196, text: 'かぎ爪（ライオン）', size: 13, anchor: 'middle' },
+      { type: 'text', x: 236, y: 196, text: 'ひづめ（シマウマ）', size: 13, anchor: 'middle' },
+    ]);
+  }
+
+  // 肉食動物の上あごの歯を横から見た図（左が前）。ア 前歯、イ 長くとがった歯、ウ 奥のぎざぎざの歯
+  const KQ_TEETH_Q = scene([
+    { type: 'text', x: 160, y: 36, text: '肉食動物の上あごの歯（左が前）', size: 13, anchor: 'middle' },
+    { type: 'rect', x: 26, y: 80, width: 270, height: 40, fill: 'white', rx: 10 },
+  ].concat(
+    [36, 48, 60].map(x => ({ type: 'polygon', points: [[x, 120], [x + 10, 120], [x + 5, 136]], fill: 'white' })),
+    [{ type: 'polygon', points: [[84, 120], [106, 120], [95, 172]], fill: 'white' }],
+    [150, 176, 202, 228, 254].map(x => ({ type: 'polygon', points: [[x, 120], [x + 26, 120], [x + 13, 148]], fill: 'white' })),
+    regionsRow([44, 100, 215], 200),
+  ));
+
+  // drag 用: 上から見た頭（上が前）。左の目の位置の候補を点線の丸で示す（前寄り (138, 74)・横 (102, 130)）
+  function headTopScene(name) {
+    return scene([
+      { type: 'text', x: 160, y: 24, text: name + 'の頭を上から見たようす', size: 13, anchor: 'middle' },
+      { type: 'line', points: [[160, 54], [160, 34]], color: 'gray', width: 2, arrow: true },
+      { type: 'text', x: 170, y: 46, text: '前', size: 12 },
+      { type: 'ellipse', x: 160, y: 140, rx: 60, ry: 84, fill: 'sand' },
+      { type: 'circle', x: 138, y: 74, r: 12, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 102, y: 130, r: 12, fill: 'none', stroke: 'gray' },
+      { type: 'circle', id: 'eye', x: 270, y: 200, r: 11, fill: 'ink', stroke: 'ink' },
+      { type: 'text', x: 270, y: 180, text: '目', size: 12, anchor: 'middle' },
+    ]);
+  }
+
+  // ---- ステージ animals-kq2: クイズ 2（体のつくりと食べ物: 歯・あしの先・目のつき方・消化管） ----
+  const anKq2 = {
+    id: 'animals-kq2', areaId: 'vertebrate', free: true, title: 'クイズ 2: 体のつくりと食べ物', minutes: 6, concepts: ['an-classify'],
+    lessons: [
+      {
+        id: 'animals-kq2-c1',
+        text: '草食動物の消化管は、体の大きさのわりに、肉食動物より長くなっています。植物はかたくて消化しにくいので、長い消化管で時間をかけて消化・吸収します。',
+        figure: gutScene(),
+      },
+      {
+        id: 'animals-kq2-c2',
+        text: 'あしの先も食べ物に合っています。肉食動物のライオンは、するどく曲がった**かぎ爪**でえものをおさえます。草食動物のシマウマは、かたい**ひづめ**で長い距離を走り、敵からにげます。',
+        figure: footScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'animals-kq2-w1', concept: 'an-classify',
+      prompt: '予想しよう。ある動物の歯を調べると、前歯が長くのび、奥の歯は平らで大きくなっていました。この動物がおもに食べるものは何だと思う？',
+      options: ['草や木の葉', 'ほかの動物の肉', '小さな魚'],
+      answer: 'a',
+      explanation: '平らで大きな奥歯は、草をすりつぶすのに向いています。ウサギやシマウマのような草食動物の歯です。体のつくりと食べ物の関係を、このステージで確かめよう。',
+      hint: '平らな歯は、すりつぶすのに向いているよ。',
+    }),
+    problems: [
+      fill({
+        id: 'animals-kq2-t1', concept: 'an-classify', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ライオンのあしの先にある、するどく曲がったつめを[b1]という。',
+        blanks: [word('b1', ['ひづめ', 'かぎ爪', '犬歯'], 'かぎ爪')],
+        explanation: 'ライオンなどの肉食動物は、するどく曲がった**かぎ爪**で、えものをしっかりおさえます。',
+        hint: 'かぎのように曲がっている、と考えよう。',
+      }),
+      figureChoice({
+        id: 'animals-kq2-p1', concept: 'an-classify',
+        prompt: '図は肉食動物の上あごの歯です。ア 前歯、イ 長くとがった歯、ウ 奥のぎざぎざの歯。えものにかみついてしとめるのに使う歯はどれ？',
+        figure: KQ_TEETH_Q,
+        answer: 'r2',
+        explanation: 'イの長くとがった歯は犬歯です。肉食動物では犬歯が大きく発達していて、えものにかみついてしとめるのに使います。',
+        hint: 'いちばん長くとがった歯だよ。',
+      }),
+      fill({
+        id: 'animals-kq2-p2', concept: 'an-classify',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'シマウマのあしの先は、かたい[b1]になっていて、長い距離を走って敵からにげるのに役立つ。',
+        blanks: [word('b1', ['ひづめ', 'かぎ爪', '水かき'], 'ひづめ')],
+        explanation: 'シマウマやウマなどの草食動物のあしの先は、かたいひづめになっていて、長い距離を走るのに向いています。',
+        hint: 'ウマのあしの先と同じつくりだよ。',
+      }),
+      choice({
+        id: 'animals-kq2-p3', concept: 'an-classify',
+        prompt: '草食動物の消化管が、体の大きさのわりに肉食動物より長いのはなぜ？',
+        options: ['植物は消化しにくく、時間がかかるから', '肉より植物のほうが量が少ないから', '速く走れるようにするため'],
+        answer: 'a',
+        explanation: '植物はかたい部分が多く、消化しにくい食べ物です。そのため、草食動物は長い消化管で時間をかけて消化・吸収します。',
+        hint: '肉と植物では、どちらが消化しにくいかな。',
+      }),
+      drag({
+        id: 'animals-kq2-p4', concept: 'an-classify',
+        prompt: '図はシマウマの頭を上から見たようすです。黒い丸（目）を、シマウマの左の目がある位置の点線の丸へ動かそう。',
+        // 草食動物の目は顔の横 → (102, 130)。不正解例は前寄りの (138, 74)（約 66 px はなれる）
+        figure: headTopScene('シマウマ'),
+        draggable: { itemId: 'eye', axis: 'xy' },
+        target: { x: 102, y: 130 },
+        samples: { correct: { x: 102, y: 130 }, wrong: { x: 138, y: 74 } },
+        explanation: 'シマウマの目は顔の横についているので、まわりの広い範囲を見わたせます。草を食べている間も、近づく敵に気づきやすくなります。',
+        hint: '敵を早く見つけるには、どんな目のつき方がよいかな。',
+      }),
+      fill({
+        id: 'animals-kq2-p5', concept: 'an-classify',
+        prompt: 'シマウマ・ライオン・ウサギ・オオカミ・キリン・トラ・ウシの 7 種類の動物がいます。',
+        text: 'このうち、草食動物は[b1]である。',
+        blanks: [number('b1', 4, 0, '種類')],
+        explanation: '草食動物は、シマウマ・ウサギ・キリン・ウシの 4 種類です。ライオン・オオカミ・トラは、ほかの動物を食べる肉食動物です。',
+        hint: 'おもに植物を食べる動物を数えよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'animals-kq2-r1', concept: 'an-classify',
+        prompt: '図は肉食動物の上あごの歯です。ア 前歯、イ 長くとがった歯、ウ 奥のぎざぎざの歯。肉をかみ切ったり、骨をくだいたりする奥の歯はどれ？',
+        figure: KQ_TEETH_Q,
+        answer: 'r3',
+        explanation: 'ウは臼歯です。肉食動物の臼歯は、するどくとがっていて、肉をかみ切ったり骨をくだいたりするのに向いています。草食動物の臼歯は平らです。',
+        hint: '口のいちばん奥にならんでいる歯だよ。',
+      }),
+      drag({
+        id: 'animals-kq2-r2', concept: 'an-classify',
+        prompt: '図はライオンの頭を上から見たようすです。黒い丸（目）を、ライオンの左の目がある位置の点線の丸へ動かそう。',
+        // 肉食動物の目は顔の前向き → (138, 74)。不正解例は横の (102, 130)
+        figure: headTopScene('ライオン'),
+        draggable: { itemId: 'eye', axis: 'xy' },
+        target: { x: 138, y: 74 },
+        samples: { correct: { x: 138, y: 74 }, wrong: { x: 102, y: 130 } },
+        explanation: 'ライオンの目は顔の前についていて、両方の目で同じ所を見る範囲が広くなります。そのため、えものまでの距離をつかみやすくなります。',
+        hint: 'えものとの距離をはかるには、両目で前を見るとよいね。',
+      }),
+      choice({
+        id: 'animals-kq2-r3', concept: 'an-classify',
+        prompt: 'ある動物の頭の骨を調べると、犬歯が長くとがり、目が顔の前についていました。この動物の食べ物として考えられるのはどれ？',
+        options: ['ほかの動物', '草や木の葉', '木の実だけ'],
+        answer: 'a',
+        explanation: '長くとがった犬歯と、前向きの目は、えものをとらえる肉食動物の特徴です。体のつくりから、食べ物を考えることができます。',
+        hint: '犬歯は、何をするのに使う歯だったかな。',
+      }),
+      choice({
+        id: 'animals-kq2-t2', concept: 'an-classify', term: true,
+        prompt: '次の説明に合う言葉はどれ？「草食動物で発達している、草をかみ切るのに使う前歯」',
+        options: ['門歯', '犬歯', '臼歯'],
+        answer: 'a',
+        explanation: '前にならぶ、草などをかみ切る歯を**門歯**といいます。草食動物は門歯で草をかみ切り、臼歯ですりつぶします。',
+        hint: '口の入り口（門）にある歯だよ。',
+      }),
+      fill({
+        id: 'animals-kq2-r4', concept: 'an-classify',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ライオンのような肉食動物の消化管は、体の大きさのわりに、草食動物と比べて[b1]。',
+        blanks: [word('b1', ['短い', '長い', '同じ'], '短い')],
+        explanation: '肉は植物より消化しやすいので、肉食動物の消化管は草食動物より短くなっています。',
+        hint: '消化しやすい食べ物なら、消化管は長くなくてもよいね。',
+      }),
+    ],
+  };
+
+  // 脱皮のようす（解説用）
+  function moltScene() {
+    return scene([
+      { type: 'ellipse', x: 66, y: 120, rx: 44, ry: 24, fill: 'sand' },
+      { type: 'text', x: 66, y: 170, text: '外骨格は', size: 12, anchor: 'middle' },
+      { type: 'text', x: 66, y: 188, text: '大きくならない', size: 12, anchor: 'middle' },
+      { type: 'arrow', x1: 120, y1: 120, x2: 168, y2: 120, color: 'blue' },
+      { type: 'text', x: 144, y: 108, text: '脱皮', size: 14, anchor: 'middle', bold: true },
+      { type: 'ellipse', x: 234, y: 76, rx: 44, ry: 24, fill: 'none', stroke: 'gray' },
+      { type: 'text', x: 234, y: 44, text: 'ぬけがら', size: 12, anchor: 'middle' },
+      { type: 'ellipse', x: 240, y: 150, rx: 58, ry: 30, fill: 'sand' },
+      { type: 'text', x: 240, y: 208, text: '大きくなった体', size: 12, anchor: 'middle' },
+    ]);
+  }
+
+  // 甲殻類と多足類の例（解説用）
+  function crustaceanScene() {
+    const items = [];
+    [['甲殻類', ['エビ・カニ・ザリガニ', 'ミジンコ・ダンゴムシ', '多くは水中でえら呼吸']], ['多足類', ['ムカデ・ヤスデ', 'あしがとても多い', '体の節も多い']]]
+      .forEach(([t, lines], i) => {
+        const x = 14 + 154 * i;
+        items.push(
+          { type: 'rect', x, y: 24, width: 138, height: 196, fill: i ? 'white' : 'sky', rx: 8 },
+          { type: 'text', x: x + 69, y: 56, text: t, size: 15, anchor: 'middle', bold: true },
+        );
+        lines.forEach((s, k) => items.push({ type: 'text', x: x + 69, y: 100 + 36 * k, text: s, size: 12, anchor: 'middle' }));
+      });
+    return scene(items);
+  }
+
+  // drag 用: 節足動物を 3 つのなかまに分ける表（列の中心・カードの位置は breathBoardScene と同じ）
+  function arthropodBoardScene(name) {
+    return scene([
+      { type: 'text', x: 210, y: 26, text: '節足動物を分ける', size: 13, anchor: 'middle' },
+      { type: 'text', x: 66, y: 58, text: '昆虫類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 66, y: 74, text: 'あし 6 本', size: 12, anchor: 'middle' },
+      { type: 'text', x: 162, y: 58, text: '甲殻類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 162, y: 74, text: '多くは水中', size: 12, anchor: 'middle' },
+      { type: 'text', x: 258, y: 58, text: 'クモ類', size: 13, anchor: 'middle' },
+      { type: 'text', x: 258, y: 74, text: 'あし 8 本', size: 12, anchor: 'middle' },
+      { type: 'rect', x: 18, y: 80, width: 96, height: 130, fill: 'white' },
+      { type: 'rect', x: 114, y: 80, width: 96, height: 130, fill: 'white' },
+      { type: 'rect', x: 210, y: 80, width: 96, height: 130, fill: 'white' },
+      { type: 'rect', id: 'card', x: 8, y: 8, width: 80, height: 30, fill: 'yellow', rx: 4, label: name },
+    ]);
+  }
+
+  // アサリの殻を開いたようす（名前は書かない）。ア 殻のふち、イ 殻の内側の大きな膜、ウ 殻の外へのびる部分
+  const KQ_CLAM_Q = scene([
+    { type: 'ellipse', x: 170, y: 116, rx: 120, ry: 76, fill: 'glass' },
+    { type: 'ellipse', x: 170, y: 116, rx: 102, ry: 60, fill: 'pink' },
+    { type: 'line', points: [[120, 96], [220, 96]], color: 'line', width: 2 },
+    { type: 'line', points: [[118, 108], [222, 108]], color: 'line', width: 2 },
+    { type: 'line', points: [[120, 120], [220, 120]], color: 'line', width: 2 },
+    { type: 'polygon', points: [[84, 150], [40, 196], [72, 210], [112, 166]], fill: 'yellow' },
+    leader(60, 52, 76, 64), { type: 'region', id: 'r1', x: 40, y: 34, r: 22, label: 'ア' },
+    leader(270, 196, 248, 152), { type: 'region', id: 'r2', x: 290, y: 214, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 66, y: 184, r: 22, label: 'ウ' },
+  ]);
+
+  // ---- ステージ animals-kq3: クイズ 3（無セキツイ動物を考える: 外骨格と脱皮・甲殻類と多足類・軟体動物のつくり） ----
+  const anKq3 = {
+    id: 'animals-kq3', areaId: 'invertebrate', free: true, title: 'クイズ 3: 無セキツイ動物の体を考える', minutes: 6, concepts: ['an-arthropod', 'an-mollusc'],
+    lessons: [
+      {
+        id: 'animals-kq3-c1',
+        text: '節足動物の外骨格は、体を支え、中を守り、体の水分がにげるのも防ぎます。けれども外骨格は大きくならないので、成長するときは**脱皮**をくり返します。',
+        figure: moltScene(),
+      },
+      {
+        id: 'animals-kq3-c2',
+        text: 'エビやカニなどの**甲殻類**は、多くが水中にすみ、えらで呼吸します。ミジンコやダンゴムシも甲殻類です。ムカデやヤスデのように、あしがとても多いなかまを**多足類**といいます。',
+        figure: crustaceanScene(),
+      },
+      {
+        id: 'animals-kq3-c3',
+        text: 'アサリは、殻の間からのばした筋肉でできた**あし**をのび縮みさせて、砂にもぐります。イカやタコは外から見える貝殻がありませんが、内臓が外とう膜に包まれた軟体動物です。',
+        figure: clamScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'animals-kq3-w1', concept: 'an-arthropod',
+      prompt: '予想しよう。夏に木の幹で見つかるセミのぬけがらは、何が残ったものだと思う？',
+      options: ['古い外骨格', 'セミの骨', 'セミの卵の殻'],
+      answer: 'a',
+      explanation: 'セミのぬけがらは、脱皮でぬいだ古い外骨格です。節足動物は、成長するときに外骨格をぬぎかえます。このステージで、そのわけを考えよう。',
+      hint: '節足動物の体の外側をおおっている、かたいものだよ。',
+    }),
+    problems: [
+      fill({
+        id: 'animals-kq3-t1', concept: 'an-arthropod', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ムカデやヤスデのように、体の節が多く、あしがとても多い節足動物のなかまを[b1]という。',
+        blanks: [word('b1', ['多足類', '甲殻類', '昆虫類'], '多足類')],
+        explanation: 'ムカデやヤスデは**多足類**です。節足動物は、昆虫類・甲殻類・クモ類・多足類などに分けられます。',
+        hint: '「あしが多い」なかま、という名前だよ。',
+      }),
+      choice({
+        id: 'animals-kq3-p1', concept: 'an-arthropod',
+        prompt: 'カニやエビが、成長するときに脱皮をくり返すのはなぜ？',
+        options: ['外骨格が大きくならないから', '体の色を変えてかくれるため', '殻に空気をためるため'],
+        answer: 'a',
+        explanation: 'かたい外骨格は大きくならないので、中の体が大きくなるには、古い外骨格をぬいで、新しい大きな外骨格をつくる必要があります。',
+        hint: 'かたい殻の中で、体が大きくなろうとすると…。',
+      }),
+      figureChoice({
+        id: 'animals-kq3-p2', concept: 'an-mollusc',
+        prompt: '図はアサリの殻を開いたようすです。ア 殻のふち、イ 殻の内側の大きな膜、ウ 殻の外へのびる部分。砂にもぐるときにのび縮みさせる部分はどれ？',
+        figure: KQ_CLAM_Q,
+        answer: 'r3',
+        explanation: 'ウはアサリのあしです。筋肉でできていて、のび縮みさせて砂の中にもぐります。イは内臓を包む外とう膜です。',
+        hint: '殻の外へ出して動かす部分だよ。',
+      }),
+      drag({
+        id: 'animals-kq3-p3', concept: 'an-arthropod',
+        prompt: '表は節足動物を 3 つのなかまに分けるものです。「ミジンコ」のカードを、当てはまる列へ動かして入れよう。',
+        // ミジンコ（甲殻類）→ カードの左上 (122, 130)。不正解例は 昆虫類 (26, 130)
+        figure: arthropodBoardScene('ミジンコ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 122, y: 130 },
+        samples: { correct: { x: 122, y: 130 }, wrong: { x: 26, y: 130 } },
+        explanation: 'ミジンコは、池や田んぼの水中にすむ小さな甲殻類です。エビやカニと同じなかまです。',
+        hint: '水中にすむ、小さなエビやカニのなかまだよ。',
+      }),
+      fill({
+        id: 'animals-kq3-p4', concept: 'an-arthropod',
+        prompt: 'カニの頭胸部からは、はさみをふくめて、左右に 5 本ずつあしが出ています。',
+        text: 'カニのあしは、はさみもふくめて全部で[b1]ある。',
+        blanks: [number('b1', 10, 0, '本')],
+        explanation: '左右に 5 本ずつなので、5 × 2 ＝ 10 本です。昆虫の 6 本、クモの 8 本とちがうので、なかまを見分ける手がかりになります。',
+        hint: '左右の数を足そう。',
+      }),
+      choice({
+        id: 'animals-kq3-p5', concept: 'an-mollusc',
+        prompt: 'イカには、アサリのような外から見える貝殻がありません。それでもアサリと同じ軟体動物に分けられるのはなぜ？',
+        options: ['内臓が外とう膜に包まれ、節がないから', '水中にすみ、えらで呼吸するから', '背骨がないから'],
+        answer: 'a',
+        explanation: 'イカもアサリも、内臓が外とう膜に包まれ、体やあしに節がありません。水中にすむことや背骨がないことは、魚やカニにも当てはまるので決め手になりません。',
+        hint: 'ほかのなかまには当てはまらない特徴を選ぼう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'animals-kq3-r1', concept: 'an-arthropod',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'あしが 8 本あり、体が頭胸部と腹部の 2 つに分かれている節足動物は、[b1]のなかまである。',
+        blanks: [word('b1', ['クモ類', '昆虫類', '甲殻類'], 'クモ類')],
+        explanation: 'あしが 8 本で、体が頭胸部と腹部に分かれているのはクモ類です。昆虫類はあしが 6 本で、体が頭部・胸部・腹部に分かれています。',
+        hint: 'あしが 6 本ではないので、昆虫ではないね。',
+      }),
+      drag({
+        id: 'animals-kq3-r2', concept: 'an-arthropod',
+        prompt: '表は節足動物を 3 つのなかまに分けるものです。「サソリ」のカードを、当てはまる列へ動かして入れよう。',
+        // サソリ（クモ類。あし 8 本）→ カードの左上 (218, 130)。不正解例は 甲殻類 (122, 130)
+        figure: arthropodBoardScene('サソリ'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 218, y: 130 },
+        samples: { correct: { x: 218, y: 130 }, wrong: { x: 122, y: 130 } },
+        explanation: 'サソリは、はさみのように見える部分をもちますが、歩くためのあしは 8 本で、クモと同じクモ類です。',
+        hint: '歩くためのあしの数で考えよう。',
+      }),
+      figureChoice({
+        id: 'animals-kq3-r3', concept: 'an-mollusc',
+        prompt: '図はアサリの殻を開いたようすです。ア 殻のふち、イ 殻の内側の大きな膜、ウ 殻の外へのびる部分。内臓を包んでいる膜はどれ？',
+        figure: KQ_CLAM_Q,
+        answer: 'r2',
+        explanation: 'イは外とう膜です。軟体動物は、内臓が外とう膜で包まれています。ウのあしは、砂にもぐるときに使います。',
+        hint: '殻のすぐ内側に広がっている部分だよ。',
+      }),
+      fill({
+        id: 'animals-kq3-r4', concept: 'an-mollusc',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '流氷の海で見られるクリオネは、貝殻をもたない巻き貝のなかまで、[b1]に分けられる。',
+        blanks: [word('b1', ['軟体動物', '節足動物', 'セキツイ動物'], '軟体動物')],
+        explanation: 'クリオネは、成長すると貝殻がなくなる巻き貝のなかまで、軟体動物です。見た目ではなく、体のつくりでなかまを決めます。',
+        hint: '巻き貝やイカ、タコのなかまだよ。',
+      }),
+      choice({
+        id: 'animals-kq3-t2', concept: 'an-mollusc', term: true,
+        prompt: '次の説明に合う言葉はどれ？「アサリやサザエなどで、外とう膜の外側にあって体を守る、かたいもの」',
+        options: ['貝殻', '外骨格', 'うろこ'],
+        answer: 'a',
+        explanation: 'アサリやサザエの体は、かたい**貝殻**で守られています。外骨格は節足動物、うろこは魚類やハチュウ類のものです。',
+        hint: '海岸で拾えるものだよ。',
+      }),
+      choice({
+        id: 'animals-kq3-r5', concept: 'an-arthropod',
+        prompt: '陸上でくらすバッタにとって、外骨格が役立っている点はどれ？',
+        options: ['体の水分がにげにくい', '体温をいつも一定に保てる', '水中でも呼吸できる'],
+        answer: 'a',
+        explanation: '外骨格は、体を支えて中を守るだけでなく、体の水分がにげるのを防ぎます。かわきやすい陸上でくらすのに役立っています。',
+        hint: '陸上は水中よりかわきやすいね。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1845,8 +2424,8 @@
     mascot: 'F',   // 担当の先生（まめ博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'vertebrate', title: 'セキツイ動物', order: 1, stages: [animals1, animals2, anMp1, anDr1] },
-      { id: 'invertebrate', title: '無セキツイ動物', order: 2, stages: [animals3, animals4, anMp2, anDr2] },
+      { id: 'vertebrate', title: 'セキツイ動物', order: 1, stages: [animals1, animals2, anMp1, anDr1, anKq1, anKq2] },
+      { id: 'invertebrate', title: '無セキツイ動物', order: 2, stages: [animals3, animals4, anMp2, anDr2, anKq3] },
     ],
   };
 

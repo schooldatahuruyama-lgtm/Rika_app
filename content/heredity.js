@@ -3,6 +3,7 @@
 // 2 領域 × 2 ステージ（細胞分裂と生殖・遺伝と進化）と、概念 5 つ（id は単元の接頭辞 he- を付けて全単元で一意にする）。
 // 領域 3「ミニプリント」（he-miniprint）: 先生のミニプリントの問題を書き直したステージ heredity-mp1〜heredity-mp5（.ai-tasks/20261106-130000_ミニプリント反映_共通.md）。
 // 領域 4「ドリル」（heredity-drill）: 学習プリントのテーマに合わせて自作したステージ heredity-dr1〜heredity-dr6（.ai-tasks/20261121-152500_ドリル問題_共通.md）。
+// クイズ heredity-kq1〜kq3（free。分野の領域に置く）: 公開クイズの出題のねらいだけを参考に自作（.ai-tasks/20261122-140000_クイズ問題_共通.md）。
 // 図（scene）の item は js/figures.js の汎用の部品で描く（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
 // 解説文の **語句** は大切な言葉（用語）。term: true の問題は、その用語を聞く用語問題。
@@ -2742,6 +2743,486 @@
   };
 
   // ================================================================
+  // クイズ（.ai-tasks/20261122-140000_クイズ問題_共通.md）
+  // 公開されているクイズの「何を問うか」と用語・誤答の例だけを参考にし、問題文・選択肢・解説・図はすべて自作した。
+  // 既存のステージ（life-1〜4、heredity-mp1〜5、heredity-dr1〜6）と同じ問いをくり返さないよう、場面と問い方を変えた。
+  // ================================================================
+
+  // ---- クイズ用の図の部品 ----
+
+  // 根の一部を顕微鏡で見たスケッチ（84×84 の視野に n × n の細胞）。cx が視野の中心、視野は y 50〜134
+  function rootView(cx, n) {
+    const size = 84 / n;
+    const items = [{ type: 'rect', x: cx - 42, y: 50, width: 84, height: 84, fill: 'white', stroke: 'line' }];
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const x = cx - 42 + i * size, y = 50 + j * size;
+        items.push({ type: 'rect', x, y, width: size, height: size, fill: 'lightgreen', stroke: 'green' });
+        items.push({ type: 'circle', x: x + size / 2, y: y + size / 2, r: Math.max(2.5, size * 0.12), fill: 'purple', stroke: 'none' });
+      }
+    }
+    return items;
+  }
+  // 根の 3 か所のスケッチ（ア 小さな細胞がぎっしり＝先端近く、イ 大きな細胞＝根もと近く、ウ 中くらい）。場所の名前は図に書かない
+  const ROOT_VIEWS_Q = scene([
+    { type: 'text', x: 160, y: 30, text: '根の 3 か所を、同じ倍率で見たスケッチ', size: 13, anchor: 'middle' },
+    ...rootView(56, 6),
+    ...rootView(160, 2),
+    ...rootView(264, 3),
+    { type: 'region', id: 'r1', x: 56, y: 172, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 172, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 264, y: 172, r: 22, label: 'ウ' },
+  ]);
+
+  // かけ合わせのカード 4 枚（ア AA × aa、イ Aa × Aa、ウ Aa × aa、エ aa × aa）。選ぶ場所はカードの左
+  function crossCards() {
+    const card = (x, y, text) => [
+      { type: 'rect', x, y, width: 100, height: 56, rx: 6, fill: 'glass', stroke: 'line' },
+      { type: 'text', x: x + 50, y: y + 35, text, size: 18, anchor: 'middle', bold: true },
+    ];
+    return [
+      ...card(52, 46, 'AA × aa'),
+      ...card(202, 46, 'Aa × Aa'),
+      ...card(52, 136, 'Aa × aa'),
+      ...card(202, 136, 'aa × aa'),
+      { type: 'text', x: 160, y: 226, text: 'A: 顕性の遺伝子　a: 潜性の遺伝子', size: 13, anchor: 'middle' },
+    ];
+  }
+  const CROSS_CARDS_Q = scene(crossCards().concat([
+    { type: 'region', id: 'r1', x: 26, y: 74, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 176, y: 74, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 26, y: 164, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 176, y: 164, r: 22, label: 'エ' },
+  ]));
+
+  // ---- ステージ heredity-kq1: クイズ 1（細胞分裂と成長・生殖のしくみ） ----
+  const heredityKq1 = {
+    id: 'heredity-kq1', areaId: 'he-cell', free: true, title: 'クイズ 1: 細胞分裂と生殖のしくみ', minutes: 6, concepts: ['he-division', 'he-reproduction'],
+    lessons: [
+      {
+        id: 'heredity-kq1-c1',
+        text: '根の先端近くの細胞は小さく、**体細胞分裂**をくり返して数をふやします。ふえた細胞が 1 つ 1 つ大きくなって、根がのびます。体細胞分裂の前と後で、1 つの細胞の染色体の数は変わりません。',
+        // 根の模式図に、細胞の大きさのちがいを書きこむ
+        figure: scene(rootItems(90).concat([
+          leader(112, 40, 150, 40),
+          { type: 'text', x: 154, y: 45, text: '大きくなった細胞', size: 13 },
+          leader(112, 128, 150, 128),
+          { type: 'text', x: 154, y: 133, text: 'のびている細胞', size: 13 },
+          leader(112, 190, 150, 190),
+          { type: 'text', x: 154, y: 195, text: '小さい細胞（分裂がさかん）', size: 13 },
+        ])),
+      },
+      {
+        id: 'heredity-kq1-c2',
+        text: '生物が新しい個体をつくることを**生殖**といいます。親のからだの一部から子ができる無性生殖では、子は親と同じ遺伝子をもちます。生殖細胞が受精する有性生殖では、子は両親の遺伝子を半分ずつ受けつぎます。',
+        // 無性生殖（親 A だけ）と有性生殖（親 A と親 B）の子の染色体
+        figure: scene([
+          { type: 'text', x: 80, y: 22, text: '無性生殖', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 240, y: 22, text: '有性生殖', size: 14, anchor: 'middle', bold: true },
+          { type: 'line', points: [[160, 10], [160, 230]], color: 'gray', width: 1, dashed: true },
+          ...colorCell(80, 70, 28, CH_A),
+          { type: 'arrow', x1: 80, y1: 104, x2: 80, y2: 140, color: 'gray', width: 2 },
+          ...colorCell(80, 174, 28, CH_A),
+          { type: 'text', x: 80, y: 224, text: '親と同じ', size: 13, anchor: 'middle' },
+          ...colorCell(206, 70, 26, CH_A),
+          ...colorCell(274, 70, 26, CH_B),
+          { type: 'arrow', x1: 214, y1: 102, x2: 234, y2: 140, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 266, y1: 102, x2: 246, y2: 140, color: 'gray', width: 2 },
+          ...colorCell(240, 174, 28, [[-15, 11, 'blue'], [-5, 6, 'blue'], [5, 11, 'orange'], [15, 6, 'orange']]),
+          { type: 'text', x: 240, y: 224, text: '両親から半分ずつ', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-kq1-w1', concept: 'he-division',
+      prompt: '予想しよう。ヒトのからだは、たった 1 個の受精卵から始まります。おとなになるまでに、細胞の数はどうなると思う？',
+      options: ['分裂をくり返して、数十兆個にふえる', '1 個のまま、とても大きくなる', '数十個になったところで止まる'],
+      answer: 'a',
+      explanation: '受精卵は細胞分裂をくり返し、おとなのからだは数十兆個の細胞でできています。分裂でふえた細胞が大きくなることでも、からだは成長します。',
+      hint: '細胞 1 つはとても小さいことを思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-kq1-p1', concept: 'he-division',
+        prompt: '根の 3 か所を同じ倍率で見たスケッチです（ア: 小さな細胞がぎっしり、イ: 大きな細胞が少し、ウ: 中くらいの細胞）。根もとに近い部分のスケッチはどれ？',
+        figure: ROOT_VIEWS_Q,
+        answer: 'r2',
+        explanation: '根もとに近い部分の細胞は、分裂したあとに大きく育った細胞です。同じ倍率で見ると、1 つ 1 つが大きいので、視野の中の細胞の数は少なくなります（イ）。',
+        hint: 'ふえた細胞は、根もと側へいくほど大きく育っているよ。',
+      }),
+      fill({
+        id: 'heredity-kq1-t1', concept: 'he-reproduction', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '生物が、自分と同じ種類の新しい個体（子）をつくることを[b1]という。',
+        blanks: [word('b1', ['生殖', '発生', '成長'], '生殖')],
+        explanation: '生物が子をつくることを**生殖**といいます。生殖には、無性生殖と有性生殖があります。',
+        hint: '「無性生殖」「有性生殖」の後ろの 2 文字だよ。',
+      }),
+      fill({
+        id: 'heredity-kq1-p2', concept: 'he-reproduction',
+        prompt: 'ある植物の卵細胞にふくまれる染色体は 7 本でした。この植物の葉の細胞 1 個には、染色体が何本ある？',
+        text: '葉の細胞 1 個の染色体は[b1]である。',
+        blanks: [number('b1', 14, 0, '本')],
+        explanation: '卵細胞は減数分裂でできるので、染色体の数は体細胞の半分です。葉の細胞（体細胞）は、その 2 倍の 14 本です。',
+        hint: '生殖細胞の染色体は、体細胞の何分の 1 だったかな。',
+      }),
+      choice({
+        id: 'heredity-kq1-p3', concept: 'he-division',
+        prompt: '根の先端を染色してスライドガラスにのせたあと、カバーガラスの上から指でおしつぶすのはなぜ？',
+        options: ['細胞の重なりを少なくして見やすくするため', '細胞の分裂を始めさせるため', '染色体を長くのばすため'],
+        answer: 'a',
+        explanation: '細胞が何層にも重なっていると、1 つ 1 つの細胞が見分けにくくなります。おしつぶして細胞をうすく広げると、核や染色体が観察しやすくなります。',
+        hint: '顕微鏡では、うすいものほどよく見えるよ。',
+      }),
+      choice({
+        id: 'heredity-kq1-p4', concept: 'he-reproduction',
+        prompt: '受粉のあと、胚珠の中で受精が起こりました。このあと胚珠と子房は、それぞれ何になる？',
+        options: ['胚珠は種子に、子房は果実になる', '胚珠は果実に、子房は種子になる', 'どちらも種子になる'],
+        answer: 'a',
+        explanation: '受精卵は胚になり、胚をふくむ胚珠全体が種子になります。胚珠を包んでいた子房は、果実になります。',
+        hint: '種子は、果実の中に入っているね。',
+      }),
+      choice({
+        id: 'heredity-kq1-p5', concept: 'he-reproduction',
+        prompt: 'いもでふやしたジャガイモの畑で、ある病気が広がると、株がまとめてかれてしまうことがあります。なぜ？',
+        options: ['どの株も同じ遺伝子をもつから', '株どうしの間で病気がうつらないから', 'いもでふやした株は必ず病気になるから'],
+        answer: 'a',
+        explanation: 'いもでふやす無性生殖では、子はみな親と同じ遺伝子をもちます。その病気に弱い性質も同じなので、まとめてかれてしまうことがあります。',
+        hint: '無性生殖でできた子の遺伝子は、親とくらべてどうだったかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'heredity-kq1-r1', concept: 'he-division',
+        prompt: '根の 3 か所を同じ倍率で見たスケッチです（ア: 小さな細胞がぎっしり、イ: 大きな細胞が少し、ウ: 中くらいの細胞）。細胞分裂がさかんな部分のスケッチはどれ？',
+        figure: ROOT_VIEWS_Q,
+        answer: 'r1',
+        explanation: '細胞分裂がさかんなのは、根の先端近くです。分裂した直後の細胞はまだ小さいので、同じ倍率で見ると、小さな細胞がぎっしり並んで見えます（ア）。',
+        hint: '分裂したばかりの細胞は、大きいかな、小さいかな。',
+      }),
+      fill({
+        id: 'heredity-kq1-r2', concept: 'he-reproduction',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '被子植物では、花粉の中の[b1]が花粉管の中を運ばれて、胚珠の中の卵細胞と受精する。',
+        blanks: [word('b1', ['精細胞', '卵細胞', '胚'], '精細胞')],
+        explanation: '花粉がつくる生殖細胞が**精細胞**です。精細胞の核と卵細胞の核が合体して、受精卵ができます。',
+        hint: '動物の精子にあたる、植物の生殖細胞だよ。',
+      }),
+      fill({
+        id: 'heredity-kq1-r3', concept: 'he-division',
+        prompt: 'ある生物の体細胞には、染色体が 12 本あります。この細胞が体細胞分裂を 2 回くり返してできた細胞 1 個の染色体は何本？',
+        text: 'できた細胞 1 個の染色体は[b1]である。',
+        blanks: [number('b1', 12, 0, '本')],
+        explanation: '体細胞分裂では、分裂の前に染色体が複製されてから分かれるので、何回分裂しても 1 個の細胞の染色体の数は変わりません。12 本のままです。',
+        hint: '1 回の体細胞分裂で、染色体の数はどうなったかな。',
+      }),
+      choice({
+        id: 'heredity-kq1-t2', concept: 'he-reproduction', term: true,
+        prompt: '次の説明に合う言葉はどれ？「胚珠の中にできる、被子植物の雌の生殖細胞」',
+        options: ['卵細胞', '精細胞', '花粉'],
+        answer: 'a',
+        explanation: '被子植物では、胚珠の中に**卵細胞**ができます。花粉の中にできる精細胞と受精して、受精卵になります。',
+        hint: '動物の「卵」にあたるものだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ heredity-kq2: クイズ 2（遺伝の規則性: 遺伝子の表し方・かけ合わせの結果） ----
+  const heredityKq2 = {
+    id: 'heredity-kq2', areaId: 'he-gene', free: true, title: 'クイズ 2: 遺伝子の記号とかけ合わせ', minutes: 7, concepts: ['he-mendel', 'he-ratio'],
+    lessons: [
+      {
+        id: 'heredity-kq2-c1',
+        text: '生物の形や性質などの特徴を**形質**といい、形質は染色体にある遺伝子によって子に伝わります。遺伝子は記号で表し、顕性の遺伝子を大文字（A）、潜性の遺伝子を小文字（a）で書きます。',
+        // 遺伝子の組み合わせと、種子の形
+        figure: scene([
+          { type: 'text', x: 70, y: 70, text: 'AA', size: 20, anchor: 'middle', bold: true },
+          { type: 'text', x: 70, y: 130, text: 'Aa', size: 20, anchor: 'middle', bold: true },
+          { type: 'text', x: 70, y: 190, text: 'aa', size: 20, anchor: 'middle', bold: true },
+          { type: 'arrow', x1: 100, y1: 63, x2: 140, y2: 63, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 100, y1: 123, x2: 140, y2: 123, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 100, y1: 183, x2: 140, y2: 183, color: 'gray', width: 2 },
+          roundPea(170, 63, 16), roundPea(170, 123, 16), wrinkled(170, 183, 18),
+          { type: 'text', x: 200, y: 68, text: '丸', size: 14 },
+          { type: 'text', x: 200, y: 128, text: '丸', size: 14 },
+          { type: 'text', x: 200, y: 188, text: 'しわ', size: 14 },
+          { type: 'text', x: 160, y: 228, text: 'A を 1 つでももつと顕性形質', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'heredity-kq2-c2',
+        text: '赤い花の純系と白い花の純系のマツバボタンをかけ合わせると、子はすべて赤い花になりました。子どうしをかけ合わせると、孫には白い花が約 4 分の 1 現れます。白の遺伝子は、子の中で消えずに受けつがれていたのです。',
+        // 花の色の遺伝（親 赤 × 白 → 子 すべて赤 → 孫 赤 3：白 1）
+        figure: scene([
+          { type: 'text', x: 24, y: 55, text: '親', size: 14, bold: true },
+          { type: 'text', x: 24, y: 125, text: '子', size: 14, bold: true },
+          { type: 'text', x: 24, y: 195, text: '孫', size: 14, bold: true },
+          { type: 'circle', x: 110, y: 50, r: 14, fill: 'red', stroke: 'line' },
+          { type: 'text', x: 160, y: 56, text: '×', size: 18, anchor: 'middle' },
+          { type: 'circle', x: 210, y: 50, r: 14, fill: 'white', stroke: 'line' },
+          { type: 'arrow', x1: 160, y1: 70, x2: 160, y2: 100, color: 'gray', width: 2 },
+          ...[130, 160, 190].map(x => ({ type: 'circle', x, y: 120, r: 14, fill: 'red', stroke: 'line' })),
+          { type: 'arrow', x1: 160, y1: 140, x2: 160, y2: 170, color: 'gray', width: 2 },
+          ...[115, 145, 175].map(x => ({ type: 'circle', x, y: 190, r: 14, fill: 'red', stroke: 'line' })),
+          { type: 'circle', x: 205, y: 190, r: 14, fill: 'white', stroke: 'line' },
+          { type: 'text', x: 228, y: 125, text: 'すべて赤', size: 12 },
+          { type: 'text', x: 228, y: 195, text: '赤：白≒3：1', size: 12 },
+        ]),
+      },
+      {
+        id: 'heredity-kq2-c3',
+        text: 'かけ合わせの結果は、親の遺伝子の組み合わせで決まります。AA × aa の子はすべて Aa、Aa × aa の子は Aa と aa が 1：1、Aa × Aa の子は AA：Aa：aa ＝ 1：2：1 になります。',
+        // かけ合わせのカード（選ぶ場所なし）
+        figure: scene(crossCards()),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-kq2-w1', concept: 'he-mendel',
+      prompt: '予想しよう。メンデルが遺伝の実験にエンドウを選んだのは、どんなよい点があったからだと思う？',
+      options: ['丸・しわなど形質の区別がはっきりしている', '花が 1 年に何十回もさく', '花がとても大きくて見やすい'],
+      answer: 'a',
+      explanation: 'エンドウには、種子の丸・しわのように、どちらか一方がはっきり現れる形質がいくつもあります。結果を数えて比べやすかったのです。',
+      hint: '結果を正しく数えるには、形質の見分けやすさが大切だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'heredity-kq2-p1', concept: 'he-ratio',
+        prompt: '4 通りのかけ合わせです（ア AA × aa、イ Aa × Aa、ウ Aa × aa、エ aa × aa）。子のおよそ半分に潜性形質が現れるのはどれ？',
+        figure: CROSS_CARDS_Q,
+        answer: 'r3',
+        explanation: 'Aa × aa では、子は Aa と aa が 1：1 になり、aa の子（半分）に潜性形質が現れます（ウ）。イは 4 分の 1、エはすべて、アは 0 です。',
+        hint: 'それぞれ、子に aa がどれだけできるかを考えよう。',
+      }),
+      fill({
+        id: 'heredity-kq2-t1', concept: 'he-mendel', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '自家受粉に対して、別の個体の花粉がめしべにつくことを[b1]という。',
+        blanks: [word('b1', ['他家受粉', '自家受粉', '受精'], '他家受粉')],
+        explanation: '同じ花や同じ個体の花粉で受粉するのが自家受粉、ちがう個体の花粉で受粉するのが**他家受粉**です。メンデルは、ちがう純系をかけ合わせるとき、人の手で他家受粉させました。',
+        hint: '「自」の反対は「他」だね。',
+      }),
+      fill({
+        id: 'heredity-kq2-p2', concept: 'he-mendel',
+        prompt: 'ヒトの体細胞には 46 本の染色体があり、形と大きさが同じものが 2 本ずつ対になっています。対は何組ある？',
+        text: '染色体の対は[b1]ある。',
+        blanks: [number('b1', 23, 0, '組')],
+        explanation: '46 本が 2 本ずつ対になっているので、46 ÷ 2 ＝ 23 組です。対の 1 本は父親から、もう 1 本は母親から受けついでいます。',
+        hint: '46 本を 2 本ずつに分けよう。',
+      }),
+      choice({
+        id: 'heredity-kq2-p3', concept: 'he-mendel',
+        prompt: 'エンドウの子葉の色で、黄（顕性）の遺伝子を Y と表すことにしました。緑（潜性）の遺伝子はどう表す？',
+        options: ['y', 'G', 'Y'],
+        answer: 'a',
+        explanation: '対になる遺伝子は同じ文字を使い、顕性の遺伝子を大文字、潜性の遺伝子を小文字で表します。だから、緑の遺伝子は y です。',
+        hint: '顕性は大文字、潜性は小文字だったね。',
+      }),
+      choice({
+        id: 'heredity-kq2-p4', concept: 'he-ratio',
+        prompt: '赤い花の純系と白い花の純系のマツバボタンから、子はすべて赤い花になりました。白い花の株も得るには、どうかけ合わせるとよい？',
+        options: ['子どうしをかけ合わせる', '子と赤い花の純系をかけ合わせる', '赤い花の純系どうしをかけ合わせる'],
+        answer: 'a',
+        explanation: '子は白の遺伝子を 1 つかくしもっています。子どうしをかけ合わせると、白の遺伝子が 2 つそろった株（約 4 分の 1）が白い花になります。赤の純系とかけ合わせると、子はすべて赤い花です。',
+        hint: '白の遺伝子を 2 つそろえるには、両方の親が白の遺伝子をもっている必要があるよ。',
+      }),
+      fill({
+        id: 'heredity-kq2-p5', concept: 'he-ratio',
+        prompt: '赤い花の純系と白い花の純系のマツバボタンの子（すべて赤い花）どうしをかけ合わせ、孫を 240 株育てました。白い花の株は約何株？',
+        text: '白い花の株は約[b1]である。',
+        blanks: [number('b1', 60, 0, '株')],
+        explanation: '孫では、赤い花：白い花 ＝ 3：1 になります。白い花は全体の 4 分の 1 なので、240 ÷ 4 ＝ 60 株です。',
+        hint: '白い花は、全体の何分の 1 かな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'heredity-kq2-r1', concept: 'he-ratio',
+        prompt: '4 通りのかけ合わせです（ア AA × aa、イ Aa × Aa、ウ Aa × aa、エ aa × aa）。子に潜性形質がまったく現れないのはどれ？',
+        figure: CROSS_CARDS_Q,
+        answer: 'r1',
+        explanation: 'AA × aa では、子はすべて Aa になり、顕性の A をもつので、潜性形質は現れません（ア）。イ・ウ・エでは aa の子ができます。',
+        hint: 'aa の子ができるのは、両方の親が a をもっているときだよ。',
+      }),
+      fill({
+        id: 'heredity-kq2-r2', concept: 'he-ratio',
+        prompt: '空らんに入る比を選ぼう。',
+        text: 'マツバボタンで、赤い花の子（赤の純系と白の純系の子）どうしをかけ合わせた孫では、赤い花：白い花 ＝[b1]になる。',
+        blanks: [word('b1', ['3：1', '1：1', '1：3'], '3：1')],
+        explanation: '子の遺伝子の組み合わせはどれも同じで、孫は顕性の形質：潜性の形質 ＝ 3：1 になります。赤が顕性なので、赤い花：白い花 ＝ 3：1 です。',
+        hint: '顕性形質のほうが多く現れるよ。',
+      }),
+      choice({
+        id: 'heredity-kq2-r3', concept: 'he-mendel',
+        prompt: '丸の純系（AA）のエンドウが生殖細胞をつくるとき、生殖細胞に入る遺伝子はどれ？',
+        options: ['A だけ', 'a だけ', 'A と a の両方'],
+        answer: 'a',
+        explanation: '対になっている遺伝子は分かれて別々の生殖細胞に入ります（分離の法則）。AA の対はどちらも A なので、生殖細胞にはすべて A が 1 つ入ります。',
+        hint: 'AA の 2 つの遺伝子は、どちらも同じだね。',
+      }),
+      choice({
+        id: 'heredity-kq2-t2', concept: 'he-mendel', term: true,
+        prompt: '次の説明に合う言葉はどれ？「生物の形や性質などの、その生物がもつ特徴」',
+        options: ['形質', '遺伝子', '染色体'],
+        answer: 'a',
+        explanation: '種子の丸・しわや花の色など、生物の形や性質を**形質**といいます。形質のもとになるのが遺伝子です。',
+        hint: '「形」と「性質」から 1 文字ずつだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ heredity-kq3: クイズ 3（進化の証拠・植物の進化・自然選択） ----
+  const heredityKq3 = {
+    id: 'heredity-kq3', areaId: 'he-gene', free: true, title: 'クイズ 3: 進化の証拠と生物の多様性', minutes: 6, concepts: ['he-evolution'],
+    lessons: [
+      {
+        id: 'heredity-kq3-c1',
+        text: 'ニシキヘビやクジラの体内には、後ろあしの骨のなごりが残っています。このように、はたらきをほとんど失って形だけが残っている器官を**痕跡器官**といいます。祖先があしをもっていた証拠と考えられます。',
+        // クジラのからだと、後ろあしの骨のなごり
+        figure: scene([
+          { type: 'ellipse', x: 150, y: 110, rx: 120, ry: 46, fill: 'sky', stroke: 'line' },
+          { type: 'polygon', points: [[262, 100], [306, 70], [296, 110], [306, 150], [262, 120]], fill: 'sky', stroke: 'line' },
+          { type: 'line', points: [[188, 124], [210, 120]], color: 'ink', width: 4 },
+          { type: 'line', points: [[200, 124], [204, 138]], color: 'ink', width: 3 },
+          leader(204, 140, 204, 190),
+          { type: 'text', x: 204, y: 208, text: '後ろあしの骨のなごり', size: 13, anchor: 'middle' },
+          { type: 'text', x: 80, y: 115, text: 'クジラ', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+      {
+        id: 'heredity-kq3-c2',
+        text: '植物も、水中から陸上へ生活の場を広げてきました。シダ植物のなかまが陸上に広がったあと、種子をつくる裸子植物が現れ、さらにあとで、胚珠が子房に包まれた被子植物が現れたと考えられています。',
+        // 植物が現れた時代（数字は億年前）
+        figure: scene([
+          { type: 'text', x: 4, y: 14, text: '数字は億年前（左ほど古い）', size: 12 },
+          ...[[4, 'シダ植物'], [3, '裸子植物'], [1.5, '被子植物']].flatMap(([t, name]) => {
+            const x = 300 - 56 * t;
+            return [
+              { type: 'line', points: [[x, 206], [x, 80]], color: 'green', width: 2 },
+              { type: 'text', x, y: 70, text: name, size: 13, anchor: 'middle' },
+            ];
+          }),
+          ...timeAxis(),
+        ]),
+      },
+      {
+        id: 'heredity-kq3-c3',
+        text: '同じ種類でも、個体ごとに形質は少しずつちがいます。まわりの環境に合った形質の個体ほど生き残って子を多く残すので、長い年月の間にその形質をもつものがふえます。この考えを**自然選択**といい、ダーウィンが唱えました。',
+        // 緑の葉の上の、緑の虫と茶色の虫
+        figure: scene([
+          { type: 'rect', x: 20, y: 40, width: 120, height: 150, rx: 8, fill: 'lightgreen', stroke: 'green' },
+          { type: 'rect', x: 180, y: 40, width: 120, height: 150, rx: 8, fill: 'lightgreen', stroke: 'green' },
+          ...[[50, 80, 'green'], [100, 70, 'brown'], [60, 140, 'brown'], [110, 150, 'green']]
+            .map(([x, y, c]) => ({ type: 'ellipse', x, y, rx: 12, ry: 7, fill: c, stroke: 'line' })),
+          ...[[210, 80, 'green'], [260, 70, 'green'], [220, 140, 'green'], [270, 150, 'brown']]
+            .map(([x, y, c]) => ({ type: 'ellipse', x, y, rx: 12, ry: 7, fill: c, stroke: 'line' })),
+          { type: 'arrow', x1: 146, y1: 115, x2: 174, y2: 115, color: 'gray', width: 2 },
+          { type: 'text', x: 80, y: 30, text: 'はじめ', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 30, text: '何代もあと', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 218, text: '目立たない緑の虫が、鳥に食べられにくく多く残る', size: 12, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'heredity-kq3-w1', concept: 'he-evolution',
+      prompt: '予想しよう。これまでに名前がつけられている地球上の生物は、およそ何種類くらいだと思う？',
+      options: ['100 万種をこえる', '約 1 万種', '約 1000 種'],
+      answer: 'a',
+      explanation: '名前がつけられた生物だけでも 100 万種をこえ、まだ見つかっていない生物も多いと考えられています。これほど多様な生物が、長い年月の進化で生まれてきました。',
+      hint: '昆虫のなかまだけでも、ものすごい数がいるよ。',
+    }),
+    problems: [
+      drag({
+        id: 'heredity-kq3-p1', concept: 'he-evolution',
+        prompt: '図は、シダ植物（約 4 億年前）と裸子植物（約 3 億年前）が現れた時代です。被子植物はそのあとの約 1.5 億年前に現れました。その位置に青い印を左右に動かして置こう。',
+        // 1.5 億年前 x = 300 − 56 × 1.5 = 216。不正解例 x = 132（3 億年前、裸子植物）は 84px はなれる
+        figure: eraDragScene([[4, 'シダ植物'], [3, '裸子植物']]),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 216, y: 170 },
+        samples: { correct: { x: 216, y: 170 }, wrong: { x: 132, y: 170 } },
+        explanation: '被子植物は、裸子植物よりあとに現れました。目もりの「2」と「1」のまん中（約 1.5 億年前）です。胚珠が子房に包まれ、乾燥から守られるつくりになっています。',
+        hint: '1.5 は、2 と 1 のちょうど間の数だよ。',
+      }),
+      fill({
+        id: 'heredity-kq3-t1', concept: 'he-evolution', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'クジラの体内に残る後ろあしの骨のなごりのように、はたらきをほとんど失った器官を[b1]という。',
+        blanks: [word('b1', ['痕跡器官', '相同器官', '感覚器官'], '痕跡器官')],
+        explanation: 'はたらきをほとんど失い、形だけが残っている器官を**痕跡器官**といいます。祖先がもっていた器官のなごりと考えられ、進化の証拠の 1 つです。',
+        hint: '「痕跡」は、あとかた・なごりという意味だよ。',
+      }),
+      choice({
+        id: 'heredity-kq3-p2', concept: 'he-evolution',
+        prompt: 'コウモリのつばさも鳥のつばさも、前あしが変化したものです。それでもコウモリがホニュウ類に分けられるのはなぜ？',
+        options: ['体が毛におおわれ、子を胎生で産むから', '空を飛ぶことができるから', '前あしがつばさになっているから'],
+        answer: 'a',
+        explanation: 'なかま分けは、飛べるかどうかではなく、体表・子の生まれ方・呼吸などの特徴で行います。コウモリは毛をもち、胎生で、子を乳で育てるのでホニュウ類です。',
+        hint: '鳥とコウモリで、体表と子の生まれ方を比べよう。',
+      }),
+      choice({
+        id: 'heredity-kq3-p3', concept: 'he-evolution',
+        prompt: 'シーラカンスは、ひれの中にしっかりした骨があり、あしに近いつくりをもつ魚類です。この特徴から考えられることはどれ？',
+        options: ['両生類は魚類のなかまから進化した', '魚類は両生類のなかまから進化した', '魚類と両生類は関係なく生まれた'],
+        answer: 'a',
+        explanation: 'あしのようなひれをもつ魚類がいたことは、魚類のなかまから、陸上を歩くあしをもつ両生類が進化したという考えの手がかりになります。',
+        hint: '魚類と両生類は、どちらが先に現れたかな。',
+      }),
+      fill({
+        id: 'heredity-kq3-p4', concept: 'he-evolution',
+        prompt: '同じ種類の虫でも、体の色が葉の色に近いものほど鳥に見つかりにくく、子を多く残します。何代もたつと、葉の色の虫がふえていきました。',
+        text: '環境に合った形質の個体が生き残って子孫を多く残すという考えを[b1]という。',
+        blanks: [word('b1', ['自然選択', '品種改良', '栄養生殖'], '自然選択')],
+        explanation: '環境に合った形質の個体が生き残りやすく、その形質が子孫に伝わってふえていく、という考えを**自然選択**といいます。ダーウィンが進化のしくみとして唱えました。',
+        hint: '人が選ぶのではなく、自然の中で選ばれていくよ。',
+      }),
+      choice({
+        id: 'heredity-kq3-p5', concept: 'he-evolution',
+        prompt: '魚類とほかの 4 つのなかまを比べたとき、魚類との共通点がいちばん多いと考えられるのはどれ？',
+        options: ['両生類', 'ホニュウ類', '鳥類'],
+        answer: 'a',
+        explanation: '両生類は魚類のなかまからいちばん早く分かれたなかまで、水中に殻のない卵を産む、変温動物である、子がえらで呼吸するなど、魚類との共通点が多くあります。',
+        hint: '魚類のすぐあとに現れたなかまはどれかな。',
+      }),
+    ],
+    retryPool: [
+      drag({
+        id: 'heredity-kq3-r1', concept: 'he-evolution',
+        prompt: '図は、シダ植物（約 4 億年前）と被子植物（約 1.5 億年前）が現れた時代です。裸子植物は約 3 億年前に現れました。その位置に青い印を左右に動かして置こう。',
+        // 3 億年前 x = 300 − 56 × 3 = 132。不正解例 x = 76（4 億年前、シダ植物）は 56px はなれる
+        figure: eraDragScene([[4, 'シダ植物'], [1.5, '被子植物']]),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 132, y: 170 },
+        samples: { correct: { x: 132, y: 170 }, wrong: { x: 76, y: 170 } },
+        explanation: '裸子植物は、シダ植物と被子植物の間の、約 3 億年前に現れました。目もりの「3」の位置です。種子をつくるので、乾燥した陸上にも広がりました。',
+        hint: '軸の数字は、何億年前かを表しているよ。',
+      }),
+      fill({
+        id: 'heredity-kq3-r2', concept: 'he-evolution',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'シーラカンスのように、大昔の化石とほとんど同じ姿で今も生きている生物は「生きている[b1]」とよばれる。',
+        blanks: [word('b1', ['化石', '地層', '祖先'], '化石')],
+        explanation: 'シーラカンスやカブトガニのように、大昔の化石の生物とほとんど変わらない姿で生き残っている生物を「生きている**化石**」とよびます。',
+        hint: '大昔の生物の手がかりになる、地層の中で見つかるものだよ。',
+      }),
+      choice({
+        id: 'heredity-kq3-r3', concept: 'he-evolution',
+        prompt: '生物が長い年月の間に進化していくのは、親から子へ伝わる何が変化するためと考えられている？',
+        options: ['遺伝子', '食べ物の種類', 'すむ場所の気温'],
+        answer: 'a',
+        explanation: '遺伝子は、まれに変化することがあります。変化した遺伝子が子孫に伝わり、その形質が環境に合っていると広がっていきます。これが進化のもとになります。',
+        hint: '形質を親から子へ伝えるものは何だったかな。',
+      }),
+      choice({
+        id: 'heredity-kq3-t2', concept: 'he-evolution', term: true,
+        prompt: '次の説明に合う言葉はどれ？「ヒトの尾骨のように、はたらきをほとんど失って、形だけが残っている器官」',
+        options: ['痕跡器官', '相同器官', '消化器官'],
+        answer: 'a',
+        explanation: 'ヒトの尾骨は、祖先がもっていた尾のなごりと考えられる**痕跡器官**です。',
+        hint: '「なごり」が残っている器官だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（確認問題 checkPool）
   // ================================================================
 
@@ -2911,8 +3392,8 @@
     mascot: 'F',   // 担当の先生（まめ博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'he-cell', title: '細胞分裂と生殖', order: 1, stages: [life1, life2, heredityMp1, heredityMp2, heredityMp3, heredityDr2, heredityDr3] },
-      { id: 'he-gene', title: '遺伝と進化', order: 2, stages: [life3, life4, heredityMp4, heredityMp5, heredityDr1, heredityDr4, heredityDr5, heredityDr6] },
+      { id: 'he-cell', title: '細胞分裂と生殖', order: 1, stages: [life1, life2, heredityMp1, heredityMp2, heredityMp3, heredityDr2, heredityDr3, heredityKq1] },
+      { id: 'he-gene', title: '遺伝と進化', order: 2, stages: [life3, life4, heredityMp4, heredityMp5, heredityDr1, heredityDr4, heredityDr5, heredityDr6, heredityKq2, heredityKq3] },
     ],
   };
 
