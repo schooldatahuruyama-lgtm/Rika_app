@@ -3663,6 +3663,506 @@
   };
 
   // ================================================================
+  // クイズ（Kahoot の公開クイズの「ねらい」を参考に自作。.ai-tasks/20261122-140000_クイズ問題_共通.md）
+  // 文・選択肢・図はすべて自作。free: true で、分野の領域（io-ion・io-acid）の最後に置く
+  // ================================================================
+
+  // 左右 2 つの箱（左 x 10〜150、右 x 170〜310、y 115〜225）と、その見出し
+  function twoBoxItems(left, right) {
+    return [
+      { type: 'rect', x: 10, y: 115, width: 140, height: 110, rx: 8, fill: 'white', stroke: 'line' },
+      { type: 'rect', x: 170, y: 115, width: 140, height: 110, rx: 8, fill: 'white', stroke: 'line' },
+      { type: 'text', x: 80, y: 140, text: left, size: 15, anchor: 'middle', bold: true },
+      { type: 'text', x: 240, y: 140, text: right, size: 15, anchor: 'middle', bold: true },
+    ];
+  }
+
+  // イオンの丸 4 つ（中心 x 50・125・200・275、y 105）と、その下の region ア〜エ（y 180）
+  function fourIonItems(names) {
+    const items = [];
+    [50, 125, 200, 275].forEach((x, i) => {
+      items.push(ion(x, 105, names[i]));
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 180, r: 22, label: 'アイウエ'[i] });
+    });
+    return items;
+  }
+
+  // ---- ステージ ion-kq1: クイズ 1 イオンの名前と原子のつくり ----
+  const ionKq1 = {
+    id: 'ion-kq1', areaId: 'io-ion', free: true, title: 'クイズ 1: イオンの名前と原子のつくり', minutes: 6, concepts: ['io-structure', 'io-electrolyte'],
+    lessons: [
+      {
+        id: 'ion-kq1-c1',
+        text: '原子の中心には**原子核**があり、原子核は＋の電気をもつ陽子と、電気をもたない**中性子**でできています。そのまわりに−の電気をもつ電子があります。陽子と電子の数が同じなので、原子全体は電気を帯びていません。',
+        // ヘリウム原子のモデルと、粒の名前
+        figure: scene(heliumItems().concat([
+          { type: 'line', points: [[122, 53], [200, 53]], color: 'gray', width: 1 },
+          { type: 'text', x: 206, y: 58, text: '電子（−）', size: 13 },
+          { type: 'line', points: [[132, 114], [200, 100]], color: 'gray', width: 1 },
+          { type: 'text', x: 206, y: 105, text: '陽子（＋）', size: 13 },
+          { type: 'line', points: [[132, 136], [200, 146]], color: 'gray', width: 1 },
+          { type: 'text', x: 206, y: 151, text: '中性子', size: 13 },
+          { type: 'text', x: 206, y: 170, text: '（電気なし）', size: 12 },
+          { type: 'text', x: 110, y: 230, text: 'ヘリウム原子', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'ion-kq1-c2',
+        text: '金属の原子は、電子を失って陽イオンになります。Na+・K+・Ag+ は 1 個、Ca2+・Ba2+・Cu2+ は 2 個、Al3+ は 3 個の電子を失っています。右上の数字が、失った電子の数を表します。',
+        // 失った電子の数と陽イオンの表
+        figure: scene(gridCells(10, 50, [90, 210], 50, 3).concat(
+          gridTexts([['1 個', 'Na+　K+　Ag+'], ['2 個', 'Ca2+　Ba2+　Cu2+'], ['3 個', 'Al3+']], [55, 205], [80, 130, 180], 14),
+          [{ type: 'text', x: 160, y: 34, text: '失った電子の数と陽イオン', size: 14, anchor: 'middle', bold: true }])),
+      },
+      {
+        id: 'ion-kq1-c3',
+        text: '陰イオンの名前にもきまりがあります。1 種類の原子からなる陰イオンは「〜化物イオン」です（Cl- 塩化物イオン、S2- 硫化物イオン）。原子のまとまりの陰イオンには、OH- 水酸化物イオン、NO₃- 硝酸イオン、CO₃2- 炭酸イオンなどがあります。',
+        // 陰イオンのイオン式と名前
+        figure: scene([
+          { type: 'text', x: 160, y: 28, text: '陰イオン', size: 15, anchor: 'middle', bold: true },
+          ...[['Cl-', '塩化物イオン'], ['S2-', '硫化物イオン'], ['OH-', '水酸化物イオン'], ['NO₃-', '硝酸イオン'], ['CO₃2-', '炭酸イオン']]
+            .flatMap(([f, n], i) => [
+              { type: 'text', x: 110, y: 64 + 38 * i, text: f, size: 16, anchor: 'end', bold: true },
+              { type: 'text', x: 130, y: 64 + 38 * i, text: n, size: 14 },
+            ]),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-kq1-w1', concept: 'io-structure',
+      prompt: '予想しよう。原子の質量のほとんどは、どこにあると思う？',
+      options: ['中心の原子核', 'まわりの電子', '原子の中に均等にある'],
+      answer: 'a',
+      explanation: '電子はとても軽く、原子の質量のほとんどは、陽子と中性子でできた中心の原子核にあります。',
+      hint: '陽子や中性子と、電子の重さをくらべてみよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-kq1-p1', concept: 'io-structure',
+        prompt: 'ヘリウム原子のモデルです。ア 中心の粒の集まり、イ 外側の小さな粒、ウ 円の線の上の何もない所。原子核はア〜ウのどれ？',
+        figure: scene(heliumItems().concat([
+          { type: 'region', id: 'r1', x: 110, y: 125, r: 24, label: 'ア' },
+          { type: 'region', id: 'r2', x: 110, y: 53, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 182, y: 125, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r1',
+        explanation: '原子の中心にある、陽子と中性子の集まりが原子核（ア）です。イは−の電気をもつ電子です。',
+        hint: '原子核は、原子の中心にあるよ。',
+      }),
+      fill({
+        id: 'ion-kq1-t1', concept: 'io-structure', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '原子核をつくる粒のうち、電気を帯びていない粒を[b1]という。',
+        blanks: [word('b1', ['中性子', '陽子', '電子'], '中性子')],
+        explanation: '原子核は、＋の電気をもつ陽子と、電気をもたない**中性子**でできています。',
+        hint: '「中性」は、＋でも−でもないという意味だよ。',
+      }),
+      fill({
+        id: 'ion-kq1-p2', concept: 'io-structure',
+        prompt: '硫黄原子が電子を 2 個受け取ってできた陰イオン S2- の名前を選ぼう。',
+        text: 'S2- の名前は[b1]である。',
+        blanks: [word('b1', ['硫化物イオン', '硫酸イオン', '硫黄イオン'], '硫化物イオン')],
+        explanation: '1 種類の原子からなる陰イオンは「〜化物イオン」とよびます。S2- は硫化物イオンです。硫酸イオンは SO₄2- で、硫黄と酸素のまとまりのイオンです。',
+        hint: 'Cl- を塩化物イオンとよぶのと同じきまりだよ。',
+      }),
+      drag({
+        id: 'ion-kq1-p3', concept: 'io-structure',
+        prompt: '硝酸イオン NO₃- のカードを、陽イオン・陰イオンのうち合うほうの箱へ動かそう。',
+        // 位置は丸の中心で判定する。右の箱「陰イオン」の中 (240, 180) が正解、左の箱「陽イオン」の中 (80, 180) が不正解例（160px はなれる）
+        figure: scene(twoBoxItems('陽イオン', '陰イオン').concat([
+          { type: 'circle', id: 'card', x: 160, y: 55, r: 23, fill: 'white', stroke: 'ink', label: 'NO₃-' },
+        ])),
+        draggable: { itemId: 'card' },
+        target: { x: 240, y: 180 },
+        samples: { correct: { x: 240, y: 180 }, wrong: { x: 80, y: 180 } },
+        explanation: 'NO₃- の右上は「−」なので、−の電気を帯びた陰イオンです。窒素原子 1 個と酸素原子 3 個のまとまりが、電子を 1 個多くもっています。',
+        hint: 'イオン式の右上の記号を見よう。',
+      }),
+      fill({
+        id: 'ion-kq1-p4', concept: 'io-electrolyte',
+        prompt: '炭酸ナトリウム Na₂CO₃ は、水にとけると Na+ と CO₃2- に電離します。CO₃2- が 50 個できました。空らんに入る数を入れよう。',
+        text: 'このとき Na+ は[b1]できている。',
+        blanks: [number('b1', 100, 0, '個')],
+        explanation: 'Na₂CO₃ → 2Na+ ＋ CO₃2- のように、CO₃2- 1 個に Na+ が 2 個できます。＋1 が 2 つで、−2 とつり合います。50 × 2 ＝ 100 個です。',
+        hint: '化学式の Na の右下の数字を見よう。',
+      }),
+      choice({
+        id: 'ion-kq1-p5', concept: 'io-electrolyte',
+        prompt: '硝酸カリウム KNO₃ が水にとけて電離するようすを表す式はどれ？',
+        options: ['KNO₃ → K+ ＋ NO₃-', 'KNO₃ → K- ＋ NO₃+', 'KNO₃ → KN+ ＋ O₃-'],
+        answer: 'a',
+        explanation: '金属のカリウムは電子を失って陽イオン K+ に、硝酸のまとまり NO₃ は陰イオン NO₃- になります。＋1 と −1 で電気の量がつり合っています。',
+        hint: '金属の原子は、陽イオンと陰イオンのどちらになるかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'ion-kq1-r1', concept: 'io-structure',
+        prompt: '原子が全体として電気を帯びていないのはなぜ？',
+        options: ['陽子の数と電子の数が等しいから', '中性子が電気を打ち消すから', '電子が原子核の中にあるから'],
+        answer: 'a',
+        explanation: '陽子 1 個の＋の電気と、電子 1 個の−の電気は同じ量です。原子では陽子と電子の数が等しいので、打ち消し合います。中性子は電気をもちません。',
+        hint: '＋の電気をもつ粒と、−の電気をもつ粒の数をくらべよう。',
+      }),
+      figureChoice({
+        id: 'ion-kq1-r2', concept: 'io-structure',
+        prompt: 'ア K+、イ Ca2+、ウ Al3+、エ Ag+ の陽イオンです。原子が電子を 3 個失ってできたイオンはア〜エのどれ？',
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: 'いろいろな陽イオン', size: 13, anchor: 'middle' },
+        ].concat(fourIonItems(['K+', 'Ca2+', 'Al3+', 'Ag+']))),
+        answer: 'r3',
+        explanation: '右上の数字が、失った電子の数です。Al3+ は電子を 3 個失っています。K+ と Ag+ は 1 個、Ca2+ は 2 個です。',
+        hint: 'イオン式の右上の数字を見よう。',
+      }),
+      fill({
+        id: 'ion-kq1-r3', concept: 'io-electrolyte',
+        prompt: '食酢にふくまれる酢酸 CH₃COOH は、水にとけると一部が H+ と陰イオン CH₃COO- に電離します。空らんに入る名前を選ぼう。',
+        text: 'CH₃COO- の名前は[b1]である。',
+        blanks: [word('b1', ['酢酸イオン', '炭酸イオン', '水酸化物イオン'], '酢酸イオン')],
+        explanation: '酢酸から H+ がはなれてできる陰イオンなので、酢酸イオンです。炭酸イオンは CO₃2-、水酸化物イオンは OH- です。',
+        hint: 'もとの物質の名前から考えよう。',
+      }),
+      choice({
+        id: 'ion-kq1-r4', concept: 'io-structure', term: true,
+        prompt: '次の説明に合う言葉はどれ？「電気を帯びた原子や、原子のまとまり」',
+        options: ['イオン', '分子', '中性子'],
+        answer: 'a',
+        explanation: '原子や原子のまとまりが、電子を失ったり受け取ったりして電気を帯びたものを**イオン**といいます。',
+        hint: 'Na+ や OH- のようなもののことだよ。',
+      }),
+      choice({
+        id: 'ion-kq1-r5', concept: 'io-electrolyte',
+        prompt: '食塩（塩化ナトリウム NaCl）を水にとかしました。水溶液の中の Na+ と Cl- の数の関係として正しいものは？',
+        options: ['同じ数', 'Na+ が Cl- の 2 倍', 'Cl- が Na+ の 2 倍'],
+        answer: 'a',
+        explanation: 'NaCl → Na+ ＋ Cl- のように、NaCl 1 つ分から Na+ と Cl- が 1 個ずつできます。だから同じ数です。',
+        hint: '化学式 NaCl に、Na と Cl はいくつずつあるかな。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-kq2: クイズ 2 電気分解と電池で電子が動くしくみ ----
+  const ionKq2 = {
+    id: 'ion-kq2', areaId: 'io-ion', free: true, title: 'クイズ 2: 電気分解と電池で電子が動くしくみ', minutes: 6, concepts: ['io-electrolysis', 'io-battery'],
+    lessons: [
+      {
+        id: 'ion-kq2-c1',
+        text: '塩化銅水溶液に電流を流すと、Cu2+ は陰極に引かれて電子を 2 個受け取り、銅になって付きます。Cl- は陽極に引かれて電子をわたし、塩素原子が 2 個結びついて塩素になります。',
+        // 左の電極が陽極（電池の＋極側）、右が陰極
+        figure: scene(electrolysisItems('sky').concat([
+          ion(150, 150, 'Cl-'),
+          { type: 'arrow', x1: 134, y1: 150, x2: 120, y2: 150, color: 'blue' },
+          ion(176, 182, 'Cu2+'),
+          { type: 'arrow', x1: 197, y1: 172, x2: 203, y2: 166, color: 'blue' },
+          { type: 'text', x: 60, y: 90, text: '陽極', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 60, y: 108, text: '塩素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 264, y: 90, text: '陰極', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 264, y: 108, text: '銅', size: 13, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'ion-kq2-c2',
+        text: '電池の−極では、亜鉛のような金属が電子を出して陽イオンになり、液にとけ出します。電子は導線を通って＋極へ流れ、＋極で液の中の陽イオンが電子を受け取ります。電流の向きは、電子の流れと逆です。',
+        // ダニエル電池の電子の流れ（亜鉛板 → 導線 → 銅板）
+        figure: scene(daniellItems().concat([
+          { type: 'arrow', x1: 194, y1: 38, x2: 228, y2: 38, color: 'blue' },
+          { type: 'text', x: 254, y: 30, text: '電子', size: 12, anchor: 'middle' },
+          { type: 'text', x: 50, y: 70, text: '−極', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 272, y: 70, text: '＋極', size: 13, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'ion-kq2-c3',
+        text: '使い切りの電池を一次電池、外から電流を流して化学変化を逆向きに進め、くり返し使える電池を二次電池といいます。二次電池を使える状態にもどすことを**充電**といいます。リチウムイオン電池や鉛蓄電池は二次電池です。',
+        // 一次電池と二次電池の例
+        figure: scene([
+          { type: 'rect', x: 10, y: 20, width: 145, height: 200, rx: 8, fill: 'white', stroke: 'line' },
+          { type: 'rect', x: 165, y: 20, width: 145, height: 200, rx: 8, fill: 'sky', stroke: 'line' },
+          { type: 'text', x: 82, y: 46, text: '一次電池', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 237, y: 46, text: '二次電池', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 82, y: 70, text: '使い切り', size: 12, anchor: 'middle' },
+          { type: 'text', x: 237, y: 70, text: '充電してくり返し使う', size: 12, anchor: 'middle' },
+          { type: 'text', x: 82, y: 120, text: 'マンガン乾電池', size: 13, anchor: 'middle' },
+          { type: 'text', x: 82, y: 150, text: 'アルカリ乾電池', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 120, text: 'リチウムイオン電池', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 150, text: '鉛蓄電池', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-kq2-w1', concept: 'io-battery',
+      prompt: '予想しよう。スマートフォンの電池は、使い切ってもまた使えるようになります。何をすると思う？',
+      options: ['外から電流を流す', '電池に水を入れる', '電池を冷やす'],
+      answer: 'a',
+      explanation: 'スマートフォンの電池は、外から電流を流すと、使ったときと逆向きの化学変化が起こって、また使えるようになります。',
+      hint: 'ふだん、ケーブルをつないで何をしているかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-kq2-p1', concept: 'io-electrolysis',
+        prompt: '図のようにつないで塩化銅水溶液を電気分解しました（上の電池は左が＋極）。刺激臭のある気体が出てくるのは電極ア・イのどちら？',
+        figure: scene(electrolysisItems('sky').concat([
+          { type: 'region', id: 'r1', x: 110, y: 130, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 210, y: 130, r: 22, label: 'イ' },
+        ])),
+        answer: 'r1',
+        explanation: '電池の＋極につないだ左の電極（ア）が陽極です。陽極には Cl- が引かれて、刺激臭のある塩素が出ます。右の電極（陰極）には銅が付きます。',
+        hint: '−の電気を帯びた Cl- は、どちらの極に引かれるかな。',
+      }),
+      fill({
+        id: 'ion-kq2-t1', concept: 'io-battery', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '使い終わった二次電池に、外から電流を流して使える状態にもどすことを[b1]という。',
+        blanks: [word('b1', ['充電', '電離', '中和'], '充電')],
+        explanation: '外から電流を流して、化学変化を逆向きに進めることを**充電**といいます。充電できる電池が二次電池です。',
+        hint: 'スマートフォンにケーブルをつないですることだよ。',
+      }),
+      fill({
+        id: 'ion-kq2-p2', concept: 'io-electrolysis',
+        prompt: '塩化銅水溶液に電流を流したとき、陽極で起こる変化を考えよう。空らんに入る言葉を選ぼう。',
+        text: '塩化物イオン Cl- は、陽極に電子を[b1]塩素原子になる。',
+        blanks: [word('b1', ['わたして', '受け取って', '分けて'], 'わたして')],
+        explanation: 'Cl- は電子を 1 個多くもつ陰イオンです。陽極でその電子をわたすと塩素原子になり、2 個が結びついて塩素分子 Cl₂ になります。',
+        hint: 'Cl- が電気を帯びていない原子にもどるには、電子をどうすればよいかな。',
+      }),
+      drag({
+        id: 'ion-kq2-p3', concept: 'io-battery',
+        prompt: 'ダニエル電池で、亜鉛板から出た電子は、導線とモーターを通ってどちらの金属板へ流れこむ？ 電子（−の丸）を左右に動かし、その金属板の真上に置こう。',
+        // 亜鉛板の中心 x 86、銅板の中心 x 234。正解は銅板の真上 (234, 80)、不正解例は亜鉛板の真上 (86, 80)（148px はなれる）。はじめは x 160
+        figure: scene(daniellItems().concat([
+          { type: 'circle', id: 'e', x: 160, y: 80, r: 12, fill: 'sky', stroke: 'blue', label: '−' },
+        ])),
+        draggable: { itemId: 'e', axis: 'x' },
+        target: { x: 234, y: 80 },
+        samples: { correct: { x: 234, y: 80 }, wrong: { x: 86, y: 80 } },
+        explanation: '亜鉛は銅より陽イオンになりやすいので、亜鉛板で亜鉛原子が電子を出して Zn2+ になります。電子は導線を通って銅板へ流れ、銅板の表面で Cu2+ が電子を受け取って銅になります。',
+        hint: '電子を出すのは、陽イオンになりやすい金属のほうだよ。',
+      }),
+      fill({
+        id: 'ion-kq2-p4', concept: 'io-electrolysis',
+        prompt: '塩化銅水溶液の電気分解では、陰極で Cu2+ 1 個が電子 2 個を受け取り、銅原子 1 個になります。銅原子が 40 個できました。',
+        text: '陰極で Cu2+ が受け取った電子は、全部で[b1]である。',
+        blanks: [number('b1', 80, 0, '個')],
+        explanation: '銅原子 1 個ができるのに電子が 2 個いるので、40 × 2 ＝ 80 個です。',
+        hint: 'Cu2+ の「2+」は、受け取る電子の数を教えてくれるよ。',
+      }),
+      choice({
+        id: 'ion-kq2-p5', concept: 'io-battery',
+        prompt: 'うすい塩酸に亜鉛板を入れると、亜鉛がとけて水素が出ました。とけた亜鉛原子はどうなった？',
+        options: ['電子を失って亜鉛イオンになった', '電子を受け取って陰イオンになった', '水素原子に変わった'],
+        answer: 'a',
+        explanation: '亜鉛原子は電子を 2 個失って Zn2+ になり、液にとけます。その電子を塩酸の H+ が受け取り、水素が発生します。原子が別の種類の原子に変わることはありません。',
+        hint: '金属の原子は、陽イオンと陰イオンのどちらになりやすいかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'ion-kq2-r1', concept: 'io-electrolysis',
+        prompt: 'うすい塩酸を、図のようにつないで電気分解しました（上の電池は左が＋極）。マッチの火を近づけると音を立てて燃える気体が出るのは、電極ア・イのどちら？',
+        figure: scene(electrolysisItems('water').concat([
+          { type: 'region', id: 'r1', x: 110, y: 130, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 210, y: 130, r: 22, label: 'イ' },
+        ])),
+        answer: 'r2',
+        explanation: '音を立てて燃えるのは水素です。H+ は陰極に引かれて電子を受け取り、水素になります。電池の−極につないだ右の電極（イ）が陰極です。',
+        hint: '＋の電気を帯びた H+ は、どちらの極に引かれるかな。',
+      }),
+      fill({
+        id: 'ion-kq2-r2', concept: 'io-battery',
+        prompt: 'ダニエル電池では、それぞれの金属板と同じ金属のイオンをふくむ水溶液に、金属板を入れます。空らんに入る言葉を選ぼう。',
+        text: '亜鉛板を入れる水溶液は[b1]である。',
+        blanks: [word('b1', ['硫酸亜鉛水溶液', '硫酸銅水溶液', '砂糖水'], '硫酸亜鉛水溶液')],
+        explanation: 'ダニエル電池では、亜鉛板を硫酸亜鉛水溶液に、銅板を硫酸銅水溶液に入れ、2 つの液をセロハンで仕切ります。',
+        hint: '亜鉛と同じ金属のイオンをふくむ液だよ。',
+      }),
+      choice({
+        id: 'ion-kq2-r3', concept: 'io-electrolysis',
+        prompt: '水酸化ナトリウムを少しとかした水を電気分解しました。出てくる気体の組み合わせはどれ？',
+        options: ['水素と酸素', '水素と塩素', '酸素と二酸化炭素'],
+        answer: 'a',
+        explanation: '水が分解されて、陰極から水素、陽極から酸素が出ます。水酸化ナトリウムは電流を流れやすくするためにとかします。',
+        hint: '分解されているのは水 H₂O だよ。',
+      }),
+      choice({
+        id: 'ion-kq2-r4', concept: 'io-battery',
+        prompt: '電池の−極で起こることとして、正しいものはどれ？',
+        options: ['金属が電子を出して陽イオンになる', '液の中の陽イオンが電子を受け取る', '電子が導線から流れこむ'],
+        answer: 'a',
+        explanation: '−極では金属が電子を出して陽イオンになり、とけ出します。出た電子は導線を通って＋極へ流れ、＋極で陽イオンが電子を受け取ります。',
+        hint: '電子は−極と＋極のどちらから出ていくかな。',
+      }),
+      choice({
+        id: 'ion-kq2-r5', concept: 'io-battery', term: true,
+        prompt: '次の説明に合う言葉はどれ？「ダニエル電池で 2 つの水溶液を仕切る、小さな穴のあいた膜」',
+        options: ['セロハン', 'アルミニウムはく', 'ガラス板'],
+        answer: 'a',
+        explanation: '**セロハン**には小さな穴があり、2 つの液がすぐには混ざらないようにしながら、イオンを少しずつ通します。',
+        hint: 'イオンは通すけれど、液はすぐには混ざらない膜だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ ion-kq3: クイズ 3 酸・アルカリの正体と中和 ----
+  const ionKq3 = {
+    id: 'ion-kq3', areaId: 'io-acid', free: true, title: 'クイズ 3: 酸・アルカリの正体と中和', minutes: 6, concepts: ['io-acidbase', 'io-neutral'],
+    lessons: [
+      {
+        id: 'ion-kq3-c1',
+        text: '酸性の水溶液に共通してふくまれるのは水素イオン H+、アルカリ性の水溶液に共通してふくまれるのは**水酸化物イオン** OH- です。アンモニアは水にとけると一部が水と反応して OH- ができるので、アンモニア水はアルカリ性です。',
+        // 3 つの水溶液のイオンのモデル
+        figure: scene(modelFrames([['H+', 'Cl-'], ['Na+', 'OH-'], ['NH₄+', 'OH-']], ['#FDE2EC', 'sky', 'sky']).concat([
+          { type: 'text', x: 56, y: 184, text: '塩酸', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 184, text: 'NaOH 水溶液', size: 12, anchor: 'middle' },
+          { type: 'text', x: 264, y: 184, text: 'アンモニア水', size: 12, anchor: 'middle' },
+          { type: 'text', x: 56, y: 208, text: '酸性', size: 13, anchor: 'middle', bold: true },
+          { type: 'text', x: 212, y: 208, text: 'アルカリ性', size: 13, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'ion-kq3-c2',
+        text: '酸とアルカリを混ぜると、H+ と OH- が結びついて水ができ、たがいの性質を打ち消し合います（中和）。酸の陰イオンとアルカリの陽イオンが結びついた物質を**塩**といいます。塩酸と水酸化カルシウムからは塩化カルシウムができます。',
+        // 中和の式
+        figure: scene([
+          { type: 'text', x: 160, y: 50, text: 'H+ ＋ OH- → H₂O', size: 20, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 110, text: 'HCl ＋ NaOH → NaCl ＋ H₂O', size: 15, anchor: 'middle' },
+          { type: 'text', x: 160, y: 132, text: '塩: 塩化ナトリウム', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 182, text: '2HCl ＋ Ca(OH)₂ → CaCl₂ ＋ 2H₂O', size: 15, anchor: 'middle' },
+          { type: 'text', x: 160, y: 204, text: '塩: 塩化カルシウム', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'ion-kq3-c3',
+        text: '中和は、生活の中でも使われています。酸性になった川や湖に石灰（炭酸カルシウムなど）を入れて中和したり、酸性になった畑の土に消石灰をまいたりします。',
+        // 酸性の湖に石灰を入れる
+        figure: scene([
+          { type: 'polygon', points: [[30, 130], [290, 130], [250, 200], [70, 200]], fill: 'water' },
+          { type: 'arrow', x1: 160, y1: 50, x2: 160, y2: 118, color: 'ink' },
+          { type: 'text', x: 160, y: 40, text: '石灰の粉を入れる', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 168, text: '酸性の湖', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 226, text: '中和して、酸性を弱める', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'ion-kq3-w1', concept: 'io-acidbase',
+      prompt: '予想しよう。蒸留水に、赤色と青色のリトマス紙をそれぞれつけると、どうなると思う？',
+      options: ['どちらも色が変わらない', '赤色が青色に変わる', '青色が赤色に変わる'],
+      answer: 'a',
+      explanation: '蒸留水は中性なので、どちらのリトマス紙の色も変わりません。リトマス紙の色が変わるのは、酸性かアルカリ性のときです。',
+      hint: '蒸留水は、酸性・中性・アルカリ性のどれかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'ion-kq3-p1', concept: 'io-acidbase',
+        prompt: 'ア〜ウは 3 つの水溶液のイオンのモデルです（ア H+ と Cl-、イ Na+ と Cl-、ウ Na+ と OH-）。フェノールフタレイン溶液を赤色にするのはどれ？',
+        figure: scene(modelFrames([['H+', 'Cl-'], ['Na+', 'Cl-'], ['Na+', 'OH-']]).concat([
+          { type: 'region', id: 'r1', x: 56, y: 196, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 196, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 264, y: 196, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: 'フェノールフタレイン溶液は、アルカリ性で赤色になります。アルカリ性のもとは OH- なので、ウ（水酸化ナトリウム水溶液）です。アは酸性、イは中性です。',
+        hint: 'アルカリ性の正体のイオンをふくむのはどれかな。',
+      }),
+      fill({
+        id: 'ion-kq3-t1', concept: 'io-acidbase', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水にとけて、水酸化物イオン OH- を生じる物質を[b1]という。',
+        blanks: [word('b1', ['アルカリ', '酸', '塩'], 'アルカリ')],
+        explanation: '水にとけて OH- を生じる物質を**アルカリ**といいます。H+ を生じる物質は酸です。',
+        hint: 'OH- は、アルカリ性の正体だったね。',
+      }),
+      fill({
+        id: 'ion-kq3-p2', concept: 'io-acidbase',
+        prompt: 'アンモニア NH₃ は水にとけると、一部が水と反応して NH₄+ と、ある陰イオンができます。空らんに入るものを選ぼう。',
+        text: 'アンモニア水がアルカリ性を示すのは、[b1]ができるからである。',
+        blanks: [word('b1', ['OH-', 'H+', 'Cl-'], 'OH-')],
+        explanation: 'NH₃ が水 H₂O から H+ を 1 個もらって NH₄+ になり、残りが OH- になります。OH- があるので、アンモニア水はアルカリ性です。',
+        hint: 'アルカリ性の水溶液に共通するイオンはどれかな。',
+      }),
+      drag({
+        id: 'ion-kq3-p3', concept: 'io-neutral',
+        prompt: 'pH 2 のうすい塩酸に、うすい水酸化ナトリウム水溶液を加えて、ちょうど中和させました。このときの pH の位置へ、印を左右に動かそう。',
+        // pH の数直線（phX(ph) ＝ 20 ＋ 20 × ph）。印は pH 2 (60, 112) から始まる。正解は pH 7 (160, 112)、不正解例は pH 3 (80, 112)（80px はなれる）
+        figure: scene(phBar().concat([
+          { type: 'text', x: 90, y: 170, text: '酸性', size: 13, anchor: 'middle' },
+          { type: 'text', x: 230, y: 170, text: 'アルカリ性', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 60, text: 'pH の数直線', size: 14, anchor: 'middle' },
+          { type: 'circle', id: 'mark', x: phX(2), y: 112, r: 12, fill: 'yellow', stroke: 'ink', label: '印' },
+        ])),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: phX(7), y: 112 },
+        samples: { correct: { x: phX(7), y: 112 }, wrong: { x: phX(3), y: 112 } },
+        explanation: '塩酸と水酸化ナトリウム水溶液がちょうど中和すると、H+ も OH- も残らず、塩化ナトリウムの水溶液になります。食塩水と同じく中性なので、pH は 7 です。',
+        hint: '酸性でもアルカリ性でもない pH はいくつかな。',
+      }),
+      fill({
+        id: 'ion-kq3-p4', concept: 'io-neutral',
+        prompt: 'H+ が 30 個ふくまれるうすい塩酸に、OH- が 20 個ふくまれる水酸化ナトリウム水溶液を加えました。H+ と OH- は 1 個ずつ結びついて水になります。',
+        text: '混ぜた後の液に残っている H+ は[b1]である。',
+        blanks: [number('b1', 10, 0, '個')],
+        explanation: 'OH- 20 個が H+ 20 個と結びついて水になります。H+ は 30 − 20 ＝ 10 個残るので、液はまだ酸性です。',
+        hint: 'H+ と OH- が同じ数ずつ減っていくよ。',
+      }),
+      choice({
+        id: 'ion-kq3-p5', concept: 'io-neutral',
+        prompt: '酸性になった湖に、石灰（炭酸カルシウム）の粉を入れることがあります。何のため？',
+        options: ['湖の水を中和して、酸性を弱めるため', '湖の水をもっと酸性にするため', '湖の水を温めるため'],
+        answer: 'a',
+        explanation: '石灰は酸と反応して、酸のはたらきを打ち消します。酸性が強すぎると魚などが生きにくいので、中和して酸性を弱めます。',
+        hint: '酸性を打ち消すはたらきを何というかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'ion-kq3-r1', concept: 'io-acidbase',
+        prompt: 'ア Na+ と OH-、イ Na+ と Cl-、ウ H+ と Cl- のイオンのモデルです。マグネシウムリボンを入れると水素が発生する水溶液はどれ？',
+        figure: scene(modelFrames([['Na+', 'OH-'], ['Na+', 'Cl-'], ['H+', 'Cl-']]).concat([
+          { type: 'region', id: 'r1', x: 56, y: 196, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 196, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 264, y: 196, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r3',
+        explanation: 'マグネシウムを入れて水素が出るのは、酸性の水溶液です。酸性のもとの H+ をふくむウ（塩酸）が当てはまります。',
+        hint: '水素が出るのは、酸性・中性・アルカリ性のどれだったかな。',
+      }),
+      choice({
+        id: 'ion-kq3-r2', concept: 'io-acidbase',
+        prompt: 'うすい塩酸とうすい硫酸に、共通してふくまれるイオンはどれ？',
+        options: ['H+', 'Cl-', 'SO₄2-'],
+        answer: 'a',
+        explanation: '塩酸は H+ と Cl-、硫酸は H+ と SO₄2- に電離します。共通する H+ が、酸性の正体です。',
+        hint: 'どちらも酸性の水溶液だね。',
+      }),
+      fill({
+        id: 'ion-kq3-r3', concept: 'io-neutral',
+        prompt: '中和では、酸の H+ とアルカリの OH- が 1 個ずつ結びつきます。空らんに入る言葉を選ぼう。',
+        text: 'H+ と OH- が結びつくと[b1]ができる。',
+        blanks: [word('b1', ['水', '塩', '水素'], '水')],
+        explanation: 'H+ ＋ OH- → H₂O のように、水ができます。塩は、酸の陰イオンとアルカリの陽イオンが結びついたものです。',
+        hint: 'H と OH を合わせると、どんな化学式になるかな。',
+      }),
+      choice({
+        id: 'ion-kq3-r4', concept: 'io-acidbase', term: true,
+        prompt: '次の説明に合う言葉はどれ？「酸性で黄色、中性で緑色、アルカリ性で青色に変わる指示薬」',
+        options: ['BTB 溶液', 'フェノールフタレイン溶液', 'ヨウ素液'],
+        answer: 'a',
+        explanation: '**BTB 溶液**は、酸性で黄色、中性で緑色、アルカリ性で青色になります。フェノールフタレイン溶液はアルカリ性で赤色になります。',
+        hint: '3 つの色に変わる指示薬だよ。',
+      }),
+      choice({
+        id: 'ion-kq3-r5', concept: 'io-neutral',
+        prompt: 'うすい塩酸と水酸化カルシウム水溶液を混ぜて中和させました。できる塩はどれ？',
+        options: ['塩化カルシウム', '塩化ナトリウム', '炭酸カルシウム'],
+        answer: 'a',
+        explanation: '酸の陰イオン Cl- と、アルカリの陽イオン Ca2+ が結びつくので、塩化カルシウム CaCl₂ ができます。',
+        hint: '塩酸の陰イオンと、水酸化カルシウムの陽イオンを組み合わせよう。',
+      }),
+    ],
+  };
+
+
+  // ================================================================
   // 概念（学び直しの確認問題 checkPool つき）
   // ================================================================
 
@@ -3889,10 +4389,10 @@
     concepts,
     areas: [
       { id: 'io-ion', title: '水溶液とイオン', order: 1, stages: [
-        ion1, ion2, ionMp1, ionMp2, ionMp3, ionMp4, ionMp5, ionMp6, ionDr1, ionDr2, ionDr5, ionDr6,
+        ion1, ion2, ionMp1, ionMp2, ionMp3, ionMp4, ionMp5, ionMp6, ionDr1, ionDr2, ionDr5, ionDr6, ionKq1, ionKq2,
       ] },
       { id: 'io-acid', title: '酸・アルカリと中和', order: 2, stages: [
-        ion3, ion4, ionMp7, ionMp8, ionMp9, ionMp10, ionDr3, ionDr4,
+        ion3, ion4, ionMp7, ionMp8, ionMp9, ionMp10, ionDr3, ionDr4, ionKq3,
       ] },
     ],
   };

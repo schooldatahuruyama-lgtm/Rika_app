@@ -2223,6 +2223,622 @@
   };
 
   // ================================================================
+  // クイズ（公開クイズの出題のねらいを参考に、2026-11-22 追加。文・図・数値の組み合わせは自作）
+  // ================================================================
+
+  // 3 つの箱を横に並べ、下にア〜ウの選ぶ場所を置く図（names は左から。「／」で 2 行）
+  function kqThreeBoxes(caption, names) {
+    const items = [{ type: 'text', x: 160, y: 34, text: caption, size: 14, anchor: 'middle' }];
+    names.forEach((name, i) => {
+      const x = 55 + 105 * i;
+      items.push({ type: 'rect', x: x - 48, y: 64, width: 96, height: 84, fill: 'white', rx: 8 });
+      const lines = name.split('／');
+      lines.forEach((t, k) => items.push({ type: 'text', x, y: (lines.length === 1 ? 112 : 100) + 24 * k, text: t, size: 13, anchor: 'middle' }));
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 194, r: 24, label: 'アイウ'[i] });
+    });
+    return scene(items);
+  }
+
+  // 液体を入れたビーカー 3 つ。list の pos は固体の位置（'top' 浮く | 'mid' 中ほど | 'bottom' 沈む | 'none' 入れる前で上に置く）
+  function kqSinkScene(caption, liquid, solidFill, list) {
+    const items = [{ type: 'text', x: 160, y: 26, text: caption, size: 14, anchor: 'middle' }];
+    list.forEach((it, i) => {
+      const x = 60 + 100 * i;
+      items.push({ type: 'beaker', x, y: 180, width: 76, height: 90, level: 0.7, liquid });
+      if (it.name) items.push({ type: 'text', x, y: 54, text: it.name, size: 13, anchor: 'middle' });
+      const y = { none: 72, top: 112, mid: 140, bottom: 166 }[it.pos];
+      items.push({ type: 'circle', x, y, r: 11, fill: solidFill });
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 212, r: 22, label: 'アイウ'[i] });
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ substance-kq1: クイズ 1（単位の換算と密度） ----
+  const substanceKq1 = {
+    id: 'substance-kq1', areaId: 'props', free: true, title: 'クイズ 1: 単位の換算と密度', minutes: 6,
+    concepts: ['su-density', 'su-measure'],
+    lessons: [
+      {
+        id: 'substance-kq1-c1',
+        text: '理科の計算では、単位をそろえてから計算します。1 kg は 1000 g、1 g は 1000 mg、1 L は 1000 mL です。体積の 1 mL は 1 cm³ と同じ大きさです。上皿てんびんではかる物質そのものの量を**質量**といいます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 34, text: '単位の換算', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 80, text: '1 kg ＝ 1000 g', size: 16, anchor: 'middle' },
+          { type: 'text', x: 160, y: 118, text: '1 g ＝ 1000 mg', size: 16, anchor: 'middle' },
+          { type: 'text', x: 160, y: 156, text: '1 L ＝ 1000 mL', size: 16, anchor: 'middle' },
+          { type: 'text', x: 160, y: 194, text: '1 mL ＝ 1 cm³', size: 16, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-kq1-c2',
+        text: '物体を液体に入れたとき、物体の**密度**が液体より大きければ沈み、小さければ浮きます。水では沈む鉄も、鉄より密度が大きい液体の水銀には浮きます。密度は物質の種類で決まり、大きさや形では変わりません。',
+        figure: scene([
+          { type: 'beaker', x: 90, y: 210, width: 120, height: 120, level: 0.6, liquid: 'gray' },
+          { type: 'circle', x: 90, y: 132, r: 14, fill: 'rock' },
+          { type: 'text', x: 90, y: 60, text: '水銀（13.6 g/cm³）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 90, y: 40, text: '鉄の玉（7.9 g/cm³）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 172, y: 120, text: '液体より密度が', size: 13 },
+          { type: 'text', x: 172, y: 144, text: '大きい → 沈む', size: 13 },
+          { type: 'text', x: 172, y: 168, text: '小さい → 浮く', size: 13 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-kq1-w1', concept: 'su-measure',
+      prompt: '予想しよう。1 kg の綿と 1 kg の鉄の玉を、てんびんの左右の皿にのせると、どうなると思う？',
+      options: ['鉄のほうに かたむく', '綿のほうに かたむく', 'つり合う'],
+      answer: 'c',
+      explanation: 'どちらも質量は 1 kg なので、てんびんはつり合います。鉄は密度が大きいので、同じ 1 kg でも綿よりずっと小さく見えます。',
+      hint: '大きさではなく、のせたものの質量をくらべよう。',
+    }),
+    problems: [
+      fill({
+        id: 'substance-kq1-p1', concept: 'su-measure',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1.5 L 入りのペットボトルいっぱいの水の体積は[b1]である。',
+        blanks: [number('b1', 1500, 0, 'cm³')],
+        explanation: '1 L は 1000 mL で、1 mL は 1 cm³ です。だから 1.5 L は 1.5 × 1000 ＝ 1500 cm³ になります。',
+        hint: 'まず L を mL に直そう。mL と cm³ は同じ大きさだよ。',
+      }),
+      fill({
+        id: 'substance-kq1-t1', concept: 'su-measure', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '月に持っていっても変わらない、物質そのものの量を[b1]という。上皿てんびんではかることができる。',
+        blanks: [word('b1', ['質量', '重さ', '体積'], '質量')],
+        explanation: '物質そのものの量を**質量**といい、単位は g や kg です。ばねばかりではかる重さは、月では小さくなりますが、質量は変わりません。',
+        hint: '単位が g や kg で表される量だよ。',
+      }),
+      figureChoice({
+        id: 'substance-kq1-p2', concept: 'su-density',
+        prompt: '液体の水銀（13.6 g/cm³）に、ア 鉄（7.9 g/cm³）、イ 金（19.3 g/cm³）、ウ アルミニウム（2.7 g/cm³）の玉を入れる。沈むのはどれ？',
+        figure: kqSinkScene('水銀に入れる前の玉', 'gray', 'rock', [{ name: '鉄', pos: 'none' }, { name: '金', pos: 'none' }, { name: 'アルミニウム', pos: 'none' }]),
+        answer: 'r2',
+        explanation: '水銀より密度が大きい金だけが沈みます。鉄とアルミニウムは水銀より密度が小さいので浮きます。浮くか沈むかは、液体の密度とくらべて考えます。',
+        hint: '13.6 より大きい密度の金属をさがそう。',
+      }),
+      fill({
+        id: 'substance-kq1-p3', concept: 'su-density',
+        prompt: '空らんに入る数を、小数第 1 位まで入れよう。',
+        text: '質量 25.0 g、体積 9.3 cm³ のアルミニウムの密度は、約[b1]である。',
+        blanks: [number('b1', 2.7, 0, 'g/cm³')],
+        explanation: '密度＝質量÷体積なので、25.0 ÷ 9.3 ＝ 2.68… となり、小数第 2 位を四捨五入して約 2.7 g/cm³ です。アルミニウムの密度とほぼ同じになります。',
+        hint: '質量を体積でわろう。わり切れないときは小数第 2 位を四捨五入するよ。',
+      }),
+      choice({
+        id: 'substance-kq1-p4', concept: 'su-density',
+        prompt: '鉄のくぎをペンチで半分に切った。切ったくぎ 1 本の密度は、もとのくぎとくらべてどうなる？',
+        options: ['半分になる', '変わらない', '2 倍になる'],
+        answer: 'b',
+        explanation: '半分に切ると、質量も体積も半分になります。質量÷体積の値は変わらないので、密度は同じです。密度は物質の種類で決まります。',
+        hint: '質量と体積が、どちらも半分になるね。',
+      }),
+      fill({
+        id: 'substance-kq1-p5', concept: 'su-measure',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1 円玉 1 枚の質量は 1 g である。1 円玉 750 枚の質量は[b1]である。',
+        blanks: [number('b1', 0.75, 0, 'kg')],
+        explanation: '750 枚で 750 g です。1 kg は 1000 g なので、750 ÷ 1000 ＝ 0.75 kg になります。',
+        hint: 'まず g で求めて、それから kg に直そう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'substance-kq1-r1', concept: 'su-density',
+        prompt: 'エタノール（0.79 g/cm³）に氷（0.92 g/cm³）を入れた。ア 浮く、イ 中ほどで止まる、ウ 底に沈む のどれになる？',
+        figure: kqSinkScene('エタノールに氷を入れたようす', 'water', 'white', [{ pos: 'top' }, { pos: 'mid' }, { pos: 'bottom' }]),
+        answer: 'r3',
+        explanation: '氷は水には浮きますが、エタノールより密度が大きいので、エタノールには沈みます。浮くか沈むかは、入れる液体によって変わります。',
+        hint: '0.92 と 0.79 をくらべよう。',
+      }),
+      choice({
+        id: 'substance-kq1-r2', concept: 'su-density',
+        prompt: 'ある物体は、水（1.0 g/cm³）には浮き、エタノール（0.79 g/cm³）には沈んだ。この物体の密度として考えられるのはどれ？',
+        options: ['0.7 g/cm³', '0.9 g/cm³', '1.2 g/cm³'],
+        answer: 'b',
+        explanation: '水に浮くので 1.0 より小さく、エタノールに沈むので 0.79 より大きい密度です。あてはまるのは 0.9 g/cm³ です。',
+        hint: '2 つの液体の密度のあいだにある値をさがそう。',
+      }),
+      fill({
+        id: 'substance-kq1-r3', concept: 'su-measure',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1.2 kg の米の質量は[b1]である。',
+        blanks: [number('b1', 1200, 0, 'g')],
+        explanation: '1 kg は 1000 g なので、1.2 × 1000 ＝ 1200 g です。',
+        hint: 'kg を g に直すときは 1000 をかけるよ。',
+      }),
+      choice({
+        id: 'substance-kq1-t2', concept: 'su-measure', term: true,
+        prompt: '次の説明に合う言葉はどれ？「上皿てんびんではかる、場所によって変わらない物質そのものの量」',
+        options: ['質量', '重さ', '密度'],
+        answer: 'a',
+        explanation: '物質そのものの量を**質量**といいます。重さはばねばかりではかる力の大きさで、場所によって変わることがあります。',
+        hint: '単位は g や kg だよ。',
+      }),
+      fill({
+        id: 'substance-kq1-r4', concept: 'su-density',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '密度は物質の[b1]によって決まっていて、物体の大きさには関係しない。',
+        blanks: [word('b1', ['種類', '形', '量'], '種類')],
+        explanation: '密度は物質の種類ごとにほぼ決まっています。だから、密度を調べると何の物質かを見分ける手がかりになります。',
+        hint: '大きいくぎも小さいくぎも、鉄なら密度は同じだね。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-kq2: クイズ 2（金属の性質と白い粉の見分け方） ----
+  const KQ_POWDER_TABLE = scene([
+    { type: 'text', x: 160, y: 26, text: '3 つの白い粉を調べた結果', size: 14, anchor: 'middle' },
+    { type: 'line', points: [[60, 40], [312, 40]], width: 2 },
+    { type: 'text', x: 140, y: 64, text: '水に入れる', size: 14, anchor: 'middle' },
+    { type: 'text', x: 255, y: 64, text: '加熱する', size: 14, anchor: 'middle' },
+    { type: 'line', points: [[60, 76], [312, 76]], width: 1, color: 'line' },
+    { type: 'text', x: 140, y: 114, text: 'とける', size: 14, anchor: 'middle' },
+    { type: 'text', x: 255, y: 114, text: 'こげない', size: 14, anchor: 'middle' },
+    { type: 'text', x: 140, y: 166, text: 'とけにくい', size: 14, anchor: 'middle' },
+    { type: 'text', x: 255, y: 166, text: '黒くこげる', size: 14, anchor: 'middle' },
+    { type: 'text', x: 140, y: 218, text: 'とける', size: 14, anchor: 'middle' },
+    { type: 'text', x: 255, y: 218, text: '黒くこげる', size: 14, anchor: 'middle' },
+    { type: 'region', id: 'r1', x: 32, y: 108, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 32, y: 160, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 32, y: 212, r: 22, label: 'ウ' },
+  ]);
+
+  const substanceKq2 = {
+    id: 'substance-kq2', areaId: 'props', free: true, title: 'クイズ 2: 金属の性質と白い粉の見分け方', minutes: 6,
+    concepts: ['su-metal', 'su-organic'],
+    lessons: [
+      {
+        id: 'substance-kq2-c1',
+        text: '金属は、たたくとうすく広がり（**展性**）、引っぱると細くのびます（**延性**）。アルミニウムはくや金ぱくは展性を、銅線や針金は延性を利用してつくられています。ガラスのような非金属は、たたくと割れてしまいます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '金属の形の変わり方', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 20, y: 70, width: 50, height: 40, fill: 'gray' },
+          { type: 'line', points: [[80, 90], [120, 90]], width: 2, arrow: true },
+          { type: 'rect', x: 130, y: 84, width: 170, height: 12, fill: 'gray' },
+          { type: 'text', x: 215, y: 126, text: 'たたく → うすく広がる（展性）', size: 13, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 160, width: 50, height: 24, fill: 'gray' },
+          { type: 'line', points: [[80, 172], [120, 172]], width: 2, arrow: true },
+          { type: 'line', points: [[130, 172], [300, 172]], color: 'gray', width: 4 },
+          { type: 'text', x: 215, y: 206, text: '引っぱる → 細くのびる（延性）', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-kq2-c2',
+        text: '見た目が同じ白い粉も、水にとけるか、加熱するとこげるかで見分けられます。食塩は水にとけてこげず、砂糖は水にとけて黒くこげます。デンプンは水にとけにくく、加熱すると黒くこげます。こげるのは炭素をふくむ**有機物**です。',
+        figure: scene([
+          { type: 'line', points: [[20, 40], [310, 40]], width: 2 },
+          { type: 'text', x: 170, y: 64, text: '水に', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 64, text: '加熱すると', size: 14, anchor: 'middle' },
+          { type: 'line', points: [[20, 76], [310, 76]], width: 1, color: 'line' },
+          { type: 'text', x: 30, y: 112, text: '食塩', size: 14 },
+          { type: 'text', x: 170, y: 112, text: 'とける', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 112, text: 'こげない', size: 14, anchor: 'middle' },
+          { type: 'text', x: 30, y: 158, text: '砂糖', size: 14 },
+          { type: 'text', x: 170, y: 158, text: 'とける', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 158, text: '黒くこげる', size: 14, anchor: 'middle' },
+          { type: 'text', x: 30, y: 204, text: 'デンプン', size: 14 },
+          { type: 'text', x: 170, y: 204, text: 'とけにくい', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 204, text: '黒くこげる', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-kq2-w1', concept: 'su-metal',
+      prompt: '予想しよう。アルミニウムのかたまりから、うすいアルミニウムはくがつくれるのは、金属のどんな性質を使っているからだと思う？',
+      options: ['電気を通す', 'たたくとうすく広がる', '熱を伝えやすい'],
+      answer: 'b',
+      explanation: '金属は、たたいたりローラーでおしたりすると、割れずにうすく広がります。この性質を使って、うすいはくがつくられます。',
+      hint: 'うすくするには、かたまりをどうするかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'substance-kq2-p1', concept: 'su-organic',
+        prompt: '表は、食塩・砂糖・デンプンのどれかであるア〜ウの白い粉を調べた結果。砂糖はどれ？',
+        figure: KQ_POWDER_TABLE,
+        answer: 'r3',
+        explanation: '水にとけて、加熱すると黒くこげるウが砂糖です。アは食塩（こげない）、イはデンプン（水にとけにくい）です。2 つの結果を組み合わせて見分けます。',
+        hint: '「水にとける」と「黒くこげる」の両方にあてはまるのはどれかな。',
+      }),
+      fill({
+        id: 'substance-kq2-t1', concept: 'su-metal', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '金属を引っぱると、切れずに細くのびる。この性質を[b1]という。',
+        blanks: [word('b1', ['展性', '延性', '金属光沢'], '延性')],
+        explanation: '引っぱると細くのびる性質を**延性**といいます。たたくとうすく広がる性質は展性です。銅線や針金は延性を利用しています。',
+        hint: '「延」は「のびる」という意味の字だよ。',
+      }),
+      fill({
+        id: 'substance-kq2-p2', concept: 'su-organic',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'かたくり粉（デンプン）を水に入れてよくかき混ぜても、とけずに液が[b1]。',
+        blanks: [word('b1', ['白くにごる', 'すきとおる', '青くなる'], '白くにごる')],
+        explanation: 'デンプンは水にとけにくいので、粉が液の中に散らばって白くにごり、しばらくすると底にたまります。食塩や砂糖はとけて、すきとおった液になります。',
+        hint: 'とけない粉が水の中に散らばると、どう見えるかな。',
+      }),
+      choice({
+        id: 'substance-kq2-p3', concept: 'su-organic',
+        prompt: 'ある白い粉を燃焼さじで加熱すると燃えた。集気びんに入れて燃やしたあと石灰水をふると白くにごった。この粉について言えることは？',
+        options: ['炭素をふくむ有機物である', '金属である', '食塩である'],
+        answer: 'a',
+        explanation: '石灰水が白くにごったので、二酸化炭素ができたと分かります。二酸化炭素の炭素は粉にふくまれていたので、この粉は有機物です。',
+        hint: '二酸化炭素ができたことから、粉に何がふくまれていたか考えよう。',
+      }),
+      choice({
+        id: 'substance-kq2-p4', concept: 'su-metal',
+        prompt: '金をたたいて、1 万分の 1 mm ほどのうすい金ぱくをつくることができる。これは金属のどの性質によるもの？',
+        options: ['展性', '延性', '金属光沢'],
+        answer: 'a',
+        explanation: 'たたくとうすく広がる性質を展性といいます。金は展性がとても大きい金属で、すけるほどうすくのばせます。',
+        hint: 'たたいて広げる性質だよ。',
+      }),
+      fill({
+        id: 'substance-kq2-p5', concept: 'su-organic',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'エタノールを燃やすと二酸化炭素ができた。この二酸化炭素にふくまれる炭素は、もともと[b1]にふくまれていたものである。',
+        blanks: [word('b1', ['エタノール', '空気', '集気びん'], 'エタノール')],
+        explanation: '空気中の酸素には炭素がふくまれていません。できた二酸化炭素の炭素は、燃えたエタノールから来ています。だからエタノールは有機物です。',
+        hint: '炭素をもっていたのは、燃えたものと空気のどちらかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'substance-kq2-r1', concept: 'su-organic',
+        prompt: 'ア 木炭（炭素）、イ 食塩、ウ プラスチック、エ 二酸化炭素 のうち、有機物はどれ？',
+        figure: drFourItems('4 つの物質', ['木炭', '食塩', 'プラス／チック', '二酸化／炭素']),
+        answer: 'r3',
+        explanation: 'プラスチックは石油からつくられる有機物です。木炭（炭素そのもの）と二酸化炭素は、炭素をふくみますが無機物に分けます。食塩は炭素をふくまない無機物です。',
+        hint: '炭素そのものと二酸化炭素は、有機物には入れないよ。',
+      }),
+      fill({
+        id: 'substance-kq2-r2', concept: 'su-organic',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '砂糖を加熱すると黒くこげる。このとき残る黒いものの正体は[b1]である。',
+        blanks: [word('b1', ['炭素', '鉄', '食塩'], '炭素')],
+        explanation: '砂糖は炭素をふくむ有機物です。加熱すると、炭素が黒い炭になって残ります。さらに強く熱すると燃えて二酸化炭素になります。',
+        hint: '炭の主な成分を考えよう。',
+      }),
+      choice({
+        id: 'substance-kq2-r3', concept: 'su-metal',
+        prompt: 'ガラスのコップを金づちで軽くたたくと、割れてしまった。この結果から言えることは？',
+        options: ['ガラスには展性がない', 'ガラスは電気を通す', 'ガラスは有機物である'],
+        answer: 'a',
+        explanation: '金属ならたたくとうすく広がりますが、ガラスは割れました。ガラスには展性がなく、金属ではない（非金属）と分かります。',
+        hint: '金属をたたいたときと、どうちがったかな。',
+      }),
+      choice({
+        id: 'substance-kq2-t2', concept: 'su-metal', term: true,
+        prompt: '次の説明に合う言葉はどれ？「金属を引っぱると、細くのびる性質」',
+        options: ['展性', '延性', '金属光沢'],
+        answer: 'b',
+        explanation: '引っぱると細くのびる性質を**延性**といいます。たたくとうすく広がる性質は展性、みがくと出るかがやきは金属光沢です。',
+        hint: '銅線をつくるときに使う性質だよ。',
+      }),
+      fill({
+        id: 'substance-kq2-r4', concept: 'su-metal',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ガラスは金属ではないので[b1]である。また、炭素をふくまないので無機物でもある。',
+        blanks: [word('b1', ['非金属', '有機物', '混合物'], '非金属')],
+        explanation: '金属以外の物質を非金属といいます。金属かどうかと、有機物か無機物かは、別の見方での分け方です。',
+        hint: '金属かどうかで分けたときの言葉だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-kq3: クイズ 3（身のまわりで発生する気体） ----
+  const substanceKq3 = {
+    id: 'substance-kq3', areaId: 'gas', free: true, title: 'クイズ 3: 身のまわりで発生する気体', minutes: 6,
+    concepts: ['su-gases'],
+    lessons: [
+      {
+        id: 'substance-kq3-c1',
+        text: '身のまわりでも気体は発生します。ジャガイモやレバーにオキシドールをかけると**酸素**が出ます。発泡入浴剤をお湯に入れたり、卵のからに酢をかけたりすると**二酸化炭素**が出ます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '身のまわりで出る気体', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 14, y: 52, width: 140, height: 160, fill: 'white', rx: 8 },
+          { type: 'text', x: 84, y: 82, text: '酸素', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 84, y: 122, text: 'ジャガイモ', size: 13, anchor: 'middle' },
+          { type: 'text', x: 84, y: 146, text: '＋オキシドール', size: 13, anchor: 'middle' },
+          { type: 'rect', x: 166, y: 52, width: 140, height: 160, fill: 'white', rx: 8 },
+          { type: 'text', x: 236, y: 82, text: '二酸化炭素', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 236, y: 122, text: '発泡入浴剤＋お湯', size: 13, anchor: 'middle' },
+          { type: 'text', x: 236, y: 160, text: '卵のから＋酢', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'substance-kq3-c2',
+        text: 'においのある気体には、鼻をさすにおいのアンモニアや塩素、くさった卵のようなにおいの**硫化水素**があります。どれも有毒なので、においは直接かがず、手であおぐようにしてかぎます。',
+        figure: scene([
+          { type: 'tube', x: 80, y: 210, height: 110, level: 0 },
+          { type: 'line', points: [[96, 96], [150, 80]], color: 'gray', width: 2, arrow: true },
+          { type: 'line', points: [[96, 112], [150, 104]], color: 'gray', width: 2, arrow: true },
+          { type: 'text', x: 160, y: 40, text: '手であおいで、少しだけかぐ', size: 14, anchor: 'middle' },
+          { type: 'text', x: 112, y: 150, text: 'アンモニア・塩素 … 鼻をさすにおい', size: 13 },
+          { type: 'text', x: 112, y: 180, text: '硫化水素 … くさった卵のにおい', size: 13 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-kq3-w1', concept: 'su-gases',
+      prompt: '予想しよう。アイスクリームを冷やすのに使うドライアイスは、ある気体を冷やして固体にしたもの。その気体は何だと思う？',
+      options: ['酸素', '窒素', '二酸化炭素'],
+      answer: 'c',
+      explanation: 'ドライアイスは二酸化炭素の固体です。置いておくと、液体にならずに直接気体の二酸化炭素に変わっていきます。',
+      hint: '石灰水を白くにごらせる気体だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'substance-kq3-p1', concept: 'su-gases',
+        prompt: 'ア ジャガイモにオキシドール、イ 卵のからにうすい塩酸、ウ 亜鉛にうすい塩酸。出た気体に火のついた線香を入れると、炎を上げて燃えるのはどれ？',
+        figure: kqThreeBoxes('出てきた気体に、火のついた線香を入れる', ['ジャガイモ／＋オキシドール', '卵のから／＋うすい塩酸', '亜鉛／＋うすい塩酸']),
+        answer: 'r1',
+        explanation: 'ジャガイモにふくまれる物質のはたらきで、オキシドールから酸素が出ます。酸素はものを燃やすので、線香が炎を上げます。イは二酸化炭素、ウは水素が出ます。',
+        hint: 'ものを燃やすはたらきがある気体が出るのはどれかな。',
+      }),
+      fill({
+        id: 'substance-kq3-t1', concept: 'su-gases', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '火山のガスや温泉地でにおう、くさった卵のようなにおいの有毒な気体を[b1]という。',
+        blanks: [word('b1', ['硫化水素', '塩化水素', '塩素'], '硫化水素')],
+        explanation: 'くさった卵のようなにおいの気体は**硫化水素**です。有毒なので、温泉地などではにおいが強い場所に近づかないようにします。',
+        hint: '名前に「硫（いおう）」の字が入る気体だよ。',
+      }),
+      fill({
+        id: 'substance-kq3-p2', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '発泡入浴剤をお湯に入れて出てきた気体を集め、石灰水に通すと白くにごった。この気体は[b1]である。',
+        blanks: [word('b1', ['酸素', '水素', '二酸化炭素'], '二酸化炭素')],
+        explanation: '石灰水を白くにごらせるのは二酸化炭素です。発泡入浴剤のあわの正体は二酸化炭素です。',
+        hint: '石灰水を白くにごらせる気体はどれかな。',
+      }),
+      choice({
+        id: 'substance-kq3-p3', concept: 'su-gases',
+        prompt: '水酸化ナトリウムに塩化アンモニウムを加えてまぜ、水を数滴たらすと、鼻をさすにおいの気体が出た。この気体の確かめ方として正しいのは？',
+        options: ['ぬらした赤色リトマス紙を近づける', '火のついた線香を入れる', '石灰水に通してふる'],
+        answer: 'a',
+        explanation: '出てきたのはアンモニアです。アンモニアは水にとけるとアルカリ性になるので、水でぬらした赤色リトマス紙が青色に変わります。',
+        hint: 'においのある気体で、水にとけるとアルカリ性になるものは？',
+      }),
+      figureChoice({
+        id: 'substance-kq3-p4', concept: 'su-gases',
+        prompt: 'ア 酸素、イ 水素、ウ 二酸化炭素 を集めた試験管を、口を上にして栓をとって置いた。いちばん早く試験管から出ていくのはどれ？',
+        figure: threeGasTubes('口を上にして、栓をとって置いておく', ['酸素', '水素', '二酸化炭素']),
+        answer: 'r2',
+        explanation: '水素はいちばん密度が小さい（軽い）気体なので、口を上にするとすぐに上へ逃げていきます。二酸化炭素は空気より重いので、しばらく試験管の中に残ります。',
+        hint: '空気よりずっと軽い気体はどれかな。',
+      }),
+      fill({
+        id: 'substance-kq3-p5', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '風呂がまの洗浄剤をお湯に入れて出てきた気体に、火のついた線香を入れると、炎を上げて燃えた。この気体は[b1]である。',
+        blanks: [word('b1', ['酸素', '水素', '二酸化炭素'], '酸素')],
+        explanation: '線香が炎を上げて燃えたので、ものを燃やすはたらきがある酸素だと分かります。気体の名前が分からなくても、調べた結果から決められます。',
+        hint: '線香を激しく燃やす気体はどれかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'substance-kq3-r1', concept: 'su-gases',
+        prompt: '吸いこむ空気とくらべて、はき出した息に多くふくまれている気体はどれ？',
+        options: ['酸素', '窒素', '二酸化炭素'],
+        answer: 'c',
+        explanation: '体の中で酸素が使われ、二酸化炭素が出されるので、はく息には二酸化炭素が多くなります。はく息を石灰水に通すと白くにごります。',
+        hint: '体の中で使われる気体と、出される気体を考えよう。',
+      }),
+      fill({
+        id: 'substance-kq3-r2', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '水素の入った試験管の口にマッチの火を寄せると、ポンと音を立てて燃える。これは水素が空気中の[b1]と結びつくからである。',
+        blanks: [word('b1', ['酸素', '窒素', '二酸化炭素'], '酸素')],
+        explanation: '水素は空気中の酸素と結びついて燃え、水ができます。酸素が混ざった水素に火を近づけると、爆発するように燃えるので注意します。',
+        hint: 'ものが燃えるときに必要な気体だよ。',
+      }),
+      figureChoice({
+        id: 'substance-kq3-r3', concept: 'su-gases',
+        prompt: 'ア 水素、イ 酸素、ウ アンモニア の試験管の口に、水でぬらした赤色リトマス紙を近づけた。青色に変わるのはどれ？',
+        figure: threeGasTubes('水でぬらした赤色リトマス紙を近づける', ['水素', '酸素', 'アンモニア']),
+        answer: 'r3',
+        explanation: 'アンモニアは水にとけるとアルカリ性になるので、赤色リトマス紙を青色に変えます。水素と酸素は水にとけにくく、色は変わりません。',
+        hint: 'アルカリ性で赤色リトマス紙は青色になるよ。',
+      }),
+      choice({
+        id: 'substance-kq3-t2', concept: 'su-gases', term: true,
+        prompt: '次の説明に合う言葉はどれ？「火山のガスなどにふくまれる、くさった卵のようなにおいの有毒な気体」',
+        options: ['硫化水素', '塩素', 'アンモニア'],
+        answer: 'a',
+        explanation: 'くさった卵のようなにおいがするのは**硫化水素**です。塩素とアンモニアは、鼻をさすようなにおいの気体です。',
+        hint: '温泉地でにおうことがある気体だよ。',
+      }),
+      fill({
+        id: 'substance-kq3-r4', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '塩素は[b1]色の気体で、水にとけやすく、漂白や殺菌に使われる。',
+        blanks: [word('b1', ['黄緑', '無', '赤かっ'], '黄緑')],
+        explanation: '塩素は黄緑色で、鼻をさすにおいのある有毒な気体です。プールの消毒などに、塩素のなかまの薬品が使われています。',
+        hint: '色のついた気体はめずらしいよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ substance-kq4: クイズ 4（気体の調べ方と集め方） ----
+  const substanceKq4 = {
+    id: 'substance-kq4', areaId: 'gas', free: true, title: 'クイズ 4: 気体の調べ方と集め方', minutes: 7,
+    concepts: ['su-collection', 'su-gases'],
+    lessons: [
+      {
+        id: 'substance-kq4-c1',
+        text: '気体の性質は、実験で確かめます。気体を入れたペットボトルに水を少し入れてふり、へこめば水にとけやすい気体です。火のついた線香を入れて炎を上げれば、ものを燃やすはたらきがあると分かります。',
+        figure: scene([
+          { type: 'text', x: 160, y: 28, text: 'ペットボトルに水を入れてふる', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 60, y: 60, width: 60, height: 140, fill: 'white', rx: 10 },
+          { type: 'rect', x: 62, y: 170, width: 56, height: 28, fill: 'water', stroke: 'none' },
+          { type: 'text', x: 90, y: 228, text: 'ふる前', size: 13, anchor: 'middle' },
+          { type: 'polygon', points: [[200, 60], [260, 60], [250, 130], [260, 200], [200, 200], [210, 130]], fill: 'white' },
+          { type: 'text', x: 230, y: 228, text: 'へこんだ', size: 13, anchor: 'middle' },
+          { type: 'line', points: [[130, 130], [180, 130]], width: 2, arrow: true },
+        ]),
+      },
+      {
+        id: 'substance-kq4-c2',
+        text: '集め方は、水へのとけやすさと空気との重さのちがいで決めます。二酸化炭素は水に少ししかとけず、空気より重いので、**水上置換法**でも下方置換法でも集められます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '集め方の決め方', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 20, y: 80, text: '水にとけにくい → 水上置換法', size: 14 },
+          { type: 'text', x: 20, y: 120, text: 'とけやすく空気より重い → 下方置換法', size: 14 },
+          { type: 'text', x: 20, y: 160, text: 'とけやすく空気より軽い → 上方置換法', size: 14 },
+          { type: 'text', x: 20, y: 206, text: '二酸化炭素: 水上置換法・下方置換法', size: 14, bold: true },
+        ]),
+      },
+      {
+        id: 'substance-kq4-c3',
+        text: '水にとかした液の性質も手がかりになります。アンモニアがとけた液はアルカリ性で、**フェノールフタレイン溶液**を赤色に、BTB 溶液を青色に変えます。二酸化炭素がとけた液は酸性で、BTB 溶液を黄色にします。',
+        figure: scene([
+          { type: 'tube', x: 70, y: 190, height: 110, level: 0.6, liquid: 'red' },
+          { type: 'tube', x: 160, y: 190, height: 110, level: 0.6, liquid: 'blue' },
+          { type: 'tube', x: 250, y: 190, height: 110, level: 0.6, liquid: 'yellow' },
+          { type: 'text', x: 70, y: 40, text: 'アンモニア', size: 13, anchor: 'middle' },
+          { type: 'text', x: 70, y: 60, text: '＋フェノール…', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 40, text: 'アンモニア', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 60, text: '＋BTB', size: 13, anchor: 'middle' },
+          { type: 'text', x: 250, y: 40, text: '二酸化炭素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 250, y: 60, text: '＋BTB', size: 13, anchor: 'middle' },
+          { type: 'text', x: 70, y: 218, text: '赤', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 218, text: '青', size: 13, anchor: 'middle' },
+          { type: 'text', x: 250, y: 218, text: '黄', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'substance-kq4-w1', concept: 'su-gases',
+      prompt: '予想しよう。ある気体を入れたペットボトルに水を少し入れ、ふたをしてふると、ボトルがへこんだ。この気体は水にどうだと思う？',
+      options: ['とけやすい', 'とけにくい', 'まったくとけない'],
+      answer: 'a',
+      explanation: '気体が水にとけると、ボトルの中の気体が減って、まわりの空気におされてへこみます。へこみが大きいほど、水にとけやすい気体です。',
+      hint: 'ボトルの中の気体が減ると、ボトルはどうなるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'substance-kq4-p1', concept: 'su-collection',
+        prompt: '二酸化炭素は水に少しとけ、空気より重い。ア 水上置換法、イ 上方置換法、ウ 下方置換法 のうち、二酸化炭素を集めるのに使えないのはどれ？',
+        figure: collectScene(),
+        answer: 'r2',
+        explanation: '二酸化炭素は空気より重いので、口を下に向けた試験管（上方置換法）ではたまりません。水に少ししかとけないので水上置換法、重いので下方置換法なら集められます。',
+        hint: '重い気体は、口を下に向けた試験管にたまるかな。',
+      }),
+      fill({
+        id: 'substance-kq4-t1', concept: 'su-gases', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'アルカリ性の水溶液に加えると赤色に変わる、無色の薬品を[b1]という。',
+        blanks: [word('b1', ['フェノールフタレイン溶液', '石灰水', 'ヨウ素液'], 'フェノールフタレイン溶液')],
+        explanation: '**フェノールフタレイン溶液**は、アルカリ性の液で赤色になります。アンモニアがとけた液に入れると赤色になります。',
+        hint: 'アルカリ性を調べる薬品だよ。',
+      }),
+      choice({
+        id: 'substance-kq4-p2', concept: 'su-gases',
+        prompt: '水素・ヘリウム・アンモニア・メタンの 4 つの気体に共通する性質はどれ？',
+        options: ['空気より軽い', '鼻をさすにおいがある', '水にとけやすい'],
+        answer: 'a',
+        explanation: '4 つとも空気より密度が小さい（軽い）気体です。においがあり水にとけやすいのはアンモニアだけで、ほかの 3 つは水にとけにくい気体です。',
+        hint: '風船に入れると浮かぶ気体を思い出そう。',
+      }),
+      fill({
+        id: 'substance-kq4-p3', concept: 'su-collection',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'ヘリウムは水にとけにくく、空気より軽い。ヘリウムを集めるのにもっとも適した方法は[b1]である。',
+        blanks: [word('b1', ['水上置換法', '上方置換法', '下方置換法'], '水上置換法')],
+        explanation: '空気より軽くても、水にとけにくい気体は水上置換法で集めます。空気が混ざりにくく、たまった量も見て分かるからです。',
+        hint: 'まず、水にとけやすいかどうかを考えよう。',
+      }),
+      drag({
+        id: 'substance-kq4-p4', concept: 'su-collection',
+        prompt: '下方置換法で二酸化炭素を集める。ガラス管を上下に動かして、管の先を試験管の正しい位置に置こう。',
+        // 試験管の底 y=220、口 y=100。ガラス管（高さ 100）の上のはしが基準点。
+        // 正解: 上のはし y=105（管の先 y=205 が底の近く）。不正解: y=20（管の先 y=120 が口のすぐ内側）
+        figure: scene([
+          { type: 'text', x: 20, y: 30, text: 'ガラス管', size: 13 },
+          { type: 'tube', x: 160, y: 220, height: 120, level: 0 },
+          { type: 'rect', id: 'pipe', x: 156, y: 10, width: 8, height: 100, fill: 'glass' },
+          { type: 'text', x: 200, y: 160, text: '試験管', size: 13 },
+        ]),
+        draggable: { itemId: 'pipe', axis: 'y' },
+        target: { x: 156, y: 105 },
+        samples: { correct: { x: 156, y: 105 }, wrong: { x: 156, y: 20 } },
+        explanation: '二酸化炭素は空気より重いので、管の先を試験管の底近くまで入れると、底からたまって上の空気をおし出します。管の先が口の近くだと、空気が残ってしまいます。',
+        hint: '重い気体は、試験管のどこからたまっていくかな。',
+      }),
+      choice({
+        id: 'substance-kq4-p5', concept: 'su-gases',
+        prompt: 'ある気体を水にとかし、BTB 溶液を加えると青色になった。この気体はどれ？',
+        options: ['アンモニア', '二酸化炭素', '酸素'],
+        answer: 'a',
+        explanation: 'BTB 溶液が青色になったので、液はアルカリ性です。水にとけてアルカリ性になる気体はアンモニアです。二酸化炭素なら酸性で黄色になります。',
+        hint: 'BTB 溶液が青色になるのは、何性のときかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'substance-kq4-r1', concept: 'su-collection',
+        prompt: '下方置換法で二酸化炭素を集めている。試験管がいっぱいになったかを確かめるには、試験管の口に何を近づける？',
+        options: ['火のついた線香', 'ぬらした赤色リトマス紙', '水を入れたビーカー'],
+        answer: 'a',
+        explanation: '二酸化炭素にはものを燃やすはたらきがないので、口までたまると線香の火が消えます。火が消えたら、いっぱいになったと分かります。',
+        hint: '二酸化炭素の中では、火はどうなるかな。',
+      }),
+      figureChoice({
+        id: 'substance-kq4-r2', concept: 'su-collection',
+        prompt: '塩素は水にとけやすく、空気より重い気体。集める方法はア（水上置換法）・イ（上方置換法）・ウ（下方置換法）のどれ？',
+        figure: collectScene(),
+        answer: 'r3',
+        explanation: '水にとけやすいので水上置換法は使えません。空気より重いので、口を上に向けた試験管の底からたまる下方置換法（ウ）で集めます。',
+        hint: '水にとけやすいか、空気より重いか、の順に考えよう。',
+      }),
+      fill({
+        id: 'substance-kq4-r3', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '気体を入れたペットボトルに水を少し入れてふっても、ボトルはへこまなかった。この気体は水に[b1]。',
+        blanks: [word('b1', ['とけやすい', 'とけにくい', '燃えやすい'], 'とけにくい')],
+        explanation: '気体が水にとけないと、ボトルの中の気体の量は変わらないので、へこみません。酸素や水素のような気体がこうなります。',
+        hint: 'へこむのは、中の気体が水にとけて減ったときだよ。',
+      }),
+      choice({
+        id: 'substance-kq4-t2', concept: 'su-gases', term: true,
+        prompt: '次の説明に合う言葉はどれ？「アルカリ性の水溶液に加えると赤色に変わる、無色の薬品」',
+        options: ['フェノールフタレイン溶液', '石灰水', 'ヨウ素液'],
+        answer: 'a',
+        explanation: 'アルカリ性で赤色になるのは**フェノールフタレイン溶液**です。石灰水は二酸化炭素を、ヨウ素液はデンプンを調べる液です。',
+        hint: 'アンモニアの噴水を赤くするときにも使うよ。',
+      }),
+      fill({
+        id: 'substance-kq4-r4', concept: 'su-gases',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '火のついた線香を、酸素で満たした試験管の中へ入れると、炎を上げて燃えた。酸素には、ものを[b1]はたらきがある。',
+        blanks: [word('b1', ['燃やす', 'とかす', '冷やす'], '燃やす')],
+        explanation: '酸素は自分は燃えませんが、ほかのものが燃えるのを助けるはたらきがあります。線香の火が炎を上げるのはそのためです。',
+        hint: '線香がよく燃えたね。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -2232,8 +2848,8 @@
     mascot: 'C',   // 担当の先生（ぷにカプセル。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'props', title: '物質の性質', order: 1, stages: [sub1, sub2, substanceMp1, substanceMp2, substanceMp3, substanceDr1] },
-      { id: 'gas', title: '気体の性質', order: 2, stages: [sub3, sub4, substanceMp4, substanceMp5, substanceDr2] },
+      { id: 'props', title: '物質の性質', order: 1, stages: [sub1, sub2, substanceMp1, substanceMp2, substanceMp3, substanceDr1, substanceKq1, substanceKq2] },
+      { id: 'gas', title: '気体の性質', order: 2, stages: [sub3, sub4, substanceMp4, substanceMp5, substanceDr2, substanceKq3, substanceKq4] },
     ],
   };
 

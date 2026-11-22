@@ -1632,6 +1632,197 @@
   };
 
   // ================================================================
+  // クイズ（Kahoot の公開クイズの「ねらい」を参考に自作した問題。docs/reports/content/sound.md）
+  // ================================================================
+
+  // 音が伝わるときの空気の粒（スピーカーの右に、こい所とうすい所が並ぶ）。こい所は x 90・210、うすい所は x 150・270。
+  // regions で ア（x 90）・イ（x 150）・ウ（x 210）の選ぶ場所を付ける
+  function kqAirScene(regions) {
+    const items = [
+      { type: 'rect', x: 14, y: 80, width: 22, height: 80, fill: 'gray' },
+      { type: 'polygon', points: [[36, 100], [50, 86], [50, 154], [36, 140]], fill: 'gray' },
+    ];
+    for (let i = 0; i < 25; i++) {
+      const u = 60 + 10 * i;
+      const x = round1(u + 9 * Math.sin(2 * Math.PI * (u - 90) / 120 + Math.PI));
+      for (let j = 0; j < 5; j++) items.push({ type: 'circle', x, y: 80 + 20 * j, r: 3, fill: 'blue', stroke: 'none' });
+    }
+    if (regions) {
+      [90, 150, 210].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 206, r: 22, label: 'アイウ'[i] }));
+    } else {
+      items.push({ type: 'text', x: 90, y: 200, text: 'こい', size: 14, anchor: 'middle' });
+      items.push({ type: 'text', x: 150, y: 200, text: 'うすい', size: 14, anchor: 'middle' });
+      items.push({ type: 'text', x: 210, y: 200, text: 'こい', size: 14, anchor: 'middle' });
+      items.push({ type: 'text', x: 270, y: 200, text: 'うすい', size: 14, anchor: 'middle' });
+    }
+    return scene(items);
+  }
+
+  // 水蒸気・水・氷（ア・イ・ウ）。regions で選ぶ場所を付ける
+  function kqStatesScene(regions) {
+    const items = [
+      { type: 'rect', x: 20, y: 60, width: 80, height: 100, fill: 'white' },
+      { type: 'rect', x: 120, y: 60, width: 80, height: 100, fill: 'white' },
+      { type: 'rect', x: 132, y: 90, width: 56, height: 70, fill: 'water', stroke: 'none' },
+      { type: 'rect', x: 230, y: 90, width: 70, height: 70, fill: '#e3f1ff' },
+      { type: 'text', x: 60, y: 184, text: '水蒸気', size: 14, anchor: 'middle' },
+      { type: 'text', x: 160, y: 184, text: '水', size: 14, anchor: 'middle' },
+      { type: 'text', x: 265, y: 184, text: '氷', size: 14, anchor: 'middle' },
+      { type: 'text', x: 160, y: 36, text: '同じ「水」の 3 つのすがた', size: 14, anchor: 'middle' },
+    ];
+    [[40, 80], [75, 95], [50, 125], [85, 140], [35, 150]].forEach(([x, y]) => items.push({ type: 'circle', x, y, r: 3, fill: 'gray', stroke: 'none' }));
+    if (regions) {
+      [60, 160, 265].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 214, r: 22, label: 'アイウ'[i] }));
+    }
+    return scene(items);
+  }
+
+  // 時間の数直線（0〜5 秒。x = 40 + 50 × 秒）。青い点（id 'pt'）を 0 秒の位置に置く。note は上に書く一言
+  function kqTimeLine(note) {
+    const items = [
+      { type: 'text', x: 160, y: 40, text: note, size: 14, anchor: 'middle' },
+      { type: 'circle', x: 40, y: 92, r: 14, fill: 'yellow', stroke: 'orange' },
+      { type: 'text', x: 62, y: 98, text: '光が見えた（0 秒）', size: 13 },
+      { type: 'line', points: [[40, 150], [292, 150]], width: 2 },
+    ];
+    for (let t = 0; t <= 5; t++) {
+      const x = 40 + 50 * t;
+      items.push({ type: 'line', points: [[x, 142], [x, 158]], width: 2 });
+      items.push({ type: 'text', x, y: 180, text: String(t), size: 14, anchor: 'middle' });
+    }
+    items.push({ type: 'text', x: 300, y: 205, text: '（秒）', size: 13, anchor: 'end' });
+    items.push({ type: 'point', id: 'pt', x: 40, y: 150 });
+    return scene(items);
+  }
+
+  // ---- ステージ sound-kq1: クイズ 1（音の伝わり方と速さ。空気のこい所・うすい所、伝わる物質による速さ、時間と距離） ----
+  const soundKq1 = {
+    id: 'sound-kq1', areaId: 'travel', free: true, title: 'クイズ 1: 音の伝わり方と速さ', minutes: 6,
+    concepts: ['so-medium', 'so-speed'],
+    lessons: [
+      {
+        id: 'sound-kq1-c1',
+        text: '音源が振動すると、まわりの空気がおし縮められたり、のばされたりして、空気のこい所とうすい所が次々に伝わっていきます。音は、このような**波**として伝わります。',
+        figure: kqAirScene(false),
+      },
+      {
+        id: 'sound-kq1-c2',
+        text: '音は気体・液体・固体の中を伝わり、物質のない**真空**では伝わりません。同じ水でも、水蒸気より水、水より氷の中のほうが、音は速く伝わります。',
+        figure: kqStatesScene(false),
+      },
+      {
+        id: 'sound-kq1-c3',
+        text: '光は 1 秒間に約 30 万 km 進み、空気中の**音の速さ**（約 340 m/s）よりはるかに速く伝わります。光が見えてから音が聞こえるまでの時間を測ると、音の速さ × 時間 で距離が求められます。',
+        figure: scene(fireworks('光はすぐ届き、音はおくれる')),
+      },
+    ],
+    warmup: choice({
+      id: 'sound-kq1-w1', concept: 'so-medium',
+      prompt: '予想しよう。宇宙空間で、宇宙船の外の岩が大きくくだけました。宇宙船の外の空間を伝わって、音は聞こえると思う？',
+      options: ['空気中と同じように聞こえる', '音を伝える物質がないので聞こえない', '光より先に届く'],
+      answer: 'b',
+      explanation: '宇宙空間には音を伝える空気などの物質がほとんどないので、音は伝わりません。音を伝えるものについて、このステージで確かめよう。',
+      hint: '音は何をゆらして伝わるのだったかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'sound-kq1-p1', concept: 'so-medium',
+        prompt: '同じ「水」の 3 つのすがた ア 水蒸気（100 ℃）、イ 水、ウ 氷 のうち、音がいちばん速く伝わるのはどれ？',
+        figure: kqStatesScene(true),
+        answer: 'r3',
+        explanation: '音は、ふつう気体より液体、液体より固体の中のほうが速く伝わります。同じ水でも、固体の氷の中がいちばん速く、水蒸気の中がいちばんおそくなります。',
+        hint: '気体・液体・固体のどれがいちばん速いか思い出そう。',
+      }),
+      fill({
+        id: 'sound-kq1-t1', concept: 'so-medium', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '音は、空気のこい所とうすい所が次々に伝わる[b1]として進む。',
+        blanks: [word('b1', ['波', '光', '電流'], '波')],
+        explanation: '音源の振動で、空気のこい所とうすい所が次々にでき、まわりへ広がっていきます。このように振動が伝わる現象を**波**といいます。',
+        hint: '水面に石を落としたときに広がるものと同じ名前だよ。',
+      }),
+      fill({
+        id: 'sound-kq1-p2', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。音の速さは 340 m/s とする。',
+        text: 'いなずまが光ってから 2.5 秒後に、かみなりの音が聞こえた。いなずままでの距離は[b1]である。',
+        blanks: [number('b1', 850, 0, 'm')],
+        explanation: '距離 ＝ 音の速さ × 時間 ＝ 340 × 2.5 ＝ 850 m です。光はほとんど一瞬で届くので、光ってから音が聞こえるまでの時間を、音が進んだ時間と考えます。',
+        hint: '340 に 2.5 をかけよう。',
+      }),
+      drag({
+        id: 'sound-kq1-p3', concept: 'so-speed',
+        prompt: '花火から 1020 m はなれた所にいる。花火が光ってから音が聞こえるまでの時間を、青い点を数直線の上で動かして示そう。音の速さは 340 m/s。',
+        figure: kqTimeLine('花火から 1020 m の所で聞く'),
+        draggable: { itemId: 'pt', axis: 'x' },
+        target: { x: 190, y: 150 },
+        samples: { correct: { x: 190, y: 150 }, wrong: { x: 140, y: 150 } },
+        explanation: '時間 ＝ 距離 ÷ 音の速さ ＝ 1020 ÷ 340 ＝ 3 秒です。だから 3 秒の目盛りに置きます。',
+        hint: '1020 を 340 でわってみよう。',
+      }),
+      choice({
+        id: 'sound-kq1-p4', concept: 'so-medium',
+        prompt: '空気をぬいた容器の中でブザーを鳴らしています。容器に少しずつ空気を入れていくと、ブザーの音はどうなる？',
+        options: ['だんだん大きく聞こえてくる', 'だんだん小さくなる', '変わらない'],
+        answer: 'a',
+        explanation: '空気が入ってくると、ブザーの振動を伝えるものがふえるので、音がだんだん大きく聞こえてきます。空気をぬいたときと反対の変化です。',
+        hint: '音を伝えているのは、容器の中の何かな。',
+      }),
+      choice({
+        id: 'sound-kq1-p5', concept: 'so-speed',
+        prompt: '100 m 走で、ゴールの計時係は、スタートのピストルの音ではなく、煙（光）を見て時計をおす。なぜ？',
+        options: ['音は光よりおそく届き、計る時間が短くなるから', '煙のほうが大きいから', '音は耳にしか届かないから'],
+        answer: 'a',
+        explanation: '音が 100 m 進むのに約 0.3 秒かかります。音を聞いてからおすと、その分だけ時間が短く計られてしまいます。光はほとんど一瞬で届くので、煙を見ておします。',
+        hint: '音が 100 m 進むのに、少し時間がかかることを考えよう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'sound-kq1-r1', concept: 'so-medium',
+        prompt: '図は、スピーカーから音が伝わるときの空気の粒のようすです。空気がうすい所はア〜ウのどれ？',
+        figure: kqAirScene(true),
+        answer: 'r2',
+        explanation: '粒の間がいちばん広くあいているイが、空気のうすい所です。アとウは粒がつまっていて、空気がこい所です。こい所とうすい所が交互に伝わっていきます。',
+        hint: '粒と粒のあいだが広い所をさがそう。',
+      }),
+      choice({
+        id: 'sound-kq1-r2', concept: 'so-medium', term: true,
+        prompt: '次の説明に合う言葉はどれ？「振動が、まわりへ次々に伝わっていく現象」',
+        options: ['波', '振幅', '真空'],
+        answer: 'a',
+        explanation: '振動が次々に伝わっていく現象を**波**といいます。音は、空気などの振動が伝わる波です。',
+        hint: '水面に広がるものを思い出そう。',
+      }),
+      fill({
+        id: 'sound-kq1-r3', concept: 'so-speed',
+        prompt: '空らんに入る数を入れよう。音の速さは 340 m/s とする。',
+        text: '1700 m はなれた所で打ち上げた花火が光ってから、音が聞こえるまでの時間は[b1]である。',
+        blanks: [number('b1', 5, 0, '秒')],
+        explanation: '時間 ＝ 距離 ÷ 音の速さ ＝ 1700 ÷ 340 ＝ 5 秒です。遠いほど、光ってから音が聞こえるまでの時間が長くなります。',
+        hint: '1700 を 340 でわろう。',
+      }),
+      drag({
+        id: 'sound-kq1-r4', concept: 'so-speed',
+        prompt: '花火から 680 m はなれた所にいる。花火が光ってから音が聞こえるまでの時間を、青い点を数直線の上で動かして示そう。音の速さは 340 m/s。',
+        figure: kqTimeLine('花火から 680 m の所で聞く'),
+        draggable: { itemId: 'pt', axis: 'x' },
+        target: { x: 140, y: 150 },
+        samples: { correct: { x: 140, y: 150 }, wrong: { x: 190, y: 150 } },
+        explanation: '時間 ＝ 680 ÷ 340 ＝ 2 秒です。だから 2 秒の目盛りに置きます。',
+        hint: '680 を 340 でわってみよう。',
+      }),
+      fill({
+        id: 'sound-kq1-r5', concept: 'so-medium',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '月の表面には空気がほとんどなく、[b1]に近い状態なので、音は空間を伝わらない。',
+        blanks: [word('b1', ['真空', '水中', '固体'], '真空')],
+        explanation: '物質がまったくない状態を真空といいます。月の表面の空間は真空に近いので、空気を伝わる音は届きません。',
+        hint: '物質がない状態の名前だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1641,7 +1832,7 @@
     mascot: 'E',   // 担当の先生（キューブ先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'travel', title: '音の伝わり方', order: 1, stages: [sound1, sound2, soundMp1, soundMp2] },
+      { id: 'travel', title: '音の伝わり方', order: 1, stages: [sound1, sound2, soundMp1, soundMp2, soundKq1] },
       { id: 'pitch', title: '音の大きさと高さ', order: 2, stages: [sound3, sound4, soundMp3, soundDr1] },
     ],
   };

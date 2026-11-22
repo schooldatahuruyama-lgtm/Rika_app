@@ -2,6 +2,7 @@
 // 文章と図はすべてこのアプリのための自作。形は content/light.js と同じ（共通指示 .ai-tasks/20261104-170000_単元教材の共通指示.md）。
 // 2 領域 × 2 ステージ（細胞と植物のはたらき・動物のからだ）と、概念 6 つ（id は単元の接頭辞 bo- を付けて全単元で一意にする）。
 // 領域 3「ミニプリント」（11 ステージ、概念 3 つを追加）は、先生のミニプリントの問題を書き直したもの（.ai-tasks/20261106-130000_ミニプリント反映_共通.md）。
+// クイズ body-kq1〜kq3（free。分野の領域に置く）: 公開クイズの出題のねらいだけを参考に自作（.ai-tasks/20261122-140000_クイズ問題_共通.md）。
 // 図（scene）の item は js/figures.js の汎用の部品で描く（docs/figures-guide.md）。座標は x 右向き・y 下向き、場面は 320×240。
 // drag の samples は手計算した正解例・不正解例（tests/content-all.test.js で判定を確かめる）。
 // 解説文の **語句** は大切な言葉（用語）。term: true の問題は、その用語を聞く用語問題。
@@ -3670,6 +3671,465 @@
   };
 
   // ================================================================
+  // クイズ（.ai-tasks/20261122-140000_クイズ問題_共通.md）
+  // 公開されているクイズの「何を問うか」と用語・誤答の例だけを参考にし、問題文・選択肢・解説・図はすべて自作した。
+  // 既存のステージ（body-1〜4、body-mp1〜11、body-dr1〜6）と同じ問いをくり返さないよう、場面と問い方を変えた。
+  // ================================================================
+
+  // ---- クイズ用の図の部品 ----
+
+  // 植物の細胞の選ぶ場所（ア 核、イ 葉緑体、ウ 液胞、エ 細胞膜）。部品の名前は図に書かない
+  const CELL_PARTS_Q = scene(plantCell(160, 120, 1).concat([
+    leader(58, 70, 102, 70),
+    leader(58, 160, 101, 160),
+    leader(258, 130, 200, 130),
+    leader(258, 200, 229, 200),
+    { type: 'region', id: 'r1', x: 36, y: 70, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 36, y: 160, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 280, y: 130, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 280, y: 200, r: 22, label: 'エ' },
+  ]));
+
+  // からだの成り立ちの 4 つの絵（x 40 1 つの細胞、x 120 同じ形の細胞の集まり、x 200 胃、x 280 ヒトのからだ）。中心の y 100
+  function levelItems() {
+    const items = [
+      { type: 'circle', x: 40, y: 100, r: 20, fill: '#FBE3EC', stroke: 'line' },
+      { type: 'circle', x: 40, y: 100, r: 6, fill: 'purple', stroke: 'none' },
+    ];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        items.push(
+          { type: 'rect', x: 99 + i * 14, y: 79 + j * 14, width: 14, height: 14, fill: '#FBE3EC', stroke: 'line' },
+          { type: 'circle', x: 106 + i * 14, y: 86 + j * 14, r: 2.5, fill: 'purple', stroke: 'none' },
+        );
+      }
+    }
+    items.push(
+      { type: 'polygon', points: [[188, 64], [204, 66], [208, 84], [226, 94], [232, 116], [218, 134], [194, 136], [180, 122], [184, 100], [190, 84]], fill: 'pink', stroke: 'line' },
+      { type: 'circle', x: 280, y: 66, r: 12, fill: '#FBE3EC', stroke: 'line' },
+      { type: 'rect', x: 268, y: 80, width: 24, height: 44, rx: 6, fill: '#FBE3EC', stroke: 'line' },
+      { type: 'line', points: [[268, 86], [258, 114]], color: 'line', width: 4 },
+      { type: 'line', points: [[292, 86], [302, 114]], color: 'line', width: 4 },
+      { type: 'line', points: [[274, 124], [272, 150]], color: 'line', width: 4 },
+      { type: 'line', points: [[286, 124], [288, 150]], color: 'line', width: 4 },
+    );
+    return items;
+  }
+  const LEVELS_Q = scene(levelItems().concat([
+    { type: 'region', id: 'r1', x: 40, y: 186, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 120, y: 186, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 200, y: 186, r: 22, label: 'ウ' },
+    { type: 'region', id: 'r4', x: 280, y: 186, r: 22, label: 'エ' },
+  ]));
+
+  // ---- ステージ body-kq1: クイズ 1（細胞のつくりと、からだの成り立ち） ----
+  const bodyKq1 = {
+    id: 'body-kq1', areaId: 'cell', free: true, title: 'クイズ 1: 細胞のつくりとからだの成り立ち', minutes: 6, concepts: ['bo-cell'],
+    lessons: [
+      {
+        id: 'body-kq1-c1',
+        text: '細胞の中には、ふつう 1 つの**核**があります。核のまわりの部分を細胞質といい、そのいちばん外側が細胞膜です。植物の細胞には、さらに細胞壁・葉緑体・大きな液胞があります。',
+        figure: PLANT_CELL_NAMES,
+      },
+      {
+        id: 'body-kq1-c2',
+        text: '多細胞生物のからだでは、同じ形で同じはたらきをする細胞の集まりを**組織**、いくつかの組織が組み合わさったものを**器官**といいます。いろいろな器官が集まって、1 つの個体になります。',
+        // 細胞 → 組織 → 器官（胃）→ 個体（ヒト）
+        figure: scene(levelItems().concat([
+          { type: 'arrow', x1: 64, y1: 100, x2: 94, y2: 100, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 146, y1: 100, x2: 176, y2: 100, color: 'gray', width: 2 },
+          { type: 'arrow', x1: 236, y1: 100, x2: 254, y2: 100, color: 'gray', width: 2 },
+          { type: 'text', x: 40, y: 180, text: '細胞', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 120, y: 180, text: '組織', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 200, y: 180, text: '器官（胃）', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 280, y: 180, text: '個体', size: 14, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'body-kq1-c3',
+        text: '細胞はとても小さいので、プレパラートをつくって顕微鏡で観察します。酢酸オルセイン液で核を赤紫色に染めると見やすくなります。見える大きさは「実際の大きさ × 倍率」です。',
+        // 見える大きさの計算の例
+        figure: scene([
+          { type: 'rect', x: 30, y: 60, width: 260, height: 90, rx: 8, fill: 'white', stroke: 'line' },
+          { type: 'text', x: 160, y: 95, text: '見える大きさ ＝ 実際の大きさ × 倍率', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 128, text: '例: 0.1 mm × 100 倍 ＝ 10 mm', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 190, text: '倍率 ＝ 接眼レンズ × 対物レンズ', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'body-kq1-w1', concept: 'bo-cell',
+      prompt: '予想しよう。ヒトのからだは、およそいくつの細胞でできていると思う？',
+      options: ['数十兆個', '約 1 万個', '約 100 個'],
+      answer: 'a',
+      explanation: 'おとなのヒトのからだは、数十兆個の細胞でできているといわれます。たくさんの細胞が、組織や器官に分かれてはたらいています。',
+      hint: '細胞 1 つは、肉眼では見えないくらい小さいよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-kq1-p1', concept: 'bo-cell',
+        prompt: '植物の細胞の模式図です（ア: 紫の丸い粒、イ: 緑の小さな粒、ウ: 中央の大きなふくろ、エ: 内側のうすい膜）。細胞質にふくまれないものはどれ？',
+        figure: CELL_PARTS_Q,
+        answer: 'r1',
+        explanation: '細胞質は、核のまわりの部分のことで、いちばん外側の細胞膜もふくみます。葉緑体（イ）・液胞（ウ）・細胞膜（エ）は細胞質にふくまれ、核（ア）はふくまれません。',
+        hint: '細胞質は、何のまわりの部分のことだったかな。',
+      }),
+      fill({
+        id: 'body-kq1-t1', concept: 'bo-cell', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '観察するものをスライドガラスにのせ、カバーガラスをかけて、顕微鏡で見られるようにしたものを[b1]という。',
+        blanks: [word('b1', ['プレパラート', 'レボルバー', 'しぼり'], 'プレパラート')],
+        explanation: 'スライドガラスとカバーガラスで観察するものをはさんだものを**プレパラート**といいます。レボルバーとしぼりは顕微鏡の部分の名前です。',
+        hint: 'ステージの上にのせて観察するものだよ。',
+      }),
+      fill({
+        id: 'body-kq1-p2', concept: 'bo-cell',
+        prompt: 'ゾウリムシのからだの長さは約 0.2 mm です。顕微鏡で 100 倍にして見ると、約何 mm の大きさに見える？',
+        text: 'ゾウリムシは約[b1]の大きさに見える。',
+        blanks: [number('b1', 20, 0, 'mm')],
+        explanation: '見える大きさは、実際の大きさ × 倍率です。0.2 × 100 ＝ 20 なので、約 20 mm に見えます。',
+        hint: '0.2 に 100 をかけよう。',
+      }),
+      choice({
+        id: 'body-kq1-p3', concept: 'bo-cell',
+        prompt: '多細胞生物では、細胞が組織や器官に分かれてはたらいています。このしくみのよい点はどれ？',
+        options: ['細胞がはたらきを分担できる', '1 つの細胞が何でもできる', '細胞の数を少なくできる'],
+        answer: 'a',
+        explanation: '多細胞生物では、消化する細胞、運動する細胞のように、細胞がそれぞれのはたらきを分担しています。そのため、大きなからだを効率よく保てます。',
+        hint: '胃の細胞と筋肉の細胞は、同じ仕事をしているかな。',
+      }),
+      fill({
+        id: 'body-kq1-p4', concept: 'bo-cell',
+        prompt: 'タマネギの表皮に酢酸オルセイン液をたらして観察しました。',
+        text: '酢酸オルセイン液によって、核は[b1]色に染まる。',
+        blanks: [word('b1', ['赤紫', '青紫', '緑'], '赤紫')],
+        explanation: '酢酸オルセイン液は、核を**赤紫色**に染めます。ヨウ素液はデンプンを青紫色に変える液で、核を染める液ではありません。',
+        hint: '青紫色になるのは、ヨウ素液とデンプンの組み合わせだね。',
+      }),
+      choice({
+        id: 'body-kq1-p5', concept: 'bo-cell',
+        prompt: 'タマネギの表皮の細胞はきちんとした四角形に、ヒトのほおの内側の細胞は丸みのある形に見えます。おもに何のちがいによる？',
+        options: ['細胞壁があるかないか', '核があるかないか', '細胞膜があるかないか'],
+        answer: 'a',
+        explanation: '植物の細胞には、細胞膜の外側にじょうぶな細胞壁があり、形が保たれています。動物の細胞には細胞壁がないので、丸みのある形になります。核と細胞膜はどちらにもあります。',
+        hint: '植物の細胞だけにある、外側のしきりを思い出そう。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'body-kq1-r1', concept: 'bo-cell',
+        prompt: 'からだの成り立ちを表す 4 つの絵です（ア: 1 つの細胞、イ: 同じ形の細胞の集まり、ウ: 胃、エ: ヒトのからだ）。器官にあたるのはどれ？',
+        figure: LEVELS_Q,
+        answer: 'r3',
+        explanation: '胃（ウ）は、筋肉の組織や消化液を出す組織など、いくつかの組織が集まってできた器官です。イは組織、エは個体です。',
+        hint: 'いくつかの組織が集まって、決まったはたらきをするものだよ。',
+      }),
+      fill({
+        id: 'body-kq1-r2', concept: 'bo-cell',
+        prompt: 'ヒトのほおの内側の細胞（直径約 0.06 mm）を、300 倍で観察しました。約何 mm の大きさに見える？',
+        text: '細胞は約[b1]の大きさに見える。',
+        blanks: [number('b1', 18, 0, 'mm')],
+        explanation: '0.06 × 300 ＝ 18 なので、約 18 mm に見えます。見える大きさは、実際の大きさに倍率をかけて求めます。',
+        hint: '実際の大きさ × 倍率で求めよう。',
+      }),
+      choice({
+        id: 'body-kq1-r3', concept: 'bo-cell',
+        prompt: 'タマネギの表皮の細胞を観察しても、葉緑体は見られません。なぜ？',
+        options: ['光の当たらない部分の細胞だから', '動物の細胞と同じつくりだから', '染色液で葉緑体がとけたから'],
+        answer: 'a',
+        explanation: 'ふだん食べるタマネギの白い部分は、土の中にあって光が当たらないので、細胞に葉緑体がありません。光が当たる緑色の葉の細胞には葉緑体があります。',
+        hint: '葉緑体は、光を受けて光合成をするつくりだね。',
+      }),
+      choice({
+        id: 'body-kq1-t2', concept: 'bo-cell', term: true,
+        prompt: '次の説明に合う言葉はどれ？「成長した植物の細胞で大きな場所をしめ、水や不要な物質などをためているふくろ」',
+        options: ['液胞', '核', '葉緑体'],
+        answer: 'a',
+        explanation: '水や、細胞の活動でできた物質などをためるふくろを**液胞**といいます。成長した植物の細胞では、とても大きくなります。',
+        hint: '「液」が入ったふくろだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-kq2: クイズ 2（消化管と消化・吸収） ----
+  const bodyKq2 = {
+    id: 'body-kq2', areaId: 'organ', free: true, title: 'クイズ 2: 消化管と養分の吸収', minutes: 6, concepts: ['bo-digestion'],
+    lessons: [
+      {
+        id: 'body-kq2-c1',
+        text: '口から肛門まで続く 1 本の管を**消化管**といいます。食物は消化管を通る間に、消化液にふくまれる消化酵素のはたらきで、吸収できる小さな物質に分解されます。',
+        // 消化にかかわる器官（名前つき）
+        figure: scene(gutItems().concat([
+          { type: 'text', x: 128, y: 93, text: '肝臓', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 222, y: 109, text: '胃', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 165, y: 192, text: '小腸', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 84, y: 196, text: '大腸', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 272, y: 30, text: '口 → 肛門', size: 13, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'body-kq2-c2',
+        text: '炭水化物（デンプンなど）はブドウ糖に、タンパク質はアミノ酸に、脂肪は脂肪酸とモノグリセリドに分解されます。どれも炭素をふくむ**有機物**で、大きな分子のままでは吸収できません。',
+        // 養分と、分解されてできる物質
+        figure: scene([
+          ...[['炭水化物', 'ブドウ糖', 60], ['タンパク質', 'アミノ酸', 120], ['脂肪', '脂肪酸・モノグリセリド', 180]].flatMap(([a, b, y]) => [
+            { type: 'rect', x: 10, y: y - 22, width: 100, height: 34, rx: 6, fill: 'glass', stroke: 'line' },
+            { type: 'text', x: 60, y: y, text: a, size: 14, anchor: 'middle', bold: true },
+            { type: 'arrow', x1: 118, y1: y - 5, x2: 150, y2: y - 5, color: 'gray', width: 2 },
+            { type: 'text', x: 156, y: y, text: b, size: 14 },
+          ]),
+          { type: 'text', x: 160, y: 226, text: '消化酵素のはたらきで分解される', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'body-kq2-c3',
+        text: '分解された養分は、小腸のかべの**柔毛**から吸収されます。ブドウ糖とアミノ酸は毛細血管に入り、肝臓を通って全身へ運ばれます。脂肪酸とモノグリセリドは、再び脂肪になってリンパ管に入ります。',
+        // 柔毛のつくり
+        figure: scene(villusItems().concat([
+          { type: 'text', x: 160, y: 20, text: '柔毛を縦に切った模式図', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 220, text: '赤い管: 毛細血管（ブドウ糖・アミノ酸）', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 236, text: '中央の白い管: リンパ管（脂肪）', size: 12, anchor: 'middle' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-kq2-w1', concept: 'bo-digestion',
+      prompt: '予想しよう。おとなの小腸の長さは、およそどれくらいだと思う？',
+      options: ['約 6 m', '約 60 cm', '約 60 m'],
+      answer: 'a',
+      explanation: 'おとなの小腸は約 6〜7 m もあり、おなかの中で折りたたまれています。長い小腸を通る間に、養分がじっくり吸収されます。',
+      hint: 'おなかの中で、何回も折りたたまれているよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-kq2-p1', concept: 'bo-digestion',
+        prompt: 'ヒトの消化にかかわる器官の図です（図の左がからだの右。ア: 左上の大きな器官、イ: 右上のふくろ、ウ: 中央の折りたたまれた管、エ: そのまわりの太い管）。おもに水分を吸収するのはどれ？',
+        figure: GUT_Q,
+        answer: 'r4',
+        explanation: '小腸（ウ）で養分が吸収されたあと、残ったものの水分は、おもに大腸（エ）で吸収されます。大腸は消化酵素をふくむ消化液を出しません。',
+        hint: '小腸のあとに食物が通る、太い管だよ。',
+      }),
+      fill({
+        id: 'body-kq2-t1', concept: 'bo-digestion', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '口・食道・胃・小腸・大腸・肛門とつながる、食物の通り道の 1 本の管を[b1]という。',
+        blanks: [word('b1', ['消化管', '気管', '血管'], '消化管')],
+        explanation: '口から肛門まで続く食物の通り道を**消化管**といいます。肝臓やすい臓は、消化管に消化液を出しますが、食物は通りません。',
+        hint: '「消化」をする「管」だよ。',
+      }),
+      fill({
+        id: 'body-kq2-p2', concept: 'bo-digestion',
+        prompt: 'ご飯にふくまれるデンプンや、果物にふくまれる糖のなかまをまとめた名前です。',
+        text: 'デンプンや砂糖などのなかまをまとめて[b1]という。',
+        blanks: [word('b1', ['炭水化物', 'タンパク質', '脂肪'], '炭水化物')],
+        explanation: 'デンプン、麦芽糖、ブドウ糖、砂糖などをまとめて**炭水化物**といいます。炭水化物は、最後はブドウ糖に分解されて吸収されます。',
+        hint: 'ご飯やパンに多くふくまれる養分だよ。',
+      }),
+      choice({
+        id: 'body-kq2-p3', concept: 'bo-digestion',
+        prompt: '食べたデンプンやタンパク質を、からだの中で分解しなければならないのはなぜ？',
+        options: ['大きな分子のままでは吸収できないから', '分解しないと味がしないから', '分解すると重さがふえるから'],
+        answer: 'a',
+        explanation: 'デンプンやタンパク質はとても大きな分子で、そのままでは小腸のかべを通りぬけられません。ブドウ糖やアミノ酸のような小さな物質に分解されてから吸収されます。',
+        hint: '小腸のかべを通りぬけられる大きさを考えよう。',
+      }),
+      choice({
+        id: 'body-kq2-p4', concept: 'bo-digestion',
+        prompt: '炭水化物・タンパク質・脂肪に共通することはどれ？',
+        options: ['炭素をふくむ有機物である', '水にとけると青紫色になる', 'からだの中で分解されない'],
+        answer: 'a',
+        explanation: '炭水化物・タンパク質・脂肪は、どれも炭素をふくむ有機物です。消化酵素で分解され、からだのエネルギーやからだをつくる材料になります。',
+        hint: '燃やすと二酸化炭素が出る物質のなかまだよ。',
+      }),
+      drag({
+        id: 'body-kq2-p5', concept: 'bo-digestion',
+        prompt: 'ヒトの消化にかかわる器官の模式図です（図の左がからだの右）。小腸で吸収されたブドウ糖が運ばれて、一部がたくわえられる器官に、青い印を動かして置こう。',
+        // 正解は肝臓の中心 (128, 88)。不正解例は胃 (220, 104) で 93px はなれる
+        figure: scene(gutItems().concat([
+          { type: 'circle', id: 'mark', x: 290, y: 222, r: 11, fill: 'blue', stroke: 'ink' },
+        ])),
+        draggable: { itemId: 'mark', axis: 'xy' },
+        target: { x: 128, y: 88 },
+        samples: { correct: { x: 128, y: 88 }, wrong: { x: 220, y: 104 } },
+        explanation: '小腸の毛細血管に入ったブドウ糖は、血液で肝臓（左上の大きな器官）に運ばれ、一部がグリコーゲンという物質に変えられてたくわえられます。',
+        hint: 'からだの中でいちばん大きな内臓だよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'body-kq2-r1', concept: 'bo-digestion',
+        prompt: 'ある人の消化管の長さは約 9 m で、そのうち小腸は 6.3 m でした。小腸は消化管全体の何% にあたる？',
+        text: '小腸は消化管全体の[b1]にあたる。',
+        blanks: [number('b1', 70, 0, '%')],
+        explanation: '6.3 ÷ 9 ＝ 0.7 なので、70 % です。消化管の大部分を小腸がしめています。',
+        hint: '小腸の長さを、消化管全体の長さでわろう。',
+      }),
+      fill({
+        id: 'body-kq2-r2', concept: 'bo-digestion',
+        prompt: 'パンのデンプンは、だ液やすい液などで分解され、最後は小腸のかべの消化酵素で分解されます。',
+        text: 'デンプンは、最後は[b1]になって小腸から吸収される。',
+        blanks: [word('b1', ['ブドウ糖', 'アミノ酸', '脂肪酸'], 'ブドウ糖')],
+        explanation: 'デンプンは、だ液やすい液で麦芽糖などになり、最後に小腸のかべの消化酵素で**ブドウ糖**になって吸収されます。',
+        hint: 'アミノ酸は、タンパク質が分解されてできるものだね。',
+      }),
+      choice({
+        id: 'body-kq2-r3', concept: 'bo-digestion',
+        prompt: '脂肪の多い食事のあと、小腸のリンパ管の中の液が白くにごって見えることがあります。なぜ？',
+        options: ['吸収された脂肪がリンパ管に入るから', 'ブドウ糖がリンパ管に入るから', '血液がリンパ管に流れこむから'],
+        answer: 'a',
+        explanation: '脂肪酸とモノグリセリドは、柔毛で吸収されたあと再び脂肪になってリンパ管に入ります。脂肪の小さな粒が多いと、液が白くにごって見えます。',
+        hint: '柔毛でリンパ管に入るのは、どの養分だったかな。',
+      }),
+      choice({
+        id: 'body-kq2-t2', concept: 'bo-digestion', term: true,
+        prompt: '次の説明に合う言葉はどれ？「炭素をふくみ、燃やすと二酸化炭素ができる物質。炭水化物やタンパク質もこのなかま」',
+        options: ['有機物', '無機物', '消化液'],
+        answer: 'a',
+        explanation: '炭素をふくみ、燃やすと二酸化炭素ができる物質を**有機物**といいます。食物の炭水化物・タンパク質・脂肪は、どれも有機物です。',
+        hint: '「無機物」の反対だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ body-kq3: クイズ 3（血液の成分と循環・肺のつくり） ----
+  const bodyKq3 = {
+    id: 'body-kq3', areaId: 'organ', free: true, title: 'クイズ 3: 血液のはたらきと循環', minutes: 6, concepts: ['bo-circulation'],
+    lessons: [
+      {
+        id: 'body-kq3-c1',
+        text: '心臓から送り出される血液が流れる血管を**動脈**、心臓にもどる血液が流れる血管を静脈といいます。酸素を多くふくむ血液を動脈血、二酸化炭素を多くふくむ血液を**静脈血**といい、血管の名前とは区別します。',
+        // 血液の道すじ（下は全身）と血管の名前
+        figure: scene(circItems().map(it => (it.type === 'text' && it.text === 'じん臓' ? Object.assign({}, it, { text: '全身' }) : it)).concat([
+          { type: 'text', x: 102, y: 66, text: '肺動脈', size: 13, anchor: 'end' },
+          { type: 'text', x: 218, y: 66, text: '肺静脈', size: 13 },
+          { type: 'text', x: 218, y: 166, text: '大動脈', size: 13 },
+          { type: 'text', x: 102, y: 166, text: '大静脈', size: 13, anchor: 'end' },
+        ])),
+      },
+      {
+        id: 'body-kq3-c2',
+        text: '赤血球にふくまれる**ヘモグロビン**は、酸素の多い肺で酸素と結びつき、酸素の少ない全身で酸素をはなします。白血球は細菌などをとらえ、血小板は出血を止め、液体の血しょうは養分や二酸化炭素などを運びます。',
+        // 血液の成分（名前つき）
+        figure: scene(bloodItems().concat([
+          { type: 'text', x: 70, y: 150, text: '赤血球', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 142, y: 158, text: '血小板', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 230, y: 138, text: '白血球', size: 13, anchor: 'middle', bg: true },
+          { type: 'text', x: 70, y: 216, text: '血しょう（液体）', size: 13, anchor: 'middle', bg: true },
+        ])),
+      },
+      {
+        id: 'body-kq3-c3',
+        text: '吸った空気は、気管から枝分かれした**気管支**を通り、肺胞に入ります。肺胞は小さなふくろがとても多く集まったつくりで、空気にふれる面が広いので、酸素と二酸化炭素の出入りが効率よく行われます。',
+        // 肺のつくり（名前つき）
+        figure: scene(lungItems().concat([
+          { type: 'text', x: 174, y: 40, text: '気管', size: 13 },
+          { type: 'text', x: 198, y: 98, text: '気管支', size: 13 },
+          { type: 'text', x: 252, y: 150, text: '肺胞', size: 13 },
+          { type: 'text', x: 316, y: 230, text: '赤い線は毛細血管', size: 12, anchor: 'end' },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'body-kq3-w1', concept: 'bo-circulation',
+      prompt: '予想しよう。ヒトの血液の重さは、体重のおよそどれくらいだと思う？',
+      options: ['約 13 分の 1', '約 2 分の 1', '約 100 分の 1'],
+      answer: 'a',
+      explanation: 'ヒトの血液の重さは、体重の約 13 分の 1（約 8 %）です。体重 39 kg の人なら約 3 kg の血液が、全身をめぐっています。',
+      hint: '体重の半分も血液だったら、からだはどうなるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'body-kq3-p1', concept: 'bo-circulation',
+        prompt: '血液の流れの模式図です（ア: 心臓から肺へ、イ: 肺から心臓へ、ウ: 心臓からじん臓へ、エ: じん臓から心臓へ向かう血管）。動脈なのに、静脈血が流れるのはどれ？',
+        figure: CIRC_Q,
+        answer: 'r1',
+        explanation: '心臓から肺へ向かう血管（ア）は、心臓から出るので動脈（肺動脈）です。全身から帰ってきた二酸化炭素の多い血液を肺へ運ぶので、静脈血が流れています。',
+        hint: '心臓から出る血管が動脈。肺に着く前の血液は、酸素が多いかな。',
+      }),
+      fill({
+        id: 'body-kq3-t1', concept: 'bo-circulation', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '気管は、肺の中で細かく枝分かれしている。この枝分かれした管を[b1]という。',
+        blanks: [word('b1', ['気管支', '肺胞', '食道'], '気管支')],
+        explanation: '気管が肺の中で枝分かれした管を**気管支**といいます。気管支の先に、小さなふくろの肺胞がたくさんついています。',
+        hint: '「気管」から枝のように分かれているよ。',
+      }),
+      fill({
+        id: 'body-kq3-p2', concept: 'bo-circulation',
+        prompt: 'ヒトの血液の重さは、体重の約 13 分の 1 です。体重 52 kg の人の血液は、約何 kg？',
+        text: '血液は約[b1]である。',
+        blanks: [number('b1', 4, 0, 'kg')],
+        explanation: '52 ÷ 13 ＝ 4 なので、約 4 kg です。この血液が、心臓のはたらきで休みなく全身をめぐっています。',
+        hint: '体重を 13 でわろう。',
+      }),
+      choice({
+        id: 'body-kq3-p3', concept: 'bo-circulation',
+        prompt: 'ヘモグロビンが、酸素の多いところでは結びつき、少ないところでははなれる性質は、何に役立っている？',
+        options: ['肺でとった酸素を全身の細胞にわたす', '食物の養分を分解する', '血液を固めて出血を止める'],
+        answer: 'a',
+        explanation: '酸素の多い肺では酸素と結びつき、酸素の少ない全身の細胞のまわりでは酸素をはなすので、肺の酸素を全身の細胞へ届けることができます。',
+        hint: '酸素が多いのは肺、少ないのはどこかな。',
+      }),
+      choice({
+        id: 'body-kq3-p4', concept: 'bo-circulation',
+        prompt: '動脈のかべは、静脈のかべより厚く、弾力があります。その理由として正しいものはどれ？',
+        options: ['心臓から送り出される強い勢いにたえるため', '血液の逆流を防ぐため', '酸素を外へ通しやすくするため'],
+        answer: 'a',
+        explanation: '動脈には、心臓から勢いよく血液が送り出されるので、かべが厚く弾力があります。逆流を防ぐ弁は、勢いの弱い静脈にあります。',
+        hint: '心臓から出たばかりの血液は、勢いが強いね。',
+      }),
+      drag({
+        id: 'body-kq3-p5', concept: 'bo-circulation',
+        prompt: '心臓の 4 つの部屋を正面から見た模式図です（図の左がからだの右）。かべの筋肉がいちばん厚い部屋に、青い印を動かして置こう。',
+        // 正解は左心室の中心 (190, 152)。不正解例は右心室 (130, 152) で 60px はなれる
+        figure: scene(heartRooms(false).concat([
+          { type: 'text', x: 160, y: 224, text: '正面から見た図（図の左がからだの右）', size: 12, anchor: 'middle' },
+          { type: 'circle', id: 'mark', x: 280, y: 40, r: 11, fill: 'blue', stroke: 'ink' },
+        ])),
+        draggable: { itemId: 'mark', axis: 'xy' },
+        target: { x: 190, y: 152 },
+        samples: { correct: { x: 190, y: 152 }, wrong: { x: 130, y: 152 } },
+        explanation: '左心室（図の右下）は、全身へ血液を送り出すので、強い力が必要です。そのため、かべの筋肉がいちばん厚くなっています。右心室は肺へ送り出す部屋です。',
+        hint: 'いちばん遠くまで血液を送り出す部屋はどれかな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'body-kq3-r1', concept: 'bo-circulation',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '肺から心臓へもどる肺静脈には、酸素を多くふくむ[b1]が流れている。',
+        blanks: [word('b1', ['動脈血', '静脈血', '組織液'], '動脈血')],
+        explanation: '肺静脈は心臓にもどる血管なので静脈ですが、肺で酸素を受けとったばかりの**動脈血**が流れています。',
+        hint: '肺を通ったあとの血液には、酸素が多いかな。',
+      }),
+      choice({
+        id: 'body-kq3-r2', concept: 'bo-circulation',
+        prompt: '血液の中の赤血球が少なくなる貧血になると、つかれやすくなることがあります。なぜ？',
+        options: ['全身に運ばれる酸素が少なくなるから', '血液が固まりにくくなるから', '養分が吸収されなくなるから'],
+        answer: 'a',
+        explanation: '赤血球は酸素を運ぶ成分です。赤血球が少ないと、細胞に届く酸素が少なくなり、養分から十分なエネルギーをとり出せなくなります。',
+        hint: '赤血球のはたらきを思い出そう。',
+      }),
+      fill({
+        id: 'body-kq3-r3', concept: 'bo-circulation',
+        prompt: '1 回の呼吸で肺に吸いこむ空気を 500 mL とし、そのうち約 20 % が酸素とします。吸いこむ酸素は約何 mL？',
+        text: '吸いこむ酸素は約[b1]である。',
+        blanks: [number('b1', 100, 0, 'mL')],
+        explanation: '500 × 0.2 ＝ 100 なので、約 100 mL です。この酸素の一部が、肺胞で毛細血管の血液にとりこまれます。',
+        hint: '20 % は 0.2 だよ。',
+      }),
+      choice({
+        id: 'body-kq3-t2', concept: 'bo-circulation', term: true,
+        prompt: '次の説明に合う言葉はどれ？「全身の細胞から二酸化炭素を受けとり、二酸化炭素を多くふくむようになった血液」',
+        options: ['静脈血', '動脈血', '血しょう'],
+        answer: 'a',
+        explanation: '二酸化炭素を多くふくむ血液を**静脈血**といいます。肺で二酸化炭素を出し、酸素を受けとると動脈血になります。',
+        hint: '大静脈を流れている血液だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（学び直しの確認問題 checkPool つき）
   // ================================================================
   const concepts = [
@@ -3952,8 +4412,8 @@
     mascot: 'F',   // 担当の先生（まめ博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'cell', title: '細胞と植物のはたらき', order: 1, stages: [body1, body2, bodyMp1, bodyMp2, bodyMp3, bodyMp4, bodyDr1, bodyDr2, bodyDr3] },
-      { id: 'organ', title: '動物のからだ', order: 2, stages: [body3, body4, bodyMp5, bodyMp6, bodyMp7, bodyMp8, bodyMp9, bodyMp10, bodyMp11, bodyDr4, bodyDr5, bodyDr6] },
+      { id: 'cell', title: '細胞と植物のはたらき', order: 1, stages: [body1, body2, bodyMp1, bodyMp2, bodyMp3, bodyMp4, bodyDr1, bodyDr2, bodyDr3, bodyKq1] },
+      { id: 'organ', title: '動物のからだ', order: 2, stages: [body3, body4, bodyMp5, bodyMp6, bodyMp7, bodyMp8, bodyMp9, bodyMp10, bodyMp11, bodyDr4, bodyDr5, bodyDr6, bodyKq2, bodyKq3] },
     ],
   };
 

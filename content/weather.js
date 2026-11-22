@@ -4751,6 +4751,508 @@
   };
 
   // ================================================================
+  // クイズ（2026-11-22 追加）: 公開されている先生のクイズの「何を問うか」だけを参考にした自作のステージ weather-kq1〜kq3
+  // 文・選択肢・図はすべて自作（もとのクイズの文は写していない）。既存の概念だけを使う。
+  // ================================================================
+
+  // ---- クイズ用の図の道具 ----
+
+  // 晴れの日・雨の日の気温（だいだい）と湿度（青）の変化（目盛りの数は書かない）
+  function sunnyRainyItems() {
+    return dayGraph(['晴れの日', '雨の日'], [
+      { name: '気温', color: 'orange', pts: [[0, 150], [6, 166], [14, 84], [20, 120], [24, 140], [30, 138], [36, 132], [42, 136], [48, 138]] },
+      { name: '湿度', color: 'blue', pts: [[0, 92], [6, 72], [14, 160], [20, 118], [24, 96], [30, 62], [36, 64], [42, 60], [48, 62]] },
+    ]);
+  }
+
+  // 飽和水蒸気量のグラフに、空気ア（10 ℃、4.7 g/m³）・イ（20 ℃、15.6 g/m³）・ウ（30 ℃、18.2 g/m³）を置く
+  function kqHumidAirItems() {
+    const pts = [[10, 4.7], [20, 15.6], [30, 18.2]];
+    const items = graphItems();
+    pts.forEach(([t, v]) => items.push({ type: 'circle', x: gx(t), y: gy(v), r: 5, fill: 'ink', stroke: 'none' }));
+    pts.forEach(([t, v], i) => items.push(region('r' + (i + 1), gx(t), gy(v), 'アイウ'[i])));
+    return items;
+  }
+
+  // 飽和水蒸気量のグラフと、気温 25 ℃・水蒸気量 12.8 g/m³ の空気（id 'air'。横にだけ動く）
+  function kqDewDragItems() {
+    return graphItems().concat([
+      { type: 'line', points: [[50, gy(12.8)], [gx(25), gy(12.8)]], color: 'gray', width: 1, dashed: true },
+      { type: 'text', x: 246, y: gy(12.8) + 26, text: '25 ℃の空気', size: 12, anchor: 'middle' },
+      { type: 'circle', id: 'air', x: gx(25), y: gy(12.8), r: 9, fill: 'orange', stroke: 'ink' },
+    ]);
+  }
+
+  // ある地点の 1 日の気圧の変化（x = 50 + 10 × 時刻、y = 200 − 8 × (気圧 − 996)）
+  const kqHx = (h) => 50 + 10 * h;
+  const kqPy = (p) => 200 - 8 * (p - 996);
+  function pressureDayItems(data, withRegions) {
+    const items = [
+      { type: 'line', points: [[50, 204], [50, 30]], width: 2, arrow: true },
+      { type: 'line', points: [[46, 200], [300, 200]], width: 2, arrow: true },
+      { type: 'text', x: 56, y: 22, text: '気圧〔hPa〕', size: 12 },
+      { type: 'text', x: 316, y: 234, text: '時刻〔時〕', size: 12, anchor: 'end' },
+    ];
+    [1000, 1004, 1008, 1012, 1016].forEach(p => {
+      items.push({ type: 'line', points: [[50, kqPy(p)], [290, kqPy(p)]], color: '#D5DBE5', width: 1 });
+      items.push({ type: 'text', x: 44, y: kqPy(p) + 4, text: String(p), size: 12, anchor: 'end' });
+    });
+    [0, 6, 12, 18, 24].forEach(h => items.push({ type: 'text', x: kqHx(h), y: 218, text: String(h), size: 12, anchor: 'middle' }));
+    items.push({ type: 'line', points: data.map(([h, p]) => [kqHx(h), kqPy(p)]), color: 'green', width: 3 });
+    data.forEach(([h, p]) => items.push({ type: 'circle', x: kqHx(h), y: kqPy(p), r: 3, fill: 'green', stroke: 'none' }));
+    if (withRegions) withRegions.forEach((h, i) => {
+      const p = data.find(d => d[0] === h)[1];
+      items.push(region('r' + (i + 1), kqHx(h), kqPy(p), 'アイウ'[i]));
+    });
+    return items;
+  }
+  // 3 時間ごとの気圧（12 時にいちばん低い）
+  const KQ_PRESSURE = [[0, 1012], [3, 1010], [6, 1007], [9, 1003], [12, 1000], [15, 1003], [18, 1007], [21, 1010], [24, 1012]];
+
+  // 温暖前線の断面（右へ進む。地表の前線は x 60）。点線の丸 3 つ（前線の後ろの上空・前線面の上・前線面の下の寒気の中）と、動かす雲
+  function warmDragItems() {
+    return [
+      { type: 'rect', x: 0, y: 30, width: 320, height: 160, fill: WARM_AIR, stroke: 'none' },
+      { type: 'polygon', points: [[60, 190], [320, 190], [320, 100]], fill: COLD_AIR, stroke: 'none' },
+      { type: 'line', points: [[0, 190], [320, 190]], color: 'brown', width: 3 },
+      { type: 'arrow', x1: 20, y1: 178, x2: 120, y2: 150, color: 'orange' },
+      { type: 'arrow', x1: 305, y1: 180, x2: 265, y2: 180, color: 'blue' },
+      { type: 'text', x: 20, y: 150, text: '暖気', size: 14, bold: true },
+      { type: 'text', x: 284, y: 150, text: '寒気', size: 14, bold: true },
+      { type: 'text', x: 230, y: 214, text: '進む向き →', size: 13, anchor: 'middle' },
+      { type: 'circle', x: 50, y: 70, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 200, y: 105, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 215, y: 172, r: 16, fill: 'none', stroke: 'gray' },
+      { type: 'ellipse', id: 'cloud', x: 60, y: 222, rx: 24, ry: 14, fill: 'white', stroke: 'ink', label: '雲' },
+    ];
+  }
+
+  // 日本付近の地図と大陸（左上）
+  function kqMapBase() {
+    return japanSmall().concat([
+      { type: 'polygon', points: [[0, 0], [130, 0], [110, 40], [70, 100], [0, 130]], fill: 'sand', stroke: 'line' },
+      { type: 'text', x: 8, y: 20, text: '大陸', size: 12 },
+    ]);
+  }
+
+  // 台風が発生する海を選ぶ地図（ア 日本海、イ オホーツク海、ウ 日本の南の熱帯の海）
+  function typhoonBirthItems() {
+    return kqMapBase().concat([
+      region('r1', 140, 100, 'ア'), region('r2', 296, 30, 'イ'), region('r3', 210, 214, 'ウ'),
+    ]);
+  }
+
+  // 移動性高気圧（id 'high'）と、点線の丸 2 つ（東の太平洋の上・北西の大陸の上）
+  function movingHighItems() {
+    return kqMapBase().concat([
+      { type: 'text', x: 160, y: 232, text: '上が北', size: 12, anchor: 'middle' },
+      { type: 'circle', x: 285, y: 185, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 40, y: 60, r: 20, fill: 'none', stroke: 'gray' },
+      { type: 'circle', id: 'high', x: 70, y: 185, r: 16, fill: 'white', label: '高' },
+    ]);
+  }
+
+  // ---- ステージ weather-kq1: 観測の記録から空気のようすを読む ----
+  const weatherKq1 = {
+    id: 'weather-kq1', areaId: 'air', free: true, title: 'クイズ 1: 観測の記録と湿度', minutes: 6, concepts: ['we-observe', 'we-humidity'],
+    lessons: [
+      {
+        id: 'weather-kq1-c1',
+        text: '気温・湿度・気圧・風向・風力・雲量・降水量のように、大気のようすを表す量を**気象要素**といいます。観測地点の高さ（標高）は場所で決まっている量で、天気によって変わらないので、気象要素には入れません。',
+        figure: scene(table(20, 40, [140, 140], [
+          ['気象要素', '単位・表し方'],
+          ['気温', '℃'],
+          ['湿度', '%'],
+          ['気圧', 'hPa'],
+          ['風向・風力', '16 方位・0〜12'],
+          ['雲量', '0〜10'],
+        ])),
+      },
+      {
+        id: 'weather-kq1-c2',
+        text: '晴れの日は、日中に気温が上がると、空気中の水蒸気の量はあまり変わらないのに湿度が下がります。気温と湿度は反対の動きになります。雨の日は日光が届きにくく、気温も湿度もあまり変化せず、湿度は高いままです。',
+        figure: scene(sunnyRainyItems()),
+      },
+      {
+        id: 'weather-kq1-c3',
+        text: '空気を冷やしたとき、水滴ができ始める温度が**露点**です。気温と露点の差が小さいほど、空気は飽和に近く、湿度は高くなります。同じ水蒸気量でも、気温が高い空気ほど湿度は低くなります。',
+        figure: scene(graphItems().concat(airDot(25, 18.5, 'A'), [
+          { type: 'line', points: [[gx(21.1), gy(18.5)], [gx(25), gy(18.5)]], color: 'gray', width: 2, dashed: true },
+          { type: 'circle', x: gx(21.1), y: gy(18.5), r: 4, fill: 'blue', stroke: 'none' },
+          { type: 'text', x: gx(21.1) - 8, y: gy(18.5) - 10, text: 'A の露点', size: 12, anchor: 'end', bg: true },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-kq1-w1', concept: 'we-humidity',
+      prompt: '予想しよう。ぬれたタオルを外に干します。いちばん早く乾くと思うのは、どんな日？',
+      options: ['晴れて風があり、湿度が低い日', 'くもりで風がなく、湿度が高い日', '雨上がりで、気温が低い日'],
+      answer: 'a',
+      explanation: '水が蒸発するのは、まわりの空気にまだ水蒸気が入る余地があるときです。湿度が低く、風でしめった空気が入れかわり、日光であたたまる日がいちばん乾きやすいです。',
+      hint: '空気がまだ水蒸気をたくさん受け入れられるのは、湿度が高いときかな、低いときかな。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-kq1-t1', concept: 'we-observe', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '気温・湿度・気圧・風向・雲量など、大気の状態を表すいろいろな量をまとめて[b1]という。',
+        blanks: [word('b1', ['気象要素', '気団', '天気図'], '気象要素')],
+        explanation: '大気の状態を表す量を**気象要素**といいます。これらを観測して記録すると、天気の変化を予想する手がかりになります。',
+        hint: '「気象」を形づくる「要素（もと）」だよ。',
+      }),
+      figureChoice({
+        id: 'weather-kq1-p1', concept: 'we-humidity',
+        prompt: '飽和水蒸気量のグラフに、空気ア〜ウの気温と水蒸気量をかきました。湿度がいちばん高いのはどれ？',
+        figure: scene(kqHumidAirItems()),
+        answer: 'r2',
+        explanation: '湿度は、その気温の飽和水蒸気量に対して、実際の水蒸気量がどれくらいかの割合です。イは曲線（飽和水蒸気量）にいちばん近く、約 90 % です。アは約 50 %、ウは約 60 % です。',
+        hint: '点の真上にある曲線の高さと、点の高さをくらべよう。',
+      }),
+      fill({
+        id: 'weather-kq1-p2', concept: 'we-humidity',
+        prompt: '気温 25 ℃（飽和水蒸気量 23.1 g/m³）、湿度 80 % の空気があります。空らんに入る数を入れよう（小数第 1 位まででよい）。',
+        text: 'この空気 1 m³ には、約[b1]の水蒸気がふくまれている。',
+        blanks: [number('b1', 18.48, 0.05, 'g')],
+        explanation: '水蒸気量＝飽和水蒸気量×湿度÷100 です。23.1 × 80 ÷ 100 ＝ 18.48 なので、約 18.5 g です。',
+        hint: '23.1 g の 80 % を求めよう。',
+      }),
+      choice({
+        id: 'weather-kq1-p3', concept: 'we-humidity',
+        prompt: 'きのうは 25 ℃・湿度 80 %、きょうは 30 ℃・湿度 60 % でした。空気 1 m³ 中の水蒸気量をくらべると、どうなる？（30 ℃の飽和水蒸気量は 30.4 g/m³）',
+        options: ['ほとんど同じ', 'きのうのほうがずっと多い', 'きょうのほうがずっと多い'],
+        answer: 'a',
+        explanation: 'きのうは 23.1 × 0.8 ≒ 18.5 g、きょうは 30.4 × 0.6 ≒ 18.2 g で、ほとんど同じです。湿度が下がっても、気温が上がっただけで水蒸気の量はあまり変わっていません。',
+        hint: '湿度だけで決めず、それぞれの水蒸気量を計算してみよう。',
+      }),
+      drag({
+        id: 'weather-kq1-p4', concept: 'we-humidity',
+        prompt: '25 ℃で 1 m³ に 12.8 g の水蒸気をふくむ空気を、水蒸気量を変えずに冷やします。水滴ができ始める点まで、●を横に動かそう。',
+        figure: scene(kqDewDragItems()),
+        draggable: { itemId: 'air', axis: 'x' },
+        target: { x: gx(15), y: gy(12.8) },
+        samples: { correct: { x: gx(15), y: gy(12.8) }, wrong: { x: gx(8), y: gy(12.8) } },
+        explanation: '水蒸気量が変わらないので、点は左（気温の低いほう）へまっすぐ進みます。曲線にぶつかる 15 ℃ で飽和し、水滴ができ始めます。この温度が露点です。',
+        hint: '点が飽和水蒸気量の曲線にぶつかる所をさがそう。',
+      }),
+      choice({
+        id: 'weather-kq1-p5', concept: 'we-observe',
+        prompt: 'ある日の記録では、朝から夜まで気温の差が 2 ℃ ほどしかなく、湿度は 90 % 以上のままでした。この日の天気として考えられるものは？',
+        options: ['雨', '快晴', '晴れ'],
+        answer: 'a',
+        explanation: '雨の日は、雲で日光がさえぎられるので気温があまり上がらず、1 日の気温の差が小さくなります。空気がしめっているので、湿度も高いままです。',
+        hint: '晴れの日は、昼に気温が上がって湿度が下がるね。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'weather-kq1-r1', concept: 'we-observe',
+        prompt: '空らんに入る方角を入れよう。',
+        text: '風で、えんとつのけむりが南へ流れていた。このときの風向は[b1]である。',
+        blanks: [word('b1', ['北', '南', '東'], '北')],
+        explanation: '風向は、風が「ふいてくる」方角で表します。けむりが南へ流れているなら、風は北からふいてくるので、風向は北です。',
+        hint: '風はどちらからふいてきて、けむりをおしているかな。',
+      }),
+      fill({
+        id: 'weather-kq1-r2', concept: 'we-humidity',
+        prompt: '気温 30 ℃（飽和水蒸気量 30.4 g/m³）、湿度 60 % の空気があります。空らんに入る数を入れよう（小数第 1 位まででよい）。',
+        text: 'この空気 1 m³ には、約[b1]の水蒸気がふくまれている。',
+        blanks: [number('b1', 18.24, 0.05, 'g')],
+        explanation: '30.4 × 60 ÷ 100 ＝ 18.24 なので、約 18.2 g です。',
+        hint: '30.4 g の 60 % を求めよう。',
+      }),
+      choice({
+        id: 'weather-kq1-r3', concept: 'we-observe',
+        prompt: '次のうち、気象要素に入らないものはどれ？',
+        options: ['観測地点の標高', '雲量', '降水量', '風力'],
+        answer: 'a',
+        explanation: '雲量・降水量・風力は、天気によって変わる大気のようすなので気象要素です。標高は場所によって決まっていて、天気では変わりません。',
+        hint: '天気が変わっても変わらないものはどれかな。',
+      }),
+      fill({
+        id: 'weather-kq1-r4', concept: 'we-humidity',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '気温が変わらないまま、空気の露点が気温に近づいていくと、湿度は[b1]なっていく。',
+        blanks: [word('b1', ['高く', '低く', '変わらなく'], '高く')],
+        explanation: '露点が上がるのは、空気中の水蒸気がふえたときです。気温（飽和水蒸気量）が同じなら、水蒸気がふえるほど湿度は**高く**なります。',
+        hint: '露点と気温が同じになると、湿度は 100 % だね。',
+      }),
+      choice({
+        id: 'weather-kq1-r5', concept: 'we-observe', term: true,
+        prompt: '次の説明に合う言葉はどれ？「各地の天気・風向・風力を、丸と矢羽根で 1 つにまとめて表した記号」',
+        options: ['天気図記号', '等圧線', '気象要素'],
+        answer: 'a',
+        explanation: 'これは**天気図記号**です。丸の中の記号が天気、矢の向きが風向、矢羽根の数が風力を表します。等圧線は気圧の等しい地点を結んだ線です。',
+        hint: '天気「図」にかく「記号」だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-kq2: 気圧の変化と前線 ----
+  const weatherKq2 = {
+    id: 'weather-kq2', areaId: 'front', free: true, title: 'クイズ 2: 気圧の変化と前線', minutes: 6, concepts: ['we-system', 'we-front'],
+    lessons: [
+      {
+        id: 'weather-kq2-c1',
+        text: '高気圧の中心では**下降気流**が起こり、雲ができにくいので晴れやすくなります。低気圧の中心では上昇気流が起こり、雲ができて雨になりやすいです。風は、気圧の差によって、気圧の高い所から低い所へふきます。',
+        figure: scene(highLowSectionItems()),
+      },
+      {
+        id: 'weather-kq2-c2',
+        text: '低気圧が近づくと気圧は下がり、遠ざかると上がります。そのため、ある地点の気圧が下がり続けたあと上がり始めたら、低気圧の中心がいちばん近くを通ったと考えられます。気圧の記録は天気の予想に役立ちます。',
+        figure: scene(pressureDayItems(KQ_PRESSURE, null)),
+      },
+      {
+        id: 'weather-kq2-c3',
+        text: '性質のちがう気団が接している境の面を**前線面**、前線面が地表と交わる線を前線といいます。温暖前線では、暖気が寒気の上をゆるやかに上がるので、前線の前方の広い範囲に**乱層雲**ができ、おだやかな雨が長く降ります。',
+        figure: scene(warmSection(10, 70, 300, '温暖前線')),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-kq2-w1', concept: 'we-front',
+      prompt: '予想しよう。天気予報で「上空に強い寒気が入り、大気の状態が不安定です」と言っていました。起こりやすいのは、どんな天気だと思う？',
+      options: ['急な強い雨や雷', '1 日中おだやかな晴れ', '弱い霧雨が何日も続く'],
+      answer: 'a',
+      explanation: '上空が冷たく地上があたたかいと、地上の空気が勢いよく上昇し、積乱雲が発達しやすくなります。そのため、急な強い雨や雷、突風が起こりやすくなります。',
+      hint: 'あたたかい空気が下、冷たい空気が上にあると、空気はどう動くかな。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-kq2-t1', concept: 'we-front', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '性質のちがう 2 つの気団が接している境の面を[b1]といい、これが地表と交わる線が前線である。',
+        blanks: [word('b1', ['前線面', '等圧線', '水平面'], '前線面')],
+        explanation: '気団と気団の境の面を**前線面**といいます。前線は、この面が地面と交わってできる線です。',
+        hint: '前線の「面」だよ。',
+      }),
+      figureChoice({
+        id: 'weather-kq2-p1', concept: 'we-system',
+        prompt: 'ある地点で 3 時間ごとに記録した気圧のグラフです。低気圧の中心がこの地点にいちばん近づいたのは、ア〜ウのどのとき？',
+        figure: scene(pressureDayItems(KQ_PRESSURE, [3, 12, 21])),
+        answer: 'r2',
+        explanation: '低気圧の中心に近いほど気圧は低くなります。気圧が下がり続けて、いちばん低くなったイ（12 時）に、中心がいちばん近くを通ったと考えられます。',
+        hint: '気圧がいちばん低いのはいつかな。',
+      }),
+      fill({
+        id: 'weather-kq2-p2', concept: 'we-system',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '風は、2 つの地点のあいだの[b1]の差によって生じ、その値が高いほうから低いほうへふく。',
+        blanks: [word('b1', ['気圧', '湿度', '雲量'], '気圧')],
+        explanation: '風は、**気圧**の高い所から低い所へ向かってふきます。気圧の差が大きいほど、風は強くなります。',
+        hint: '天気図の等圧線で表している量だよ。',
+      }),
+      choice({
+        id: 'weather-kq2-p3', concept: 'we-front',
+        prompt: 'ある地点で、おだやかな雨が半日ほど続いたあと雨がやみ、風が南寄りに変わって気温が上がりました。この地点を通過した前線は？',
+        options: ['温暖前線', '寒冷前線', '閉そく前線'],
+        answer: 'a',
+        explanation: '温暖前線の前方では乱層雲によるおだやかな雨が長く続きます。通過すると暖気におおわれるので、気温が上がり、風は南寄りになります。',
+        hint: '通過したあと、あたたかい空気に入れかわる前線はどれかな。',
+      }),
+      drag({
+        id: 'weather-kq2-p4', concept: 'we-front',
+        prompt: '右へ進む温暖前線の断面です。乱層雲ができやすい場所を、点線の丸の中から選んで、「雲」を動かそう。',
+        figure: scene(warmDragItems()),
+        draggable: { itemId: 'cloud', axis: 'xy' },
+        target: { x: 200, y: 105 },
+        samples: { correct: { x: 200, y: 105 }, wrong: { x: 215, y: 172 } },
+        explanation: '温暖前線では、暖気が寒気の上をゆるやかにはい上がり、前線面にそって冷やされて雲ができます。そのため、地表の前線より前方の、前線面の上に乱層雲が広がります。',
+        hint: '暖気が上がっていくのは、前線面の上かな、下の寒気の中かな。',
+      }),
+      fill({
+        id: 'weather-kq2-p5', concept: 'we-system',
+        prompt: 'グラフを読んで、空らんに入る数を入れよう。',
+        figure: scene(pressureDayItems(KQ_PRESSURE, null)),
+        text: '0 時から 12 時までに、気圧は[b1]下がった。',
+        blanks: [number('b1', 12, 0, 'hPa')],
+        explanation: '0 時は 1012 hPa、12 時は 1000 hPa です。1012 − 1000 ＝ 12 hPa 下がりました。',
+        hint: '横の線の目盛りは 4 hPa ごとだよ。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'weather-kq2-r1', concept: 'we-system',
+        prompt: '高気圧の中心付近で晴れることが多いのはなぜ？',
+        options: ['下降気流があり、雲ができにくいから', '上昇気流があり、雲が消えるから', '気温が高く、雨がすぐ蒸発するから'],
+        answer: 'a',
+        explanation: '高気圧の中心では、空気が上から下へおりてくる下降気流が起こります。下降する空気はあたためられるので、雲ができにくく、晴れやすくなります。',
+        hint: '雲ができるのは、空気が上がるときだったね。',
+      }),
+      fill({
+        id: 'weather-kq2-r2', concept: 'we-front',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '寒冷前線のように、空気が強く上昇する所で縦に高く発達し、短い時間に強い雨や雷をもたらす雲は[b1]である。',
+        blanks: [word('b1', ['積乱雲', '乱層雲', '巻雲'], '積乱雲')],
+        explanation: '強い上昇気流で縦にのびる雲は**積乱雲**です。乱層雲は横に広がり、おだやかな雨を長く降らせます。',
+        hint: '入道雲とも呼ばれる雲だよ。',
+      }),
+      choice({
+        id: 'weather-kq2-r3', concept: 'we-front',
+        prompt: '寒冷前線が通過するときのようすとして正しいものはどれ？',
+        options: ['強い雨が短時間降り、通過後は気温が下がる', '弱い雨が長く降り、通過後は気温が上がる', '雨は降らず、気温も変わらない'],
+        answer: 'a',
+        explanation: '寒冷前線では積乱雲が発達するので、強い雨が短時間降ります。通過後は寒気におおわれ、気温が下がり、風は北寄りになります。',
+        hint: '寒気が暖気をおし上げる前線だよ。',
+      }),
+      fill({
+        id: 'weather-kq2-r4', concept: 'we-system',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'ある地点の気圧が、6 時間で 1010 hPa から 998 hPa まで下がった。1 時間あたり平均[b1]ずつ下がったことになる。',
+        blanks: [number('b1', 2, 0, 'hPa')],
+        explanation: '下がった気圧は 1010 − 998 ＝ 12 hPa です。12 ÷ 6 ＝ 2 hPa ずつ下がりました。気圧が急に下がるのは、低気圧が近づいているしるしです。',
+        hint: 'まず何 hPa 下がったかを求め、時間でわろう。',
+      }),
+      choice({
+        id: 'weather-kq2-r5', concept: 'we-system', term: true,
+        prompt: '次の説明に合う言葉はどれ？「まわりより気圧が低く、中心付近で上昇気流が起こっている所」',
+        options: ['低気圧', '高気圧', '前線面'],
+        answer: 'a',
+        explanation: 'これは**低気圧**です。北半球の地表では、風が反時計回りにふきこみ、中心で上昇気流になるので、くもりや雨になりやすいです。',
+        hint: '天気図に「低」と書かれる所だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ weather-kq3: 日本の天気と身を守る行動 ----
+  const weatherKq3 = {
+    id: 'weather-kq3', areaId: 'front', free: true, title: 'クイズ 3: 日本の天気と身を守る行動', minutes: 7, concepts: ['we-japan', 'we-disaster'],
+    lessons: [
+      {
+        id: 'weather-kq3-c1',
+        text: '冬型の気圧配置（**西高東低**）では、北西の季節風が日本海をわたるあいだに水蒸気をふくみ、山脈にぶつかって上昇し、日本海側に雪を降らせます。山をこえた風は乾いているので、太平洋側は晴れやすくなります。',
+        figure: scene(winterSectionBase().concat([
+          { type: 'ellipse', x: 200, y: 120, rx: 34, ry: 16, fill: 'white', stroke: 'gray' },
+          { type: 'text', x: 200, y: 160, text: '雪', size: 14, anchor: 'middle', bold: true, bg: true },
+          { type: 'text', x: 296, y: 120, text: '晴れ', size: 14, anchor: 'middle', bold: true },
+        ])),
+      },
+      {
+        id: 'weather-kq3-c2',
+        text: '**台風**は、日本の南の熱帯の海上で発生した低気圧が発達したものです。中心の気圧はまわりよりとても低く、あたたかい海から蒸発する水蒸気をエネルギーにしています。春や秋の天気は、**移動性高気圧**と低気圧が西から東へ進むことで変わります。',
+        figure: scene(kqMapBase().concat([
+          { type: 'line', points: [[230, 230], [190, 205], [160, 180], [170, 150]], color: 'red', width: 3, arrow: true },
+          { type: 'text', x: 316, y: 200, text: '台風の進路の例', size: 12, anchor: 'end' },
+          { type: 'arrow', x1: 150, y1: 44, x2: 210, y2: 44, color: 'orange', width: 3 },
+          { type: 'text', x: 136, y: 28, text: '高気圧・低気圧は西から東へ', size: 12 },
+        ])),
+      },
+      {
+        id: 'weather-kq3-c3',
+        text: '雷が鳴ったら、じょうぶな建物や車の中に入ります。竜巻が近づいたら、じょうぶな建物の中で窓から離れます。都市では、舗装や建物が熱をため、冷房などの排熱も加わるので郊外より暑くなります。これが**ヒートアイランド現象**です。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 30, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 61, text: '雷 → じょうぶな建物や車の中へ', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 95, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 126, text: '竜巻 → 建物の中で窓から離れる', size: 14, anchor: 'middle' },
+          { type: 'rect', x: 20, y: 160, width: 280, height: 50, fill: 'sky', stroke: 'line', rx: 6 },
+          { type: 'text', x: 160, y: 191, text: '都市の中心ほど気温が高くなりやすい', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'weather-kq3-w1', concept: 'we-disaster',
+      prompt: '予想しよう。よく晴れた夏の夜、大きな都市の中心部と、まわりの畑や林の多い地域では、気温が下がりにくいのはどちらだと思う？',
+      options: ['都市の中心部', '畑や林の多い地域', 'どちらも同じ'],
+      answer: 'a',
+      explanation: '都市の中心部では、アスファルトやコンクリートが昼の熱をため、夜にその熱を出します。冷房や車からの排熱も多いので、夜になっても気温が下がりにくいです。',
+      hint: '昼に日光で熱くなったアスファルトは、夜にどうなるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'weather-kq3-t1', concept: 'we-disaster', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '都市の中心部の気温が、まわりの郊外より高くなる現象を[b1]現象という。',
+        blanks: [word('b1', ['ヒートアイランド', 'フェーン', 'エルニーニョ'], 'ヒートアイランド')],
+        explanation: '気温の分布をかくと、都市の中心が熱い「島」のように見えるので、**ヒートアイランド現象**といいます。',
+        hint: '「熱（ヒート）」の「島（アイランド）」だよ。',
+      }),
+      figureChoice({
+        id: 'weather-kq3-p1', concept: 'we-japan',
+        prompt: '日本付近の地図です。日本に来る台風の多くが発生するのは、ア（日本海）・イ（オホーツク海）・ウ（日本の南の熱帯の海）のどこ？',
+        figure: scene(typhoonBirthItems()),
+        answer: 'r3',
+        explanation: '台風は、日本の南の、海水温が高い熱帯の海の上で発生します。あたたかい海から蒸発する大量の水蒸気をエネルギーにして発達し、北へ進んできます。',
+        hint: '台風のエネルギーのもとは、あたたかい海の水蒸気だったね。',
+      }),
+      fill({
+        id: 'weather-kq3-p2', concept: 'we-japan',
+        prompt: '空らんに入る数を入れよう。',
+        text: '時速 20 km で北へ進む台風の中心が、300 km 南にある。このまま進むと、およそ[b1]後に近くへやってくる。',
+        blanks: [number('b1', 15, 0, '時間')],
+        explanation: '300 ÷ 20 ＝ 15 時間です。台風の進む速さと進路の予想から、いつごろ近づくかを考えて、早めに備えることが大切です。',
+        hint: 'きょり÷速さで、かかる時間が求められるよ。',
+      }),
+      choice({
+        id: 'weather-kq3-p3', concept: 'we-disaster',
+        prompt: '校庭で遊んでいたら空が急に暗くなり、遠くでゴロゴロという音が聞こえてきた。このときの行動として正しいのはどれ？',
+        options: ['すぐにじょうぶな建物や車の中に入る', '高い木の真下で雨宿りをする', '広いグラウンドの真ん中で待つ'],
+        answer: 'a',
+        explanation: '雷は高い物や開けた場所に立つ人に落ちやすく、木の真下も危険です。雷の音が聞こえたら、すぐにじょうぶな建物や車の中へ避難しましょう。',
+        hint: '雷は、まわりより高い所に落ちやすいよ。',
+      }),
+      fill({
+        id: 'weather-kq3-p4', concept: 'we-japan',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '冬の北西の季節風は、大陸を出たときは乾いているが、[b1]の上をわたるあいだに水蒸気をふくみ、日本海側に雪をもたらす。',
+        blanks: [word('b1', ['日本海', '太平洋', 'オホーツク海'], '日本海')],
+        explanation: 'シベリア気団から出た乾いた冷たい風は、比較的あたたかい**日本海**の上で水蒸気をふくみます。それが山脈にぶつかって雪雲になります。',
+        hint: '大陸と日本のあいだにある海だよ。',
+      }),
+      drag({
+        id: 'weather-kq3-p5', concept: 'we-japan',
+        prompt: '春のある日、日本の西に移動性高気圧があります（図の上が北）。1〜2 日後、この高気圧の中心はどちらにある？ 点線の丸のうち正しいほうへ「高」を動かそう。',
+        figure: scene(movingHighItems()),
+        draggable: { itemId: 'high', axis: 'xy' },
+        target: { x: 285, y: 185 },
+        samples: { correct: { x: 285, y: 185 }, wrong: { x: 40, y: 60 } },
+        explanation: '日本付近の上空には西から東へ偏西風がふいているので、移動性高気圧は西から東へ進みます。1〜2 日後には日本の東の海上へぬけていき、天気は西から変わっていきます。',
+        hint: '日本付近の上空の偏西風は、どちらからどちらへふいているかな。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'weather-kq3-r1', concept: 'we-disaster',
+        prompt: '竜巻が近づいてきました。身を守る行動として正しいものはどれ？',
+        options: ['じょうぶな建物に入り、窓から離れる', '窓を開けて、竜巻のようすを確かめる', '物置やプレハブの小屋に入る'],
+        answer: 'a',
+        explanation: '竜巻は、強い風で物を飛ばし、窓ガラスを割ります。じょうぶな建物の中で、窓から離れた所や地下に身をかくします。簡単な小屋はこわされるおそれがあります。',
+        hint: '飛んでくる物やガラスから身を守るには、どうするとよいかな。',
+      }),
+      fill({
+        id: 'weather-kq3-r2', concept: 'we-disaster',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '地球温暖化が進むと、海水があたためられてふくらんだり、陸の氷がとけて海に流れこんだりして、[b1]が上がると考えられている。',
+        blanks: [word('b1', ['海面', '気圧', '露点'], '海面')],
+        explanation: '温暖化によって**海面**が上がると、海に近い低い土地が水につかるおそれがあります。高潮の被害も大きくなりやすいです。',
+        hint: '海の水の高さのことだよ。',
+      }),
+      fill({
+        id: 'weather-kq3-r3', concept: 'we-japan',
+        prompt: '空らんに入る数を入れよう。',
+        text: '時速 25 km で進む台風の中心が、いま 200 km はなれた所にある。このまま近づくと、およそ[b1]後に近くへやってくる。',
+        blanks: [number('b1', 8, 0, '時間')],
+        explanation: '200 ÷ 25 ＝ 8 時間です。近づくまでの時間が分かれば、避難の準備をいつまでにすればよいか考えられます。',
+        hint: 'きょり÷速さで求めよう。',
+      }),
+      choice({
+        id: 'weather-kq3-r4', concept: 'we-japan',
+        prompt: '秋雨前線が長くとどまり、雨やくもりの日が何日も続きました。この地域で起こりやすいことはどれ？',
+        options: ['日照が足りず、農作物が育ちにくくなる', '空気が乾き、山火事がふえる', '気温が上がり、真夏日が続く'],
+        answer: 'a',
+        explanation: '停滞前線が長くとどまると、雨やくもりが続いて日光が足りなくなります。実りの時期の農作物が育ちにくくなったり、大雨の災害が起こったりします。',
+        hint: '雨やくもりの日が続くと、何が足りなくなるかな。',
+      }),
+      choice({
+        id: 'weather-kq3-r5', concept: 'we-japan', term: true,
+        prompt: '次の説明に合う言葉はどれ？「春や秋に、偏西風に流されて西から東へ進みながら日本付近を通る高気圧」',
+        options: ['移動性高気圧', '太平洋高気圧', 'シベリア高気圧'],
+        answer: 'a',
+        explanation: 'これは**移動性高気圧**です。低気圧と交互に通るので、春や秋は天気が数日ごとに変わります。',
+        hint: '「移動する」高気圧だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（類題の不足を補う確認問題つき）
   // ================================================================
 
@@ -5135,16 +5637,18 @@
     mascot: 'D',   // 担当の先生（もくもく先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      // 2026-11-21: 分野でまとめた。基本 → プリント → ドリル（プリント・ドリルは free のステージ）
+      // 2026-11-21: 分野でまとめた。基本 → プリント → ドリル → クイズ（プリント・ドリル・クイズは free のステージ）
       { id: 'air', title: '大気と水蒸気', order: 1, stages: [
         weather1, weather2,
         weatherMp1, weatherMp2, weatherMp3, weatherMp4, weatherMp5, weatherMp6, weatherMp7,
         weatherDr1, weatherDr2, weatherDr3, weatherDr4,
+        weatherKq1,
       ] },
       { id: 'front', title: '前線と天気の変化', order: 2, stages: [
         weather3, weather4,
         weatherMp8, weatherMp9, weatherMp10, weatherMp11, weatherMp12, weatherMp13, weatherMp14,
         weatherDr5, weatherDr6, weatherDr7,
+        weatherKq2, weatherKq3,
       ] },
     ],
   };

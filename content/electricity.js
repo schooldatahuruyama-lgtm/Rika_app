@@ -4715,6 +4715,514 @@
   };
 
   // ================================================================
+  // クイズ（2026-11-22 追加）: 公開されている先生のクイズの「何を問うか」だけを参考にした自作のステージ electricity-kq1〜kq3
+  // 文・選択肢・図はすべて自作（もとのクイズの文は写していない）。既存の概念だけを使う。
+  // ================================================================
+
+  // ---- クイズ用の図の道具 ----
+
+  // スイッチと豆電球 P・Q の 3 つの回路（ア 直列、イ 並列でスイッチが枝分かれの前、ウ 並列でスイッチが P の枝）
+  function switchCircuitsItems() {
+    const items = [];
+    [55, 160, 265].forEach((cx, i) => {
+      const L = cx - 45, R = cx + 45;
+      items.push(sym('battery', cx, 205), wire([[cx - 20, 205], [L, 205]]), wire([[cx + 20, 205], [R, 205]]));
+      if (i === 0) {
+        items.push(sym('bulb', cx, 50), sym('bulb', R, 120, 90), sym('switch', L, 128, 90),
+          wire([[L, 205], [L, 148]]), wire([[L, 108], [L, 50], [cx - 20, 50]]),
+          wire([[cx + 20, 50], [R, 50], [R, 100]]), wire([[R, 140], [R, 205]]),
+          note(cx, 34, 'P', 14), { type: 'text', x: R - 16, y: 126, text: 'Q', size: 14, anchor: 'end' });
+      } else if (i === 1) {
+        items.push(sym('bulb', cx, 50), sym('bulb', cx, 105), sym('switch', L, 160, 90),
+          wire([[L, 205], [L, 180]]), wire([[L, 140], [L, 50], [cx - 20, 50]]), wire([[L, 105], [cx - 20, 105]]),
+          wire([[cx + 20, 50], [R, 50], [R, 205]]), wire([[cx + 20, 105], [R, 105]]),
+          dot(L, 105), dot(R, 105), note(cx, 34, 'P', 14), note(cx, 136, 'Q', 14));
+      } else {
+        items.push(sym('bulb', cx, 50), sym('bulb', cx, 130), sym('switch', L, 90, 90),
+          wire([[L, 205], [L, 110]]), wire([[L, 70], [L, 50], [cx - 20, 50]]), wire([[L, 130], [cx - 20, 130]]),
+          wire([[cx + 20, 50], [R, 50], [R, 205]]), wire([[cx + 20, 130], [R, 130]]),
+          dot(L, 130), dot(R, 130), note(cx, 34, 'P', 14), note(cx, 112, 'Q', 14));
+      }
+      items.push({ type: 'region', id: 'r' + (i + 1), x: cx, y: 172, r: 22, label: 'アイウ'[i] });
+    });
+    items.push({ type: 'line', points: [[107.5, 20], [107.5, 230]], color: 'gray', width: 1, dashed: true });
+    items.push({ type: 'line', points: [[212.5, 20], [212.5, 230]], color: 'gray', width: 1, dashed: true });
+    return items;
+  }
+
+  // 中の見えない電源と豆電球の回路。電流の向き（だいだいの矢印）と、点線の丸 2 つ（上の端子・下の端子）、動かす「＋」
+  function powerPlusItems() {
+    return [
+      { type: 'rect', x: 30, y: 90, width: 60, height: 60, fill: 'white', stroke: 'ink', label: '電源' },
+      sym('bulb', 280, 120, 90),
+      wire([[60, 90], [60, 50], [280, 50], [280, 100]]),
+      wire([[280, 140], [280, 190], [60, 190], [60, 150]]),
+      { type: 'arrow', x1: 140, y1: 34, x2: 200, y2: 34, color: 'orange' },
+      { type: 'arrow', x1: 200, y1: 206, x2: 140, y2: 206, color: 'orange' },
+      note(170, 228, 'だいだいの矢印は電流の向き', 13),
+      { type: 'circle', x: 115, y: 72, r: 18, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 115, y: 168, r: 18, fill: 'none', stroke: 'gray' },
+      { type: 'circle', id: 'plus', x: 200, y: 120, r: 16, fill: 'white', stroke: 'blue', label: '＋' },
+    ];
+  }
+
+  // 同じ 6 V の電源に、電熱線ア 2 Ω・イ 4 Ω・ウ 8 Ω をそれぞれつないだ回路
+  function heaterTrioItems() {
+    const items = [];
+    [[55, '2 Ω'], [160, '4 Ω'], [265, '8 Ω']].forEach(([cx, r], i) => {
+      items.push(sym('resistor', cx, 50), sym('battery', cx, 140),
+        wire([[cx - 20, 50], [cx - 40, 50], [cx - 40, 140], [cx - 20, 140]]),
+        wire([[cx + 20, 50], [cx + 40, 50], [cx + 40, 140], [cx + 20, 140]]),
+        note(cx, 98, r, 15), note(cx, 172, '電源 6 V', 12),
+        { type: 'region', id: 'r' + (i + 1), x: cx, y: 210, r: 22, label: 'アイウ'[i] });
+    });
+    return items;
+  }
+
+  // 電圧と電流のグラフの軸と、上下にだけ動く点（id 'pt'。4 V の線の上）
+  function viDragItems() {
+    return axes('電圧〔V〕', '電流〔A〕', ['1', '2', '3', '4', '5', '6'], ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6']).concat([
+      { type: 'circle', id: 'pt', x: 210, y: 190, r: 8, fill: 'blue', stroke: 'ink' },
+    ]);
+  }
+
+  // 電磁石の 3 つの条件（ア 100 回・0.5 A・鉄心あり、イ 100 回・1 A・鉄心なし、ウ 200 回・1 A・鉄心あり）
+  function emTrioItems() {
+    const items = [];
+    [['100 回', '0.5 A', true], ['100 回', '1 A', false], ['200 回', '1 A', true]].forEach(([turns, amp, core], i) => {
+      const cx = 60 + 100 * i;
+      items.push(core
+        ? { type: 'rect', x: cx - 38, y: 50, width: 76, height: 22, fill: 'gray', stroke: 'ink' }
+        : { type: 'rect', x: cx - 38, y: 50, width: 76, height: 22, fill: 'none', stroke: 'line' });
+      items.push(
+        { type: 'line', points: [[cx - 30, 44], [cx - 22, 78], [cx - 14, 44], [cx - 6, 78], [cx + 2, 44], [cx + 10, 78], [cx + 18, 44], [cx + 26, 78]], color: 'orange', width: 2 },
+        note(cx, 104, '巻数 ' + turns, 13),
+        note(cx, 124, '電流 ' + amp, 13),
+        note(cx, 144, core ? '鉄心あり' : '鉄心なし', 13),
+        { type: 'region', id: 'r' + (i + 1), x: cx, y: 190, r: 22, label: 'アイウ'[i] });
+    });
+    return items;
+  }
+
+  // 棒磁石（左 N）と、方位磁針を置く点線の丸 3 つ（① 上、② N 極の左、③ S 極の右）、動かす方位磁針（id 'compass'）
+  function compassDragItems() {
+    return barMagnetItems().concat([
+      { type: 'circle', x: 160, y: 60, r: 18, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 56, y: 120, r: 18, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 264, y: 120, r: 18, fill: 'none', stroke: 'gray' },
+      { type: 'circle', id: 'compass', x: 50, y: 205, r: 18, fill: 'white', stroke: 'red', label: 'N→' },
+      note(200, 214, 'N 極が右（→）をさす方位磁針', 12),
+    ]);
+  }
+
+  // ---- ステージ electricity-kq1: 回路と電流の大きさ ----
+  const elecKq1 = {
+    id: 'electricity-kq1', areaId: 'circuit', free: true, title: 'クイズ 1: 回路のつなぎ方と電流', minutes: 6, concepts: ['el-circuit', 'el-rule'],
+    lessons: [
+      {
+        id: 'electricity-kq1-c1',
+        text: '電流が流れる道すじを**回路**といいます。電流は電源の＋極から出て−極へもどります。道すじが 1 本道の回路を**直列回路**、途中で枝分かれする回路を**並列回路**といいます。',
+        figure: scene(twoCircuitsItems(false).concat([note(80, 230, '直列回路', 13), note(240, 230, '並列回路', 13)])),
+      },
+      {
+        id: 'electricity-kq1-c2',
+        text: '電流の大きさの単位はアンペア（A）で、1 A ＝ 1000 mA です。電流計は、はかる部分に直列につなぎます。電流計は電流を通しやすいので、並列につなぐと大きな電流が流れてこわれることがあります。',
+        figure: scene(meterFace(5, 50, ['0', '1', '2', '3', '4', '5'], 2.5, 'A').concat([
+          note(160, 26, '−端子 5 A のとき 2.5 A ＝ 2500 mA', 13),
+        ])),
+      },
+      {
+        id: 'electricity-kq1-c3',
+        text: '直列回路を流れる電流は、どの点ではかっても同じ大きさです。並列回路では、枝分かれする前の電流が、分かれた後の電流の和になります。並列につないだ部分には、どれも電源と同じ電圧が加わります。',
+        figure: scene(parallelABCDItems({ A: '0.5 A', B: '0.2 A', C: '0.3 A', D: '0.5 A' })),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-kq1-w1', concept: 'el-rule',
+      prompt: '予想しよう。家の部屋の照明を消しても、冷蔵庫やテレビは動いたままです。家の中の電気器具は、どんなつなぎ方だと思う？',
+      options: ['並列につながっている', '直列につながっている', '1 つずつ別の発電所につながっている'],
+      answer: 'a',
+      explanation: '家庭の電気器具は並列につながっています。並列なら、1 つのスイッチを切っても、ほかの器具には電流が流れ続け、どの器具にも同じ 100 V が加わります。',
+      hint: '直列だと、1 か所切れると全部が止まってしまうね。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-kq1-t1', concept: 'el-rule', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '電流の道すじが途中で枝分かれしている回路を[b1]回路という。',
+        blanks: [word('b1', ['並列', '直列', '交流'], '並列')],
+        explanation: '道すじが枝分かれしている回路を**並列**回路、1 本道の回路を直列回路といいます。',
+        hint: '道が横に「並ぶ」ように分かれているよ。',
+      }),
+      fill({
+        id: 'electricity-kq1-p1', concept: 'el-circuit',
+        prompt: '電流計の針が図の位置をさしています（−端子は 5 A）。この電流を mA の単位で表そう。',
+        figure: scene(meterFace(5, 50, ['0', '1', '2', '3', '4', '5'], 1.9, '').concat([note(160, 26, '−端子は 5 A', 13)])),
+        text: 'この電流は[b1]である。',
+        blanks: [number('b1', 1900, 0, 'mA')],
+        explanation: '5 A の端子なので、目盛りをそのまま読んで 1.9 A です。1 A ＝ 1000 mA なので、1.9 × 1000 ＝ 1900 mA です。',
+        hint: 'まず A で読んでから、1000 倍しよう。',
+      }),
+      figureChoice({
+        id: 'electricity-kq1-p2', concept: 'el-rule',
+        prompt: '豆電球 P・Q とスイッチをつないだ回路ア〜ウです。スイッチを切ると P だけが消え、Q はついたままになるのはどれ？',
+        figure: scene(switchCircuitsItems()),
+        answer: 'r3',
+        explanation: 'ウは並列回路で、スイッチが P の枝にだけあります。スイッチを切っても、Q の枝には電流が流れ続けます。アは直列なので両方消え、イはスイッチが枝分かれの前にあるので両方消えます。',
+        hint: 'スイッチを切ったとき、Q を通る道が残っているのはどれかな。',
+      }),
+      fill({
+        id: 'electricity-kq1-p3', concept: 'el-rule',
+        prompt: '空らんに入る数を入れよう。',
+        text: '3 個の豆電球を並列につなぐと、それぞれに 0.2 A、0.3 A、0.25 A が流れた。電源から流れ出る電流は[b1]である。',
+        blanks: [number('b1', 0.75, 0, 'A')],
+        explanation: '並列回路では、分かれた後の電流の和が、分かれる前の電流になります。0.2 ＋ 0.3 ＋ 0.25 ＝ 0.75 A です。',
+        hint: '枝の電流をすべてたそう。',
+      }),
+      choice({
+        id: 'electricity-kq1-p4', concept: 'el-circuit',
+        prompt: '電流計を豆電球と並列につないではいけないのはなぜ？',
+        options: ['電流計に大きな電流が流れ、こわれるおそれがあるから', '針が反対向きにふれるから', '豆電球に電圧が加わらなくなるから'],
+        answer: 'a',
+        explanation: '電流計は電流をとても通しやすい（抵抗が小さい）ので、並列につなぐと電流計に大きな電流が流れこみ、こわれるおそれがあります。だから、はかる部分に直列につなぎます。',
+        hint: '電流計は、電流を通しやすいかな、通しにくいかな。',
+      }),
+      drag({
+        id: 'electricity-kq1-p5', concept: 'el-circuit',
+        prompt: '中が見えない電源に豆電球をつなぎました。だいだいの矢印が電流の向きです。電源の＋極はどちらの端子？ 点線の丸のうち正しいほうへ「＋」を動かそう。',
+        figure: scene(powerPlusItems()),
+        draggable: { itemId: 'plus', axis: 'xy' },
+        target: { x: 115, y: 72 },
+        samples: { correct: { x: 115, y: 72 }, wrong: { x: 115, y: 168 } },
+        explanation: '電流は＋極から出て、回路を通って−極へもどります。上の導線では電流が電源から出ていく向きに流れているので、上の端子が＋極です。',
+        hint: '電流が電源から「出ていく」のは、どちらの端子かな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'electricity-kq1-r1', concept: 'el-circuit',
+        prompt: '空らんに入る数を入れよう。',
+        text: '豆電球に 0.35 A の電流が流れている。これは[b1]である。',
+        blanks: [number('b1', 350, 0, 'mA')],
+        explanation: '1 A ＝ 1000 mA なので、0.35 × 1000 ＝ 350 mA です。',
+        hint: 'A を mA にするときは 1000 倍だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-kq1-r2', concept: 'el-rule',
+        prompt: '豆電球 P・Q とスイッチをつないだ回路ア〜ウです。P と Q が並列につながっていて、スイッチを切ると両方とも消えるのはどれ？',
+        figure: scene(switchCircuitsItems()),
+        answer: 'r2',
+        explanation: 'イは並列回路で、スイッチが枝分かれする前の道にあります。ここを切ると、どちらの枝にも電流が流れなくなり、両方とも消えます。アは直列回路です。',
+        hint: 'スイッチが、P と Q の両方に通じる道にあるのはどれかな。',
+      }),
+      fill({
+        id: 'electricity-kq1-r3', concept: 'el-rule',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '豆電球 2 個の直列回路で電流をはかると、電池の近く・豆電球のあいだ・反対側のどの点でも、電流の大きさは[b1]。',
+        blanks: [word('b1', ['等しい', '少しずつ小さくなる', '少しずつ大きくなる'], '等しい')],
+        explanation: '直列回路は 1 本道なので、電流は途中でへったりふえたりしません。どの点でも電流の大きさは**等しい**です。',
+        hint: '1 本道を流れる電流は、どこかで消えるかな。',
+      }),
+      choice({
+        id: 'electricity-kq1-r4', concept: 'el-circuit',
+        prompt: '流れる電流の大きさが分からないとき、電流計の−端子をはじめに 5 A にするのはなぜ？',
+        options: ['針がふり切れて電流計がこわれるのを防ぐため', '小さな電流を細かく読むため', '電流の向きを逆にするため'],
+        answer: 'a',
+        explanation: 'いちばん大きな電流まではかれる 5 A の端子なら、針がふり切れにくく安全です。ふれが小さいときは、500 mA、50 mA の順につなぎかえます。',
+        hint: '思ったより大きな電流が流れたら、どうなるかな。',
+      }),
+      choice({
+        id: 'electricity-kq1-r5', concept: 'el-circuit', term: true,
+        prompt: '次の説明に合う言葉はどれ？「電源から出て、また電源にもどってくる、電流の流れる道すじ」',
+        options: ['回路', '導線', '電圧'],
+        answer: 'a',
+        explanation: 'これは**回路**です。道すじがどこかで切れていると、電流は流れません。',
+        hint: '「回る」「路（みち）」と書くよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-kq2: 電気抵抗と電力・電力量 ----
+  const elecKq2 = {
+    id: 'electricity-kq2', areaId: 'el-energy', free: true, title: 'クイズ 2: 抵抗と電力・電力量', minutes: 7, concepts: ['el-ohm', 'el-power'],
+    lessons: [
+      {
+        id: 'electricity-kq2-c1',
+        text: '**電圧**は電流を流そうとするはたらき、**電気抵抗**（抵抗）は電流の流れにくさで、単位はオーム（Ω）です。電流は電圧に比例し（オームの法則）、電圧〔V〕＝抵抗〔Ω〕×電流〔A〕の関係があります。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 30, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          note(160, 61, '電圧 V ＝ 抵抗 R × 電流 I', 16),
+          { type: 'rect', x: 20, y: 100, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          note(160, 131, '電流 I ＝ 電圧 V ÷ 抵抗 R', 16),
+          { type: 'rect', x: 20, y: 170, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          note(160, 201, '抵抗 R ＝ 電圧 V ÷ 電流 I', 16),
+        ]),
+      },
+      {
+        id: 'electricity-kq2-c2',
+        text: '金属のように抵抗が小さく、電流を通しやすい物質を**導体**といいます。ゴム・ガラス・プラスチックのように、電流をほとんど通さない物質を**絶縁体**（不導体）といい、導線のおおいなどに使われます。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 40, width: 135, height: 160, fill: 'white', stroke: 'line', rx: 6 },
+          { type: 'rect', x: 165, y: 40, width: 135, height: 160, fill: 'white', stroke: 'line', rx: 6 },
+          note(87, 70, '導体', 15), note(232, 70, '絶縁体', 15),
+          note(87, 110, '銅・アルミニウム', 13), note(87, 140, '鉄', 13),
+          note(232, 110, 'ゴム・ガラス', 13), note(232, 140, 'プラスチック', 13),
+          note(87, 180, '電流を通しやすい', 12), note(232, 180, 'ほとんど通さない', 12),
+        ]),
+      },
+      {
+        id: 'electricity-kq2-c3',
+        text: '1 秒あたりに使う電気エネルギーの量が**電力**〔W〕で、電圧〔V〕×電流〔A〕で求めます。使った電気エネルギーの量が**電力量**で、電力〔W〕×時間〔s〕で求め、単位はジュール（J）です。1 Wh は 3600 J です。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 30, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          note(160, 61, '電力〔W〕＝ 電圧〔V〕× 電流〔A〕', 15),
+          { type: 'rect', x: 20, y: 100, width: 280, height: 50, fill: 'white', stroke: 'line', rx: 6 },
+          note(160, 131, '電力量〔J〕＝ 電力〔W〕× 時間〔s〕', 15),
+          { type: 'rect', x: 20, y: 170, width: 280, height: 50, fill: 'sky', stroke: 'line', rx: 6 },
+          note(160, 201, '1 kW ＝ 1000 W、1 Wh ＝ 3600 J', 15),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-kq2-w1', concept: 'el-ohm',
+      prompt: '予想しよう。電気コードの中の銅線は、ビニルやゴムでおおわれています。おおっているいちばんの理由は何だと思う？',
+      options: ['電流がほかの物や人に流れないようにするため', '電流を速く流すため', '銅線を重くするため'],
+      answer: 'a',
+      explanation: 'ビニルやゴムは電流をほとんど通さない絶縁体です。銅線をおおうことで、さわった人や近くの物に電流が流れるのを防いでいます。',
+      hint: 'ビニルやゴムは、電流を通しやすいかな、通しにくいかな。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-kq2-t1', concept: 'el-ohm', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ゴムやガラスのように、電流をほとんど通さない物質を[b1]（不導体）という。',
+        blanks: [word('b1', ['絶縁体', '導体', '電解質'], '絶縁体')],
+        explanation: '電流をほとんど通さない物質を**絶縁体**（不導体）といいます。電気を「絶つ」ので、導線のおおいやコンセントの外がわに使われます。',
+        hint: '電気の流れを「絶つ」物質だよ。',
+      }),
+      fill({
+        id: 'electricity-kq2-p1', concept: 'el-ohm',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'ある電熱線に 12 V の電圧を加えると、0.4 A の電流が流れた。この電熱線の抵抗は[b1]である。',
+        blanks: [number('b1', 30, 0, 'Ω')],
+        explanation: '抵抗＝電圧÷電流です。12 ÷ 0.4 ＝ 30 Ω です。',
+        hint: '抵抗 R ＝ 電圧 V ÷ 電流 I だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-kq2-p2', concept: 'el-power',
+        prompt: '同じ 6 V の電源に、電熱線ア（2 Ω）・イ（4 Ω）・ウ（8 Ω）をそれぞれつなぎます。1 秒あたりに出す熱がいちばん多いのはどれ？',
+        figure: scene(heaterTrioItems()),
+        answer: 'r1',
+        explanation: '電圧が同じなら、抵抗が小さいほど大きな電流が流れます。アは 3 A で 18 W、イは 1.5 A で 9 W、ウは 0.75 A で 4.5 W なので、電力が最も大きいアがいちばん多く熱を出します。',
+        hint: 'それぞれの電流を求めてから、電力＝電圧×電流をくらべよう。',
+      }),
+      fill({
+        id: 'electricity-kq2-p3', concept: 'el-power',
+        prompt: '空らんに入る数を入れよう。',
+        text: '6 V の電圧を加えると 0.5 A の電流が流れる豆電球の電力は[b1]である。',
+        blanks: [number('b1', 3, 0, 'W')],
+        explanation: '電力＝電圧×電流です。6 × 0.5 ＝ 3 W です。',
+        hint: '電力〔W〕＝ 電圧〔V〕× 電流〔A〕だよ。',
+      }),
+      choice({
+        id: 'electricity-kq2-p4', concept: 'el-ohm',
+        prompt: '「電圧」の説明として正しいものはどれ？',
+        options: ['回路に電流を流そうとするはたらきの大きさ', '回路での電流の流れにくさ', '1 秒あたりに使う電気エネルギーの量'],
+        answer: 'a',
+        explanation: '電圧は、電流を流そうとするはたらきの大きさです。電流の流れにくさは抵抗、1 秒あたりの電気エネルギーは電力です。',
+        hint: '単位 V（ボルト）で表す量だよ。',
+      }),
+      drag({
+        id: 'electricity-kq2-p5', concept: 'el-ohm',
+        prompt: '8 Ω の電熱線に 4 V の電圧を加えます。このときの電流を表す点まで、●を上下に動かそう。',
+        figure: scene(viDragItems()),
+        draggable: { itemId: 'pt', axis: 'y' },
+        target: { x: 210, y: 75 },
+        samples: { correct: { x: 210, y: 75 }, wrong: { x: 210, y: 150 } },
+        explanation: '電流＝電圧÷抵抗なので、4 ÷ 8 ＝ 0.5 A です。4 V の線の上で、0.5 A の高さに点を置きます。',
+        hint: 'まず電流を計算してから、たての目盛りで探そう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'electricity-kq2-r1', concept: 'el-power',
+        prompt: '空らんに入る数を入れよう。',
+        text: '1200 W のドライヤーを 5 分間使ったときの電力量は[b1]である。',
+        blanks: [number('b1', 360000, 0, 'J')],
+        explanation: '5 分＝300 秒です。電力量＝電力×時間なので、1200 × 300 ＝ 360000 J です。',
+        hint: '時間は秒になおしてから計算しよう。',
+      }),
+      fill({
+        id: 'electricity-kq2-r2', concept: 'el-power',
+        prompt: '空らんに入る数を入れよう。',
+        text: '40 W の照明を 1 日 5 時間、30 日間使った。使った電力量は[b1]である。',
+        blanks: [number('b1', 6, 0, 'kWh')],
+        explanation: '使った時間は 5 × 30 ＝ 150 時間です。40 × 150 ＝ 6000 Wh で、1 kWh ＝ 1000 Wh なので 6 kWh です。',
+        hint: 'まず Wh で求めて、1000 でわろう。',
+      }),
+      choice({
+        id: 'electricity-kq2-r3', concept: 'el-ohm',
+        prompt: '同じ電圧の電源に、5 Ω と 10 Ω の電熱線を別々につなぎました。流れる電流について正しいものはどれ？',
+        options: ['5 Ω のほうが 2 倍大きい', '10 Ω のほうが 2 倍大きい', 'どちらも同じ'],
+        answer: 'a',
+        explanation: '電流＝電圧÷抵抗なので、電圧が同じなら、抵抗が半分の 5 Ω のほうに 2 倍の電流が流れます。',
+        hint: '抵抗は電流の流れにくさだったね。',
+      }),
+      fill({
+        id: 'electricity-kq2-r4', concept: 'el-ohm',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '銅やアルミニウムなどの金属のように、抵抗が小さく電流を通しやすい物質を[b1]という。',
+        blanks: [word('b1', ['導体', '絶縁体', '磁石'], '導体')],
+        explanation: '電流を通しやすい物質を**導体**といいます。導線には、とくに抵抗の小さい銅がよく使われます。',
+        hint: '電流を「導く」物質だよ。',
+      }),
+      choice({
+        id: 'electricity-kq2-r5', concept: 'el-power', term: true,
+        prompt: '次の説明に合う言葉はどれ？「電気器具が 1 秒あたりに使う電気エネルギーの量。単位は W」',
+        options: ['電力', '電力量', '電圧'],
+        answer: 'a',
+        explanation: 'これは**電力**です。電力に使った時間をかけると、電力量になります。',
+        hint: 'ワット（W）で表す量だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ electricity-kq3: 磁界・モーター・電磁誘導 ----
+  const elecKq3 = {
+    id: 'electricity-kq3', areaId: 'el-energy', free: true, title: 'クイズ 3: 磁界・モーター・発電', minutes: 7, concepts: ['el-magnet', 'el-motor', 'el-induction'],
+    lessons: [
+      {
+        id: 'electricity-kq3-c1',
+        text: '磁力がはたらく空間を**磁界**といいます。磁界の向きは、そこに置いた方位磁針の N 極がさす向きです。磁界のようすを表す線が**磁力線**で、N 極から出て S 極に入る向きにかき、間かくがせまい所ほど磁界が強いです。',
+        figure: scene(fieldLineItems().concat(barMagnetItems())),
+      },
+      {
+        id: 'electricity-kq3-c2',
+        text: '磁界の中の導線に電流を流すと、導線は電流の向きと磁界の向きの両方に垂直な向きに力を受けます。**モーター**はこの力でコイルを回し、**整流子**とブラシで半回転ごとに電流の向きを切りかえて、同じ向きに回り続けます。',
+        figure: scene(motorItems(false).concat([note(160, 216, 'コイルは磁界から力を受けて回る', 12)])),
+      },
+      {
+        id: 'electricity-kq3-c3',
+        text: 'コイルの中の磁界を変化させると電流が流れます。この現象が**電磁誘導**です。向きが変わらない電流を直流、向きが周期的に変わる電流を**交流**といい、1 秒間にくり返す変化の回数を周波数（Hz）といいます。',
+        figure: scene(wavesItems(false).concat([
+          { type: 'text', x: 66, y: 32, text: '直流: 向きが一定', size: 12 },
+          { type: 'text', x: 66, y: 140, text: '交流: 向きが周期的に変わる', size: 12, bg: true },
+        ])),
+      },
+    ],
+    warmup: choice({
+      id: 'electricity-kq3-w1', concept: 'el-induction',
+      prompt: '予想しよう。家のコンセントに来ている電流は、乾電池の電流と同じ「向きが変わらない電流」だと思う？',
+      options: ['ちがう。向きがくり返し入れかわる', '同じ。向きは変わらない', 'コンセントには電流は来ていない'],
+      answer: 'a',
+      explanation: 'コンセントの電流は、向きが周期的に入れかわる交流です。発電所の発電機で、電磁誘導によってつくられています。',
+      hint: '発電機は、コイルの中で磁石を回してつくる電流だよ。',
+    }),
+    problems: [
+      fill({
+        id: 'electricity-kq3-t1', concept: 'el-induction', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '交流で、電流の向きの変化が 1 秒間にくり返される回数を[b1]といい、単位はヘルツ（Hz）である。',
+        blanks: [word('b1', ['周波数', '電力量', '抵抗'], '周波数')],
+        explanation: '1 秒間にくり返す変化の回数を**周波数**といいます。日本では、東日本は 50 Hz、西日本は 60 Hz の交流が使われています。',
+        hint: '「周（くり返し）」の「波」の「数」だよ。',
+      }),
+      figureChoice({
+        id: 'electricity-kq3-p1', concept: 'el-magnet',
+        prompt: '電磁石ア〜ウの、コイルの巻数・電流・鉄心の有無です。磁力がいちばん強いのはどれ？',
+        figure: scene(emTrioItems()),
+        answer: 'r3',
+        explanation: '電磁石は、巻数が多いほど、電流が大きいほど強くなり、鉄心を入れるとさらに強くなります。ウは巻数がいちばん多く、電流も大きく、鉄心もあるので、いちばん強いです。',
+        hint: '巻数・電流・鉄心のどれもがそろっているのはどれかな。',
+      }),
+      fill({
+        id: 'electricity-kq3-p2', concept: 'el-motor',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: 'モーターが同じ向きに回り続けるのは、[b1]とブラシが、コイルが半回転するごとに電流の向きを切りかえるからである。',
+        blanks: [word('b1', ['整流子', '電磁石', '検流計'], '整流子')],
+        explanation: '**整流子**とブラシがないと、コイルは半回転ごとに逆向きの力を受けて止まってしまいます。電流の向きを切りかえることで、同じ向きの回転が続きます。',
+        hint: '電流の流れ（流）を整える部品だよ。',
+      }),
+      drag({
+        id: 'electricity-kq3-p3', concept: 'el-magnet',
+        prompt: '棒磁石のまわりの①〜③のうち、方位磁針の N 極が右（→）をさすのはどこ？ 正しい点線の丸へ、方位磁針を動かそう。',
+        figure: scene(compassDragItems()),
+        draggable: { itemId: 'compass', axis: 'xy' },
+        target: { x: 160, y: 60 },
+        samples: { correct: { x: 160, y: 60 }, wrong: { x: 264, y: 120 } },
+        explanation: '磁界は N 極から出て S 極に入る向きです。磁石の上（①）では、左の N 極から右の S 極へ向かうので、N 極は右をさします。②と③では、N 極は左をさします。',
+        hint: '磁力線は N 極から出て、まわりこんで S 極に入るよ。',
+      }),
+      fill({
+        id: 'electricity-kq3-p4', concept: 'el-induction',
+        prompt: '空らんに入る数を入れよう。',
+        text: '60 Hz の交流は、1 秒間に 60 回の変化をくり返す。2 秒間では[b1]くり返す。',
+        blanks: [number('b1', 120, 0, '回')],
+        explanation: '1 秒間に 60 回なので、2 秒間では 60 × 2 ＝ 120 回です。',
+        hint: '1 秒あたりの回数に、秒数をかけよう。',
+      }),
+      choice({
+        id: 'electricity-kq3-p5', concept: 'el-induction',
+        prompt: '自転車のライト用の発電機は、ペダルを速くこぐほどライトが明るくなります。その理由として正しいものはどれ？',
+        options: ['磁石が速く回り、コイルの中の磁界が速く変化するから', '中の電池の電圧が上がるから', 'タイヤとの摩擦で熱が出るから'],
+        answer: 'a',
+        explanation: '発電機の中では、タイヤといっしょに磁石が回り、コイルの中の磁界が変化して誘導電流が流れます。速く回すほど磁界の変化が速くなり、大きな電流が流れます。',
+        hint: '誘導電流は、磁界の変化が速いほど大きくなるよ。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'electricity-kq3-r1', concept: 'el-magnet',
+        prompt: '空らんに入る文字を入れよう。',
+        text: 'ある点の磁界の向きは、そこに置いた方位磁針の[b1]極がさす向きである。',
+        blanks: [word('b1', ['N', 'S', '＋'], 'N')],
+        explanation: '磁界の向きは、方位磁針の **N** 極がさす向きと決められています。',
+        hint: '地球の北をさすほうの極だよ。',
+      }),
+      choice({
+        id: 'electricity-kq3-r2', concept: 'el-magnet',
+        prompt: '磁力線の説明として正しいものはどれ？',
+        options: ['N 極から出て S 極に入る向きにかく', 'S 極から出て N 極に入る向きにかく', '2 本の磁力線が交わることがある'],
+        answer: 'a',
+        explanation: '磁力線は N 極から出て S 極に入る向きにかきます。磁力線どうしは交わったり枝分かれしたりしません。',
+        hint: '方位磁針の N 極がさす向きにそってかくよ。',
+      }),
+      choice({
+        id: 'electricity-kq3-r3', concept: 'el-motor',
+        prompt: '磁界の中の導線が電流を流したときに受ける力の向きは、何によって決まる？',
+        options: ['電流の向きと磁界の向き', '電圧の大きさと抵抗の大きさ', '導線の長さと太さ'],
+        answer: 'a',
+        explanation: '力の向きは、電流の向きと磁界の向きで決まり、その両方に垂直な向きになります。どちらか一方を逆にすると、力の向きも逆になります。',
+        hint: 'フレミングの左手の法則で、指に当てはめる向きを思い出そう。',
+      }),
+      fill({
+        id: 'electricity-kq3-r4', concept: 'el-motor',
+        prompt: '空らんに入る言葉を入れよう。',
+        text: '磁界の中のコイルに電流を流したときにはたらく力で、コイルを連続して回転させる装置を[b1]という。',
+        blanks: [word('b1', ['モーター', '発電機', '電磁石'], 'モーター')],
+        explanation: '電流が磁界から受ける力で回るのが**モーター**です。反対に、回転させて電流をとり出すのが発電機です。',
+        hint: '扇風機や洗濯機の中で、羽や水そうを回す部品だよ。',
+      }),
+      fill({
+        id: 'electricity-kq3-r5', concept: 'el-induction',
+        prompt: '空らんに入る数を入れよう。',
+        text: '50 Hz の交流は、3 秒間に[b1]変化をくり返す。',
+        blanks: [number('b1', 150, 0, '回')],
+        explanation: '50 Hz は 1 秒間に 50 回くり返すことを表します。3 秒間では 50 × 3 ＝ 150 回です。',
+        hint: 'Hz は 1 秒間にくり返す回数だよ。',
+      }),
+      choice({
+        id: 'electricity-kq3-r6', concept: 'el-induction', term: true,
+        prompt: '次の説明に合う言葉はどれ？「コイルの中の磁界が変化すると、コイルに電圧が生じて電流が流れる現象」',
+        options: ['電磁誘導', '放電', '帯電'],
+        answer: 'a',
+        explanation: 'これは**電磁誘導**です。このとき流れる電流を誘導電流といい、発電機に利用されています。',
+        hint: '「電」気と「磁」石で電流を「誘い導く」現象だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 概念（確認問題 checkPool つき）
   // ================================================================
 
@@ -5134,10 +5642,12 @@
       { id: 'circuit', title: '回路と電流・電圧', order: 1, stages: [
         elec1, elec2, elecMp1, elecMp2, elecMp3, elecMp4, elecMp5, elecMp6, elecMp7, elecMp8,
         elecDr1, elecDr2, elecDr3,
+        elecKq1,
       ] },
       { id: 'el-energy', title: '電気のはたらき', order: 2, stages: [
         elec3, elec4, elecMp9, elecMp10, elecMp11, elecMp12, elecMp13, elecMp14, elecMp15, elecMp16,
         elecDr4, elecDr5, elecDr6,
+        elecKq2, elecKq3,
       ] },
     ],
   };

@@ -1798,6 +1798,173 @@
   };
 
   // ================================================================
+  // クイズ（公開クイズの出題のねらいを参考に、2026-11-22 追加。文・図・数値の組み合わせは自作）
+  // ================================================================
+
+  // 液体のろうを入れたビーカー 3 つと、固体のろうのかけらの位置（左から 浮く・中ほど・沈む）。下にア〜ウ
+  const KQ_WAX_SINK = scene([
+    { type: 'text', x: 160, y: 28, text: '液体のろうに、固体のろうを入れる', size: 14, anchor: 'middle' },
+    { type: 'beaker', x: 60, y: 180, width: 76, height: 100, level: 0.7, liquid: 'water' },
+    { type: 'rect', x: 50, y: 106, width: 20, height: 14, fill: 'white' },
+    { type: 'beaker', x: 160, y: 180, width: 76, height: 100, level: 0.7, liquid: 'water' },
+    { type: 'rect', x: 150, y: 132, width: 20, height: 14, fill: 'white' },
+    { type: 'beaker', x: 260, y: 180, width: 76, height: 100, level: 0.7, liquid: 'water' },
+    { type: 'rect', x: 250, y: 160, width: 20, height: 14, fill: 'white' },
+    { type: 'region', id: 'r1', x: 60, y: 212, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 160, y: 212, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 260, y: 212, r: 22, label: 'ウ' },
+  ]);
+
+  // 固体・液体・気体と、3 本の矢印（固体→液体、液体→気体、気体→固体）。矢印の横にア〜ウ
+  const KQ_STATE_ARROWS = scene([
+    { type: 'rect', x: 120, y: 26, width: 80, height: 36, fill: 'white', rx: 8, label: '気体' },
+    { type: 'rect', x: 20, y: 172, width: 80, height: 36, fill: 'white', rx: 8, label: '固体' },
+    { type: 'rect', x: 220, y: 172, width: 80, height: 36, fill: 'white', rx: 8, label: '液体' },
+    { type: 'line', points: [[106, 190], [214, 190]], width: 3, arrow: true },
+    { type: 'line', points: [[250, 166], [186, 68]], width: 3, arrow: true },
+    { type: 'line', points: [[134, 68], [70, 166]], width: 3, arrow: true },
+    { type: 'region', id: 'r1', x: 160, y: 156, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 248, y: 108, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 72, y: 108, r: 22, label: 'ウ' },
+  ]);
+
+  // ---- ステージ state-change-kq1: クイズ 1（状態変化と密度） ----
+  const scKq1 = {
+    id: 'state-change-kq1', areaId: 'state', free: true, title: 'クイズ 1: 状態変化と密度', minutes: 6,
+    concepts: ['sc-change', 'sc-model'],
+    lessons: [
+      {
+        id: 'state-change-kq1-c1',
+        text: '状態変化で質量は変わらないので、体積が小さくなると**密度**は大きくなります。多くの物質は固体のほうが液体より密度が大きく、液体の中に固体を入れると沈みます。水は例外で、氷は水に浮きます。',
+        figure: scene([
+          { type: 'beaker', x: 80, y: 190, width: 90, height: 110, level: 0.7, liquid: 'water' },
+          { type: 'rect', x: 68, y: 168, width: 24, height: 16, fill: 'white' },
+          { type: 'beaker', x: 240, y: 190, width: 90, height: 110, level: 0.7, liquid: 'water' },
+          { type: 'rect', x: 226, y: 104, width: 28, height: 20, fill: 'sky' },
+          { type: 'text', x: 80, y: 42, text: '液体のろう＋固体', size: 13, anchor: 'middle' },
+          { type: 'text', x: 80, y: 220, text: '固体は沈む', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 42, text: '水＋氷', size: 13, anchor: 'middle' },
+          { type: 'text', x: 240, y: 220, text: '氷は浮く', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'state-change-kq1-c2',
+        text: '加熱すると粒子の運動が激しくなり、粒子どうしの**間隔**が広がります。粒子の数は変わりません。固体→液体→気体の向きの変化は加熱で、その逆向きの変化は冷却で起こります。',
+        figure: scene([
+          ...particleBox(20, 60, 'solid'),
+          ...particleBox(120, 60, 'liquid'),
+          ...particleBox(220, 60, 'gas'),
+          { type: 'text', x: 60, y: 166, text: '固体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 160, y: 166, text: '液体', size: 14, anchor: 'middle' },
+          { type: 'text', x: 260, y: 166, text: '気体', size: 14, anchor: 'middle' },
+          { type: 'line', points: [[40, 196], [280, 196]], color: 'orange', width: 3, arrow: true },
+          { type: 'text', x: 160, y: 226, text: '加熱 → 間隔が広がる', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'state-change-kq1-w1', concept: 'sc-change',
+      prompt: '予想しよう。水を満たしてふたをしたペットボトルを冷凍庫でこおらせると、ボトルはどうなると思う？',
+      options: ['ふくらむ', 'へこむ', '変わらない'],
+      answer: 'a',
+      explanation: '水は氷になると体積が大きくなるので、ボトルはふくらみます。こおらせるときは、水を少し減らしておくと安全です。',
+      hint: '水が氷になるとき、体積はどうなるかな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'state-change-kq1-p1', concept: 'sc-change',
+        prompt: '液体のろうに、固体のろうのかけらを入れた。かけらのようすは、ア 浮く、イ 中ほどで止まる、ウ 底に沈む のどれ？',
+        figure: KQ_WAX_SINK,
+        answer: 'r3',
+        explanation: 'ろうは液体から固体になると体積が小さくなり、密度が大きくなります。固体のろうは液体のろうより密度が大きいので、底に沈みます。',
+        hint: '固体のろうと液体のろうでは、どちらの密度が大きいかな。',
+      }),
+      fill({
+        id: 'state-change-kq1-t1', concept: 'sc-change', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'バターがとけるように、物質の種類は変わらず、すがただけが変わる変化を[b1]という。',
+        blanks: [word('b1', ['状態変化', '化学変化', '燃焼'], '状態変化')],
+        explanation: '物質の種類が変わらず、固体・液体・気体とすがたが変わる変化を**状態変化**といいます。燃えるときのように、別の物質ができる変化は化学変化です。',
+        hint: 'とけたバターを冷やすと、また固体のバターにもどるね。',
+      }),
+      choice({
+        id: 'state-change-kq1-p2', concept: 'sc-change',
+        prompt: '次のうち、状態変化ではないものはどれ？',
+        options: ['氷がとけて水になる', '鉄くぎがさびる', '水たまりがかわく', 'チョコレートがとける'],
+        answer: 'b',
+        explanation: '鉄がさびると、鉄とはちがう物質（さび）ができます。これは化学変化です。ほかの 3 つは、物質の種類はそのままで、すがたが変わる状態変化です。',
+        hint: '別の物質ができてしまう変化はどれかな。',
+      }),
+      fill({
+        id: 'state-change-kq1-p3', concept: 'sc-change',
+        prompt: '空らんに入る数を、小数第 1 位まで入れよう。',
+        text: '水 90 g をこおらせると、氷の体積は 98 cm³ になった。この氷の密度は約[b1]である。',
+        blanks: [number('b1', 0.9, 0, 'g/cm³')],
+        explanation: 'こおらせても質量は 90 g のままです。密度＝質量÷体積なので、90 ÷ 98 ＝ 0.91… で、約 0.9 g/cm³ です。水（1.0 g/cm³）より小さいので、氷は水に浮きます。',
+        hint: '質量は変わらないよ。90 を 98 でわろう。',
+      }),
+      fill({
+        id: 'state-change-kq1-p4', concept: 'sc-model',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '液体が気体になると体積がとても大きくなるのは、粒子どうしの[b1]がとても大きくなるからである。',
+        blanks: [word('b1', ['間隔', '数', '大きさ'], '間隔')],
+        explanation: '気体では粒子が飛び回り、粒子どうしの間隔がとても広くなります。粒子の数や、粒子 1 つの大きさは変わりません。',
+        hint: '粒子の数も大きさも変わらないよ。',
+      }),
+      choice({
+        id: 'state-change-kq1-p5', concept: 'sc-change',
+        prompt: '氷が水に浮く理由として正しいものはどれ？',
+        options: ['氷は水より密度が小さいから', '氷は水より質量が大きいから', '氷の中に空気がたくさん入っているから'],
+        answer: 'a',
+        explanation: '水が氷になっても質量は変わりませんが、体積が大きくなります。そのため密度が水より小さくなり、氷は水に浮きます。',
+        hint: '浮くか沈むかは、何をくらべて決まったかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'state-change-kq1-r1', concept: 'sc-change',
+        prompt: '図の矢印は、物質のすがたの変わり方を表している。ア〜ウのうち、冷やしたときに起こる変化を表す矢印はどれ？',
+        figure: KQ_STATE_ARROWS,
+        answer: 'r3',
+        explanation: 'アの固体→液体、イの液体→気体は、加熱したときの変化です。ウの気体→固体は、冷やしたときの変化です。粒子の間隔がせまくなる向きが冷却です。',
+        hint: '気体から固体へは、粒子の間隔が広がる？ せまくなる？',
+      }),
+      fill({
+        id: 'state-change-kq1-r2', concept: 'sc-model',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '物質が状態変化しても、物質をつくる粒子の[b1]は変わらない。だから質量も変わらない。',
+        blanks: [word('b1', ['数', '間隔', '動き方'], '数')],
+        explanation: '状態変化では、粒子の間隔や動き方は変わりますが、粒子の数は変わりません。粒子の数が同じなので、質量も同じです。',
+        hint: '質量が変わらないことと結びつくのはどれかな。',
+      }),
+      choice({
+        id: 'state-change-kq1-r3', concept: 'sc-model',
+        prompt: '固体のろうを加熱して液体にした。粒子のようすの変化として正しいものはどれ？',
+        options: ['間隔が広がり、数は変わらない', '間隔がせまくなり、数がふえる', '間隔は変わらず、粒子が大きくなる'],
+        answer: 'a',
+        explanation: '加熱すると粒子の運動が激しくなり、粒子どうしの間隔が広がります。粒子の数も大きさも変わりません。',
+        hint: '加熱すると、粒子の動きはどうなるかな。',
+      }),
+      choice({
+        id: 'state-change-kq1-t2', concept: 'sc-change', term: true,
+        prompt: '次の説明に合う言葉はどれ？「物質の種類は変わらず、固体・液体・気体とすがたが変わる変化」',
+        options: ['状態変化', '化学変化', '蒸留'],
+        answer: 'a',
+        explanation: '物質の種類が変わらず、すがただけが変わる変化を**状態変化**といいます。',
+        hint: '氷がとけて水になる変化のなかまだよ。',
+      }),
+      fill({
+        id: 'state-change-kq1-r4', concept: 'sc-change',
+        prompt: '空らんに入る数を入れよう。',
+        text: 'ビーカーごと質量をはかると 150 g の液体のろうを、そのまま冷やして固体にした。ビーカーごとの質量は[b1]である。',
+        blanks: [number('b1', 150, 0, 'g')],
+        explanation: 'ろうが固体になって体積が小さくなっても、質量は変わりません。ビーカーごとの質量も 150 g のままです。',
+        hint: '状態変化で変わるのは体積だよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1807,7 +1974,7 @@
     mascot: 'B',   // 担当の先生（しずく博士。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'state', title: '状態変化と粒子', order: 1, stages: [state1, state2, scMp1, scMp2, scDr1] },
+      { id: 'state', title: '状態変化と粒子', order: 1, stages: [state1, state2, scMp1, scMp2, scDr1, scKq1] },
       { id: 'sc-distill', title: '混合物を分ける', order: 2, stages: [state3, state4, scMp3, scMp4] },
     ],
   };

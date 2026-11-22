@@ -1611,6 +1611,223 @@
   };
 
   // ================================================================
+  // クイズ（ほかの先生が公開しているクイズの「何を問うか」だけを参考に自作した問題。docs/reports/content/strata.md）
+  // ================================================================
+
+  // 露頭（地層が見えているがけ）と、観察で調べること（解説用）
+  function outcropScene() {
+    const items = [
+      { type: 'text', x: 228, y: 34, text: '露頭', size: 15, anchor: 'middle', bold: true },
+    ];
+    [['sand', 50], [MUD, 90], ['rock', 130], ['yellow', 170]].forEach(([f, y]) => {
+      items.push({ type: 'rect', x: 156, y, width: 144, height: 40, fill: f });
+    });
+    items.push(
+      { type: 'text', x: 14, y: 70, text: '観察で調べること', size: 13, bold: true },
+      { type: 'text', x: 14, y: 100, text: '・層の重なり方', size: 12 },
+      { type: 'text', x: 14, y: 124, text: '・粒の大きさや形', size: 12 },
+      { type: 'text', x: 14, y: 148, text: '・化石があるか', size: 12 },
+      { type: 'text', x: 14, y: 188, text: '→ 柱状図に記録', size: 13 },
+    );
+    return scene(items);
+  }
+
+  // 山から海までの断面に、流れる水のはたらきを書いたもの（解説用）
+  function riverWorkScene() {
+    return scene(riverItems().concat([
+      { type: 'text', x: 14, y: 26, text: '風化・侵食', size: 12 },
+      { type: 'text', x: 70, y: 170, text: '運搬', size: 13 },
+      { type: 'text', x: 262, y: 176, text: '堆積', size: 13, anchor: 'middle' },
+    ]));
+  }
+
+  // しゅう曲と断層（解説用）
+  function foldFaultScene() {
+    return scene(deformPanel(16, 40, 132, 120, 'fold').concat(deformPanel(172, 40, 132, 120, 'fault'), [
+      { type: 'text', x: 82, y: 190, text: 'しゅう曲', size: 14, anchor: 'middle', bold: true },
+      { type: 'text', x: 82, y: 210, text: '押されて曲がる', size: 12, anchor: 'middle' },
+      { type: 'text', x: 238, y: 190, text: '断層', size: 14, anchor: 'middle', bold: true },
+      { type: 'text', x: 238, y: 210, text: '切れてずれる', size: 12, anchor: 'middle' },
+    ]));
+  }
+
+  // drag 用: 大きながけの図（kind は 'fault' | 'fold'）。y 120 の点線の上を、青い丸が左右に動く
+  // 断層の線は x = 40 + 144 − 0.15 × (y − 40)。y 120 では x 172。しゅう曲の層がいちばん高い所は x 160
+  function cliffDragScene(kind) {
+    return scene([
+      { type: 'text', x: 160, y: 28, text: 'がけの地層のようす', size: 13, anchor: 'middle' },
+    ].concat(deformPanel(40, 40, 240, 160, kind), [
+      { type: 'line', points: [[20, 120], [300, 120]], color: 'gray', width: 2, dashed: true },
+      { type: 'circle', id: 'mark', x: 296, y: 120, r: 10, fill: 'blue', stroke: 'ink' },
+    ]));
+  }
+
+  // 断層が層を切っているがけ。ア いちばん上の層、イ いちばん下の層、ウ 断層
+  // 断層の線は x = 30 + 156 − 0.15 × (y − 50)。y 125 では x 175
+  const KQ_FAULT_AGE_Q = scene([
+    { type: 'text', x: 160, y: 34, text: 'がけの地層のようす', size: 13, anchor: 'middle' },
+  ].concat(deformPanel(30, 50, 260, 150, 'fault'), [
+    { type: 'region', id: 'r1', x: 80, y: 69, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 80, y: 181, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 175, y: 125, r: 22, label: 'ウ' },
+  ]));
+
+  // 曲がった層の上に、水平な層が重なっているがけ。ア 曲がった層（右）、イ 上の水平な層、ウ 曲がった層（いちばん下）
+  const KQ_FOLD_AGE_Q = scene([
+    { type: 'text', x: 160, y: 30, text: 'がけの地層のようす', size: 13, anchor: 'middle' },
+    { type: 'rect', x: 30, y: 44, width: 260, height: 28, fill: 'sand' },
+    { type: 'rect', x: 30, y: 72, width: 260, height: 28, fill: MUD },
+  ].concat(deformPanel(30, 100, 260, 110, 'fold'), [
+    { type: 'region', id: 'r1', x: 240, y: 150, r: 22, label: 'ア' },
+    { type: 'region', id: 'r2', x: 80, y: 66, r: 22, label: 'イ' },
+    { type: 'region', id: 'r3', x: 80, y: 192, r: 22, label: 'ウ' },
+  ]));
+
+  // ---- ステージ strata-kq1: クイズ 1（地層の観察と大地の変化: 露頭・流れる水のはたらき・断層としゅう曲・プレート） ----
+  const srKq1 = {
+    id: 'strata-kq1', areaId: 'history', free: true, title: 'クイズ 1: 地層の観察と大地の変化', minutes: 7, concepts: ['st-erosion', 'st-column', 'st-deform'],
+    lessons: [
+      {
+        id: 'strata-kq1-c1',
+        text: '地層が地表に出ていて、直接観察できるがけなどを**露頭**といいます。観察では、層の重なり方、粒の大きさや形、化石があるかを調べ、**柱状図**に記録します。',
+        figure: outcropScene(),
+      },
+      {
+        id: 'strata-kq1-c2',
+        text: '岩石は**風化**でもろくなり、流れる水に**侵食**されてけずられます。けずられた土砂は**運搬**され、流れがゆるやかな所に**堆積**します。これが地層の材料になります。',
+        figure: riverWorkScene(),
+      },
+      {
+        id: 'strata-kq1-c3',
+        text: '地層に左右から押す大きな力がはたらくと、曲がって**しゅう曲**ができます。力で地層が切れてずれると**断層**ができます。どちらも、大地に大きな力が加わった証拠です。',
+        figure: foldFaultScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'strata-kq1-w1', concept: 'st-column',
+      prompt: '予想しよう。がけの地層を観察しに行きます。気をつけることとして正しいのはどれだと思う？',
+      options: ['落石に注意し、がけに登らない', 'がけを強くたたいてくずす', '一人だけで観察に行く'],
+      answer: 'a',
+      explanation: 'がけでは石が落ちてくることがあるので、ヘルメットをかぶり、がけに登らずに観察します。必ず何人かで行きます。',
+      hint: '安全に観察する方法を考えよう。',
+    }),
+    problems: [
+      fill({
+        id: 'strata-kq1-t1', concept: 'st-column', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地層が地表に現れていて、直接観察できるがけなどの場所を[b1]という。',
+        blanks: [word('b1', ['露頭', '断層', 'かぎ層'], '露頭')],
+        explanation: '地層が見えているがけや切り通しなどを**露頭**といいます。露頭で調べたことを、柱状図にまとめます。',
+        hint: '地層が「露（あらわ）」になっている所だよ。',
+      }),
+      drag({
+        id: 'strata-kq1-p1', concept: 'st-deform',
+        prompt: '図はがけの地層です。点線の上の青い丸を左右に動かして、地層が切れてずれている線（断層）の位置に合わせよう。',
+        // 断層の線と点線（y 120）の交わる所は x 172。不正解例は x 100（72 px はなれる）
+        figure: cliffDragScene('fault'),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 172, y: 120 },
+        samples: { correct: { x: 172, y: 120 }, wrong: { x: 100, y: 120 } },
+        explanation: '層の境目が、ななめの線の左右で食いちがっています。この線で地層が切れてずれたので、ここが断層です。',
+        hint: '層の境目の高さが、左右で急に変わる所をさがそう。',
+      }),
+      figureChoice({
+        id: 'strata-kq1-p2', concept: 'st-deform',
+        prompt: '図のがけでは、ア いちばん上の層、イ いちばん下の層、ウ 層を切っている断層 が見られます。いちばん最後にできたのはどれ？',
+        figure: KQ_FAULT_AGE_Q,
+        answer: 'r3',
+        explanation: '断層は、いちばん上の層までずらしています。だから、すべての層が積もったあとに、断層ができたと分かります。',
+        hint: '切られているものと切っているもの、どちらが先にあったかな。',
+      }),
+      fill({
+        id: 'strata-kq1-p3', concept: 'st-erosion',
+        prompt: 'ある湖の底では、泥が 1 年に約 2 mm ずつ積もっています。',
+        text: '泥の層が 10 cm の厚さになるまでに、約[b1]かかる。',
+        blanks: [number('b1', 50, 0, '年')],
+        explanation: '10 cm は 100 mm なので、100 ÷ 2 ＝ 50 年かかります。地層は、とても長い時間をかけてできることが分かります。',
+        hint: 'cm を mm になおしてから計算しよう。',
+      }),
+      choice({
+        id: 'strata-kq1-p4', concept: 'st-erosion',
+        prompt: '山の岩石が、海底の地層の材料になるまでのはたらきの順として正しいのはどれ？',
+        options: ['風化→侵食→運搬→堆積', '堆積→運搬→侵食→風化', '運搬→風化→堆積→侵食'],
+        answer: 'a',
+        explanation: '岩石は風化でもろくなり、流れる水に侵食され、運搬されて、流れのゆるやかな所に堆積します。',
+        hint: 'まず岩石がもろくなり、最後に積もるよ。',
+      }),
+      fill({
+        id: 'strata-kq1-p5', concept: 'st-deform',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '地球の表面は、十数枚の[b1]とよばれる厚い岩盤でおおわれていて、少しずつ動いている。',
+        blanks: [word('b1', ['プレート', 'マグマ', 'かぎ層'], 'プレート')],
+        explanation: '地球の表面をおおう厚い岩盤をプレートといいます。プレートの動きで地層に大きな力が加わり、しゅう曲や断層ができます。',
+        hint: '大陸を動かしている、大きな板のような岩盤だよ。',
+      }),
+    ],
+    retryPool: [
+      drag({
+        id: 'strata-kq1-r1', concept: 'st-deform',
+        prompt: '図はがけの地層です。点線の上の青い丸を左右に動かして、曲がった層がいちばん高く盛り上がっている位置に合わせよう。',
+        // しゅう曲の層がいちばん高いのは x 160。不正解例は x 60（100 px はなれる）
+        figure: cliffDragScene('fold'),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 160, y: 120 },
+        samples: { correct: { x: 160, y: 120 }, wrong: { x: 60, y: 120 } },
+        explanation: '層の境目は、がけのまん中で最も高く盛り上がっています。左右から押されて、地層が山の形に曲がったしゅう曲です。',
+        hint: '層の境目の線が、いちばん上にある所をさがそう。',
+      }),
+      figureChoice({
+        id: 'strata-kq1-r2', concept: 'st-column',
+        prompt: '図のがけでは、曲がった層の上に水平な層が重なっています。ア 右の曲がった層、イ 上の水平な層、ウ いちばん下の曲がった層。いちばん新しい層はどれ？',
+        figure: KQ_FOLD_AGE_Q,
+        answer: 'r2',
+        explanation: '下の層が曲がったあとに、その上にイの水平な層が積もりました。曲がっていないので、しゅう曲ができたあとに積もった、いちばん新しい層です。',
+        hint: '曲がっていない層は、曲げる力がはたらいたあとに積もったね。',
+      }),
+      fill({
+        id: 'strata-kq1-r3', concept: 'st-erosion',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '川の水が運ぶ土砂の量や粒の大きさは、流れが[b1]ほど多く、大きくなる。',
+        blanks: [word('b1', ['速い', 'おそい', '冷たい'], '速い')],
+        explanation: '流れが速いほど、侵食と運搬のはたらきが大きくなり、大きな粒までたくさん運ばれます。流れがおそくなると堆積します。',
+        hint: '大雨で川の流れが速くなると、どうなるかな。',
+      }),
+      choice({
+        id: 'strata-kq1-r4', concept: 'st-erosion',
+        prompt: '大雨のあと、川の水が茶色くにごっていました。どのはたらきが強まったからだと考えられる？',
+        options: ['侵食と運搬', '風化だけ', '堆積だけ'],
+        answer: 'a',
+        explanation: '流れが速くなると、川底や岸がけずられ（侵食）、けずられた土砂がたくさん運ばれる（運搬）ので、水がにごります。',
+        hint: 'にごりは、水の中を運ばれている土砂だよ。',
+      }),
+      choice({
+        id: 'strata-kq1-t2', concept: 'st-column', term: true,
+        prompt: '次の説明に合う言葉はどれ？「露頭で調べた地層の重なり方や厚さを、柱のような形にまとめた図」',
+        options: ['柱状図', '断面図', '天気図'],
+        answer: 'a',
+        explanation: '地層の重なり方や厚さを柱の形に表した図を**柱状図**といいます。離れた地点の地層を比べるときに使います。',
+        hint: '「柱」の「状（形）」の図だよ。',
+      }),
+      fill({
+        id: 'strata-kq1-r5', concept: 'st-column',
+        prompt: 'ある露頭を上から順に調べると、泥岩の層が 2 m、その下に砂岩の層が 3 m あり、その下に凝灰岩の層がありました。',
+        text: '凝灰岩の層の上面は、露頭の上のはしから[b1]の深さにある。',
+        blanks: [number('b1', 5, 0, 'm')],
+        explanation: '泥岩 2 m と砂岩 3 m の下なので、2 ＋ 3 ＝ 5 m の深さです。柱状図にすると、深さが読み取りやすくなります。',
+        hint: '上の 2 つの層の厚さを足そう。',
+      }),
+      choice({
+        id: 'strata-kq1-r6', concept: 'st-deform',
+        prompt: 'がけの地層に、しゅう曲や断層が見られました。ここから分かることはどれ？',
+        options: ['大地に大きな力がはたらいた', '近くで火山が噴火した', '昔そこが深い海だった'],
+        answer: 'a',
+        explanation: 'しゅう曲や断層は、地層に大きな力が加わってできます。火山の噴火は凝灰岩、海の深さは粒の大きさや化石から考えます。',
+        hint: 'しゅう曲と断層は、どうやってできたかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1621,7 +1838,7 @@
     concepts,
     areas: [
       { id: 'form', title: '地層のでき方', order: 1, stages: [strata1, strata2, srMp1] },
-      { id: 'history', title: '地層から読み取る', order: 2, stages: [strata3, strata4, srMp2, srDr1] },
+      { id: 'history', title: '地層から読み取る', order: 2, stages: [strata3, strata4, srMp2, srDr1, srKq1] },
     ],
   };
 

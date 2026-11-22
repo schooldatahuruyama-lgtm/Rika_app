@@ -27,6 +27,9 @@
   // 図の中を選ぶ（figure は必ず書く）
   function figureChoice(p) { return Object.assign({ type: 'figure-choice' }, p); }
 
+  // 図の中の部品を動かす（クイズのステージで使う。content/light.js と同じ）
+  function drag(p) { return Object.assign({ type: 'drag' }, p); }
+
   function word(id, opts, answer) { return { id, kind: 'word', options: opts, answer }; }
   function number(id, answer, tolerance, unit) { return { id, kind: 'number', answer, tolerance, unit }; }
 
@@ -1144,6 +1147,734 @@
   };
 
   // ================================================================
+  // クイズ（Kahoot の公開クイズの「ねらい」を参考に自作した問題。docs/reports/content/basics.md）
+  // ================================================================
+
+  // 学校の地図（上が北）。mode は 'lesson'（文字だけ）| 'choice'（ア〜エの選ぶ場所）| 'drag'（「オオバコ」のカードを動かす）
+  // 北側の日かげ (x 70〜250, y 30〜62)、校舎 (y 62〜106)、日なたの通り道 (y 106〜130)、運動場 (左下)、池 (右下)
+  function schoolMap(mode) {
+    const items = [
+      { type: 'text', x: 12, y: 22, text: '学校の地図（上が北）', size: 13 },
+      { type: 'arrow', x1: 300, y1: 64, x2: 300, y2: 30, width: 2 },
+      { type: 'text', x: 300, y: 82, text: '北', size: 13, anchor: 'middle' },
+      { type: 'rect', x: 70, y: 30, width: 180, height: 32, fill: '#d5dae2', stroke: 'none' },
+      { type: 'text', x: 76, y: 51, text: '日かげ・しめった土', size: 12 },
+      { type: 'rect', x: 70, y: 62, width: 180, height: 44, fill: 'glass', label: '校舎' },
+      { type: 'rect', x: 70, y: 106, width: 180, height: 24, fill: 'sand', stroke: 'none' },
+      { type: 'text', x: 76, y: 123, text: '日なたの通り道', size: 12 },
+      { type: 'rect', x: 20, y: 140, width: 170, height: 90, fill: '#efe6cf', stroke: 'line' },
+      { type: 'text', x: 28, y: 160, text: '運動場', size: 12 },
+      { type: 'ellipse', x: 255, y: 185, rx: 48, ry: 32, fill: 'water' },
+      { type: 'text', x: 236, y: 172, text: '池', size: 12 },
+    ];
+    if (mode === 'choice') {
+      // ア 通り道、イ 北側の日かげ、ウ 池、エ 運動場の真ん中
+      [[220, 118], [220, 46], [262, 198], [105, 192]].forEach(([x, y], i) => {
+        items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KANA[i] });
+      });
+    }
+    if (mode === 'drag') {
+      // カードの中心 (105, 190)。正しい置き場所は通り道（中心 (160, 118)。rect の答えは左上なので target は (125, 106)）
+      items.push({ type: 'rect', id: 'card', x: 70, y: 178, width: 70, height: 24, fill: 'lightgreen', rx: 4, label: 'オオバコ' });
+    }
+    return scene(items);
+  }
+
+  // 双眼実体顕微鏡の視野（中心 (160, 120)、半径 80）。mode は 'lesson' | 'drag'（虫の像を左右の目印へ動かす）| 'choice'（ア 上・イ 下・ウ 左・エ 右）
+  function stereoView(mode) {
+    const items = [
+      { type: 'circle', x: 160, y: 120, r: 80, fill: 'white' },
+    ];
+    if (mode === 'lesson') {
+      items.push({ type: 'ellipse', x: 190, y: 120, rx: 14, ry: 7, fill: 'brown' });
+      items.push({ type: 'ellipse', x: 130, y: 120, rx: 14, ry: 7, fill: 'none', stroke: 'gray' });
+      items.push({ type: 'arrow', x1: 146, y1: 104, x2: 176, y2: 104, color: 'blue', width: 2 });
+      items.push({ type: 'text', x: 160, y: 228, text: '実物を右へ動かすと、像も右へ', size: 14, anchor: 'middle' });
+    }
+    if (mode === 'drag') {
+      items.push({ type: 'circle', x: 100, y: 120, r: 12, fill: 'none', stroke: 'gray' });
+      items.push({ type: 'circle', x: 220, y: 120, r: 12, fill: 'none', stroke: 'gray' });
+      items.push({ type: 'text', x: 100, y: 96, text: '目印', size: 12, anchor: 'middle' });
+      items.push({ type: 'text', x: 220, y: 96, text: '目印', size: 12, anchor: 'middle' });
+      items.push({ type: 'text', x: 160, y: 228, text: 'ステージの上の虫を、右へ動かした', size: 14, anchor: 'middle' });
+      items.push({ type: 'ellipse', id: 'bug', x: 160, y: 120, rx: 14, ry: 7, fill: 'brown' });
+    }
+    if (mode === 'choice') {
+      items.push({ type: 'ellipse', x: 160, y: 120, rx: 14, ry: 7, fill: 'brown' });
+      [[160, 64], [160, 176], [104, 120], [216, 120]].forEach(([x, y], i) => {
+        items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KANA[i] });
+      });
+      items.push({ type: 'text', x: 160, y: 228, text: 'ステージの上の虫を、左へ動かした', size: 14, anchor: 'middle' });
+    }
+    return scene(items);
+  }
+
+  // 顕微鏡を横から見た図（自作の簡単な線画）。regions で目を置く場所 ア 接眼レンズの真上・イ ステージの真横・ウ ステージより下 を付ける
+  function scopeSide(regions) {
+    const items = [
+      { type: 'rect', x: 80, y: 212, width: 130, height: 16, fill: 'gray' },
+      { type: 'rect', x: 180, y: 70, width: 14, height: 142, fill: 'glass' },
+      { type: 'line', points: [[136, 78], [180, 78]], width: 6, color: 'gray' },
+      { type: 'rect', x: 114, y: 44, width: 18, height: 14, fill: 'gray' },
+      { type: 'rect', x: 110, y: 58, width: 26, height: 62, fill: 'white' },
+      { type: 'rect', x: 116, y: 120, width: 14, height: 22, fill: 'glass' },
+      { type: 'rect', x: 70, y: 150, width: 124, height: 8, fill: 'gray' },
+      { type: 'rect', x: 94, y: 146, width: 58, height: 4, fill: 'sky', stroke: 'none' },
+      { type: 'ellipse', x: 123, y: 188, rx: 16, ry: 6, fill: 'glass' },
+    ];
+    if (regions) {
+      [[123, 22], [44, 146], [44, 200]].forEach(([x, y], i) => {
+        items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KANA[i] });
+      });
+    } else {
+      items.push({ type: 'eye', x: 40, y: 146 });
+      items.push({ type: 'line', points: [[56, 146], [110, 146]], color: 'blue', width: 2, dashed: true });
+      items.push({ type: 'text', x: 214, y: 140, text: '横から見る', size: 14 });
+    }
+    return scene(items);
+  }
+
+  // 同じプレパラートを 3 つの倍率で見た視野（左から ア・イ・ウ）。ア 40 倍（小さな細胞が多い・明るい）、
+  // イ 400 倍（大きな細胞が 1 つ・暗い）、ウ 100 倍（中くらい）。regions で選ぶ場所を付ける
+  function viewsScene(regions) {
+    const items = [
+      { type: 'circle', x: 58, y: 110, r: 46, fill: 'white' },
+      { type: 'circle', x: 160, y: 110, r: 46, fill: '#c9ced8' },
+      { type: 'circle', x: 262, y: 110, r: 46, fill: '#e6e9ee' },
+    ];
+    [-20, 0, 20].forEach(dx => [-20, 0, 20].forEach(dy => {
+      items.push({ type: 'circle', x: 58 + dx, y: 110 + dy, r: 6, fill: 'lightgreen' });
+    }));
+    items.push({ type: 'circle', x: 160, y: 110, r: 30, fill: 'lightgreen' });
+    [[-15, -15], [15, -15], [-15, 15], [15, 15]].forEach(([dx, dy]) => {
+      items.push({ type: 'circle', x: 262 + dx, y: 110 + dy, r: 12, fill: 'lightgreen' });
+    });
+    if (regions) {
+      [58, 160, 262].forEach((x, i) => items.push({ type: 'region', id: 'r' + (i + 1), x, y: 196, r: 22, label: KANA[i] }));
+    } else {
+      items.push({ type: 'text', x: 58, y: 186, text: '低い倍率', size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: 160, y: 186, text: '高い倍率', size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: 160, y: 210, text: '広く明るい → せまく暗い', size: 13, anchor: 'middle' });
+    }
+    return scene(items);
+  }
+
+  // 観点「自分で動き回るか」の 2 つの箱。drag のとき「ボルボックス」のカード（中心 (160, 212)）を置く
+  function moveBoxes(dragCard) {
+    const items = [
+      { type: 'text', x: 160, y: 24, text: '観点: 自分で動き回るか', size: 14, anchor: 'middle', bold: true },
+      { type: 'rect', x: 20, y: 40, width: 130, height: 140, fill: 'white', rx: 8 },
+      { type: 'rect', x: 170, y: 40, width: 130, height: 140, fill: 'white', rx: 8 },
+      { type: 'text', x: 85, y: 62, text: '動き回る', size: 14, anchor: 'middle' },
+      { type: 'text', x: 235, y: 62, text: '動き回らない', size: 14, anchor: 'middle' },
+    ];
+    if (dragCard) {
+      items.push({ type: 'text', x: 85, y: 160, text: 'ゾウリムシ', size: 12, anchor: 'middle' });
+      items.push({ type: 'text', x: 235, y: 160, text: 'タンポポ', size: 12, anchor: 'middle' });
+      items.push({ type: 'rect', id: 'card', x: 115, y: 200, width: 90, height: 24, fill: 'lightgreen', rx: 4, label: 'ボルボックス' });
+    } else {
+      items.push({ type: 'text', x: 85, y: 110, text: 'ゾウリムシ', size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: 85, y: 140, text: 'ミジンコ', size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: 235, y: 110, text: 'タンポポ', size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: 235, y: 140, text: 'サクラ', size: 13, anchor: 'middle' });
+      items.push({ type: 'text', x: 160, y: 212, text: '基準を決めて分ける', size: 14, anchor: 'middle' });
+    }
+    return scene(items);
+  }
+
+  // 温度計（目盛り 20〜30 ℃、1 ℃ ごと。y = 190 − (温度 − 20) × 15）。value は赤い液の先の温度、eye は目の部品の有無
+  const thermoY = (v) => 190 - (v - 20) * 15;
+  function thermoScene(value, eye) {
+    const top = thermoY(value);
+    const items = [
+      { type: 'rect', x: 154, y: 28, width: 12, height: 180, fill: 'white' },
+      { type: 'circle', x: 160, y: 212, r: 9, fill: 'red' },
+      { type: 'rect', x: 157, y: top, width: 6, height: 206 - top, fill: 'red', stroke: 'none' },
+    ];
+    for (let v = 20; v <= 30; v++) {
+      const y = thermoY(v);
+      items.push({ type: 'line', points: [[166, y], [v % 5 === 0 ? 182 : 174, y]], width: 1 });
+      if (v % 5 === 0) items.push({ type: 'text', x: 188, y: y + 5, text: String(v), size: 13 });
+    }
+    items.push({ type: 'text', x: 214, y: 40, text: '℃', size: 14 });
+    if (eye) {
+      items.push({ type: 'line', points: [[70, 30], [70, 226]], color: 'gray', width: 1, dashed: true });
+      items.push({ type: 'eye', id: 'eye', x: 70, y: 214 });
+    }
+    return scene(items);
+  }
+
+  // ガスバーナー（自作の線画）。regions で ア 上のねじ・イ 下のねじ・ウ 元栓 の選ぶ場所を付ける
+  function burnerScene(regions) {
+    const items = [
+      { type: 'rect', x: 110, y: 206, width: 100, height: 14, fill: 'gray' },
+      { type: 'rect', x: 150, y: 78, width: 20, height: 128, fill: 'glass' },
+      { type: 'rect', x: 142, y: 140, width: 36, height: 10, fill: 'gray' },
+      { type: 'rect', x: 140, y: 168, width: 40, height: 12, fill: 'gray' },
+      { type: 'line', points: [[210, 196], [262, 196]], width: 6, color: 'gray' },
+      { type: 'circle', x: 275, y: 196, r: 10, fill: 'gray' },
+      { type: 'flame', x: 160, y: 78 },
+    ];
+    if (regions) {
+      items.push({ type: 'line', points: [[118, 140], [142, 145]], width: 2 });
+      items.push({ type: 'line', points: [[202, 178], [180, 174]], width: 2 });
+      [[98, 136], [222, 180], [275, 140]].forEach(([x, y], i) => {
+        items.push({ type: 'region', id: 'r' + (i + 1), x, y, r: 22, label: KANA[i] });
+      });
+      items.push({ type: 'line', points: [[275, 162], [275, 186]], width: 2 });
+    } else {
+      items.push({ type: 'text', x: 40, y: 150, text: '空気調節ねじ', size: 13 });
+      items.push({ type: 'text', x: 190, y: 172, text: 'ガス調節ねじ', size: 13 });
+      items.push({ type: 'text', x: 254, y: 228, text: '元栓', size: 13 });
+    }
+    return scene(items);
+  }
+
+  // 電子てんびんと薬包紙（表示 0.0 g）
+  function balanceScene() {
+    return scene([
+      { type: 'rect', x: 70, y: 150, width: 180, height: 50, fill: 'glass', rx: 6 },
+      { type: 'rect', x: 170, y: 164, width: 64, height: 24, fill: 'white' },
+      { type: 'text', x: 228, y: 182, text: '0.0 g', size: 14, anchor: 'end' },
+      { type: 'rect', x: 90, y: 136, width: 70, height: 10, fill: 'gray' },
+      { type: 'polygon', points: [[125, 112], [165, 132], [125, 146], [85, 132]], fill: 'white' },
+      { type: 'text', x: 125, y: 100, text: '薬包紙', size: 13, anchor: 'middle' },
+      { type: 'text', x: 160, y: 228, text: '紙をのせてから表示を 0 にする', size: 14, anchor: 'middle' },
+    ]);
+  }
+
+  // ビーカーの湯と、温度計の液だめを置く場所（ア 液の中ほど・イ 液面より上・ウ 底にふれる所）
+  function beakerThermoScene() {
+    return scene([
+      { type: 'beaker', x: 160, y: 214, width: 170, height: 124, level: 0.6 },
+      { type: 'region', id: 'r1', x: 130, y: 172, r: 22, label: 'ア' },
+      { type: 'region', id: 'r2', x: 160, y: 112, r: 22, label: 'イ' },
+      { type: 'region', id: 'r3', x: 202, y: 206, r: 22, label: 'ウ' },
+    ]);
+  }
+
+  // ---- ステージ basics-kq1: クイズ 1（野外観察とスケッチ。生物の見られる場所、双眼鏡、記録の書き方） ----
+  const basKq1 = {
+    id: 'basics-kq1', areaId: 'bas-observe', free: true, title: 'クイズ 1: 野外観察とスケッチ', minutes: 6,
+    concepts: ['bas-loupe'],
+    lessons: [
+      {
+        id: 'basics-kq1-c1',
+        text: '場所によって、**日当たり**や土のしめりけがちがい、見られる植物もちがいます。校舎の北側のような**日かげ**のしめった所にはドクダミやゼニゴケ、よくふまれる日なたの通り道にはオオバコやタンポポが多く見られます。',
+        // 学校の地図（日かげ・校舎・通り道・運動場・池）
+        figure: schoolMap('lesson'),
+      },
+      {
+        id: 'basics-kq1-c2',
+        text: '近づくとにげてしまう野鳥などは、**双眼鏡**で遠くから観察します。野外では、生物にむやみにさわったり、とったりしないようにします。調べるためにとった生物は、観察が終わったら元の場所にもどします。',
+        // 双眼鏡（筒 2 本）と遠くの鳥
+        figure: scene([
+          { type: 'rect', x: 40, y: 110, width: 36, height: 70, fill: 'gray', rx: 6 },
+          { type: 'rect', x: 84, y: 110, width: 36, height: 70, fill: 'gray', rx: 6 },
+          { type: 'rect', x: 76, y: 130, width: 8, height: 24, fill: 'ink' },
+          { type: 'text', x: 80, y: 206, text: '双眼鏡', size: 14, anchor: 'middle' },
+          { type: 'line', points: [[130, 120], [262, 70]], color: 'gray', width: 2, dashed: true },
+          { type: 'ellipse', x: 272, y: 66, rx: 16, ry: 9, fill: 'brown' },
+          { type: 'circle', x: 286, y: 58, r: 6, fill: 'brown' },
+          { type: 'line', points: [[268, 74], [268, 96]], color: 'brown', width: 2 },
+          { type: 'text', x: 272, y: 122, text: '遠くの野鳥', size: 13, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'basics-kq1-c3',
+        text: '**スケッチ**は、観察するものだけを細い線と小さな点ではっきりかき、背景やルーペの丸いふちはかきません。日付・天気・場所も書いておくと、あとで同じ条件で調べ直したり、比べたりできます。',
+        // スケッチの例（観察するものだけ）
+        figure: scene([
+          { type: 'rect', x: 30, y: 20, width: 260, height: 200, fill: 'white' },
+          { type: 'text', x: 44, y: 44, text: '6月3日　くもり　校舎の北側', size: 13 },
+          { type: 'ellipse', x: 110, y: 130, rx: 40, ry: 26, fill: 'none' },
+          { type: 'line', points: [[110, 104], [110, 156]], width: 1 },
+          { type: 'line', points: [[110, 156], [110, 196]], width: 2 },
+          { type: 'text', x: 170, y: 120, text: 'ハート形の葉', size: 13 },
+          { type: 'text', x: 170, y: 142, text: '強いにおいがする', size: 13 },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'basics-kq1-w1', concept: 'bas-loupe',
+      prompt: '予想しよう。校舎の北側の日かげと、南側の日なたでは、見られる植物は同じだと思う？',
+      options: ['同じ植物が見られる', 'ちがう植物が多く見られる', 'どちらにも植物は生えない'],
+      answer: 'b',
+      explanation: '日当たりや土のしめりけがちがうと、育ちやすい植物もちがいます。場所と植物の関係を、このステージで調べよう。',
+      hint: '日かげと日なたで、土のようすがどうちがうか考えよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'basics-kq1-p1', concept: 'bas-loupe',
+        prompt: 'ドクダミやゼニゴケは、日かげのしめった所に多い植物です。多く見られそうなのはどこ？ ア 通り道、イ 校舎の北側、ウ 池、エ 運動場の真ん中',
+        figure: schoolMap('choice'),
+        answer: 'r2',
+        explanation: '校舎の北側は一日じゅう日光が当たりにくく、土がしめっています。ドクダミやゼニゴケは、このような日かげのしめった所によく見られます。',
+        hint: '地図の上が北だよ。日光が当たりにくい所をさがそう。',
+      }),
+      fill({
+        id: 'basics-kq1-t1', concept: 'bas-loupe', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '近づくとにげてしまう野鳥を、はなれた所から大きくして見るには、[b1]を使う。',
+        blanks: [word('b1', ['ルーペ', '双眼鏡', '双眼実体顕微鏡'], '双眼鏡')],
+        explanation: '**双眼鏡**は、遠くのものを大きくして見る道具です。ルーペや双眼実体顕微鏡は、近くにある小さなものを観察するときに使います。',
+        hint: '遠くを見るための道具はどれかな。',
+      }),
+      drag({
+        id: 'basics-kq1-p2', concept: 'bas-loupe',
+        prompt: 'オオバコは、背が低く、人によくふまれる日なたに多い植物です。「オオバコ」のカードを、地図の上の多く見られそうな場所へ動かして置こう。',
+        figure: schoolMap('drag'),
+        draggable: { itemId: 'card' },
+        target: { x: 125, y: 106 },   // rect の答えは左上。カード 70×24 の中心が通り道 (160, 118) に来る位置
+        samples: { correct: { x: 125, y: 106 }, wrong: { x: 125, y: 34 } },
+        explanation: 'オオバコは、日当たりがよく、人がよく歩いて土がかたい通り道に多く見られます。北側の日かげのしめった所には、あまり見られません。',
+        hint: '日がよく当たり、人がよく歩く所はどこかな。',
+      }),
+      choice({
+        id: 'basics-kq1-p3', concept: 'bas-loupe',
+        prompt: '人がよく歩く通り道に、オオバコが多く見られるのはなぜだと考えられる？',
+        options: ['背が低く、ふまれてもちぎれにくいから', '日かげでしか育たないから', '水の中でしか育たないから'],
+        answer: 'a',
+        explanation: 'オオバコは葉が地面に広がっていて、ふまれてもちぎれにくい体のつくりです。ふまれる所では背の高い植物が育ちにくいので、オオバコが多くなります。',
+        hint: 'ふまれる場所で生きるのに、どんな体が都合がよいか考えよう。',
+      }),
+      fill({
+        id: 'basics-kq1-p4', concept: 'bas-loupe',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: 'スケッチでは、観察するものだけをかき、まわりの[b1]はかかない。',
+        blanks: [word('b1', ['背景', '輪郭', '特徴'], '背景')],
+        explanation: 'スケッチでは、観察するものだけをかき、まわりの草や地面などの背景はかきません。見てほしいところがはっきり伝わります。',
+        hint: '観察するもの以外の、まわりのようすのことだよ。',
+      }),
+      choice({
+        id: 'basics-kq1-p5', concept: 'bas-loupe',
+        prompt: '観察カードに、天気や観察した場所を書いておくのはなぜ？',
+        options: ['あとで同じ条件で調べ直したり比べたりするため', 'カードの空いた所をうめるため', '絵が上手に見えるようにするため'],
+        answer: 'a',
+        explanation: '天気や場所によって、見られる生物や結果が変わることがあります。条件を書いておくと、あとで同じ条件で調べ直したり、ほかの記録と比べたりできます。',
+        hint: '天気や場所が変わると、結果はどうなりそうかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'basics-kq1-r1', concept: 'bas-loupe',
+        prompt: '水の中で育つオオカナダモが見られそうなのはどこ？ ア 通り道、イ 校舎の北側、ウ 池、エ 運動場の真ん中',
+        figure: schoolMap('choice'),
+        answer: 'r3',
+        explanation: 'オオカナダモは、池などの水の中で育つ植物です。同じ学校の中でも、水の中・日かげ・日なたで、見られる生物がちがいます。',
+        hint: '水のある場所はどこかな。',
+      }),
+      fill({
+        id: 'basics-kq1-r2', concept: 'bas-loupe',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '校舎の北側のような日かげのしめった所には、ドクダミや[b1]がよく見られる。',
+        blanks: [word('b1', ['ゼニゴケ', 'オオバコ', 'タンポポ'], 'ゼニゴケ')],
+        explanation: 'ゼニゴケは、日かげのしめった所に多い植物です。オオバコやタンポポは、日当たりのよい所に多く見られます。',
+        hint: 'しめった所を好む植物を選ぼう。',
+      }),
+      choice({
+        id: 'basics-kq1-r3', concept: 'bas-loupe',
+        prompt: '野外観察で、生物や自分の身を守るために大切なことはどれ？',
+        options: ['むやみに生物にさわったり、とったりしない', '見つけた生物はすべて持ち帰る', '知らない植物は口に入れて確かめる'],
+        answer: 'a',
+        explanation: '毒をもつ植物や、かんだりさしたりする生き物もいます。むやみにさわらず、調べるためにとった生物は、観察が終わったら元の場所にもどします。',
+        hint: '自分の安全と、生物の命の両方を考えよう。',
+      }),
+      choice({
+        id: 'basics-kq1-r4', concept: 'bas-loupe',
+        prompt: 'ルーペで見た花をスケッチします。ルーペで見えた丸いふち（視野のふち）はかく？',
+        options: ['かかない。観察するものだけをかく', 'かく。ルーペで見たと分かるように', 'かげをつけて太くかく'],
+        answer: 'a',
+        explanation: 'ルーペで見えた丸いふちは、観察するものではないのでかきません。スケッチには、観察するものだけを細い線ではっきりかきます。',
+        hint: 'スケッチには何だけをかくのだったかな。',
+      }),
+      choice({
+        id: 'basics-kq1-r5', concept: 'bas-loupe', term: true,
+        prompt: '次の説明に合う言葉はどれ？「建物などで日光がさえぎられ、土がしめりやすい場所」',
+        options: ['日なた', '日かげ', '通り道'],
+        answer: 'b',
+        explanation: '日光がさえぎられる場所を**日かげ**といいます。日かげは土がかわきにくく、しめった所を好む植物が多く見られます。',
+        hint: '日光が当たらない所の名前だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ basics-kq2: クイズ 2（双眼実体顕微鏡と顕微鏡のあつかい。像の向き、倍率、近づけ方、かたづけ方） ----
+  const basKq2 = {
+    id: 'basics-kq2', areaId: 'bas-observe', free: true, title: 'クイズ 2: 顕微鏡のあつかい', minutes: 6,
+    concepts: ['bas-stereo', 'bas-scope'],
+    lessons: [
+      {
+        id: 'basics-kq2-c1',
+        text: '**双眼実体顕微鏡**の倍率は、接眼レンズの倍率 × 対物レンズの倍率で、20〜40 倍ほどです。見える像は上下左右が逆にならないので、観察するものを動かした向きに、像も動きます。',
+        figure: stereoView('lesson'),
+      },
+      {
+        id: 'basics-kq2-c2',
+        text: '顕微鏡で対物レンズの先をプレパラートに寄せていくときは、ぶつからないように横から見ながら調節ねじを回します。高い倍率で視野が暗いときは、**しぼり**や反射鏡で光の量をふやします。',
+        figure: scopeSide(false),
+      },
+      {
+        id: 'basics-kq2-c3',
+        text: 'かたづけるときは、対物レンズを先に外し、接眼レンズを最後に外します。こうすると、**鏡筒**の上の口がふさがったままなので、中にほこりが入りません。',
+        // レンズを外す順
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: 'レンズを外す順', size: 15, anchor: 'middle', bold: true },
+          { type: 'rect', x: 30, y: 80, width: 110, height: 60, fill: 'white', rx: 8, label: '対物レンズ' },
+          { type: 'arrow', x1: 146, y1: 110, x2: 174, y2: 110, width: 2 },
+          { type: 'rect', x: 180, y: 80, width: 110, height: 60, fill: 'white', rx: 8, label: '接眼レンズ' },
+          { type: 'text', x: 160, y: 190, text: '（つけるときは、この逆の順）', size: 14, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'basics-kq2-w1', concept: 'bas-scope',
+      prompt: '予想しよう。直射日光が当たる窓ぎわで、反射鏡のある顕微鏡を使ってよいと思う？',
+      options: ['よい。明るいほど見やすい', 'よくない。目をいためるおそれがある', 'どちらでもよい'],
+      answer: 'b',
+      explanation: '反射鏡で直射日光を集めると、強い光が目に入って目をいためるおそれがあります。顕微鏡は、直射日光の当たらない明るい所に置きます。',
+      hint: 'ルーペで太陽を見てはいけない理由を思い出そう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'basics-kq2-p1', concept: 'bas-scope',
+        prompt: '対物レンズの先をプレパラートに寄せていくとき、目をどこに置いて見るとよい？ ア 接眼レンズの真上、イ ステージの真横、ウ ステージより下',
+        figure: scopeSide(true),
+        answer: 'r2',
+        explanation: 'ステージの真横から見ると、対物レンズの先とプレパラートのすき間が見えます。すき間を見ながら近づければ、ぶつけてプレパラートを割ることがありません。',
+        hint: '対物レンズの先とプレパラートのすき間が見える位置はどこかな。',
+      }),
+      fill({
+        id: 'basics-kq2-t1', concept: 'bas-scope', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '高い倍率にして暗くなった視野を明るくするには、ステージの下の[b1]を調節して、通る光の量をふやす。',
+        blanks: [word('b1', ['しぼり', 'レボルバー', '鏡筒'], 'しぼり')],
+        explanation: '**しぼり**は、ステージの下で、通る光の量を調節する部分です。倍率を上げると視野が暗くなるので、しぼりや反射鏡で明るさを調節します。',
+        hint: '光の量を調節する部分の名前だよ。',
+      }),
+      fill({
+        id: 'basics-kq2-p2', concept: 'bas-stereo',
+        prompt: '空らんに入る数を入れよう。倍率は、接眼レンズの倍率 × 対物レンズの倍率。',
+        text: '接眼レンズが 10 倍、対物レンズが 4 倍の双眼実体顕微鏡の倍率は[b1]である。',
+        blanks: [number('b1', 40, 0, '倍')],
+        explanation: '10 × 4 ＝ 40 なので 40 倍です。双眼実体顕微鏡の倍率は 20〜40 倍ほどで、数百倍まで上げられる顕微鏡より低い倍率で、ものを立体的に見ます。',
+        hint: '2 つの倍率をかけ算しよう。',
+      }),
+      drag({
+        id: 'basics-kq2-p3', concept: 'bas-stereo',
+        prompt: '双眼実体顕微鏡で、ステージの上の虫を右へ動かしました。視野の中の虫の像は、左右どちらの目印へ動いて見える？ 像をその目印まで動かそう。',
+        figure: stereoView('drag'),
+        draggable: { itemId: 'bug', axis: 'x' },
+        target: { x: 220, y: 120 },
+        samples: { correct: { x: 220, y: 120 }, wrong: { x: 100, y: 120 } },
+        explanation: '双眼実体顕微鏡の像は、上下左右が逆になりません。だから、虫を右へ動かすと、像も右へ動いて見えます。',
+        hint: '双眼実体顕微鏡の像は、逆さまになるかな。',
+      }),
+      choice({
+        id: 'basics-kq2-p4', concept: 'bas-stereo',
+        prompt: '双眼実体顕微鏡をのぞくと、視野が 2 つの丸に分かれて見えました。どうするとよい？',
+        options: ['左右の鏡筒の間隔を、目の幅に合わせる', '対物レンズを高い倍率にかえる', '片目をつぶって見る'],
+        answer: 'a',
+        explanation: '左右の鏡筒の間隔が目の幅と合っていないと、視野が 2 つに分かれて見えます。間隔を調節して、1 つの丸に重なって見えるようにします。',
+        hint: '両目と鏡筒の位置が合っているか考えよう。',
+      }),
+      choice({
+        id: 'basics-kq2-p5', concept: 'bas-scope',
+        prompt: '観察が終わり、顕微鏡からレンズを外します。外す順として正しいのはどれ？',
+        options: ['対物レンズ → 接眼レンズ', '接眼レンズ → 対物レンズ', 'どちらからでもよい'],
+        answer: 'a',
+        explanation: '接眼レンズを最後まで残しておくと、鏡筒の上の口がふさがったままなので、中にほこりが入りません。つけるときの順（接眼 → 対物）の逆です。',
+        hint: '鏡筒にほこりを入れないためには、どちらを最後まで残すとよいかな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'basics-kq2-r1', concept: 'bas-stereo',
+        prompt: '空らんに入る数を入れよう。倍率は、接眼レンズの倍率 × 対物レンズの倍率。',
+        text: '接眼レンズが 10 倍の双眼実体顕微鏡で 20 倍にして見るには、対物レンズを[b1]にする。',
+        blanks: [number('b1', 2, 0, '倍')],
+        explanation: '20 ÷ 10 ＝ 2 なので、2 倍の対物レンズを使います。倍率の式から、分からない方の倍率を求められます。',
+        hint: '20 を接眼レンズの倍率でわってみよう。',
+      }),
+      figureChoice({
+        id: 'basics-kq2-r2', concept: 'bas-stereo',
+        prompt: '双眼実体顕微鏡で、ステージの上の虫を左へ動かしました。視野の中の像はどちらへ動いて見える？ ア 上、イ 下、ウ 左、エ 右',
+        figure: stereoView('choice'),
+        answer: 'r3',
+        explanation: '双眼実体顕微鏡の像は上下左右が逆にならないので、虫を左へ動かすと、像も左へ動きます。',
+        hint: '像は逆さまにならないよ。',
+      }),
+      choice({
+        id: 'basics-kq2-r3', concept: 'bas-scope',
+        prompt: '接眼レンズをのぞいたまま、対物レンズとプレパラートを近づけていくと、どんなおそれがある？',
+        options: ['レンズがプレパラートにぶつかる', '像が上下左右逆にならなくなる', '視野が明るくなりすぎる'],
+        answer: 'a',
+        explanation: 'のぞいたままではすき間が見えないので、レンズがプレパラートにぶつかり、割れたり傷がついたりするおそれがあります。近づけるときは横から見ます。',
+        hint: 'のぞいているとき、レンズの先は見えているかな。',
+      }),
+      fill({
+        id: 'basics-kq2-r4', concept: 'bas-scope',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '顕微鏡からレンズを外すときは、対物レンズを先に外し、[b1]を最後に外す。',
+        blanks: [word('b1', ['接眼レンズ', '反射鏡', 'ステージ'], '接眼レンズ')],
+        explanation: '接眼レンズを最後まで残すと、鏡筒の口がふさがったままになり、ほこりが入りません。',
+        hint: '鏡筒の上の口にはまっているレンズだよ。',
+      }),
+      choice({
+        id: 'basics-kq2-r5', concept: 'bas-scope', term: true,
+        prompt: '次の説明に合う言葉はどれ？「ステージの下にあり、通る光の量を調節する部分」',
+        options: ['しぼり', 'レボルバー', 'アーム'],
+        answer: 'a',
+        explanation: '**しぼり**で光の量を調節して、視野の明るさを変えます。レボルバーは対物レンズをかえる部分、アームは運ぶときににぎる部分です。',
+        hint: '光の量を「しぼる」部分だよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ basics-kq3: クイズ 3（倍率と像の大きさ、プランクトン、観点と基準） ----
+  const basKq3 = {
+    id: 'basics-kq3', areaId: 'bas-observe', free: true, title: 'クイズ 3: 倍率と小さな生物のなかま分け', minutes: 6,
+    concepts: ['bas-magnify', 'bas-microbe'],
+    lessons: [
+      {
+        id: 'basics-kq3-c1',
+        text: '倍率を上げると、ものは大きく見えますが、**視野**はせまく暗くなります。倍率は長さを何倍にしたかを表すので、像の長さを倍率でわると、実際の長さが分かります。',
+        figure: viewsScene(false),
+      },
+      {
+        id: 'basics-kq3-c2',
+        text: '池や水そうの水の中には、水中をただよって生活する小さな生物がたくさんいます。これらをまとめて**プランクトン**といいます。緑色で光合成をするものも、動き回ってほかの生物を食べるものもいます。',
+        figure: scene([
+          { type: 'rect', x: 20, y: 30, width: 280, height: 180, fill: 'water', rx: 10 },
+          { type: 'ellipse', x: 80, y: 90, rx: 26, ry: 8, fill: 'lightgreen' },
+          { type: 'circle', x: 230, y: 80, r: 18, fill: 'lightgreen' },
+          { type: 'ellipse', x: 110, y: 160, rx: 22, ry: 10, fill: 'white' },
+          { type: 'ellipse', x: 220, y: 160, rx: 16, ry: 20, fill: 'white' },
+          { type: 'text', x: 160, y: 232, text: '水中をただよう小さな生物', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'basics-kq3-c3',
+        text: 'なかま分けでは、何に注目するか（**観点**）を決め、「動き回る／動き回らない」のような分ける決まり（**基準**）を決めます。色のように、成長や季節で変わる特徴は、基準にしにくいことがあります。',
+        figure: moveBoxes(false),
+      },
+    ],
+    warmup: choice({
+      id: 'basics-kq3-w1', concept: 'bas-magnify',
+      prompt: '予想しよう。長さ 0.1 mm の生物を、顕微鏡で 150 倍にして見ると、像の長さはどのくらいに見えると思う？',
+      options: ['約 1.5 mm', '約 15 mm', '約 150 mm'],
+      answer: 'b',
+      explanation: '0.1 × 150 ＝ 15 なので、約 15 mm に見えます。倍率は、長さを何倍にして見ているかを表しています。',
+      hint: '実際の長さに倍率をかけてみよう。',
+    }),
+    problems: [
+      fill({
+        id: 'basics-kq3-p1', concept: 'bas-magnify',
+        prompt: '空らんに入る数を入れよう。倍率は、長さを何倍にして見ているかを表す。',
+        text: '150 倍で見た生物の像の長さが 30 mm だった。この生物の実際の長さは[b1]である。',
+        blanks: [number('b1', 0.2, 0, 'mm')],
+        explanation: '30 ÷ 150 ＝ 0.2 なので、実際の長さは 0.2 mm です。像の長さを倍率でわると、実際の長さが分かります。',
+        hint: '像の長さを倍率でわってみよう。',
+      }),
+      fill({
+        id: 'basics-kq3-t1', concept: 'bas-microbe', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '水中をただよって生活する小さな生物を、まとめて[b1]という。',
+        blanks: [word('b1', ['プランクトン', '胞子', '花粉'], 'プランクトン')],
+        explanation: 'ミカヅキモやゾウリムシ、ミジンコのように、水中をただよって生活する小さな生物をまとめて**プランクトン**といいます。',
+        hint: '水中を「ただよう」生物の、まとめた名前だよ。',
+      }),
+      figureChoice({
+        id: 'basics-kq3-p2', concept: 'bas-magnify',
+        prompt: 'ア〜ウは、同じプレパラートを 40 倍・100 倍・400 倍で見た視野です。400 倍で見たものはどれ？',
+        figure: viewsScene(true),
+        answer: 'r2',
+        explanation: '倍率が高いほど、1 つ 1 つが大きく見え、見える範囲（視野）はせまく暗くなります。大きな細胞が 1 つだけ見え、いちばん暗いイが 400 倍です。',
+        hint: '大きく見えて、視野が暗いものをさがそう。',
+      }),
+      fill({
+        id: 'basics-kq3-p3', concept: 'bas-magnify',
+        prompt: '空らんに入る数を入れよう。倍率を 4 倍にすると、ものの長さは 4 倍に見える。',
+        text: '100 倍で、視野の直径にそって細胞が 8 個並んで見えた。400 倍にすると、直径にそって並んで見える細胞は[b1]になる。',
+        blanks: [number('b1', 2, 0, '個')],
+        explanation: '倍率を 4 倍にすると、細胞 1 個の長さが 4 倍に見えるので、直径にならぶ数は 8 ÷ 4 ＝ 2 個になります。高倍率ほど視野がせまくなることが、数からも分かります。',
+        hint: '1 個の細胞が何倍の長さに見えるか考えよう。',
+      }),
+      drag({
+        id: 'basics-kq3-p4', concept: 'bas-microbe',
+        prompt: '観点「自分で動き回るか」でなかま分けします。緑色で光合成をするボルボックスのカードを、入る方の箱へ動かして置こう。',
+        figure: moveBoxes(true),
+        draggable: { itemId: 'card' },
+        target: { x: 40, y: 108 },   // rect の答えは左上。カード 90×24 の中心が左の箱の中 (85, 120) に来る位置
+        samples: { correct: { x: 40, y: 108 }, wrong: { x: 190, y: 108 } },
+        explanation: 'ボルボックスは緑色で光合成をしますが、細い毛（べん毛）を動かして、回りながら水中を動き回ります。「緑色だから動かない」とは決められません。',
+        hint: 'ボルボックスが水中でどう動くか、思い出そう。',
+      }),
+      choice({
+        id: 'basics-kq3-p5', concept: 'bas-microbe',
+        prompt: '生物を「体の色」だけでなかま分けするのが、むずかしいことがあるのはなぜ？',
+        options: ['同じ種類でも、成長や季節で色が変わるから', '色はだれが見ても同じだから', '色は顕微鏡でしか見えないから'],
+        answer: 'a',
+        explanation: '同じ種類でも、成長のようすや季節、育った場所で色が変わることがあります。分ける基準には、変わりにくい特徴を選ぶと、だれが分けても同じになります。',
+        hint: '同じ植物でも、春と秋で色がちがうことはないかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'basics-kq3-r1', concept: 'bas-magnify',
+        prompt: 'ア〜ウは、同じプレパラートを 40 倍・100 倍・400 倍で見た視野です。40 倍で見たものはどれ？',
+        figure: viewsScene(true),
+        answer: 'r1',
+        explanation: '倍率がいちばん低い 40 倍では、細胞は小さく見えますが、見える範囲が広く明るくなります。小さな細胞がたくさん見えるアが 40 倍です。',
+        hint: '小さく見えて、たくさん見えるものをさがそう。',
+      }),
+      fill({
+        id: 'basics-kq3-r2', concept: 'bas-magnify',
+        prompt: '空らんに入る数を入れよう。倍率は、長さを何倍にして見ているかを表す。',
+        text: '実際の長さが 0.05 mm のミカヅキモが、像では 20 mm の長さに見えた。このときの倍率は[b1]である。',
+        blanks: [number('b1', 400, 0, '倍')],
+        explanation: '20 ÷ 0.05 ＝ 400 なので、400 倍で見ています。像の長さを実際の長さでわると、倍率が分かります。',
+        hint: '像の長さが、実際の長さの何倍かを求めよう。',
+      }),
+      choice({
+        id: 'basics-kq3-r3', concept: 'bas-microbe',
+        prompt: 'ゾウリムシ・ミジンコ・ミミズ・バッタを、観点「すんでいる場所」で分けました。ゾウリムシと同じなかまに入るのはどれ？',
+        options: ['ミジンコ', 'ミミズ', 'バッタ'],
+        answer: 'a',
+        explanation: 'ゾウリムシとミジンコは水中、ミミズは土の中、バッタは地上にすんでいます。観点を決めると、それぞれの生物がどのなかまに入るかがはっきりします。',
+        hint: '水の中にすむ生物はどれかな。',
+      }),
+      choice({
+        id: 'basics-kq3-r4', concept: 'bas-microbe', term: true,
+        prompt: '次の説明に合う言葉はどれ？「なかま分けで、観点にそって分けるときの決まり。例: 動き回るか、動き回らないか」',
+        options: ['観点', '基準', '結論'],
+        answer: 'b',
+        explanation: '何に注目するかが観点、その観点でどう分けるかの決まりが**基準**です。「動き」が観点なら、「動き回る／動き回らない」が基準になります。',
+        hint: '「分ける決まり」のことだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ basics-kq4: クイズ 4（実験器具の使い方。電子てんびんと薬包紙、温度計の読み方、ガスバーナーの調節） ----
+  const basKq4 = {
+    id: 'basics-kq4', areaId: 'bas-experiment', free: true, title: 'クイズ 4: 実験器具の使い方', minutes: 6,
+    concepts: ['bas-burner', 'bas-review'],
+    lessons: [
+      {
+        id: 'basics-kq4-c1',
+        text: '電子てんびんは水平な台に置きます。粉の薬品をはかるときは、皿に**薬包紙**をのせてから表示を 0 にし、その上に薬品をのせます。こうすると、薬品だけの質量が表示されます。',
+        figure: balanceScene(),
+      },
+      {
+        id: 'basics-kq4-c2',
+        text: '温度計は、**液だめ**を液の中ほどに入れ、赤い液の先が止まってから読みます。目は液の先と同じ高さにして真横から見て、最小目盛りの 10 分の 1 まで目分量で読みます。',
+        figure: thermoScene(24.5, false),
+      },
+      {
+        id: 'basics-kq4-c3',
+        text: 'ガスバーナーの**ガス調節ねじ**は炎の大きさを、**空気調節ねじ**は炎の色を変えます。炎の色だけを変えたいときは、ガス調節ねじを指でおさえて、空気調節ねじだけを回します。',
+        figure: burnerScene(false),
+      },
+    ],
+    warmup: choice({
+      id: 'basics-kq4-w1', concept: 'bas-review',
+      prompt: '予想しよう。電子てんびんに薬包紙をのせ、表示を 0 にしないまま薬品をのせると、表示される値はどれ？',
+      options: ['薬品だけの質量', '薬品と薬包紙を合わせた質量', '薬包紙だけの質量'],
+      answer: 'b',
+      explanation: '表示を 0 にしていないと、薬包紙の質量もいっしょに表示されます。薬包紙をのせてから 0 にすれば、薬品だけの質量が分かります。',
+      hint: '皿の上にのっているものを全部考えよう。',
+    }),
+    problems: [
+      fill({
+        id: 'basics-kq4-p1', concept: 'bas-review',
+        prompt: '空らんに入る数を入れよう。',
+        text: '表示を 0 にしないで、0.4 g の薬包紙と食塩をのせると、5.6 g と表示された。食塩の質量は[b1]である。',
+        blanks: [number('b1', 5.2, 0, 'g')],
+        explanation: '5.6 − 0.4 ＝ 5.2 なので、食塩は 5.2 g です。薬包紙をのせてから表示を 0 にしておけば、このひき算をしなくてすみます。',
+        hint: '表示された値から、薬包紙の質量をひこう。',
+      }),
+      fill({
+        id: 'basics-kq4-t1', concept: 'bas-review', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '粉の薬品を電子てんびんではかるとき、皿にのせて薬品を受ける紙を[b1]という。',
+        blanks: [word('b1', ['薬包紙', 'ろ紙', 'リトマス紙'], '薬包紙')],
+        explanation: '**薬包紙**は、粉の薬品をのせたり包んだりする紙です。ろ紙は液体と固体を分けるろ過に、リトマス紙は酸性・アルカリ性を調べるのに使います。',
+        hint: '薬を「包む」紙だよ。',
+      }),
+      figureChoice({
+        id: 'basics-kq4-p2', concept: 'bas-burner',
+        prompt: '炎の大きさは変えずに、色だけを青くしたい。空気調節ねじを回すとき、指でおさえておくのはどれ？ ア 上のねじ（空気調節ねじ）、イ 下のねじ（ガス調節ねじ）、ウ 元栓',
+        figure: burnerScene(true),
+        answer: 'r2',
+        explanation: '空気調節ねじを回すと、下のガス調節ねじもいっしょに回ってしまうことがあります。ガス調節ねじをおさえておけば、ガスの量（炎の大きさ）が変わりません。',
+        hint: '炎の大きさを決めるねじが、動かないようにしよう。',
+      }),
+      drag({
+        id: 'basics-kq4-p3', concept: 'bas-review',
+        prompt: '温度計の目盛りを読みます。目はどの高さに置くとよい？ 目を点線にそって上下に動かして、正しい高さに置こう。',
+        figure: thermoScene(24.5, true),
+        draggable: { itemId: 'eye', axis: 'y' },
+        target: { x: 70, y: thermoY(24.5) },
+        samples: { correct: { x: 70, y: thermoY(24.5) }, wrong: { x: 70, y: 52 } },
+        explanation: '目は赤い液の先と同じ高さにして、真横から読みます。上や下から見ると、目盛りがずれて読めてしまいます。',
+        hint: '赤い液の先を、真横から見る高さはどこかな。',
+      }),
+      fill({
+        id: 'basics-kq4-p4', concept: 'bas-review',
+        prompt: '図の温度計の目盛りを読もう。最小目盛りの 10 分の 1 まで目分量で読む。',
+        text: '温度計が示している温度は[b1]である。',
+        figure: thermoScene(24.5, false),
+        blanks: [number('b1', 24.5, 0.1, '℃')],
+        explanation: '赤い液の先は、24 ℃と 25 ℃の目盛りのちょうど真ん中なので、24.5 ℃と読みます。最小目盛り（1 ℃）の 10 分の 1 まで目分量で読みます。',
+        hint: '20 と 25 の数字から、1 目盛りが何 ℃かを考えよう。',
+      }),
+      choice({
+        id: 'basics-kq4-p5', concept: 'bas-burner',
+        prompt: 'ガスバーナーの元栓を開く前に、2 つの調節ねじが閉まっているか確かめるのはなぜ？',
+        options: ['元栓を開いたとき、ガスがもれ出ないようにするため', '炎の色を青くするため', 'ねじをこわさないため'],
+        answer: 'a',
+        explanation: 'ねじが開いたまま元栓を開くと、火のついていないガスが出て、たまったガスに火がつくと危険です。2 つのねじが閉じているかを、最初に必ず見ておきます。',
+        hint: 'ねじが開いていたら、元栓を開いたときに何が出てくるかな。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'basics-kq4-r1', concept: 'bas-burner', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: 'ガスバーナーの炎の大きさを調節するのは、[b1]である。',
+        blanks: [word('b1', ['ガス調節ねじ', '空気調節ねじ', '元栓'], 'ガス調節ねじ')],
+        explanation: '**ガス調節ねじ**でガスの量を変えると、炎の大きさが変わります。空気調節ねじは、炎の色を変えるねじです。',
+        hint: 'ガスの量がふえると、炎はどうなるかな。',
+      }),
+      choice({
+        id: 'basics-kq4-r2', concept: 'bas-burner',
+        prompt: '空気調節ねじを開きすぎて、炎がゴーッと音を立て、消えそうになった。どうするとよい？',
+        options: ['空気調節ねじを少し閉める', 'ガス調節ねじを閉める', '元栓をさらに開く'],
+        answer: 'a',
+        explanation: '空気が多すぎると、炎が音を立ててふき消えそうになります。空気調節ねじを少し閉めて、ちょうどよい青い炎にします。',
+        hint: '何が多すぎるのか考えよう。',
+      }),
+      figureChoice({
+        id: 'basics-kq4-r3', concept: 'bas-review',
+        prompt: 'ビーカーの湯の温度をはかります。温度計の液だめを置く位置として正しいのはどれ？ ア 液の中ほど、イ 液面より上、ウ ビーカーの底にふれる所',
+        figure: beakerThermoScene(),
+        answer: 'r1',
+        explanation: '液だめは液の中ほどに入れます。液面より上では空気の温度に、底にふれると加熱されたビーカーの温度に近くなり、液の温度を正しくはかれません。',
+        hint: '液の温度だけを正しくはかれる位置はどこかな。',
+      }),
+      fill({
+        id: 'basics-kq4-r4', concept: 'bas-review',
+        prompt: '図の温度計の目盛りを読もう。最小目盛りの 10 分の 1 まで目分量で読む。',
+        text: '温度計が示している温度は[b1]である。',
+        figure: thermoScene(28, false),
+        blanks: [number('b1', 28, 0.1, '℃')],
+        explanation: '赤い液の先は 28 ℃の目盛りに重なっているので、28.0 ℃と読みます。目盛りちょうどのときも、10 分の 1 の位まで「.0」と読みます。',
+        hint: '25 から数えて、いくつ上の目盛りかな。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1153,8 +1884,8 @@
     mascot: 'A',   // 担当の先生（js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'bas-observe', title: '観察の道具', order: 1, stages: [bas1, bas2, bas3, basDr1] },
-      { id: 'bas-experiment', title: '実験の基本', order: 2, stages: [bas4] },
+      { id: 'bas-observe', title: '観察の道具', order: 1, stages: [bas1, bas2, bas3, basDr1, basKq1, basKq2, basKq3] },
+      { id: 'bas-experiment', title: '実験の基本', order: 2, stages: [bas4, basKq4] },
     ],
   };
 

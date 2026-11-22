@@ -1794,6 +1794,159 @@
   };
 
   // ================================================================
+  // クイズ（公開クイズの出題のねらいを参考に、2026-11-22 追加。文・図・数値の組み合わせは自作）
+  // ================================================================
+
+  // ビーカーを横に並べ、上に名前（「／」で 2 行）、下にア〜の選ぶ場所を置く図。list は [{ name, liquid }]（3 つか 4 つ）
+  function kqBeakerRow(caption, list) {
+    const n = list.length;
+    const step = n === 4 ? 77 : 100;
+    const x0 = n === 4 ? 44 : 60;
+    const items = [{ type: 'text', x: 160, y: 24, text: caption, size: 14, anchor: 'middle' }];
+    list.forEach((it, i) => {
+      const x = x0 + step * i;
+      const lines = it.name.split('／');
+      lines.forEach((t, k) => items.push({ type: 'text', x, y: 56 + 20 * k, text: t, size: 13, anchor: 'middle' }));
+      items.push({ type: 'beaker', x, y: 172, width: n === 4 ? 60 : 70, height: 76, level: 0.65, liquid: it.liquid });
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 208, r: 22, label: 'アイウエ'[i] });
+    });
+    return scene(items);
+  }
+
+  // ---- ステージ solution-kq1: クイズ 1（水溶液の言葉と濃度の計算） ----
+  const solKq1 = {
+    id: 'solution-kq1', areaId: 'dissolve', free: true, title: 'クイズ 1: 水溶液の言葉と濃度の計算', minutes: 6,
+    concepts: ['sol-terms', 'sol-concentration'],
+    lessons: [
+      {
+        id: 'solution-kq1-c1',
+        text: '溶質が溶媒にとけていくことを**溶解**といい、できた液全体を溶液といいます。溶媒が水の溶液を**水溶液**といいます。水溶液はすきとおっていて、色がついているものもあります。塩酸のように、気体が溶質の水溶液もあります。',
+        figure: scene([
+          { type: 'beaker', x: 100, y: 200, width: 110, height: 130, level: 0.65, liquid: 'water' },
+          { type: 'text', x: 100, y: 40, text: '溶質（砂糖）＋溶媒（水）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 100, y: 228, text: '溶液（砂糖水）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 180, y: 110, text: '溶媒が水', size: 14 },
+          { type: 'text', x: 180, y: 136, text: '→ 水溶液', size: 14, bold: true },
+          { type: 'text', x: 180, y: 176, text: '塩酸の溶質は', size: 13 },
+          { type: 'text', x: 180, y: 198, text: '気体の塩化水素', size: 13 },
+        ]),
+      },
+      {
+        id: 'solution-kq1-c2',
+        text: '2 つの水溶液を混ぜたときは、溶質の質量どうし、溶液の質量どうしをそれぞれたしてから**質量パーセント濃度**を求めます。水を加えてうすめるときは、溶質の質量は変わらず、溶液の質量だけがふえます。',
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '混ぜたときの濃度の求め方', size: 15, anchor: 'middle', bold: true },
+          { type: 'text', x: 20, y: 78, text: '10 % の食塩水 100 g（食塩 10 g）', size: 13 },
+          { type: 'text', x: 20, y: 106, text: '＋ 4 % の食塩水 200 g（食塩 8 g）', size: 13 },
+          { type: 'line', points: [[20, 122], [300, 122]], width: 2 },
+          { type: 'text', x: 20, y: 150, text: '食塩 18 g、食塩水 300 g', size: 14 },
+          { type: 'text', x: 20, y: 186, text: '18 ÷ 300 × 100 ＝ 6 %', size: 16, bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'solution-kq1-w1', concept: 'sol-concentration',
+      prompt: '予想しよう。10 % の砂糖水 100 g に、同じ 10 % の砂糖水 100 g を混ぜた。混ぜた砂糖水の濃さは何 % になると思う？',
+      options: ['5 %', '10 %', '20 %'],
+      answer: 'b',
+      explanation: '砂糖は 10 g ＋ 10 g ＝ 20 g、砂糖水は 200 g なので、20 ÷ 200 × 100 ＝ 10 % です。同じ濃さの液を混ぜても、濃さは変わりません。',
+      hint: '砂糖と砂糖水の質量を、それぞれたしてみよう。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'solution-kq1-p1', concept: 'sol-terms',
+        prompt: 'ア 牛乳、イ 墨汁、ウ 食酢、エ みそしる のうち、水溶液といえるのはどれ？',
+        figure: kqBeakerRow('4 つの液体', [{ name: '牛乳', liquid: 'white' }, { name: '墨汁', liquid: 'ink' }, { name: '食酢', liquid: 'water' }, { name: 'みそしる', liquid: 'brown' }]),
+        answer: 'r3',
+        explanation: '食酢は、酢酸という物質が水にとけた水溶液で、すきとおっています。牛乳・墨汁・みそしるは、とけていない小さな粒が散らばっていて、すきとおっていません。',
+        hint: '向こうがすけて見える液はどれかな。',
+      }),
+      fill({
+        id: 'solution-kq1-t1', concept: 'sol-terms', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '溶質が溶媒にとけていくことを[b1]という。',
+        blanks: [word('b1', ['溶解', '溶液', '溶媒'], '溶解')],
+        explanation: '溶質が溶媒にとけることを**溶解**といいます。とけてできた液全体が溶液、とかしている液体が溶媒です。',
+        hint: '「とける」ことを表す言葉だよ。',
+      }),
+      fill({
+        id: 'solution-kq1-p2', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '20 % の食塩水 100 g と、5 % の食塩水 200 g を混ぜた。できた食塩水の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 10, 0, '%')],
+        explanation: '食塩は 20 g ＋ 10 g ＝ 30 g、食塩水は 100 g ＋ 200 g ＝ 300 g です。30 ÷ 300 × 100 ＝ 10 % になります。20 % と 5 % の平均ではありません。',
+        hint: 'それぞれにとけている食塩の質量を先に求めよう。',
+      }),
+      fill({
+        id: 'solution-kq1-p3', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '25 % の砂糖水 80 g に水を加えて、10 % の砂糖水にしたい。加える水の質量は[b1]である。',
+        blanks: [number('b1', 120, 0, 'g')],
+        explanation: '砂糖は 80 × 0.25 ＝ 20 g で、水を加えても変わりません。20 g が 10 % になる砂糖水は 200 g なので、加える水は 200 − 80 ＝ 120 g です。',
+        hint: 'とけている砂糖の質量は、水を加えても変わらないよ。',
+      }),
+      choice({
+        id: 'solution-kq1-p4', concept: 'sol-terms',
+        prompt: '塩酸は、塩化水素という気体が水にとけた水溶液である。塩酸の溶質と溶媒の組み合わせはどれ？',
+        options: ['溶質 塩化水素・溶媒 水', '溶質 水・溶媒 塩化水素', '溶質 塩酸・溶媒 水'],
+        answer: 'a',
+        explanation: 'とけている物質が溶質、とかしている液体が溶媒です。塩酸では、気体の塩化水素が溶質、水が溶媒です。溶質は固体とは限りません。',
+        hint: 'とけているのはどちらか、とかしているのはどちらかを考えよう。',
+      }),
+      figureChoice({
+        id: 'solution-kq1-p5', concept: 'sol-concentration',
+        prompt: 'ア 10 % の食塩水 100 g、イ 10 % の食塩水 300 g、ウ 20 % の食塩水 100 g。とけている食塩の質量がいちばん多いのはどれ？',
+        figure: kqBeakerRow('3 つの食塩水', [{ name: '10 %／100 g', liquid: 'water' }, { name: '10 %／300 g', liquid: 'water' }, { name: '20 %／100 g', liquid: 'water' }]),
+        answer: 'r2',
+        explanation: '食塩の質量は、アが 10 g、イが 30 g、ウが 20 g です。濃度がいちばん大きいウではなく、量の多いイに食塩がいちばん多くとけています。',
+        hint: '濃度 × 食塩水の質量 で、食塩の質量を出そう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'solution-kq1-r1', concept: 'sol-concentration',
+        prompt: '空らんに入る数を入れよう。',
+        text: '8 % の食塩水 50 g と、2 % の食塩水 50 g を混ぜた。できた食塩水の質量パーセント濃度は[b1]である。',
+        blanks: [number('b1', 5, 0, '%')],
+        explanation: '食塩は 4 g ＋ 1 g ＝ 5 g、食塩水は 100 g です。5 ÷ 100 × 100 ＝ 5 % になります。',
+        hint: '食塩の質量と食塩水の質量を、それぞれたそう。',
+      }),
+      choice({
+        id: 'solution-kq1-r2', concept: 'sol-concentration',
+        prompt: '12 % の食塩水 100 g に水を加えて、4 % の食塩水にしたい。加える水は何 g？',
+        options: ['100 g', '200 g', '300 g'],
+        answer: 'b',
+        explanation: '食塩は 12 g です。12 g が 4 % になる食塩水は 300 g なので、加える水は 300 − 100 ＝ 200 g です。',
+        hint: 'うすめたあとの食塩水全体の質量を、先に求めよう。',
+      }),
+      fill({
+        id: 'solution-kq1-r3', concept: 'sol-terms',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '炭酸水は、気体が水にとけた水溶液である。炭酸水の溶質は[b1]である。',
+        blanks: [word('b1', ['二酸化炭素', '水', '酸素'], '二酸化炭素')],
+        explanation: '炭酸水は、二酸化炭素が水にとけた水溶液です。溶質は二酸化炭素、溶媒は水です。ふたをあけると、とけきれない二酸化炭素があわになって出てきます。',
+        hint: '炭酸水のあわの正体を考えよう。',
+      }),
+      choice({
+        id: 'solution-kq1-t2', concept: 'sol-terms', term: true,
+        prompt: '次の説明に合う言葉はどれ？「溶質が溶媒にとけていくこと」',
+        options: ['溶解', '溶液', '溶質'],
+        answer: 'a',
+        explanation: '溶質が溶媒にとけることを**溶解**といいます。溶液はとけてできた液全体、溶質はとけている物質です。',
+        hint: '物質ではなく、とけるという「できごと」を表す言葉だよ。',
+      }),
+      figureChoice({
+        id: 'solution-kq1-r4', concept: 'sol-terms',
+        prompt: 'ア 食塩水、イ 硫酸銅の水溶液（青色）、ウ 石灰水、エ 牛乳 のうち、水溶液ではないものはどれ？',
+        figure: kqBeakerRow('4 つの液体', [{ name: '食塩水', liquid: 'water' }, { name: '硫酸銅', liquid: 'sky' }, { name: '石灰水', liquid: 'water' }, { name: '牛乳', liquid: 'white' }]),
+        answer: 'r4',
+        explanation: '牛乳はすきとおっていないので、水溶液ではありません。硫酸銅の水溶液は青色ですが、すきとおっていて、どこも同じ濃さなので水溶液です。',
+        hint: '色があるかではなく、すきとおっているかで考えよう。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -1803,7 +1956,7 @@
     mascot: 'B',   // 担当の先生（しずく博士。js/mascot.js の MASCOTS）
     concepts: concepts.concat(mpConcepts),
     areas: [
-      { id: 'dissolve', title: '水にとける', order: 1, stages: [sol1, sol2, solMp1, solMp2] },
+      { id: 'dissolve', title: '水にとける', order: 1, stages: [sol1, sol2, solMp1, solMp2, solKq1] },
       { id: 'sol-solubility', title: '溶解度', order: 2, stages: [sol3, sol4, solMp3, solMp4, solDr1] },
     ],
   };

@@ -3696,6 +3696,526 @@
 
 
   // ================================================================
+  // クイズ（Kahoot の公開クイズの「ねらい」を参考に自作。.ai-tasks/20261122-140000_クイズ問題_共通.md）
+  // 文・選択肢・図はすべて自作。free: true で、分野の領域（atom・reaction）の最後に置く
+  // ================================================================
+
+  // 元素記号のカード 4 枚（中心 x 46・122・198・274、y 70〜126）と、その下の region ア〜エ
+  function symbolCardItems(syms) {
+    const items = [];
+    [46, 122, 198, 274].forEach((x, i) => {
+      items.push(...noteBox(x - 30, 70, 60, 56, [syms[i]], { size: 22 }));
+      items.push({ type: 'region', id: 'r' + (i + 1), x, y: 170, r: 22, label: 'アイウエ'[i] });
+    });
+    return items;
+  }
+
+  // ---- ステージ chemical-change-kq1: クイズ 1 元素記号と化学式 ----
+  const chemKq1 = {
+    id: 'chemical-change-kq1', areaId: 'atom', free: true, title: 'クイズ 1: 元素記号と化学式を使いこなす', minutes: 6, concepts: ['ch-atom', 'ch-formula'],
+    lessons: [
+      {
+        id: 'chemical-change-kq1-c1',
+        text: '元素は、アルファベット 1〜2 文字の**元素記号**で表します。1 文字目は大文字、2 文字目は小文字で書きます。金 Au と銀 Ag、塩素 Cl とアルミニウム Al のように、形の似た記号はとくに気をつけよう。',
+        // 形の似た元素記号の組（左右に並べる）
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '形の似た元素記号', size: 15, anchor: 'middle', bold: true },
+          ...noteBox(20, 44, 130, 50, ['Au', '金'], { size: 15 }),
+          ...noteBox(170, 44, 130, 50, ['Ag', '銀'], { size: 15 }),
+          ...noteBox(20, 104, 130, 50, ['Cl', '塩素'], { size: 15 }),
+          ...noteBox(170, 104, 130, 50, ['Al', 'アルミニウム'], { size: 15 }),
+          ...noteBox(20, 164, 130, 50, ['Pb', '鉛'], { size: 15 }),
+          ...noteBox(170, 164, 130, 50, ['P', 'リン'], { size: 15 }),
+          { type: 'text', x: 160, y: 234, text: '1 文字目は大文字、2 文字目は小文字', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'chemical-change-kq1-c2',
+        text: '1 種類の元素だけでできた物質を**単体**といいます。酸素 O₂ は原子が 2 個でも、同じ種類の原子なので単体です。銅 Cu や硫黄 S のように分子をつくらない単体は、元素記号 1 つで化学式を表します。',
+        // 単体と化合物の例（原子のモデルと化学式）
+        figure: scene([
+          { type: 'rect', x: 10, y: 14, width: 145, height: 216, rx: 8, fill: 'white', stroke: 'line' },
+          { type: 'rect', x: 165, y: 14, width: 145, height: 216, rx: 8, fill: 'white', stroke: 'line' },
+          { type: 'text', x: 82, y: 38, text: '単体', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 237, y: 38, text: '化合物', size: 16, anchor: 'middle', bold: true },
+          ...molO2(82, 74), { type: 'text', x: 82, y: 108, text: 'O₂（酸素）', size: 13, anchor: 'middle' },
+          atom(82, 140, 'Cu'), { type: 'text', x: 82, y: 174, text: 'Cu（銅）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 82, y: 208, text: 'S（硫黄）', size: 13, anchor: 'middle' },
+          ...molH2O(237, 66), { type: 'text', x: 237, y: 108, text: 'H₂O（水）', size: 13, anchor: 'middle' },
+          atom(225, 140, 'Cu'), atom(253, 140, 'O'), { type: 'text', x: 237, y: 174, text: 'CuO（酸化銅）', size: 13, anchor: 'middle' },
+          { type: 'text', x: 237, y: 208, text: 'NaCl（塩化ナトリウム）', size: 12, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'chemical-change-kq1-c3',
+        text: '化合物の化学式は、結びつく原子の数の割合で書きます。酸化銅は Cu と O が 1：1 なので **CuO**、酸化銀は Ag と O が 2：1 なので Ag₂O です。右下の小さな数字は、すぐ前の原子の数を表します。',
+        // 酸化銅と酸化銀のモデル
+        figure: scene([
+          atom(66, 100, 'Cu'), atom(94, 100, 'O'),
+          { type: 'text', x: 80, y: 148, text: 'CuO', size: 20, anchor: 'middle', bold: true },
+          { type: 'text', x: 80, y: 172, text: 'Cu：O ＝ 1：1', size: 13, anchor: 'middle' },
+          atom(206, 100, 'Ag'), atom(234, 100, 'O'), atom(262, 100, 'Ag'),
+          { type: 'text', x: 234, y: 148, text: 'Ag₂O', size: 20, anchor: 'middle', bold: true },
+          { type: 'text', x: 234, y: 172, text: 'Ag：O ＝ 2：1', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 218, text: '右下の数字 ＝ すぐ前の原子の数', size: 13, anchor: 'middle' },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'chemical-change-kq1-w1', concept: 'ch-atom',
+      prompt: '予想しよう。元素記号の「Co」と化学式の「CO」は、大文字と小文字がちがうだけです。同じものを表していると思う？',
+      options: ['ちがうものを表す', '同じものを表す', 'どちらの書き方でもよい'],
+      answer: 'a',
+      explanation: 'Co はコバルトという 1 種類の元素の記号です。CO は炭素 C と酸素 O の 2 種類の原子が結びついた物質（一酸化炭素）を表します。大文字か小文字かで、意味が変わります。',
+      hint: '2 文字目が小文字なら、2 文字で 1 つの元素記号だよ。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'chemical-change-kq1-p1', concept: 'ch-atom',
+        prompt: '元素記号のカード ア Ag、イ Au、ウ Al、エ Ar があります。金を表す元素記号はア〜エのどれ？',
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: 'A で始まる元素記号', size: 14, anchor: 'middle' },
+          ...symbolCardItems(['Ag', 'Au', 'Al', 'Ar']),
+        ]),
+        answer: 'r2',
+        explanation: '金は Au、銀は Ag です。Al はアルミニウム、Ar はアルゴンです。A で始まる記号はまぎらわしいので、名前とセットで覚えよう。',
+        hint: '銀の記号 Ag と取りちがえないようにしよう。',
+      }),
+      fill({
+        id: 'chemical-change-kq1-t1', concept: 'ch-formula', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '酸素 O₂ や銅 Cu のように、1 種類の元素だけでできている物質を[b1]という。',
+        blanks: [word('b1', ['単体', '化合物', '混合物'], '単体')],
+        explanation: '1 種類の元素でできた物質を**単体**、2 種類以上の元素でできた物質を化合物といいます。混合物は、いくつかの物質が混ざったものです。',
+        hint: '「単」には「1 つ」という意味があるよ。',
+      }),
+      fill({
+        id: 'chemical-change-kq1-p2', concept: 'ch-formula',
+        prompt: '酸化銀は、銀原子 2 個に酸素原子 1 個の割合で結びついた物質です。空らんに入る化学式を選ぼう。',
+        text: '酸化銀の化学式は[b1]である。',
+        blanks: [word('b1', ['Ag₂O', 'AgO₂', 'Au₂O'], 'Ag₂O')],
+        explanation: '右下の数字は、すぐ前の原子の数です。銀 Ag が 2 個なので、Ag の右下に 2 を書いて Ag₂O です。AgO₂ では酸素が 2 個になり、Au は金の記号です。',
+        hint: '2 個あるのは、銀と酸素のどちらかな。',
+      }),
+      choice({
+        id: 'chemical-change-kq1-p3', concept: 'ch-formula',
+        prompt: '硫黄の化学式を「S₂」と書いた人がいます。正しく直したものはどれ？',
+        options: ['S（記号 1 つで表す）', 'S₂ のままでよい', '2S'],
+        answer: 'a',
+        explanation: '硫黄は分子をつくらない単体なので、銅 Cu や炭素 C と同じく、元素記号 1 つの S で表します。2S は「硫黄原子が 2 個」という意味になり、物質を表す化学式ではありません。',
+        hint: '分子をつくらない単体の化学式の書き方を思い出そう。',
+      }),
+      fill({
+        id: 'chemical-change-kq1-p4', concept: 'ch-formula',
+        prompt: '水酸化ナトリウムの化学式は NaOH です。空らんに入る数を入れよう。',
+        text: 'NaOH 1 つ分にふくまれる原子は、全部で[b1]である。',
+        blanks: [number('b1', 3, 0, '個')],
+        explanation: 'Na（ナトリウム）・O（酸素）・H（水素）が 1 個ずつで、合わせて 3 個です。右下に数字がない記号は 1 個を表します。Na は 2 文字で 1 つの元素記号です。',
+        hint: '大文字の数を数えよう。Na は 2 文字で 1 つの記号だよ。',
+      }),
+      drag({
+        id: 'chemical-change-kq1-p5', concept: 'ch-formula',
+        prompt: '「O₂ は原子が 2 個あるから化合物だ」と考えた人がいます。酸素 O₂ のカードを、単体・化合物のうち正しいほうの箱へ動かそう。',
+        // 位置はカード（rect）の左上で判定する。左の箱「単体」の中 (50, 158) が正解、右の箱「化合物」の中 (205, 158) が不正解例（155px はなれる）
+        figure: scene([
+          { type: 'rect', x: 10, y: 115, width: 140, height: 110, rx: 8, fill: 'white', stroke: 'line' },
+          { type: 'rect', x: 170, y: 115, width: 140, height: 110, rx: 8, fill: 'white', stroke: 'line' },
+          { type: 'text', x: 80, y: 140, text: '単体', size: 16, anchor: 'middle', bold: true },
+          { type: 'text', x: 240, y: 140, text: '化合物', size: 16, anchor: 'middle', bold: true },
+          { type: 'rect', id: 'card', x: 125, y: 30, width: 70, height: 40, fill: 'sky', stroke: 'ink', label: 'O₂' },
+        ]),
+        draggable: { itemId: 'card' },
+        target: { x: 50, y: 158 },
+        samples: { correct: { x: 50, y: 158 }, wrong: { x: 205, y: 158 } },
+        explanation: 'O₂ は原子が 2 個ですが、どちらも酸素原子で、元素は 1 種類だけです。だから単体です。化合物は、H₂O のように 2 種類以上の元素でできた物質です。',
+        hint: '原子の「数」ではなく、原子の「種類」を数えよう。',
+      }),
+    ],
+    retryPool: [
+      fill({
+        id: 'chemical-change-kq1-r1', concept: 'ch-atom', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '元素を、アルファベット 1 文字か 2 文字で表したものを[b1]という。',
+        blanks: [word('b1', ['元素記号', '化学式', '化学反応式'], '元素記号')],
+        explanation: '元素を表す記号を**元素記号**といいます。元素記号を組み合わせて物質を表したものが化学式です。',
+        hint: 'H・O・Cu のような記号のことだよ。',
+      }),
+      figureChoice({
+        id: 'chemical-change-kq1-r2', concept: 'ch-atom',
+        prompt: '元素記号のカード ア Pb、イ Fe、ウ Cu、エ P があります。鉛を表す元素記号はア〜エのどれ？',
+        figure: scene([
+          { type: 'text', x: 160, y: 40, text: 'いろいろな元素記号', size: 14, anchor: 'middle' },
+          ...symbolCardItems(['Pb', 'Fe', 'Cu', 'P']),
+        ]),
+        answer: 'r1',
+        explanation: '鉛は Pb です。Fe は鉄、Cu は銅、P はリンです。鉛の Pb のように、日本語の名前と記号の文字が結びつきにくい元素もあります。',
+        hint: 'P で始まる 2 文字の記号だよ。',
+      }),
+      choice({
+        id: 'chemical-change-kq1-r3', concept: 'ch-atom',
+        prompt: '鉄くぎがさびて、鉄と酸素が結びついた物質に変わりました。くぎの中の鉄原子はどうなった？',
+        options: ['鉄原子のまま、酸素原子と結びついた', '酸素原子に変わった', 'なくなって、別の原子ができた'],
+        answer: 'a',
+        explanation: '原子は、化学変化で別の種類の原子に変わったり、なくなったり、新しくできたりしません。鉄原子は鉄原子のまま、酸素原子と結びついただけです。',
+        hint: '化学変化で、原子の種類は変わるかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq1-r4', concept: 'ch-formula',
+        prompt: '二酸化炭素の「二」は、酸素原子の数を表しています。空らんに入る化学式を選ぼう。',
+        text: '二酸化炭素の化学式は[b1]である。',
+        blanks: [word('b1', ['CO₂', 'C₂O', '2CO'], 'CO₂')],
+        explanation: '二酸化炭素は、炭素原子 1 個と酸素原子 2 個が結びついた分子です。酸素 O の右下に 2 を書いて CO₂ です。C₂O では炭素が 2 個になってしまいます。',
+        hint: '2 個あるのは酸素だから、O の右下に 2 を書こう。',
+      }),
+    ],
+  };
+
+  // ---- ステージ chemical-change-kq2: クイズ 2 分解の実験で確かめること ----
+  const chemKq2 = {
+    id: 'chemical-change-kq2', areaId: 'atom', free: true, title: 'クイズ 2: 分解の実験で確かめること', minutes: 6, concepts: ['ch-decomposition'],
+    lessons: [
+      {
+        id: 'chemical-change-kq2-c1',
+        text: '加熱の実験では、試験管の口を少し下げます。できた水が熱い底へ流れこむと、急に冷えて試験管が割れることがあるからです。加熱をやめるときは、先にガラス管を石灰水から出します。火を消すと中の気体が縮み、石灰水が逆流するからです。',
+        // 加熱の装置と、やめるときの順
+        figure: scene(heatingItems('white').concat([
+          { type: 'text', x: 110, y: 82, text: '口を少し下げる', size: 13, anchor: 'middle' },
+          { type: 'text', x: 238, y: 40, text: '① ガラス管を出す', size: 13, anchor: 'middle' },
+          { type: 'text', x: 238, y: 62, text: '② 火を消す', size: 13, anchor: 'middle' },
+          { type: 'text', x: 220, y: 234, text: '石灰水', size: 12, anchor: 'middle' },
+        ])),
+      },
+      {
+        id: 'chemical-change-kq2-c2',
+        text: '分解でできた物質は、性質で確かめます。水は**塩化コバルト紙**を青色から赤色（桃色）に変え、二酸化炭素は石灰水を白くにごらせます。酸素は火のついた線香を激しく燃やし、水素はマッチの火で音を立てて燃えます。',
+        // 物質と確かめ方の一覧
+        figure: scene([
+          ...noteBox(10, 10, 300, 48, ['水', '塩化コバルト紙 青色 → 赤色（桃色）']),
+          ...noteBox(10, 66, 300, 48, ['二酸化炭素', '石灰水が白くにごる']),
+          ...noteBox(10, 122, 300, 48, ['酸素', '火のついた線香が激しく燃える']),
+          ...noteBox(10, 178, 300, 48, ['水素', 'マッチの火で音を立てて燃える']),
+        ]),
+      },
+      {
+        id: 'chemical-change-kq2-c3',
+        text: '確かめた結果から、もとの物質にふくまれていた元素が分かります。炭酸水素ナトリウムから二酸化炭素と水ができたので、炭素・水素・酸素がふくまれていたと分かります。原子は、なくなったり新しくできたりしないからです。',
+        // 炭酸水素ナトリウム → できた物質 → ふくまれていた元素
+        figure: scene([
+          { type: 'text', x: 160, y: 32, text: '炭酸水素ナトリウム NaHCO₃', size: 14, anchor: 'middle', bold: true },
+          { type: 'arrow', x1: 160, y1: 44, x2: 160, y2: 76, color: 'gray' },
+          { type: 'text', x: 60, y: 102, text: 'CO₂', size: 16, anchor: 'middle' },
+          { type: 'text', x: 160, y: 102, text: 'H₂O', size: 16, anchor: 'middle' },
+          { type: 'text', x: 260, y: 102, text: 'Na₂CO₃', size: 16, anchor: 'middle' },
+          { type: 'text', x: 60, y: 124, text: '石灰水', size: 12, anchor: 'middle' },
+          { type: 'text', x: 160, y: 124, text: '塩化コバルト紙', size: 12, anchor: 'middle' },
+          { type: 'text', x: 260, y: 124, text: '残った固体', size: 12, anchor: 'middle' },
+          ...noteBox(30, 150, 260, 60, ['ふくまれていた元素', 'Na・H・C・O'], { size: 14, fill: 'sky' }),
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'chemical-change-kq2-w1', concept: 'ch-decomposition',
+      prompt: '予想しよう。試験管の口を上に向けたまま粉を加熱すると、どんな危険があると思う？',
+      options: ['できた水が底に流れて試験管が割れる', '粉が全部とけてなくなる', '危険なことは何もない'],
+      answer: 'a',
+      explanation: '加熱でできた水は、口の近くで冷えて水滴になります。口が上を向いていると、その水が熱い底へ流れ、試験管が急に冷えて割れることがあります。',
+      hint: '口の近くにたまった水は、どちらへ流れるかな。',
+    }),
+    problems: [
+      drag({
+        id: 'chemical-change-kq2-p1', concept: 'ch-decomposition',
+        prompt: '炭酸水素ナトリウムを加熱しています。水ができたかを調べるため、青色の塩化コバルト紙（紙）を、液体がたまる場所へ動かそう。',
+        // 試験管の口は (129, 116)。正解は口の近く (118, 112)、不正解例は石灰水の中 (220, 170)（100px 以上はなれる）
+        figure: scene(heatingItems('white').concat([
+          { type: 'text', x: 262, y: 20, text: '塩化コバルト紙', size: 12, anchor: 'middle' },
+          { type: 'circle', id: 'paper', x: 262, y: 44, r: 16, fill: '#8FB4F0', stroke: 'ink', label: '紙' },
+        ])),
+        draggable: { itemId: 'paper' },
+        target: { x: 118, y: 112 },
+        samples: { correct: { x: 118, y: 112 }, wrong: { x: 220, y: 170 } },
+        explanation: 'できた水蒸気は、試験管の口の近くの冷たい部分で冷やされて水滴になります。そこに塩化コバルト紙をつけると、青色から赤色（桃色）に変わり、水だと分かります。石灰水では水は調べられません。',
+        hint: '水蒸気が冷やされて水になるのは、試験管のどのあたりかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq2-t1', concept: 'ch-decomposition', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '物質そのものが変わり、もとの物質とはちがう物質ができる変化を[b1]という。',
+        blanks: [word('b1', ['化学変化', '状態変化', '溶解'], '化学変化')],
+        explanation: '別の物質ができる変化が**化学変化**です。氷が水になるように、すがただけが変わる変化は状態変化です。',
+        hint: '分解も、この変化のなかまだよ。',
+      }),
+      figureChoice({
+        id: 'chemical-change-kq2-p2', concept: 'ch-decomposition',
+        prompt: '酸化銀を加熱して出た気体を試験管に集め、火のついた線香を入れました。結果として正しいのはどれ？ ア 火が消えた、イ 炎を上げて燃えた、ウ 変わらなかった。',
+        // 3 本の試験管に線香を入れた図。ア 火なし、イ 炎、ウ 先が赤く光るだけ
+        figure: scene([
+          { type: 'tube', x: 60, y: 180, height: 100, level: 0 },
+          { type: 'tube', x: 160, y: 180, height: 100, level: 0 },
+          { type: 'tube', x: 260, y: 180, height: 100, level: 0 },
+          { type: 'line', points: [[60, 30], [60, 130]], color: 'brown', width: 4 },
+          { type: 'line', points: [[160, 30], [160, 130]], color: 'brown', width: 4 },
+          { type: 'line', points: [[260, 30], [260, 130]], color: 'brown', width: 4 },
+          { type: 'flame', x: 160, y: 140 },
+          { type: 'circle', x: 260, y: 131, r: 4, fill: 'orange', stroke: 'none' },
+          { type: 'region', id: 'r1', x: 60, y: 214, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 214, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 260, y: 214, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r2',
+        explanation: '酸化銀を加熱すると酸素が出ます。酸素にはものを燃やすはたらきがあるので、線香は炎を上げて激しく燃えます。二酸化炭素なら、線香の火は消えます。',
+        hint: '酸素には、ものを燃やすはたらきがあるよ。',
+      }),
+      choice({
+        id: 'chemical-change-kq2-p3', concept: 'ch-decomposition',
+        prompt: '炭酸水素ナトリウムを加熱して出た気体で、石灰水が白くにごりました。このことから、炭酸水素ナトリウムにふくまれていたと分かる元素はどれ？',
+        options: ['炭素', '窒素', '塩素'],
+        answer: 'a',
+        explanation: '石灰水を白くにごらせたのは二酸化炭素 CO₂ です。原子は新しくできないので、二酸化炭素の炭素は、もとの炭酸水素ナトリウムにふくまれていたと分かります。',
+        hint: '二酸化炭素は、どの元素とどの元素でできているかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq2-p4', concept: 'ch-decomposition',
+        prompt: '気体を集めた試験管に石灰水を入れてよくふると、石灰水が白くにごりました。空らんに入る言葉を選ぼう。',
+        text: '集めた気体は[b1]である。',
+        blanks: [word('b1', ['二酸化炭素', '酸素', '水素'], '二酸化炭素')],
+        explanation: '石灰水を白くにごらせるのは二酸化炭素の性質です。酸素は線香の火、水素はマッチの火で調べます。',
+        hint: '石灰水で調べる気体はどれだったかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq2-p5', concept: 'ch-decomposition',
+        prompt: '炭酸水素ナトリウム 8.4 g を、気体が出なくなるまで加熱すると、試験管に残った固体は 5.3 g でした。空らんに入る数を入れよう。',
+        text: '出ていった水と二酸化炭素は、合わせて[b1]である。',
+        blanks: [number('b1', 3.1, 0, 'g')],
+        explanation: '加熱で出ていった水（水蒸気）と二酸化炭素の分だけ、試験管の中は軽くなります。8.4 − 5.3 ＝ 3.1 g です。',
+        hint: '加熱の前と後の質量の差を求めよう。',
+      }),
+    ],
+    retryPool: [
+      choice({
+        id: 'chemical-change-kq2-r1', concept: 'ch-decomposition',
+        prompt: '炭酸水素ナトリウムの加熱を終えるとき、火を消す前にガラス管を石灰水から出すのはなぜ？',
+        options: ['石灰水が試験管に逆流するのを防ぐ', '二酸化炭素を多く集める', '石灰水を冷やさないようにする'],
+        answer: 'a',
+        explanation: '火を消すと、試験管の中の気体が冷えて縮みます。ガラス管が石灰水に入ったままだと、石灰水が吸いこまれて熱い試験管に入り、割れることがあります。',
+        hint: '火を消すと、試験管の中の気体はどうなるかな。',
+      }),
+      choice({
+        id: 'chemical-change-kq2-r2', concept: 'ch-decomposition',
+        prompt: 'ある白い粉を加熱すると、試験管の口に液体がつき、青色の塩化コバルト紙が赤色（桃色）に変わりました。粉にふくまれていたと分かる元素はどれ？',
+        options: ['水素', '窒素', '塩素'],
+        answer: 'a',
+        explanation: '塩化コバルト紙の色の変化から、できた液体は水 H₂O です。原子は新しくできないので、水の水素は、もとの粉にふくまれていたと分かります。',
+        hint: '水は、どの元素とどの元素でできているかな。',
+      }),
+      figureChoice({
+        id: 'chemical-change-kq2-r3', concept: 'ch-decomposition',
+        prompt: '炭酸水素ナトリウムを加熱すると、水滴が多くつくのはどこ？ ア 試験管の口の近く、イ 試験管の底（加熱している所）、ウ 石灰水の中。',
+        figure: scene(heatingItems('white').concat([
+          { type: 'region', id: 'r1', x: 112, y: 86, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 36, y: 66, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 220, y: 175, r: 22, label: 'ウ' },
+        ])),
+        answer: 'r1',
+        explanation: '水蒸気は、加熱していない口の近くで冷やされて水滴になります。だから口を少し下げて、水滴が熱い底へ流れないようにします。',
+        hint: '水蒸気が冷やされるのは、熱い所と冷たい所のどちらかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq2-r4', concept: 'ch-decomposition',
+        prompt: '炭酸水素ナトリウム 16.8 g を、気体が出なくなるまで加熱すると、残った固体は 10.6 g でした。空らんに入る数を入れよう。',
+        text: '加熱で減った質量は[b1]である。',
+        blanks: [number('b1', 6.2, 0, 'g')],
+        explanation: '水と二酸化炭素が試験管の外へ出ていった分だけ減ります。16.8 − 10.6 ＝ 6.2 g です。',
+        hint: '加熱の前と後の質量の差だよ。',
+      }),
+      fill({
+        id: 'chemical-change-kq2-r5', concept: 'ch-decomposition', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '酸化銀を加熱して残った銀をみがくと、金属に特有のかがやきが出る。このかがやきを[b1]という。',
+        blanks: [word('b1', ['金属光沢', '結晶', '沈殿'], '金属光沢')],
+        explanation: '金属をみがくと出るかがやきを**金属光沢**といいます。残った物質に金属光沢が出ることから、銀ができたと分かります。',
+        hint: '金属の性質の 1 つだよ。',
+      }),
+    ],
+  };
+
+  // ---- ステージ chemical-change-kq3: クイズ 3 酸化・熱の出入り・質量の保存 ----
+  const chemKq3 = {
+    id: 'chemical-change-kq3', areaId: 'reaction', free: true, title: 'クイズ 3: 酸化・熱の出入り・質量の保存', minutes: 6, concepts: ['ch-oxidation', 'ch-conservation'],
+    lessons: [
+      {
+        id: 'chemical-change-kq3-c1',
+        text: '使い捨てカイロの中では、鉄粉が空気中の酸素とゆっくり結びつき、熱を出しています。熱や光を激しく出さずにゆっくり進む酸化を**おだやかな酸化**といいます。外の袋を開けるまで温まらないのは、鉄粉が酸素にふれないからです。',
+        // カイロの袋の中の鉄粉に、外から酸素が入る
+        figure: scene([
+          { type: 'rect', x: 90, y: 60, width: 140, height: 120, rx: 12, fill: 'white', stroke: 'line' },
+          ...[[115, 95], [145, 110], [175, 92], [205, 112], [125, 140], [160, 150], [195, 140]].map(([x, y]) => dot(x, y, 'Fe', 8)),
+          { type: 'text', x: 160, y: 172, text: '鉄粉', size: 13, anchor: 'middle' },
+          { type: 'arrow', x1: 30, y1: 100, x2: 84, y2: 110, color: 'blue' },
+          { type: 'arrow', x1: 290, y1: 100, x2: 236, y2: 110, color: 'blue' },
+          { type: 'text', x: 40, y: 88, text: '酸素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 280, y: 88, text: '酸素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 40, text: '使い捨てカイロ', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 160, y: 214, text: 'ゆっくり酸化 → 熱が出る', size: 14, anchor: 'middle' },
+        ]),
+      },
+      {
+        id: 'chemical-change-kq3-c2',
+        text: '物質が酸素と結びつくと、結びついた酸素の分だけ質量がふえます。スチールウール（鉄）を燃やすと重くなります。木炭を燃やすと、炭素が気体の二酸化炭素になって空気中へ出ていくので、皿の上は軽くなります。',
+        // 燃やした後の質量の変わり方
+        figure: scene([
+          ...noteBox(10, 20, 300, 90, ['スチールウール（鉄）', '→ 酸化鉄（固体）が皿に残る', '重くなる'], { size: 14, bold: true }),
+          ...noteBox(10, 130, 300, 90, ['木炭（炭素）', '→ 二酸化炭素（気体）が出ていく', '軽くなる'], { size: 14, bold: true }),
+        ]),
+      },
+      {
+        id: 'chemical-change-kq3-c3',
+        text: '化学変化では、原子の組み合わせは変わりますが、原子の種類と数は変わりません。だから、出入りする気体まで合わせると、全体の質量は変わりません（**質量保存の法則**）。この法則は、状態変化や物質がとける変化でも成り立ちます。',
+        // 2Cu ＋ O₂ → 2CuO のモデル。原子の種類と数は同じ
+        figure: scene([
+          { type: 'text', x: 160, y: 34, text: '2Cu ＋ O₂ → 2CuO', size: 16, anchor: 'middle', bold: true },
+          atom(36, 100, 'Cu'), atom(72, 100, 'Cu'),
+          { type: 'text', x: 100, y: 106, text: '＋', size: 16, anchor: 'middle' },
+          ...molO2(134, 100),
+          { type: 'text', x: 176, y: 106, text: '→', size: 16, anchor: 'middle' },
+          atom(206, 100, 'Cu'), atom(234, 100, 'O'),
+          atom(262, 100, 'Cu'), atom(290, 100, 'O'),
+          { type: 'text', x: 160, y: 170, text: '原子の数: Cu 2 個・O 2 個 → Cu 2 個・O 2 個', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 200, text: '変わるのは組み合わせだけ', size: 14, anchor: 'middle', bold: true },
+        ]),
+      },
+    ],
+    warmup: choice({
+      id: 'chemical-change-kq3-w1', concept: 'ch-oxidation',
+      prompt: '予想しよう。使い捨てカイロは、袋から出すと温かくなります。何がはたらいていると思う？',
+      options: ['空気中の酸素', '空気中の窒素', '手の温度だけ'],
+      answer: 'a',
+      explanation: 'カイロの中の鉄粉が、空気中の酸素と結びついて熱を出しています。鉄がさびるのと同じ、ゆっくり進む酸化です。',
+      hint: '鉄がさびるとき、鉄と結びつく気体は何かな。',
+    }),
+    problems: [
+      figureChoice({
+        id: 'chemical-change-kq3-p1', concept: 'ch-conservation',
+        prompt: 'スチールウール（左の皿）と木炭（右の皿）をてんびんでつり合わせ、それぞれ皿の上で加熱しました。冷めた後はア〜ウのどれ？ ア 左が下がる、イ つり合う、ウ 右が下がる。',
+        // 3 つのてんびん。ア 左が下がる（tilt 10）、イ つり合う、ウ 右が下がる（tilt −10）
+        figure: scene([
+          { type: 'text', x: 160, y: 30, text: '左: スチールウール　右: 木炭', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 52, text: '加熱して冷めた後', size: 12, anchor: 'middle' },
+          ...balanceItems(60, 10), ...balanceItems(160, 0), ...balanceItems(260, -10),
+          { type: 'region', id: 'r1', x: 60, y: 196, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 196, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 260, y: 196, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r1',
+        explanation: 'スチールウールは酸素と結びついて酸化鉄になり、その分重くなります。木炭は二酸化炭素になって空気中へ出ていくので軽くなります。だから左（スチールウール）が下がります。',
+        hint: '燃えてできた物質が、皿に残るのはどちらかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq3-t1', concept: 'ch-oxidation', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '鉄がさびるときや使い捨てカイロのように、熱や光を激しく出さずにゆっくり進む酸化を[b1]という。',
+        blanks: [word('b1', ['おだやかな酸化', '燃焼', '還元'], 'おだやかな酸化')],
+        explanation: 'ゆっくり進む酸化を**おだやかな酸化**といいます。熱や光を激しく出しながら進む酸化は燃焼です。',
+        hint: '激しく燃えるのとは反対の進み方だよ。',
+      }),
+      fill({
+        id: 'chemical-change-kq3-p2', concept: 'ch-conservation',
+        prompt: '銅 2.0 g を 1 回加熱して冷ますと、2.3 g になりました。銅と酸素は 4：1 の質量の比で結びつきます。空らんに入る数を入れよう。',
+        text: 'この銅に、あと結びつくことのできる酸素は[b1]である。',
+        blanks: [number('b1', 0.2, 0, 'g')],
+        explanation: '銅 2.0 g と結びつく酸素は、2.0 ÷ 4 ＝ 0.5 g が限度です。すでに 2.3 − 2.0 ＝ 0.3 g 結びついているので、あと 0.5 − 0.3 ＝ 0.2 g です。結びつく酸素の量には限りがあります。',
+        hint: 'まず、銅 2.0 g と結びつく酸素の最大の量を求めよう。',
+      }),
+      fill({
+        id: 'chemical-change-kq3-p3', concept: 'ch-conservation',
+        prompt: '化学変化の前と後で、原子について変わるものを考えよう。空らんに入る言葉を選ぼう。',
+        text: '化学変化で変わるのは原子の[b1]で、原子の種類と数は変わらない。',
+        blanks: [word('b1', ['組み合わせ', '大きさ', '質量'], '組み合わせ')],
+        explanation: '化学変化では、原子どうしの組み合わせが変わって別の物質ができます。原子の種類と数、1 個 1 個の質量は変わらないので、全体の質量も変わりません。',
+        hint: '2Cu ＋ O₂ → 2CuO のモデルで、変わったところを見よう。',
+      }),
+      choice({
+        id: 'chemical-change-kq3-p4', concept: 'ch-oxidation',
+        prompt: '使い捨てカイロは、外の袋を開けるまで温かくなりません。なぜ？',
+        options: ['中の鉄粉が空気中の酸素にふれないから', '中の鉄粉が冷やされているから', '人の体温がないと反応しないから'],
+        answer: 'a',
+        explanation: 'カイロの熱は、鉄粉が酸素と結びつく酸化で出ます。外の袋は空気を通さないので、開けるまで酸化が進まず、温かくなりません。',
+        hint: 'カイロの熱は、鉄と何が結びついて出るのかな。',
+      }),
+      choice({
+        id: 'chemical-change-kq3-p5', concept: 'ch-conservation',
+        prompt: '質量保存の法則について、正しいものはどれ？',
+        options: ['状態変化や物質がとける変化でも成り立つ', '化学変化のときだけ成り立つ', '気体が出る反応では成り立たない'],
+        answer: 'a',
+        explanation: '物質がとけたり、すがたが変わったりしても、物質をつくる粒の数は変わらないので、質量は変わりません。気体が出る反応でも、出た気体まで合わせれば質量は保存されています。',
+        hint: '水に食塩をとかしても、食塩の粒はなくならないね。',
+      }),
+    ],
+    retryPool: [
+      drag({
+        id: 'chemical-change-kq3-r1', concept: 'ch-conservation',
+        prompt: '酸化カルシウム（CaO）に水を加えると、水酸化カルシウムができます。このカードを、温度の変化に合う箱へ動かそう。',
+        // 位置はカード（rect）の左上で判定する。左の箱「温度が上がる」(32, 162) が正解、右の箱「温度が下がる」(192, 162) が不正解例（160px はなれる）
+        figure: scene([
+          { type: 'rect', x: 10, y: 115, width: 140, height: 110, rx: 8, fill: '#FFE3D1', stroke: 'line' },
+          { type: 'rect', x: 170, y: 115, width: 140, height: 110, rx: 8, fill: 'sky', stroke: 'line' },
+          { type: 'text', x: 80, y: 140, text: '温度が上がる', size: 14, anchor: 'middle', bold: true },
+          { type: 'text', x: 240, y: 140, text: '温度が下がる', size: 14, anchor: 'middle', bold: true },
+          { type: 'rect', id: 'card', x: 110, y: 30, width: 96, height: 40, fill: 'white', stroke: 'ink', label: 'CaO ＋ 水' },
+        ]),
+        draggable: { itemId: 'card' },
+        target: { x: 32, y: 162 },
+        samples: { correct: { x: 32, y: 162 }, wrong: { x: 192, y: 162 } },
+        explanation: '酸化カルシウムと水の反応は、熱を出して温度が上がる発熱反応です。この熱は、ひもを引くと温まる弁当などに使われています。',
+        hint: '酸化カルシウムに水を加えると、さわれないほど熱くなるよ。',
+      }),
+      fill({
+        id: 'chemical-change-kq3-r2', concept: 'ch-oxidation',
+        prompt: 'スチールウールを空気中で燃やすと、黒い物質ができました。空らんに入る言葉を選ぼう。',
+        text: 'できた黒い物質は[b1]である。',
+        blanks: [word('b1', ['酸化鉄', '硫化鉄', '酸化銅'], '酸化鉄')],
+        explanation: 'スチールウールは鉄なので、空気中の酸素と結びついて酸化鉄になります。硫化鉄は鉄と硫黄、酸化銅は銅と酸素が結びついた物質です。',
+        hint: '鉄が酸素と結びついてできる物質だよ。',
+      }),
+      figureChoice({
+        id: 'chemical-change-kq3-r3', concept: 'ch-oxidation',
+        prompt: '2CuO ＋ C → 2Cu ＋ CO₂ の反応で、還元された物質はどれ？ ア 酸化銅、イ 炭素、ウ 二酸化炭素。',
+        figure: scene([
+          { type: 'text', x: 160, y: 36, text: '2CuO ＋ C → 2Cu ＋ CO₂', size: 16, anchor: 'middle' },
+          atom(40, 100, 'Cu'), atom(68, 100, 'O'),
+          atom(160, 100, 'C'),
+          ...molCO2(266, 100),
+          { type: 'text', x: 54, y: 140, text: '酸化銅', size: 13, anchor: 'middle' },
+          { type: 'text', x: 160, y: 140, text: '炭素', size: 13, anchor: 'middle' },
+          { type: 'text', x: 266, y: 140, text: '二酸化炭素', size: 13, anchor: 'middle' },
+          { type: 'region', id: 'r1', x: 54, y: 186, r: 22, label: 'ア' },
+          { type: 'region', id: 'r2', x: 160, y: 186, r: 22, label: 'イ' },
+          { type: 'region', id: 'r3', x: 266, y: 186, r: 22, label: 'ウ' },
+        ]),
+        answer: 'r1',
+        explanation: '酸化銅は炭素に酸素をうばわれて銅になったので、還元されたのは酸化銅（ア）です。炭素は酸素と結びついて二酸化炭素になったので、酸化されました。',
+        hint: '酸素を失った物質はどれかな。',
+      }),
+      fill({
+        id: 'chemical-change-kq3-r4', concept: 'ch-conservation',
+        prompt: '炭酸ナトリウム水溶液 50.0 g と塩化カルシウム水溶液 30.0 g を混ぜると、白い沈殿ができました。気体は出ませんでした。',
+        text: '沈殿をふくめた全体の質量は[b1]である。',
+        blanks: [number('b1', 80, 0, 'g')],
+        explanation: '沈殿ができても、原子がなくなったりふえたりはしません。気体も出ていかないので、全体の質量は 50.0 ＋ 30.0 ＝ 80.0 g のままです。',
+        hint: '出ていった物質も、入ってきた物質もないね。',
+      }),
+      choice({
+        id: 'chemical-change-kq3-r5', concept: 'ch-oxidation', term: true,
+        prompt: '次の説明に合う言葉はどれ？「金属が、空気中の酸素などとゆっくり結びついてできたもの」',
+        options: ['さび', '結晶', '沈殿'],
+        answer: 'a',
+        explanation: '金属がゆっくり酸化してできたものが**さび**です。鉄のさびは、おだやかな酸化でできます。',
+        hint: '古い鉄くぎの表面につく、赤茶色のものだよ。',
+      }),
+    ],
+  };
+
+
+  // ================================================================
   // 概念（学び直しの確認問題 checkPool つき）
   // ================================================================
 
@@ -3935,10 +4455,10 @@
     concepts,
     areas: [
       { id: 'atom', title: '物質のなりたち', order: 1, stages: [
-        chem1, chem2, chemMp1, chemMp2, chemMp3, chemMp4, chemDr1, chemDr2, chemDr3,
+        chem1, chem2, chemMp1, chemMp2, chemMp3, chemMp4, chemDr1, chemDr2, chemDr3, chemKq1, chemKq2,
       ] },
       { id: 'reaction', title: '化学変化と質量', order: 2, stages: [
-        chem3, chem4, chemMp5, chemMp6, chemMp7, chemMp8, chemMp9, chemMp10, chemDr4, chemDr5, chemDr6, chemDr7,
+        chem3, chem4, chemMp5, chemMp6, chemMp7, chemMp8, chemMp9, chemMp10, chemDr4, chemDr5, chemDr6, chemDr7, chemKq3,
       ] },
     ],
   };

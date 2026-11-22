@@ -2142,6 +2142,373 @@
   };
 
   // ================================================================
+  // クイズ（ほかの先生が公開しているクイズの「何を問うか」だけを参考に自作した問題。docs/reports/content/volcano.md）
+  // ================================================================
+
+  // 傾斜のゆるやかな火山と、斜面を流れ下る溶岩流（解説用）
+  function lavaFlowScene() {
+    return scene([
+      { type: 'rect', x: 0, y: 0, width: 320, height: 170, fill: 'sky', stroke: 'none' },
+      { type: 'line', points: [[0, 170], [320, 170]], color: 'line', width: 2 },
+      { type: 'polygon', points: [[16, 170], [100, 142], [150, 128], [170, 128], [220, 142], [304, 170]], fill: '#4A4540' },
+      { type: 'line', points: [[166, 130], [206, 140], [250, 154], [292, 168]], color: 'orange', width: 6, arrow: true },
+      { type: 'text', x: 236, y: 120, text: '溶岩流', size: 14, bold: true },
+      { type: 'text', x: 160, y: 204, text: 'ねばりけの弱いマグマの火山', size: 13, anchor: 'middle' },
+      { type: 'text', x: 160, y: 224, text: '溶岩が流れやすく、遠くまで広がる', size: 12, anchor: 'middle' },
+    ]);
+  }
+
+  // drag 用: 火成岩の 6 つの分け方の表（ますだけ）と、岩石の名前のカード（84×28）
+  // ますの中心: 上の段 (124, 96)・(200, 96)・(276, 96)、下の段 (124, 176)・(200, 176)・(276, 176)
+  // カードの左上は 中心 − (42, 14)
+  function igneousBoardScene(name) {
+    const items = [
+      { type: 'text', x: 200, y: 32, text: '白っぽい ← 色 → 黒っぽい', size: 13, anchor: 'middle' },
+      { type: 'text', x: 42, y: 92, text: '火山岩', size: 13, anchor: 'middle' },
+      { type: 'text', x: 42, y: 110, text: '（斑状）', size: 12, anchor: 'middle' },
+      { type: 'text', x: 42, y: 172, text: '深成岩', size: 13, anchor: 'middle' },
+      { type: 'text', x: 42, y: 190, text: '（等粒状）', size: 12, anchor: 'middle' },
+    ];
+    [0, 1].forEach(row => [0, 1, 2].forEach(col => {
+      items.push({ type: 'rect', x: 86 + 76 * col, y: 56 + 80 * row, width: 76, height: 80, fill: ['white', '#D9D4CA', '#A8A39A'][col] });
+    }));
+    items.push({ type: 'rect', id: 'card', x: 2, y: 4, width: 84, height: 28, fill: 'yellow', rx: 4, label: name });
+    return scene(items);
+  }
+
+  // 火山岩をルーペで見たスケッチ（斑晶 5 個）
+  const KQ_PORPHYRY = scene([
+    { type: 'text', x: 160, y: 34, text: '火山岩をルーペで見たスケッチ', size: 13, anchor: 'middle' },
+  ].concat(porphyryItems(105, 56)));
+
+  // 3 つの火山の形（左から ア 円すいの形・イ 傾斜のゆるやかな形・ウ 盛り上がった形）。どれも同じ色
+  const KQ_SHAPES_Q = scene(volcanoShapes(['cone', 'shield', 'dome'], false).concat(regionsAt(SHAPE_X, 206)));
+
+  // ---- ステージ volcano-kq1: クイズ 1（火山の形と火成岩: 溶岩流・火山弾・火山の形・火成岩の分け方・斑晶） ----
+  const voKq1 = {
+    id: 'volcano-kq1', areaId: 'volcano', free: true, title: 'クイズ 1: 火山の形と火成岩', minutes: 6, concepts: ['vo-magma', 'vo-igneous'],
+    lessons: [
+      {
+        id: 'volcano-kq1-c1',
+        text: '噴火で火口からあふれた溶岩が、斜面を流れ下るものを**溶岩流**といいます。ねばりけが弱いマグマの溶岩は流れやすく、遠くまで広がるので、傾斜のゆるやかな火山になります。',
+        figure: lavaFlowScene(),
+      },
+      {
+        id: 'volcano-kq1-c2',
+        text: '火成岩は、つくりと色で 6 つに分けられます。斑状組織の**火山岩**は流紋岩・安山岩・玄武岩、等粒状組織の**深成岩**は花こう岩・閃緑岩・はんれい岩で、どちらも左ほど白っぽくなります。',
+        figure: igneousGrid(true),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-kq1-w1', concept: 'vo-magma',
+      prompt: '予想しよう。ハワイ島の火山は、ねばりけの弱いマグマの火山です。どんな噴火が多いと思う？',
+      options: ['溶岩が川のように流れ出す', '大爆発して山がふき飛ぶ', '白い溶岩が火口に盛り上がる'],
+      answer: 'a',
+      explanation: 'ねばりけの弱いマグマは、ガスがぬけやすく流れやすいので、溶岩が川のように流れ出す、比較的おだやかな噴火が多くなります。',
+      hint: 'さらさらした液体は、どう流れるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'volcano-kq1-t1', concept: 'vo-magma', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '火口からあふれた溶岩が、斜面を川のように流れ下るものを[b1]という。',
+        blanks: [word('b1', ['溶岩流', '火砕流', '土石流'], '溶岩流')],
+        explanation: '溶岩が斜面を流れ下るものを**溶岩流**といいます。火砕流は、高温の火山ガスと火山灰などがいっしょに、とても速く流れ下るものです。',
+        hint: '「溶岩」が「流れる」と書くよ。',
+      }),
+      figureChoice({
+        id: 'volcano-kq1-p1', concept: 'vo-magma',
+        prompt: '図は火山の 3 つの形です。桜島や富士山のように、溶岩と火山灰などが何度も交互に積み重なってできた形はどれ？ ア〜ウから選ぼう。',
+        figure: KQ_SHAPES_Q,
+        answer: 'r1',
+        explanation: '桜島や富士山は、溶岩を流す噴火と、火山灰などをふき出す噴火をくり返し、それらが交互に積み重なって、アの円すいの形になりました。',
+        hint: 'きれいな三角形に見える形だよ。',
+      }),
+      fill({
+        id: 'volcano-kq1-p2', concept: 'vo-igneous',
+        prompt: '玄武岩・安山岩・閃緑岩・流紋岩の 4 つの火成岩があります。',
+        text: 'このうち、深成岩は[b1]である。',
+        blanks: [word('b1', ['閃緑岩', '玄武岩', '安山岩'], '閃緑岩')],
+        explanation: '閃緑岩は、地下深くでゆっくり冷えてできた深成岩です。玄武岩・安山岩・流紋岩は、地表や地表の近くで急に冷えてできた火山岩です。',
+        hint: '深成岩は 花こう岩・閃緑岩・はんれい岩 の 3 つだよ。',
+      }),
+      drag({
+        id: 'volcano-kq1-p3', concept: 'vo-igneous',
+        prompt: '表は火成岩の分け方です。上の段は火山岩、下の段は深成岩で、左ほど白っぽい岩石です。「安山岩」のカードを、当てはまるますへ動かそう。',
+        // 安山岩: 火山岩・中間の色 → ますの中心 (200, 96)、カードの左上 (158, 82)。不正解例は 閃緑岩のます (158, 162)
+        figure: igneousBoardScene('安山岩'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 158, y: 82 },
+        samples: { correct: { x: 158, y: 82 }, wrong: { x: 158, y: 162 } },
+        explanation: '安山岩は斑状組織の火山岩で、色は流紋岩と玄武岩の中間です。同じ色の深成岩は閃緑岩です。',
+        hint: '安山岩は火山岩だよ。色は 3 つのうちのまん中。',
+      }),
+      choice({
+        id: 'volcano-kq1-p4', concept: 'vo-igneous',
+        prompt: '斑状組織の斑晶は、まわりの石基より大きな結晶です。斑晶が大きく育ったのはなぜ？',
+        options: ['地下でゆっくり冷える間に育ったから', '地表で急に冷えたから', '噴火のあとに雨で運ばれたから'],
+        answer: 'a',
+        explanation: '斑晶は、マグマが地下にある間に、ゆっくり冷えながら大きく育った結晶です。そのあと地表の近くで急に冷えた部分が、細かい石基になりました。',
+        hint: '結晶は、ゆっくり冷えるほど大きく育つね。',
+      }),
+      choice({
+        id: 'volcano-kq1-p5', concept: 'vo-magma',
+        prompt: '火山弾には、ラグビーボールのような形や、ねじれた形のものが多く見られます。そのような形になるのはなぜ？',
+        options: ['空中で回りながら固まったから', '川で角がけずられたから', '地下深くでゆっくり冷えたから'],
+        answer: 'a',
+        explanation: '火山弾は、ふき飛ばされたマグマが、空中で回転しながら冷えて固まったものです。そのため、紡錘形やねじれた形になります。',
+        hint: '火山弾は、どこで固まったものだったかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'volcano-kq1-r1', concept: 'vo-magma',
+        prompt: '図は火山の 3 つの形です。ある火山では、白っぽい溶岩が火口の上に盛り上がりました。この火山の形として考えられるのはどれ？ ア〜ウから選ぼう。',
+        figure: KQ_SHAPES_Q,
+        answer: 'r3',
+        explanation: '白っぽい溶岩は、ねばりけが強いマグマからできます。流れにくいので火口の上に盛り上がり、ウのような形になります。',
+        hint: 'ねばりけが強い溶岩は、流れにくいね。',
+      }),
+      drag({
+        id: 'volcano-kq1-r2', concept: 'vo-igneous',
+        prompt: '表は火成岩の分け方です。上の段は火山岩、下の段は深成岩で、左ほど白っぽい岩石です。「はんれい岩」のカードを、当てはまるますへ動かそう。',
+        // はんれい岩: 深成岩・黒っぽい → ますの中心 (276, 176)、カードの左上 (234, 162)。不正解例は 玄武岩のます (234, 82)
+        figure: igneousBoardScene('はんれい岩'),
+        draggable: { itemId: 'card', axis: 'xy' },
+        target: { x: 234, y: 162 },
+        samples: { correct: { x: 234, y: 162 }, wrong: { x: 234, y: 82 } },
+        explanation: 'はんれい岩は等粒状組織の深成岩で、有色鉱物を多くふくむので黒っぽい色をしています。同じ色の火山岩は玄武岩です。',
+        hint: 'はんれい岩は深成岩で、黒っぽい岩石だよ。',
+      }),
+      fill({
+        id: 'volcano-kq1-r3', concept: 'vo-igneous',
+        prompt: '図は、ある火山岩をルーペで見たスケッチです。細かい粒の中に、大きな結晶が散らばっています。',
+        figure: KQ_PORPHYRY,
+        text: 'スケッチの中の斑晶の数は[b1]である。',
+        blanks: [number('b1', 5, 0, '個')],
+        explanation: '細かい粒（石基）の中に散らばる、六角形の大きな結晶が斑晶で、白っぽいもの 3 個と黒っぽいもの 2 個の、合わせて 5 個です。',
+        hint: '大きな六角形の結晶を、色に関係なく数えよう。',
+      }),
+      fill({
+        id: 'volcano-kq1-r4', concept: 'vo-magma',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '溶岩・火山弾・軽石・火山灰などの火山噴出物は、どれも地下の[b1]がもとになってできている。',
+        blanks: [word('b1', ['マグマ', '地下水', '堆積岩'], 'マグマ')],
+        explanation: '火山噴出物は、どれもマグマがもとです。流れ出したり、ふき飛ばされて空中で固まったり、細かくくだけたりして、いろいろな形になります。',
+        hint: '地下の岩石がとけて、どろどろになったものだよ。',
+      }),
+      choice({
+        id: 'volcano-kq1-t2', concept: 'vo-igneous', term: true,
+        prompt: '次の説明に合う言葉はどれ？「斑状組織で、斑晶のまわりをうめている、細かい粒やガラス質の部分」',
+        options: ['石基', '斑晶', '鉱物'],
+        answer: 'a',
+        explanation: '斑晶のまわりの、細かい粒やガラス質の部分を**石基**といいます。マグマが地表の近くで急に冷えたため、大きな結晶になれなかった部分です。',
+        hint: '大きな結晶のまわりの「基（もと）」になる部分だよ。',
+      }),
+    ],
+  };
+
+  // 断層がずれて地震が起こり、ゆれが震源から伝わる（解説用）
+  function faultQuakeScene() {
+    return scene([
+      { type: 'rect', x: 0, y: 70, width: 320, height: 170, fill: 'sand', stroke: 'none' },
+      { type: 'line', points: [[0, 70], [320, 70]], color: 'line', width: 2 },
+      { type: 'line', points: [[140, 70], [196, 236]], width: 3 },
+      { type: 'text', x: 124, y: 62, text: '断層', size: 13, anchor: 'end' },
+      { type: 'arrow', x1: 154, y1: 150, x2: 150, y2: 118, color: 'ink', width: 2 },
+      { type: 'arrow', x1: 182, y1: 150, x2: 186, y2: 182, color: 'ink', width: 2 },
+      { type: 'circle', x: 168, y: 150, r: 8, fill: 'orange' },
+      { type: 'text', x: 184, y: 146, text: '震源', size: 13, bold: true },
+      { type: 'circle', x: 168, y: 150, r: 40, fill: 'none', stroke: 'gray' },
+      { type: 'circle', x: 168, y: 150, r: 70, fill: 'none', stroke: 'gray' },
+      { type: 'text', x: 316, y: 226, text: 'ゆれは震源から四方へ伝わる', size: 12, anchor: 'end' },
+    ]);
+  }
+
+  // 地震の前とあとの海岸（土地の隆起）（解説用）
+  function upliftScene() {
+    const items = [];
+    [[10, 130, '地震の前'], [170, 80, '地震のあと']].forEach(([x0, top, label]) => {
+      items.push(
+        { type: 'rect', x: x0, y: 60, width: 140, height: 140, fill: 'sky', stroke: 'none' },
+        { type: 'rect', x: x0, y: 110, width: 140, height: 90, fill: 'water', stroke: 'none' },
+        { type: 'rect', x: x0, y: top, width: 140, height: 200 - top, fill: 'rock' },
+        { type: 'line', points: [[x0, 110], [x0 + 140, 110]], color: 'blue', width: 2 },
+        { type: 'text', x: x0 + 70, y: 224, text: label, size: 13, anchor: 'middle' },
+      );
+      [30, 60, 90, 120].forEach(dx => items.push({ type: 'circle', x: x0 + dx, y: top + 6, r: 5, fill: 'white' }));
+    });
+    items.push(
+      { type: 'text', x: 316, y: 40, text: '海面', size: 12, anchor: 'end' },
+      { type: 'arrow', x1: 300, y1: 160, x2: 300, y2: 96, color: 'blue' },
+      { type: 'text', x: 160, y: 30, text: '白い丸は岩についた海の生物', size: 12, anchor: 'middle' },
+    );
+    return scene(items);
+  }
+
+  // 地震計の記録に、時刻を表す縦の点線とア・イ・ウ（ア x 70・イ x 150・ウ x 290）
+  const KQ_SEISMO_Q = scene([
+    { type: 'text', x: 160, y: 34, text: 'ある地点の地震計の記録', size: 13, anchor: 'middle' },
+    { type: 'text', x: 306, y: 172, text: '時間 →', size: 12, anchor: 'end' },
+  ].concat(
+    [70, 150, 290].map(x => ({ type: 'line', points: [[x, 60], [x, 174]], color: 'gray', width: 1, dashed: true })),
+    [seismoLine()],
+    regionsAt([70, 150, 290], 204),
+  ));
+
+  // drag 用: 初期微動継続時間と震源からの距離のグラフ（距離 d km → x = 50 + 1.6d、時間 t 秒 → y = 200 − 8t）
+  // 60 km・8 秒の点を通る直線。sec 秒の横の点線を引き、横軸の上の青い丸（x 方向だけ動く）を置く
+  function durationDragScene(sec) {
+    const y = 200 - 8 * sec;
+    return scene([
+      { type: 'line', points: [[50, 200], [50, 30]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [304, 200]], width: 2, arrow: true },
+      { type: 'line', points: [[50, 200], [290, 40]], color: 'blue', width: 3 },
+      { type: 'line', points: [[146, 200], [146, 136], [50, 136]], color: 'gray', width: 1, dashed: true },
+      { type: 'circle', x: 146, y: 136, r: 5, fill: 'blue', stroke: 'none' },
+      { type: 'line', points: [[50, y], [300, y]], color: 'orange', width: 2, dashed: true },
+      { type: 'text', x: 44, y: y + 4, text: String(sec), size: 12, anchor: 'end', color: 'orange' },
+      { type: 'text', x: 146, y: 222, text: '60', size: 12, anchor: 'middle' },
+      { type: 'text', x: 44, y: 140, text: '8', size: 12, anchor: 'end' },
+      { type: 'text', x: 44, y: 214, text: '0', size: 12, anchor: 'end' },
+      { type: 'text', x: 56, y: 24, text: '初期微動継続時間〔秒〕', size: 12 },
+      { type: 'text', x: 306, y: 236, text: '震源からの距離〔km〕', size: 12, anchor: 'end' },
+      { type: 'circle', id: 'mark', x: 62, y: 200, r: 10, fill: 'blue', stroke: 'ink' },
+    ]);
+  }
+
+  // ---- ステージ volcano-kq2: クイズ 2（地震のゆれと大地の変化: 地震計の記録・初期微動継続時間・隆起と沈降・液状化） ----
+  const voKq2 = {
+    id: 'volcano-kq2', areaId: 'quake', free: true, title: 'クイズ 2: 地震のゆれと大地の変化', minutes: 7, concepts: ['vo-wave', 'vo-plate'],
+    lessons: [
+      {
+        id: 'volcano-kq2-c1',
+        text: '地下の岩盤に大きな力が加わり続け、たえきれなくなってこわれ、ずれると地震が起こります。ずれた所が**断層**です。ゆれは**震源**から波になって、四方へ伝わります。',
+        figure: faultQuakeScene(),
+      },
+      {
+        id: 'volcano-kq2-c2',
+        text: '大きな地震では、広い範囲で土地がもち上がる**隆起**や、土地がしずむ**沈降**が起こることがあります。海岸の岩についた生物の高さが、変化の手がかりになります。',
+        figure: upliftScene(),
+      },
+    ],
+    warmup: choice({
+      id: 'volcano-kq2-w1', concept: 'vo-plate',
+      prompt: '予想しよう。水をたっぷりふくんだ砂を容器に入れ、上におもりをのせて、容器を横からトントンとたたき続けます。おもりはどうなると思う？',
+      options: ['砂の中にしずむ', '浮き上がる', '変わらない'],
+      answer: 'a',
+      explanation: 'ゆすられると砂の粒どうしの支え合いがくずれ、砂と水が液体のようになって、おもりがしずみます。地震で起こる液状化と同じしくみです。',
+      hint: 'ゆすると、砂の粒の間の水はどうなるかな。',
+    }),
+    problems: [
+      fill({
+        id: 'volcano-kq2-t1', concept: 'vo-plate', term: true,
+        prompt: '大切な言葉を入れよう。',
+        text: '地震で土地が広くしずみ、海岸ぞいの田畑が海水につかるようになった。このように土地がしずむことを[b1]という。',
+        blanks: [word('b1', ['沈降', '隆起', '侵食'], '沈降')],
+        explanation: '土地がしずむことを**沈降**、もち上がることを**隆起**といいます。大きな地震では、どちらも起こることがあります。',
+        hint: '「沈む」という字が入る言葉だよ。',
+      }),
+      fill({
+        id: 'volcano-kq2-p1', concept: 'vo-wave',
+        prompt: '初期微動継続時間は、震源から 30 km の地点で 4 秒でした。初期微動継続時間は、震源からの距離に比例します。',
+        text: '震源から 105 km の地点の初期微動継続時間は[b1]である。',
+        blanks: [number('b1', 14, 0, '秒')],
+        explanation: '105 km は 30 km の 3.5 倍なので、初期微動継続時間も 3.5 倍になり、4 × 3.5 ＝ 14 秒です。',
+        hint: '105 km は 30 km の何倍かを考えよう。',
+      }),
+      figureChoice({
+        id: 'volcano-kq2-p2', concept: 'vo-wave',
+        prompt: '図は地震計の記録です。ア〜ウの縦の点線は、記録の中のある時刻を表します。主要動が始まった時刻はどれ？',
+        figure: KQ_SEISMO_Q,
+        answer: 'r2',
+        explanation: 'イで、小さなゆれ（初期微動）から大きなゆれ（主要動）に変わっています。ここで S 波が届きました。アは P 波が届いて初期微動が始まった時刻です。',
+        hint: 'ゆれの幅が急に大きくなった所をさがそう。',
+      }),
+      choice({
+        id: 'volcano-kq2-p3', concept: 'vo-plate',
+        prompt: '海岸のうめ立て地では、地震のときに液状化が起こりやすいといわれます。その理由として正しいのはどれ？',
+        options: ['水をふくんだ砂の地盤だから', 'かたい岩盤の上にあるから', '標高が高い所にあるから'],
+        answer: 'a',
+        explanation: 'うめ立て地は、砂などでつくられ、地下水を多くふくんでいます。ゆすられると砂と水が液体のようになり、地面がしずんだり、泥水がふき出したりします。',
+        hint: '予想の実験で、おもりがしずんだのはどんな砂だったかな。',
+      }),
+      drag({
+        id: 'volcano-kq2-p4', concept: 'vo-wave',
+        prompt: 'グラフは、震源からの距離（横軸）と初期微動継続時間（たて軸）の関係です。初期微動継続時間が 12 秒になる距離へ、横軸の上の青い丸を動かそう。',
+        // 60 km で 8 秒 → 12 秒は 90 km。x = 50 + 1.6 × 90 = 194。不正解例は 120 km の x 242（48 px はなれる）
+        figure: durationDragScene(12),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 194, y: 200 },
+        samples: { correct: { x: 194, y: 200 }, wrong: { x: 242, y: 200 } },
+        explanation: '初期微動継続時間は距離に比例します。60 km で 8 秒なので、12 秒（1.5 倍）になるのは 60 × 1.5 ＝ 90 km の地点です。',
+        hint: '12 秒の点線がグラフの線と交わる所の、真下を見よう。',
+      }),
+      choice({
+        id: 'volcano-kq2-p5', concept: 'vo-plate',
+        prompt: 'ある岩場で、地震のあと、海の生物がついた岩が、海面より高い所に出ていました。この土地で起こったこととして考えられるのはどれ？',
+        options: ['土地が隆起した', '土地が沈降した', '海水がふえた'],
+        answer: 'a',
+        explanation: '海の中で生きていた生物が海面より上に出たので、土地がもち上がった（隆起した）と考えられます。',
+        hint: '岩と海面の位置は、どちらが動いたのかな。',
+      }),
+    ],
+    retryPool: [
+      figureChoice({
+        id: 'volcano-kq2-r1', concept: 'vo-wave',
+        prompt: '図は地震計の記録です。ア〜ウの縦の点線は、記録の中のある時刻を表します。初期微動が始まった時刻はどれ？',
+        figure: KQ_SEISMO_Q,
+        answer: 'r1',
+        explanation: 'アで、ゆれのなかった記録に小さなゆれが現れています。ここで P 波が届き、初期微動が始まりました。',
+        hint: '記録が最初にゆれ始めた所だよ。',
+      }),
+      drag({
+        id: 'volcano-kq2-r2', concept: 'vo-wave',
+        prompt: 'グラフは、震源からの距離（横軸）と初期微動継続時間（たて軸）の関係です。初期微動継続時間が 6 秒になる距離へ、横軸の上の青い丸を動かそう。',
+        // 60 km で 8 秒 → 6 秒は 45 km。x = 50 + 1.6 × 45 = 122。不正解例は 90 km の x 194
+        figure: durationDragScene(6),
+        draggable: { itemId: 'mark', axis: 'x' },
+        target: { x: 122, y: 200 },
+        samples: { correct: { x: 122, y: 200 }, wrong: { x: 194, y: 200 } },
+        explanation: '60 km で 8 秒なので、6 秒（8 秒の 0.75 倍）になるのは 60 × 0.75 ＝ 45 km の地点です。',
+        hint: '6 秒の点線がグラフの線と交わる所の、真下を見よう。',
+      }),
+      fill({
+        id: 'volcano-kq2-r3', concept: 'vo-plate',
+        prompt: '空らんに入る言葉を選ぼう。',
+        text: '地震で海底が急にもち上がったりしずんだりすると、その上の海水全体が動いて[b1]が起こることがある。',
+        blanks: [word('b1', ['津波', '高潮', '液状化'], '津波')],
+        explanation: '海底が急に動くと、上の海水全体がもち上げられたり下げられたりして、津波が発生します。高潮は、台風などで海面が高くなることです。',
+        hint: '海から陸へおし寄せる、とても大きな波だよ。',
+      }),
+      fill({
+        id: 'volcano-kq2-r4', concept: 'vo-wave',
+        prompt: '初期微動継続時間は、震源から 48 km の地点で 6 秒でした。初期微動継続時間は、震源からの距離に比例します。',
+        text: '初期微動継続時間が 10 秒の地点は、震源から[b1]はなれている。',
+        blanks: [number('b1', 80, 0, 'km')],
+        explanation: '48 km で 6 秒なので、1 秒あたり 8 km です。10 秒なら 8 × 10 ＝ 80 km はなれています。',
+        hint: '1 秒あたり何 km かを先に求めよう。',
+      }),
+      choice({
+        id: 'volcano-kq2-t2', concept: 'vo-plate', term: true,
+        prompt: '次の説明に合う言葉はどれ？「海洋プレートが大陸プレートの下にしずみこむ所にできる、海底の深い谷」',
+        options: ['海溝', '断層', '震央'],
+        answer: 'a',
+        explanation: '海洋プレートがしずみこむ所にできる、海底の深い谷を**海溝**といいます。日本の太平洋側の沖には、海溝があります。',
+        hint: '「海」の「みぞ」と書く言葉だよ。',
+      }),
+      choice({
+        id: 'volcano-kq2-r5', concept: 'vo-plate',
+        prompt: '地震が起こるしくみとして、正しいのはどれ？',
+        options: ['地下の岩盤が力にたえきれずずれる', '地下のマグマが冷えて固まる', '月の引力で海水が動く'],
+        answer: 'a',
+        explanation: '地下の岩盤に力が加わり続け、たえきれなくなってこわれ、ずれるときに地震が起こります。',
+        hint: '断層ができたり、ずれたりするときだよ。',
+      }),
+    ],
+  };
+
+  // ================================================================
   // 単元
   // ================================================================
 
@@ -2151,8 +2518,8 @@
     mascot: 'D',   // 担当の先生（もくもく先生。js/mascot.js の MASCOTS）
     concepts,
     areas: [
-      { id: 'volcano', title: '火山', order: 1, stages: [volcano1, volcano2, voMp1, voMp2, voDr1] },
-      { id: 'quake', title: '地震', order: 2, stages: [volcano3, volcano4, voMp3, voMp4, voDr2] },
+      { id: 'volcano', title: '火山', order: 1, stages: [volcano1, volcano2, voMp1, voMp2, voDr1, voKq1] },
+      { id: 'quake', title: '地震', order: 2, stages: [volcano3, volcano4, voMp3, voMp4, voDr2, voKq2] },
     ],
   };
 
