@@ -184,22 +184,6 @@
     return RQ.badges.count(rec) + ' / ' + RQ.badges.DEFS.length + ' 個';
   }
 
-  // ホームのバッジのカード: 取った数と、最近取った 3 つ
-  function badgeHomeCard(ctx, rec) {
-    const recent = earnedBadges(rec).slice(0, 3);
-    return card([
-      cardTitle('バッジ'),
-      el('p', { class: 'badge-count', text: badgeCountText(rec) }),
-      recent.length > 0
-        ? el('ul', { class: 'badge-recent' }, recent.map((x) => el('li', { class: 'badge-item' }, [
-          badgeMedal(x.def, true),
-          el('span', { class: 'badge-title', text: x.def.title }),
-        ])))
-        : el('p', { class: 'muted', text: 'ステージをクリアしたり、続けて学習したりすると取れるよ' }),
-      button('バッジを見る', () => ctx.go('record'), 'btn-block'),
-    ]);
-  }
-
   // 記録画面のバッジの一覧（DEFS の順に全部）
   function badgeListCard(rec) {
     const list = el('ul', { class: 'badge-grid' });
@@ -433,9 +417,7 @@
     ]));
 
     section.append(questCard(ctx, rec, now));
-    section.append(levelCard(ctx, rec, 'レベルと経験値'));
-    section.append(streakCard(rec, now, today));
-    section.append(badgeHomeCard(ctx, rec));
+    section.append(statusCard(ctx, rec, now, today, true));
 
     section.append(el('div', { class: 'stack' }, [
       button('学習マップへ', () => ctx.go('map'), 'btn-primary btn-block'),
@@ -488,8 +470,35 @@
     return card(children);
   }
 
-  // レベルと経験値のカード（ホームと記録画面で使う）
-  function levelCard(ctx, rec, title) {
+  // いまのがんばりのカード（ホームと記録画面で使う）。上にレベル・連続学習・バッジの 3 つの数字、
+  // 下に細かい内容。home が true なら最近のバッジの節も出す（記録画面はすぐ下にバッジの一覧がある）
+  function statusCard(ctx, rec, now, today, home) {
+    const tile = (kind, label, value) => el('li', { class: 'status-tile status-tile-' + kind }, [
+      el('span', { class: 'status-label', text: label }),
+      el('span', { class: 'status-value', text: value }),
+    ]);
+    return card([
+      cardTitle('いまのがんばり'),
+      el('ul', { class: 'status-summary' }, [
+        tile('level', 'レベル', 'Lv ' + rec.level),
+        tile('streak', '連続学習', streakNow(rec, today).count + ' 日'),
+        tile('badge', 'バッジ', badgeCountText(rec)),
+      ]),
+      levelSection(ctx, rec),
+      streakSection(rec, now, today),
+      home ? badgeRecentSection(ctx, rec) : null,
+    ], 'status-card');
+  }
+
+  // 連続学習が続いているか（最後の学習日が今日かきのう）と、その日数（続いていなければ 0）
+  function streakNow(rec, today) {
+    const streak = rec.streak || {};
+    const alive = streak.lastDate ? RQ.xp.daysBetween(streak.lastDate, today) <= 1 : false;
+    return { alive, count: alive ? streak.count || 0 : 0 };
+  }
+
+  // 経験値の節: 次のレベルまでのバーと、合計 / 次の XP
+  function levelSection(ctx, rec) {
     const level = rec.level;
     const total = rec.xp;
     const next = RQ.xp.nextLevelXp(level, ctx.config);
@@ -503,23 +512,21 @@
       'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': percent,
     }, el('div', { class: 'xp-bar-fill' }));
     bar.firstChild.style.width = percent + '%';
-    return card([
-      cardTitle(title),
-      el('div', { class: 'level-row' }, [
-        el('span', { class: 'level-num', text: 'Lv ' + level }),
-        el('span', { text: total + ' / ' + next + ' XP' }),
-      ]),
+    return el('div', { class: 'status-section' }, [
+      el('h3', { class: 'status-heading', text: '次のレベルまで' }),
       bar,
-      el('p', { class: 'muted', text: 'あと ' + Math.max(0, next - total) + ' XP で Lv ' + (level + 1) }),
+      el('div', { class: 'status-xp-row' }, [
+        el('span', { text: total + ' / ' + next + ' XP' }),
+        el('span', { class: 'muted', text: 'あと ' + Math.max(0, next - total) + ' XP で Lv ' + (level + 1) }),
+      ]),
     ]);
   }
 
-  // 連続学習のカード（ホームと記録画面で使う）。
+  // 今週の学習の節: ひとことと曜日の丸。
   // 曜日の丸は「学習した日」= 予想（warmup）以外の解答があった日（連続学習の数え方と同じ）
-  function streakCard(rec, now, today) {
+  function streakSection(rec, now, today) {
     const streak = rec.streak || {};
-    const alive = streak.lastDate ? RQ.xp.daysBetween(streak.lastDate, today) <= 1 : false;
-    const count = alive ? streak.count || 0 : 0;
+    const alive = streakNow(rec, today).alive;
     const studied = new Set((rec.history || []).filter((h) => h && h.phase !== 'warmup').map((h) => RQ.xp.localDate(h.at)));
     const dots = el('ol', { class: 'week-dots', 'aria-label': '今週学習した日' });
     weekDates(now).forEach((date, i) => {
@@ -536,11 +543,25 @@
     let note = '今日から始めよう！';
     if (streak.lastDate === today) note = '今日も学習したね！';
     else if (alive) note = '今日も学習して、記録をのばそう。';
-    return card([
-      cardTitle('連続学習'),
-      el('p', {}, [el('span', { class: 'streak-count', text: count + ' 日' }), ' 連続']),
+    return el('div', { class: 'status-section' }, [
+      el('h3', { class: 'status-heading', text: '今週の学習' }),
       el('p', { class: 'muted', text: note }),
       dots,
+    ]);
+  }
+
+  // 最近のバッジの節（ホームだけ）: 最近取った 3 つと、記録画面へのボタン
+  function badgeRecentSection(ctx, rec) {
+    const recent = earnedBadges(rec).slice(0, 3);
+    return el('div', { class: 'status-section' }, [
+      el('h3', { class: 'status-heading', text: '最近のバッジ' }),
+      recent.length > 0
+        ? el('ul', { class: 'badge-recent' }, recent.map((x) => el('li', { class: 'badge-item' }, [
+          badgeMedal(x.def, true),
+          el('span', { class: 'badge-title', text: x.def.title }),
+        ])))
+        : el('p', { class: 'muted', text: 'ステージをクリアしたり、続けて学習したりすると取れるよ' }),
+      button('バッジを見る', () => ctx.go('record'), 'btn-block'),
     ]);
   }
 
@@ -1461,8 +1482,8 @@
   }
 
   // ---- 記録 ----
-  // 進捗（単元ごと・領域ごとのクリア数）、理解度の目安（単元ごと。経験値とは別のカード）、経験値とレベル、
-  // 連続学習、バッジ、取り組み履歴。教材のある単元はすべて出す。履歴は長くなるので一番下に置く。
+  // 進捗（単元ごと・領域ごとのクリア数）、理解度の目安（単元ごと。経験値とは別のカード）、いまのがんばり
+  // （レベル・連続学習・バッジの数）、バッジの一覧、取り組み履歴。教材のある単元はすべて出す。履歴は長くなるので一番下に置く。
 
   function renderRecord(section, ctx) {
     const rec = ctx.record;
@@ -1472,8 +1493,7 @@
     section.append(topBar('記録', 'ホーム', () => ctx.go('home')));
     section.append(progressCard(ctx, rec, readyItems));
     readyItems.forEach((item) => section.append(masteryCard(ctx, rec, item.unit, item.title)));
-    section.append(levelCard(ctx, rec, '経験値とレベル'));
-    section.append(streakCard(rec, now, today));
+    section.append(statusCard(ctx, rec, now, today, false));
     section.append(badgeListCard(rec));
     section.append(historyCard(ctx, rec, now));
     section.append(button('ホームへ', () => ctx.go('home'), 'btn-block'));

@@ -971,6 +971,16 @@ test('class unit app: 指定解除・教材にないidは選択を保って印�
   }
 });
 
+test('home: レベル・連続学習・バッジは「いまのがんばり」の 1 枚にまとまる', async (t) => {
+  const f = classApp(t, { unitScreens: true }); await f.ready; await f.settle();
+  const home = f.ids['screen-home']; const text = home.textContent;
+  for (const s of ['いまのがんばり', '次のレベルまで', '今週の学習', '最近のバッジ', 'バッジを見る']) assert.ok(text.includes(s), s);
+  assert.equal(text.includes('レベルと経験値'), false);
+  assert.ok(text.includes('Lv 1')); assert.ok(text.includes('0 日')); assert.ok(text.includes('0 / ' + require('../js/badges.js').DEFS.length + ' 個'));
+  assert.equal(f.nodes(home).filter((e) => e.attrs.role === 'progressbar').length, 1);
+  assert.equal(f.nodes(home).filter((e) => String(e.className || '').split(' ').includes('status-tile')).length, 3);
+});
+
 test('class unit app: 印がなければ「決めない」・教材にないidを読んでも保存せず、時刻も変えない', async (t) => {
   for (const unitId of [null, 'unknown-unit']) {
     for (const appliedAt of [undefined, 300]) {
