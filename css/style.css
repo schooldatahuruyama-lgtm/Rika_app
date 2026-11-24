@@ -155,6 +155,10 @@ p {
 
 .header-profile {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-weight: bold;
 }
 
